@@ -9,7 +9,8 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
 
-include { MINIMAP2_INDEX } from '../modules/nf-core/minimap2/index/main'
+include { SAMTOOLS_CAT           } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX         } from '../modules/nf-core/minimap2/index/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,7 +26,17 @@ workflow LR_SOMATIC {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    
+    //
+    // MODULE: Combine bam files from the same sample
+    //
+    MERGE_BAM_SAMPLE ( ch_samplesheet )
+        .reads
+        .set { ch_cat_fastq }
 
+    ch_versions = ch_versions.mix (CAT_FASTQ_SAMPLE.out.versions.first().ifEmpty(null))
+    
+    
     //
     // Collate and save software versions
     //
