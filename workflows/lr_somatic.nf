@@ -114,7 +114,7 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
     MINIMAP2_ALIGN.out.bam 
-        | set { ch_minimap_bam }
+        .set { ch_minimap_bam }
 
     
     // TODO: Add post-alignment QC step here
