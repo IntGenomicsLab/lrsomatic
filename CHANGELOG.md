@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https://nf-co.re/) template.
 
 ### `Added`
+- cramino module
+- modkit pileup module 
 
 ### `Fixed`
 
