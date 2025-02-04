@@ -13,21 +13,31 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "bam_tumor": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "Bam file of tumor sample must be provided, cannot contain spaces and must have extension '.bam'"
             },
-            "fastq_2": {
+            "bam_normal": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "Bam file of normal sample must be provided, cannot contain spaces and must have extension '.bam'"
+            },
+            "method": {
+                "type": "string",
+                "enum": ["pb", "ont"],
+                "errorMessage": "Method must be one of the following: 'pb' or 'ont'"
+            },
+            "specs": {
+                "type": "string",
+                "enum": ["R9", "R10", "NA"],
+                "errorMessage": "Detailed of the used sequencing technology (R9 or R10) for ont and 'NA' for pb"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "bam_tumor","method","specs"]
     }
 }
