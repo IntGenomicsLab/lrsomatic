@@ -9,6 +9,7 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 
 ### `Added`
 - cramino module
+- modkit pileup module 
 
 ### `Fixed`
 
