@@ -12,7 +12,6 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 include { SAMTOOLS_CAT as SAMTOOLS_CAT_TUMOUR  } from '../modules/nf-core/samtools/cat/main'
 include { SAMTOOLS_CAT as SAMTOOLS_CAT_NORMAL  } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX                       } from '../modules/nf-core/minimap2/index/main'
-include { MINIMAP2_ALIGN                       } from '../modules/nf-core/minimap2/align/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,6 +42,9 @@ workflow LR_SOMATIC {
         .set { ch_ubams }
     
     // TODO: Split workflow here in paired/tumour-only?
+    
+    //
+    // SUBWORKFLOW: 
     
     //
     // MODULE: Combine bam files from the same sample (TUMOUR ubams)
