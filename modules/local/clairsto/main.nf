@@ -52,7 +52,8 @@ process CLAIRSTO {
     // TODO : change to reflect the meta data information from Laurens
     def platform = task.ext.platform ?: 'ont'
     def output_dir = "${meta.id}_clairs_output"
-
+    def SNV_VCFGZ="${output_dir}/snv.vcf.gz"
+    def INDEL_VCFGZ="${output_dir}/indel.vcf.gz"
     def SNV_VCF="${output_dir}/snv.vcf"
     def INDEL_VCF="${output_dir}/indel.vcf"
     def SOMATIC_VCF="${output_dir}/somatic.vcf"
@@ -80,6 +81,9 @@ process CLAIRSTO {
         --use_longphase_for_intermediate_haplotagging True \
         --conda_prefix /opt/micromamba/envs/clairs-to
    
+    # Unzip ;)
+    gunzip $SNV_VCFGZ $INDEL_VCFGZ
+
     # Extract header from snv.vcf (lines starting with '##' or the first line starting with '#')
     awk '/^##/ {print} /^#CHROM/ {print; exit}' "$SNV_VCF" > header.vcf
 
