@@ -1,4 +1,4 @@
 sample,bam_tumor,bam_normal,method,specs
-sample1_pb_paired,/path/to/sample1_tumor.bam,/path/to/sample1_normal.bam,pb,NA
-sample1_ont_paired,/path/to/sample2_tumor.bam,/path/to/sample2_normal.bam,ont,R9
-sample1_ont_tumoronly,/path/to/sample3_tumor.bam,,ont,R10
+sample1,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,/staging/leuven/stg_00096/home/hackathon/test_data_LH/normal_chr19.bam,ont,R10
+sample2,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,/staging/leuven/stg_00096/home/hackathon/test_data_LH/normal_chr19.bam,pb,NA
+sample3,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,,ont,R10
