@@ -2,7 +2,8 @@
 // Run minimap2 on tumour (and normal) ubams
 //
 
-include { MINIMAP2_ALIGN } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_PB  } from '../../modules/nf-core/minimap2/align/main'
+include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_ONT } from '../../modules/nf-core/minimap2/align/main'
 
 workflow RUN_MINIMAP2_ALIGN {
     take:
@@ -29,11 +30,18 @@ workflow RUN_MINIMAP2_ALIGN {
             
             return result
         }
-        .view()
         .set { ch_restructured_ubams }
-    // Run minimap2 align on each bam file
-    MINIMAP2_ALIGN ( 
-        ch_restructured_ubams,
+        
+    // Split the channel into pacbio and ont
+    ch_split = ch_restructured_ubams
+        .branch { meta, bam -> 
+                ont: meta.method == 'ont'
+                pb: meta.method == 'pb'
+        }
+    
+    // Run minimap2 on PacBio samples
+    MINIMAP2_ALIGN_PB ( 
+        ch_split.pb,
         ch_minimap_index,
         true,
         'bai',
@@ -41,12 +49,29 @@ workflow RUN_MINIMAP2_ALIGN {
         "" 
     )
     
-    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
-    ch_aligned = MINIMAP2_ALIGN.out.bam
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN_PB.out.versions)
+    ch_aligned_pb = MINIMAP2_ALIGN_PB.out.bam
     
-    // Restructure back to original format
-
-        
+    // Run minimap2 on ONT samples
+    MINIMAP2_ALIGN_ONT ( 
+        ch_split.ont,
+        ch_minimap_index,
+        true,
+        'bai',
+        "", 
+        "" 
+    )
+    
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN_ONT.out.versions)
+    ch_aligned_ont = MINIMAP2_ALIGN_ONT.out.bam
+    
+    // Mix back in together
+    ch_aligned = ch_aligned_pb.mix(ch_aligned_ont)
+    
+    // TODO: Restructure back to normal if needed
+    // ch_aligned is now [[meta], [bam]] 
+    // With meta consisting of [id, paired_data, method, specs, type]
+    
     emit:
         aligned = ch_aligned
         versions = ch_versions 
