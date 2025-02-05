@@ -23,6 +23,13 @@ include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
 include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
 include { RUN_MINIMAP2_ALIGN          } from '../subworkflows/local/run_minimap2_align'
 
+//
+// IMPORT SUBWORKFLOWS
+//
+
+include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
+include { RUN_MINIMAP2_ALIGN          } from '../subworkflows/local/run_minimap2_align'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -102,10 +109,6 @@ workflow LR_SOMATIC {
     RUN_MINIMAP2_ALIGN.out.aligned 
         .set { ch_minimap_bam } 
     // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
-    
-    // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
-    // 
-    // MODULE: CRAMINO
     // 
     
     //CRAMINO_POST ( )
