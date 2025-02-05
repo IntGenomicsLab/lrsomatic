@@ -95,7 +95,8 @@ workflow PIPELINE_INITIALISATION {
             bam_normal = bam_normal.flatten()
             return [ meta, bam_tumor, bam_normal ]
         }
-        .set { ch_samplesheet }
+        .set { ch_samplesheet }          
+        
     emit:
     samplesheet = ch_samplesheet
     versions    = ch_versions
