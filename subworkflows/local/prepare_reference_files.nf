@@ -1,5 +1,5 @@
 //
-// Creates gtfs to that add introns as features
+// Prepare reference files (unzipping and adding index)
 //
 
 include { PIGZ_UNCOMPRESS as UNZIP_FASTA } from '../../modules/nf-core/pigz/uncompress/main'

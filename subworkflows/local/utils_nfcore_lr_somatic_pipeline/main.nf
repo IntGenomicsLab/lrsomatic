@@ -77,7 +77,7 @@ workflow PIPELINE_INITIALISATION {
         .map {
             meta, bam_tumor, bam_normal, method, specs ->
                 if (!bam_normal) {
-                    return [ meta + [ paired_data:false, method:method, specs:specs ], [ bam_tumor ] ]
+                    return [ meta + [ paired_data:false, method:method, specs:specs ], [ bam_tumor ], [] ]
                 } else {
                     return [ meta + [ paired_data:true, method:method, specs:specs ], [ bam_tumor ], [ bam_normal ] ]
                 }
@@ -95,8 +95,8 @@ workflow PIPELINE_INITIALISATION {
             bam_normal = bam_normal.flatten()
             return [ meta, bam_tumor, bam_normal ]
         }
-        .view()
-        .set { ch_samplesheet }
+        .set { ch_samplesheet }          
+        
     emit:
     samplesheet = ch_samplesheet
     versions    = ch_versions

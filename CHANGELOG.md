@@ -12,6 +12,11 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 - cramino module
 - modkit pileup module 
 - mosdepth module
+- minimap2/index module
+- minimap2/align module
+- pigz module
+- samtools/cat module
+- samtools faidx module
 
 ### `Fixed`
 
