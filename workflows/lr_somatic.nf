@@ -9,6 +9,11 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
 
+include { SAMTOOLS_CAT as SAMTOOLS_CAT_TUMOUR  } from '../modules/nf-core/samtools/cat/main'
+include { SAMTOOLS_CAT as SAMTOOLS_CAT_NORMAL  } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX                       } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN                       } from '../modules/nf-core/minimap2/align/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -23,7 +28,102 @@ workflow LR_SOMATIC {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    
+    //
+    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
+    //
+    ch_samplesheet
+        .branch{
+            meta, tumour ->
+                single: tumour.size() == 1
+                    return [ meta, tumour.flatten(), normal.flatten() ] // TODO: this probably doesnt work
+                multiple: tumour.size() > 1
+                    return [ meta, tumour.flatten(), normal.flatten() ]
+        }
+        .set { ch_ubams }
+    
+    // TODO: Split workflow here in paired/tumour-only?
+    
+    //
+    // MODULE: Combine bam files from the same sample (TUMOUR ubams)
+    //
+    // TODO: Ensure it only takes tumour bam here
+    SAMTOOLS_CAT_TUMOUR ( ch_ubams.multiple )
+        .reads
+        .mix ( ch_ubams.single )
+        .set { ch_cat_ubams }
 
+    ch_versions = ch_versions.mix (SAMTOOLS_CAT_TUMOUR.out.versions.first().ifEmpty(null))
+    
+    //
+    // MODULE: Combine bam files from the same sample (NORMAL ubams)
+    //
+    // TODO: Ensure it only takes normal bam here
+    SAMTOOLS_CAT_NORMAL ( ch_ubams.multiple )
+        .reads
+        .mix ( ch_ubams.single )
+        .set { ch_cat_ubams }
+
+
+    ch_versions = ch_versions.mix (SAMTOOLS_CAT_NORMAL.out.versions.first().ifEmpty(null))
+    
+    // TODO: Add pre-alignment QC step here
+    //
+    // MODULE: CRAMINO
+    //
+    CRAMINO_PRE ( )
+
+    
+    //
+    // SUBWORKFLOW: PREPARE_REFERENCE_FILES
+    //
+    
+    PREPARE_REFERENCE_FILES ( params.fasta )
+    
+    ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
+    ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
+    
+    ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
+    
+    //
+    // MODULE: Run MINIMAP2_INDEX
+    //
+    
+    // Create minimap2 index channel
+    
+    
+    if (!params.skip_save_minimap2_index) {
+        
+        MINIMAP2_INDEX ( ch_fasta )
+        ch_minimap_index = MINIMAP2_INDEX.out.index
+        
+        ch_versions = ch_versions.mix(MINIMAP2_INDEX.out.versions)
+    }
+
+    //
+    // MODULE: Run MINIMAP2_ALIGN
+    //
+    MINIMAP2_ALIGN (
+        ch_cat_ubams,
+        ch_minimap_index,
+        true,
+        'bai',
+        "",
+        ""
+    )
+
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
+    MINIMAP2_ALIGN.out.bam 
+        .set { ch_minimap_bam }
+
+    
+    // TODO: Add post-alignment QC step here
+    // 
+    // MODULE: CRAMINO
+    // 
+    
+    CRAMINO_POST ( )
+    
     //
     // Collate and save software versions
     //
