@@ -69,16 +69,16 @@ process CLAIRSTO {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    /opt/bin/run_clairs_to \
-        --tumor_bam_fn  \
-        --ref_fn ${ref} \
-        --threads ${task.cpus} \
-        --platform ${platform} \
-        --output_dir ${output_dir} \
-        --use_heterozygous_snp_in_normal_sample_and_normal_bam_for_intermediate_phasing True \
-        --remove_intermediate_dir \
-        --use_longphase_for_intermediate_phasing True \
-        --use_longphase_for_intermediate_haplotagging True \
+    /opt/bin/run_clairs_to \\
+        --tumor_bam_fn  \\
+        --ref_fn ${ref} \\
+        --threads ${task.cpus} \\
+        --platform ${platform} \\
+        --output_dir ${output_dir} \\
+        --use_heterozygous_snp_in_normal_sample_and_normal_bam_for_intermediate_phasing True \\
+        --remove_intermediate_dir \\
+        --use_longphase_for_intermediate_phasing True \\
+        --use_longphase_for_intermediate_haplotagging True \\
         --conda_prefix /opt/micromamba/envs/clairs-to
    
     # Unzip ;)
