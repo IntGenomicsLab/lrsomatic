@@ -40,11 +40,6 @@ workflow LR_SOMATIC {
     ch_multiqc_files = Channel.empty()
     
 
-    // TODO: Split workflow here in paired/tumour-only?
-    
-    //
-    // SUBWORKFLOW: 
-    
     //
     // MODULE: Combine bam files from the same sample (TUMOUR ubams)
     //
@@ -69,12 +64,12 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix (SAMTOOLS_CAT_NORMAL.out.versions.first().ifEmpty(null))
     
-    // TODO: Add pre-alignment QC step here
+    // TODO: Add pre-alignment QC step here, maybe add a subworkflow with all pre-alignment QC together
     //
     // MODULE: CRAMINO
     //
     CRAMINO_PRE ( )
-*/
+    */
     
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -108,10 +103,10 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(RUN_MINIMAP2_ALIGN.out.versions)
     RUN_MINIMAP2_ALIGN.out.aligned 
-        .set { ch_minimap_bam }
-
+        .set { ch_minimap_bam } 
+    // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
     
-    // TODO: Add post-alignment QC step here
+    // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
     // 
     // MODULE: CRAMINO
     // 
