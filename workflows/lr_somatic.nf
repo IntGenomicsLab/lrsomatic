@@ -15,7 +15,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 
 include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
-
+include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST       } from '../modules/local/cramino/main'
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -65,8 +65,9 @@ workflow LR_SOMATIC {
     //
     // MODULE: CRAMINO
     //
-    CRAMINO_PRE ( )
     */
+    CRAMINO_PRE ( ch_cat_ubams )
+    
     
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -107,8 +108,8 @@ workflow LR_SOMATIC {
     // 
     // MODULE: CRAMINO
     // 
-    
-    //CRAMINO_POST ( )
+    ch_minimap_bam.view()
+    CRAMINO_POST ( ch_minimap_bam )
     
     //
     // Collate and save software versions
