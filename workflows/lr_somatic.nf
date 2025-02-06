@@ -33,6 +33,8 @@ workflow LR_SOMATIC {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
+    // Channel format is [[meta], [bam]]. 
+    // Where [meta] is [id, paired_data, method, specs, type]
     main:
 
     ch_versions = Channel.empty()
