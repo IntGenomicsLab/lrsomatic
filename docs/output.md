@@ -27,6 +27,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 ### Minimap2
 
+[ClairS-TO](https://github.com/HKU-BAL/ClairS-TO) ool in the Clair series to support long-read somatic small variant calling with only tumor samples available. For more information, see <https://github.com/HKU-BAL/ClairS-TO>.
+
 ### Cramino
 <details markdown="1">
 <summary>Output files</summary>
