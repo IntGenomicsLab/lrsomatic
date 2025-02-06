@@ -37,6 +37,8 @@ process CLAIRSTO {
     //               e.g. "*.fastq.gz" and NOT "*.fastq", "*.bam" and NOT "*.sam" etc.
     tuple val(meta), path(tumour_bam)
     path(ref)
+    val specs
+    val method
 
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
@@ -49,9 +51,22 @@ process CLAIRSTO {
     task.ext.when == null || task.ext.when
 
     script:
-    // TODO : change to reflect the meta data information from Laurens
-    def platform = task.ext.platform ?: 'ont'
     def output_dir = "${meta.id}_clairs_output"
+
+    // Contains ClairS-TO models appropriate for specs in the schema
+    def platformMap = [
+        'R9_4k': 'ont_r10_dorado_sup_4khz',
+        'R10_4k': 'ont_r10_dorado_sup_4khz',
+        'R9_5k': 'ont_r10_dorado_sup_5khz_ssrs',
+        'R10_5k': 'ont_r10_dorado_sup_5khz_ssrs'
+    ]
+    
+    def platform = (params.method == 'pb') ? 'pb' : platformMap.get(params.specs)
+
+    if (specs in ['R9_4k', 'R10_4k','R9_5k']) {
+        log.warn "Warning: ClairS-TO has no appropriate models for ${params.specs} defaulting to ${platform}"
+    }
+
     def SNV_VCFGZ="${output_dir}/snv.vcf.gz"
     def INDEL_VCFGZ="${output_dir}/indel.vcf.gz"
     def SNV_VCF="${output_dir}/snv.vcf"
