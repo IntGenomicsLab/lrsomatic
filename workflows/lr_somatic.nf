@@ -13,9 +13,8 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 // IMPORT MODULES
 //
 
-include { SAMTOOLS_CAT as SAMTOOLS_CAT_TUMOUR  } from '../modules/nf-core/samtools/cat/main'
-include { SAMTOOLS_CAT as SAMTOOLS_CAT_NORMAL  } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX                       } from '../modules/nf-core/minimap2/index/main'
+include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -41,30 +40,25 @@ workflow LR_SOMATIC {
     
 
     //
-    // MODULE: Combine bam files from the same sample (TUMOUR ubams)
+    // MODULE: Combine bam files from the same sample 
     //
-    // TODO: Ensure it only takes tumour bam here
+    
+    // Take channels where there are multiple bam files in the list
+    
+    ch_split = ch_samplesheet
+        .branch { meta, bam -> 
+            single: bam.size() == 1
+            multiple: bam.size() > 1
+        }
+    
+    SAMTOOLS_CAT ( ch_split.multiple )
+        .bam
+        .mix ( ch_split.single )
+        .set { ch_cat_ubams }
+    ch_versions = ch_versions.mix (SAMTOOLS_CAT.out.versions.first().ifEmpty(null))
+    
     /*
-    SAMTOOLS_CAT_TUMOUR ( ch_ubams.multiple )
-        .reads
-        .mix ( ch_ubams.single )
-        .set { ch_cat_ubams }
-
-    ch_versions = ch_versions.mix (SAMTOOLS_CAT_TUMOUR.out.versions.first().ifEmpty(null))
-    
-    //
-    // MODULE: Combine bam files from the same sample (NORMAL ubams)
-    //
-    // TODO: Ensure it only takes normal bam here
-    SAMTOOLS_CAT_NORMAL ( ch_ubams.multiple )
-        .reads
-        .mix ( ch_ubams.single )
-        .set { ch_cat_ubams }
-
-
-    ch_versions = ch_versions.mix (SAMTOOLS_CAT_NORMAL.out.versions.first().ifEmpty(null))
-    
-    // TODO: Add pre-alignment QC step here, maybe add a subworkflow with all pre-alignment QC together
+    // TODO: Add pre-alignment QC step here, maybe add a subworkflow with all pre-alignment QC together if there will be more than CRAMINO
     //
     // MODULE: CRAMINO
     //
@@ -97,7 +91,7 @@ workflow LR_SOMATIC {
     // SUBWORKFLOW: RUN_MINIMAP2_ALIGN
     //
     RUN_MINIMAP2_ALIGN (
-        ch_samplesheet,
+        ch_cat_ubams,
         ch_minimap_index
     )
 
