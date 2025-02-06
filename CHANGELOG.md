@@ -19,6 +19,7 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 - samtools faidx module
 
 ### `Fixed`
+- New channel structure
 
 ### `Dependencies`
 

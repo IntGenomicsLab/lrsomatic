@@ -74,28 +74,31 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, bam_tumor, bam_normal, method, specs ->
-                if (!bam_normal) {
-                    return [ meta + [ paired_data:false, method:method, specs:specs ], [ bam_tumor ], [] ]
-                } else {
-                    return [ meta + [ paired_data:true, method:method, specs:specs ], [ bam_tumor ], [ bam_normal ] ]
-                }
+        .map { meta, bam_tumor, bam_normal, method, specs ->
+            def paired_data = bam_normal ? true : false
+            def meta_info = meta + [ paired_data: paired_data, method: method, specs: specs ]
+            return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
         .groupTuple()
-        /* 
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
+        .map { meta, bam_tumor, bam_normal ->
+            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
-        */
-        .map {
-            meta, bam_tumor, bam_normal ->
-                  // Flatten the nested lists
-            bam_tumor = bam_tumor.flatten()
-            bam_normal = bam_normal.flatten()
-            return [ meta, bam_tumor, bam_normal ]
+        .flatMap { meta, tumor_bam, normal_bam ->
+            def meta_tumor = meta.clone()
+            meta_tumor.type = 'tumor'
+            def result = [[meta_tumor, tumor_bam]]
+            
+            if (normal_bam) {
+                def meta_normal = meta.clone()
+                meta_normal.type = 'normal'
+                result << [meta_normal, normal_bam]
+            }
+            
+            return result
         }
-        .set { ch_samplesheet }          
+        .set { ch_samplesheet }
+        // Channel is now [[meta], [bam]]       
+        // With meta consisting of [id, paired_data, method, specs, type]
         
     emit:
     samplesheet = ch_samplesheet
