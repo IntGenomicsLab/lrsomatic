@@ -74,13 +74,10 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, bam_tumor, bam_normal, method, specs ->
-                if (!bam_normal) {
-                    return [ meta + [ paired_data:false, method:method, specs:specs ], [ bam_tumor ], [] ]
-                } else {
-                    return [ meta + [ paired_data:true, method:method, specs:specs ], [ bam_tumor ], [ bam_normal ] ]
-                }
+        .map { meta, bam_tumor, bam_normal, method, specs ->
+            def paired_data = bam_normal ? true : false
+            def meta_info = meta + [ paired_data: paired_data, method: method, specs: specs ]
+            return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
         .groupTuple()
         .map { meta, bam_tumor, bam_normal ->
