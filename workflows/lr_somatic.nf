@@ -58,7 +58,8 @@ workflow LR_SOMATIC {
     ch_versions = ch_versions.mix (SAMTOOLS_CAT.out.versions.first().ifEmpty(null))
     
     /*
-    // TODO: Add pre-alignment QC step here, maybe add a subworkflow with all pre-alignment QC together if there will be more than CRAMINO
+    // TODO: Add pre-alignment QC step here
+    // Maybe add a subworkflow with all pre-alignment QC together if there will be more than CRAMINO
     //
     // MODULE: CRAMINO
     //
