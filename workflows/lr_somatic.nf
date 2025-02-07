@@ -14,6 +14,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 //
 include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
+include { CLAIRSTO            } from '../modules/local/clairsto/main'
 include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 
 //
@@ -104,6 +105,14 @@ workflow LR_SOMATIC {
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
     MINIMAP2_ALIGN.out.bam 
         .set { ch_minimap_bam } 
+
+
+    CLAIRSTO (
+        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index),
+        ch_fasta,
+        ch_fai
+    )
+    // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
     
     // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
     // 
@@ -182,6 +191,8 @@ workflow LR_SOMATIC {
     emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
+
+    
 }
 
 /*
