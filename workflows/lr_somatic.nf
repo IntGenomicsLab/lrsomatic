@@ -12,16 +12,14 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 //
 // IMPORT MODULES
 //
-
 include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 
 //
 // IMPORT SUBWORKFLOWS
 //
-
 include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
-include { RUN_MINIMAP2_ALIGN          } from '../subworkflows/local/run_minimap2_align'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,17 +89,20 @@ workflow LR_SOMATIC {
     }
 
     //
-    // SUBWORKFLOW: RUN_MINIMAP2_ALIGN
+    // MODULE: MINIMAP2_ALIGN
     //
-    RUN_MINIMAP2_ALIGN (
+    MINIMAP2_ALIGN ( 
         ch_cat_ubams,
-        ch_minimap_index
+        ch_minimap_index,
+        true,
+        'bai',
+        "", 
+        "" 
     )
 
-    ch_versions = ch_versions.mix(RUN_MINIMAP2_ALIGN.out.versions)
-    RUN_MINIMAP2_ALIGN.out.aligned 
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
+    MINIMAP2_ALIGN.out.bam 
         .set { ch_minimap_bam } 
-    // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
     
     // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
     // 
