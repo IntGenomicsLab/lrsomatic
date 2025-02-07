@@ -67,6 +67,8 @@ workflow LR_SOMATIC {
     // MODULE: CRAMINO
     */
     CRAMINO_PRE ( ch_cat_ubams )
+
+    ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
     
     
     //
@@ -121,6 +123,8 @@ workflow LR_SOMATIC {
     // 
     
     CRAMINO_POST ( ch_minimap_bam )
+
+    ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
     
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
