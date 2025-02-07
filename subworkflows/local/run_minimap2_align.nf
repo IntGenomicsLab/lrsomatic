@@ -7,31 +7,16 @@ include { MINIMAP2_ALIGN as MINIMAP2_ALIGN_ONT } from '../../modules/nf-core/min
 
 workflow RUN_MINIMAP2_ALIGN {
     take:
-    ch_ubams // channel: val(meta), [ bam_tumor, bam_normal ] or val(meta), [ bam_tumor ]
+    ch_ubams // channel: val(meta), [ bam ]
     ch_minimap_index
 
             
     main:
     ch_versions = Channel.empty()
-    ch_aligned = Channel.empty()  // Initialize ch_aligned        
-    // Split the channel into pacbio and ont
-    ch_split = ch_ubams
-        .branch { meta, bam -> 
-                ont: meta.method == 'ont'
-                pb: meta.method == 'pb'
-        }
-    
-                def meta_normal = meta.clone()
-                meta_normal.type = 'normal'
-                result << [meta_normal, normal_bam]
-            }
-            
-            return result
-        }
-        .set { ch_restructured_ubams }
+    ch_aligned = Channel.empty()  // Initialize ch_aligned
         
     // Split the channel into pacbio and ont
-    ch_split = ch_restructured_ubams
+    ch_split = ch_ubams
         .branch { meta, bam -> 
                 ont: meta.method == 'ont'
                 pb: meta.method == 'pb'
