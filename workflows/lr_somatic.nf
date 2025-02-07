@@ -120,7 +120,7 @@ workflow LR_SOMATIC {
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
     BAM_STATS_SAMTOOLS (
-        ch_minimap_bam.join(RUN_MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
+        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
         ch_fasta
     )
     
