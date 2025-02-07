@@ -22,6 +22,7 @@ include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
 
 include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
 include { RUN_MINIMAP2_ALIGN          } from '../subworkflows/local/run_minimap2_align'
+include { BAM_STATS_SAMTOOLS          } from '../subworkflows/nf-core/bam_stats_samtools/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,7 +58,7 @@ workflow LR_SOMATIC {
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
-    ch_versions = ch_versions.mix (SAMTOOLS_CAT.out.versions.first().ifEmpty(null))
+    ch_versions = ch_versions.mix (SAMTOOLS_CAT.out.versions)
     
     /*
     // TODO: Add pre-alignment QC step here
@@ -111,6 +112,17 @@ workflow LR_SOMATIC {
     //CRAMINO_POST ( )
     
     //
+    // SUBWORKFLOW: BAM_STATS_SAMTOOLS
+    //
+    BAM_STATS_SAMTOOLS (
+        ch_minimap_bam.join(RUN_MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
+        ch_fasta
+    )
+    
+    ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
+    
+    
+    //
     // Collate and save software versions
     //
     softwareVersionsToYAML(ch_versions)
@@ -134,11 +146,11 @@ workflow LR_SOMATIC {
         Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
         Channel.empty()
 
-    summary_params      = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
+    summary_params      = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(
+    ch_multiqc_files    = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
         file(params.multiqc_methods_description, checkIfExists: true) :
         file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
@@ -152,7 +164,12 @@ workflow LR_SOMATIC {
             sort: true
         )
     )
-
+    
+    // Collect MultiQC files
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
+    
+    ch_multiqc_files.view()
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
