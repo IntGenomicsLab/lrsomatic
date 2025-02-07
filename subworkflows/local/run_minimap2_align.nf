@@ -34,6 +34,7 @@ workflow RUN_MINIMAP2_ALIGN {
     
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_PB.out.versions)
     ch_aligned_pb = MINIMAP2_ALIGN_PB.out.bam
+    ch_index_pb = MINIMAP2_ALIGN_PB.out.index
     
     // Run minimap2 on ONT samples
     MINIMAP2_ALIGN_ONT ( 
@@ -47,10 +48,11 @@ workflow RUN_MINIMAP2_ALIGN {
     
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_ONT.out.versions)
     ch_aligned_ont = MINIMAP2_ALIGN_ONT.out.bam
-    
+    ch_index_ont = MINIMAP2_ALIGN_ONT.out.index
+
     // Mix back in together
     ch_aligned = ch_aligned_pb.mix(ch_aligned_ont)
-    
+    ch_index = ch_index_pb.mix(ch_index_ont)
     // TODO: Restructure back to normal if needed
     // ch_aligned is now [[meta], [bam]] 
     // With meta consisting of [id, paired_data, method, specs, type]
@@ -58,4 +60,5 @@ workflow RUN_MINIMAP2_ALIGN {
     emit:
         aligned = ch_aligned
         versions = ch_versions 
+        index = ch_index
 }
