@@ -17,9 +17,12 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 - pigz module
 - samtools/cat module
 - samtools faidx module
+- bam_stats_samtools subworkflow
 
 ### `Fixed`
 - New channel structure
+- No longer possible to have duplicated naming after samtools cat
+- restructured minimap2
 
 ### `Dependencies`
 
