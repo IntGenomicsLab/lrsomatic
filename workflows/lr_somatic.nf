@@ -16,6 +16,7 @@ include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
 include { CLAIRSTO            } from '../modules/local/clairsto/main'
 include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
+include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST } from '../modules/local/cramino/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -64,9 +65,9 @@ workflow LR_SOMATIC {
     // Maybe add a subworkflow with all pre-alignment QC together if there will be more than CRAMINO
     //
     // MODULE: CRAMINO
-    //
-    CRAMINO_PRE ( )
     */
+    CRAMINO_PRE ( ch_cat_ubams )
+    
     
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -119,7 +120,7 @@ workflow LR_SOMATIC {
     // MODULE: CRAMINO
     // 
     
-    //CRAMINO_POST ( )
+    CRAMINO_POST ( ch_minimap_bam )
     
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
