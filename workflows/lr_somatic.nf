@@ -170,7 +170,6 @@ workflow LR_SOMATIC {
     ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
     
-    ch_multiqc_files.view()
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
