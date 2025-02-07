@@ -13,7 +13,6 @@ workflow RUN_MINIMAP2_ALIGN {
             
     main:
     ch_versions = Channel.empty()
-    ch_aligned = Channel.empty()  // Initialize ch_aligned
         
     // Split the channel into pacbio and ont
     ch_split = ch_ubams
@@ -21,7 +20,7 @@ workflow RUN_MINIMAP2_ALIGN {
                 ont: meta.method == 'ont'
                 pb: meta.method == 'pb'
         }
-    
+
     // Run minimap2 on PacBio samples
     MINIMAP2_ALIGN_PB ( 
         ch_split.pb,
@@ -34,7 +33,9 @@ workflow RUN_MINIMAP2_ALIGN {
     
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_PB.out.versions)
     ch_aligned_pb = MINIMAP2_ALIGN_PB.out.bam
-    
+    ch_index_pb = MINIMAP2_ALIGN_PB.out.index
+
+
     // Run minimap2 on ONT samples
     MINIMAP2_ALIGN_ONT ( 
         ch_split.ont,
@@ -47,15 +48,14 @@ workflow RUN_MINIMAP2_ALIGN {
     
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN_ONT.out.versions)
     ch_aligned_ont = MINIMAP2_ALIGN_ONT.out.bam
+    ch_index_ont = MINIMAP2_ALIGN_ONT.out.index
     
     // Mix back in together
     ch_aligned = ch_aligned_pb.mix(ch_aligned_ont)
-    
-    // TODO: Restructure back to normal if needed
-    // ch_aligned is now [[meta], [bam]] 
-    // With meta consisting of [id, paired_data, method, specs, type]
+    ch_index = ch_index_pb.mix(ch_index_ont)
     
     emit:
         aligned = ch_aligned
+        index = ch_index
         versions = ch_versions 
 }
