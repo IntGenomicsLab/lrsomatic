@@ -20,11 +20,7 @@ include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
-<<<<<<< HEAD
-=======
-include { RUN_MINIMAP2_ALIGN          } from '../subworkflows/local/run_minimap2_align'
 include { BAM_STATS_SAMTOOLS          } from '../subworkflows/nf-core/bam_stats_samtools/main'
->>>>>>> 95a04dce801d24deb9fb0e452bbd016c18dc7cfa
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
