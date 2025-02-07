@@ -34,8 +34,8 @@
             },
             "specs": {
                 "type": "string",
-                "enum": ["R9", "R10", "NA"],
-                "errorMessage": "Detailed of the used sequencing technology (R9 or R10) for ont and 'NA' for pb"
+                "enum": ["R9_4k", "R10_4k","R9_5k", "R10_5k", "NA"],
+                "errorMessage": "Detailed of the used sequencing technology (R9 or R10 at either 4khz or 5khz) for ont and 'NA' for pb"
             }
         },
         "required": ["sample", "bam_tumor","method","specs"]

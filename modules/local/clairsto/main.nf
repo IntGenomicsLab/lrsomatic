@@ -35,13 +35,14 @@ process CLAIRSTO {
     //               https://github.com/nf-core/modules/blob/master/modules/nf-core/bwa/index/main.nf
     // TODO nf-core: Where applicable please provide/convert compressed files as input/output
     //               e.g. "*.fastq.gz" and NOT "*.fastq", "*.bam" and NOT "*.sam" etc.
-    tuple val(meta), path(tumour_bam)
-    path(ref)
+    tuple val(meta), path(tumor_bam), path(tumor_bai)
+    tuple val(meta2), path(ref)
+    tuple val(meta3), path(ref_index)
 
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
-    tuple val(meta), path("*_somatic.vcf.gz"), emit: somatic_vcf
-    tuple val(meta), path("*_germline.vcf.gz"), emit: germline_vcf
+    tuple val(meta), path("*snv.vcf.gz"), emit: somatic_vcf
+    tuple val(meta), path("*indel.vcf.gz"), emit: germline_vcf
     // TODO nf-core: List additional required output channels/values here
     path "versions.yml"           , emit: versions
 
@@ -49,15 +50,22 @@ process CLAIRSTO {
     task.ext.when == null || task.ext.when
 
     script:
-    // TODO : change to reflect the meta data information from Laurens
-    def platform = task.ext.platform ?: 'ont'
-    def output_dir = "${meta.id}_clairs_output"
-    def SNV_VCFGZ="${output_dir}/snv.vcf.gz"
-    def INDEL_VCFGZ="${output_dir}/indel.vcf.gz"
-    def SNV_VCF="${output_dir}/snv.vcf"
-    def INDEL_VCF="${output_dir}/indel.vcf"
-    def SOMATIC_VCF="${output_dir}/somatic.vcf"
-    def NONSOMATIC_VCF="${output_dir}/germline.vcf"
+    def method = task.ext.args ?: ''
+
+    // Contains ClairS-TO models appropriate for specs in the schema
+    def platformMap = [
+        'R9_4k': 'ont_r10_dorado_sup_4khz',
+        'R10_4k': 'ont_r10_dorado_sup_4khz',
+        'R9_5k': 'ont_r10_dorado_sup_5khz_ssrs',
+        'R10_5k': 'ont_r10_dorado_sup_5khz_ssrs'
+    ]
+    
+    // if method meta data is pb, default to the revio model else go to the map
+    def platform = (method == 'pb') ? 'hifi_revio_ssrs' : platformMap.get(method.toString().trim(), method)
+
+    if (method.toString().trim() in ['R9_4k','R9_5k']) {
+        log.warn "Warning: ClairS-TO has no appropriate models for ${method} defaulting to ${platform}"
+    }
 
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
@@ -70,43 +78,15 @@ process CLAIRSTO {
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
     /opt/bin/run_clairs_to \\
-        --tumor_bam_fn  \\
+        --tumor_bam_fn ${tumor_bam} \\
         --ref_fn ${ref} \\
         --threads ${task.cpus} \\
         --platform ${platform} \\
-        --output_dir ${output_dir} \\
-        --use_heterozygous_snp_in_normal_sample_and_normal_bam_for_intermediate_phasing True \\
         --remove_intermediate_dir \\
+        --output_dir . \\
         --use_longphase_for_intermediate_phasing True \\
         --use_longphase_for_intermediate_haplotagging True \\
         --conda_prefix /opt/micromamba/envs/clairs-to
-   
-    # Unzip ;)
-    gunzip $SNV_VCFGZ $INDEL_VCFGZ
-
-    # Extract header from snv.vcf (lines starting with '##' or the first line starting with '#')
-    awk '/^##/ {print} /^#CHROM/ {print; exit}' "$SNV_VCF" > header.vcf
-
-    # Extract data (excluding headers) from both files
-    awk '!/^#/' "$SNV_VCF" > snv_data.tmp
-    awk '!/^#/' "$INDEL_VCF" > indel_data.tmp
-
-    # Combine data
-    cat snv_data.tmp indel_data.tmp > combined_data.tmp
-
-    # Split into somatic and non-somatic files based on 7th column containing "NonSomatic"
-    awk '$7 ~ /NonSomatic/' combined_data.tmp > nonsomatic_data.tmp
-    awk '$7 !~ /NonSomatic/' combined_data.tmp > somatic_data.tmp
-
-    # Add header to output files
-    cat header.vcf nonsomatic_data.tmp > "$NONSOMATIC_VCF"
-    cat header.vcf somatic_data.tmp > "$SOMATIC_VCF"
-
-    # Cleanup temporary files
-    rm header.vcf snv_data.tmp indel_data.tmp combined_data.tmp nonsomatic_data.tmp somatic_data.tmp
-    
-    # Zip the resulting files
-    gzip $NONSOMATIC_VCF $SOMATIC_VCF
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
