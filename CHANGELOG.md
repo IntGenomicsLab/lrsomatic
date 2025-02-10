@@ -18,6 +18,7 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 - samtools/cat module
 - samtools faidx module
 - bam_stats_samtools subworkflow
+mosdepth added to workflow
 
 ### `Fixed`
 - New channel structure
