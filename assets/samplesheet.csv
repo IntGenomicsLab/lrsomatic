@@ -1,5 +1,5 @@
 sample,bam_tumor,bam_normal,method,specs
-sample1,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,/staging/leuven/stg_00096/home/hackathon/test_data_LH/normal_chr19.bam,ont,R10_5k
-sample2,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,/staging/leuven/stg_00096/home/hackathon/test_data_LH/normal_chr19.bam,pb,NA
-sample3,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19.bam,,ont,R10_4k
-sample2,/staging/leuven/stg_00096/home/hackathon/test_data_LH/tumor_chr19_rep2.bam,/staging/leuven/stg_00096/home/hackathon/test_data_LH/normal_chr19_rep2.bam,pb,NA
+sample1,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19_50k.bam,ont,R10_5k
+sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19_50k.bam,pb,NA
+sample3,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,,ont,R10_4k
+sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19_50k.bam,pb,NA
