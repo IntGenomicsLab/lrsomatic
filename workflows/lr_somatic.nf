@@ -17,6 +17,7 @@ include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
 include { CLAIRSTO            } from '../modules/local/clairsto/main'
 include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST } from '../modules/local/cramino/main'
+include { MOSDEPTH         } from '../modules/nf-core/mosdepth/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -125,6 +126,22 @@ workflow LR_SOMATIC {
     CRAMINO_POST ( ch_minimap_bam )
 
     ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
+
+
+    
+    
+    //
+    // Module: MOSDEPTH
+    //
+    
+    // prepare mosdepth input channel: we need to specify compulsory path to bed as well
+    ch_minimap_bam.join(MINIMAP2_ALIGN.out.index).map{ meta, bam, bai -> [meta, bam, bai, []]}.set{ch_mosdepth_in}
+
+    MOSDEPTH ( ch_mosdepth_in,
+        ch_fasta )  
+
+    ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
+
     
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
