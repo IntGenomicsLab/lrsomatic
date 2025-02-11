@@ -22,6 +22,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [Severus](#severus) - Tool to call somatic and germline structural variants
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+- [Longphase](#longphase) - Phase the variants into haplotype blocks
 
 ### samtools
 
@@ -95,6 +96,18 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 </details>
 
 [Severus](https://github.com/KolmogorovLab/Severus) is a tool to call not only somatic, but also germline structural variant calls. For mor information on the tool and its usage, check out <https://github.com/KolmogorovLab/Severus>.
+
+### Longphase
+<details markdown="1">
+<summary>Output files</summary>
+
+TODO - add description ot output file
+- `longphase/`
+
+</details>
+
+[Longphase](https://github.com/twolinin/longphase) isa tool to phase your input variant calls and haplotag your bam. To see more, see <https://github.com/twolinin/longphase>.
+
 
 ### MultiQC
 
