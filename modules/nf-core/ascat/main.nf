@@ -48,7 +48,11 @@ process ASCAT {
     def fasta_arg                        = fasta                              ?  ",ref.fasta = '$fasta'" : ""
     def skip_allele_counting_tumour_arg  = args.skip_allele_counting_tumour   ?  ",skip_allele_counting_tumour = $args.skip_allele_counting_tumour" : ""
     def skip_allele_counting_normal_arg  = args.skip_allele_counting_normal   ?  ",skip_allele_counting_normal = $args.skip_allele_counting_normal" : ""
-
+    
+    def normal_bam                       = input_normal                       ? ",normalseqfile = '$input_normal'" : ""
+    def normal_name                      = input_normal                       ? ",normalname = $prefix.normal" : ""
+    def longread_bins                    = args.longread_bins                 ? ",loci_binsize = $args.longread_bins" : ""
+    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : "" 
     """
     #!/usr/bin/env Rscript
     library(RColorBrewer)
@@ -65,9 +69,7 @@ process ASCAT {
     #prepare from BAM files
     ascat.prepareHTS(
         tumourseqfile = "$input_tumor",
-        normalseqfile = "$input_normal",
         tumourname = paste0("$prefix", ".tumour"),
-        normalname = paste0("$prefix", ".normal"),
         allelecounter_exe = "alleleCounter",
         alleles.prefix = allele_prefix,
         loci.prefix = loci_prefix,
