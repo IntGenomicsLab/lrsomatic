@@ -8,7 +8,8 @@
                     "ascat": {
                         "branch": "master",
                         "git_sha": "81880787133db07d9b4c1febd152c090eb8325dc",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/ascat/ascat.diff"
                     },
                     "minimap2/align": {
                         "branch": "master",
@@ -66,6 +67,11 @@
                         "installed_by": ["bam_stats_samtools"]
                     },
                     "severus": {
+                        "branch": "master",
+                        "git_sha": "81880787133db07d9b4c1febd152c090eb8325dc",
+                        "installed_by": ["modules"]
+                    },
+                    "unzip": {
                         "branch": "master",
                         "git_sha": "81880787133db07d9b4c1febd152c090eb8325dc",
                         "installed_by": ["modules"]
