@@ -84,6 +84,13 @@ workflow LR_SOMATIC {
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
     
+    // ASCAT files
+    allele_files = PREPARE_REFERENCE_FILES.out.allele_files
+    loci_files = PREPARE_REFERENCE_FILES.out.loci_files
+    gc_file = PREPARE_REFERENCE_FILES.out.gc_file
+    rt_file = PREPARE_REFERENCE_FILES.out.rt_file
+    
+    
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     
     //
@@ -155,6 +162,20 @@ workflow LR_SOMATIC {
     )
     
     ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
+    
+    //
+    // MODULE: ASCAT
+    //
+    
+    ASCAT (
+        // input channel,
+        params.allele_files,
+        params.loci_files,
+        [:],
+        [:],
+        [:],
+        [:]
+    )
     
     
     //
