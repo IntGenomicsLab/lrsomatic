@@ -12,12 +12,15 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
-include { CLAIRSTO            } from '../modules/local/clairsto/main'
-include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
-include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST } from '../modules/local/cramino/main'
-include { MOSDEPTH         } from '../modules/nf-core/mosdepth/main'
+include { SAMTOOLS_CAT              } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX            } from '../modules/nf-core/minimap2/index/main'
+include { CLAIRSTO                  } from '../modules/local/clairsto/main'
+include { MINIMAP2_ALIGN            } from '../modules/nf-core/minimap2/align/main'
+include { CRAMINO as CRAMINO_PRE    } from '../modules/local/cramino/main'
+include { CRAMINO as CRAMINO_POST   } from '../modules/local/cramino/main'
+include { MOSDEPTH                  } from '../modules/nf-core/mosdepth/main'
+include { ASCAT                     } from '../modules/nf-core/ascat/main'
+
 
 //
 // IMPORT SUBWORKFLOWS
