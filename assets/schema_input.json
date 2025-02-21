@@ -27,17 +27,12 @@
                 "pattern": "^\\S+\\.bam$",
                 "errorMessage": "Bam file of normal sample must be provided, cannot contain spaces and must have extension '.bam'"
             },
-            "method": {
+            "platform": {
                 "type": "string",
                 "enum": ["pb", "ont"],
                 "errorMessage": "Method must be one of the following: 'pb' or 'ont'"
             },
-            "specs": {
-                "type": "string",
-                "enum": ["R9_4k", "R10_4k","R9_5k", "R10_5k", "NA"],
-                "errorMessage": "Detailed of the used sequencing technology (R9 or R10 at either 4khz or 5khz) for ont and 'NA' for pb"
-            }
         },
-        "required": ["sample", "bam_tumor","method","specs"]
+        "required": ["sample", "bam_tumor","platform"]
     }
 }

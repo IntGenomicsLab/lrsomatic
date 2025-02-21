@@ -14,10 +14,11 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 //
 include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
-include { CLAIRSTO            } from '../modules/local/clairsto/main'
+include { CLAIR3            } from '../modules/local/clair3/main'
 include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST } from '../modules/local/cramino/main'
 include { MOSDEPTH         } from '../modules/nf-core/mosdepth/main'
+include { METAEXTRACT         } from '../modules/local/metaextract/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -48,6 +49,22 @@ workflow LR_SOMATIC {
     //
     
     // Take channels where there are multiple bam files in the list
+    //tst.view()
+   // METAEXTRACT(ch_samplesheet) | view { message -> "I say... $message" }
+    basecall_meta = METAEXTRACT(ch_samplesheet)
+
+    ch_samplesheet
+    .join(basecall_meta)
+    .map{ meta, bam, meta_ext ->
+        def meta_new = meta + [ basecall_model: meta_ext]
+        return[ meta_new, bam ]
+    }
+    .groupTuple()
+    .map { meta, bam ->
+           [ meta, bam.flatten()]
+        }
+    .view()
+    .set{ch_samplesheet}
     
     ch_split = ch_samplesheet
         .branch { meta, bam -> 
@@ -111,7 +128,8 @@ workflow LR_SOMATIC {
         .set { ch_minimap_bam } 
 
 
-    CLAIRSTO (
+
+    CLAIR3 (
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index),
         ch_fasta,
         ch_fai
