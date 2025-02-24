@@ -15,7 +15,7 @@
 // TODO nf-core: Optional inputs are not currently supported by Nextflow. However, using an empty
 //               list (`[]`) instead of a file can be used to work around this issue.
 
-process CLAIRSTO {
+process CLAIR3 {
     tag "$meta.id"
     label 'process_high'
 
@@ -25,8 +25,8 @@ process CLAIRSTO {
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://hkubal/clairs-to:v0.3.1':
-        'hkubal/clairs-to:v0.3.1' }"
+        'docker://hkubal/clair3:v1.0.10':
+        'hkubal/clair3:v1.0.10' }"
 
     input:
     // TODO nf-core: Where applicable all sample-specific information e.g. "id", "single_end", "read_group"
@@ -35,14 +35,15 @@ process CLAIRSTO {
     //               https://github.com/nf-core/modules/blob/master/modules/nf-core/bwa/index/main.nf
     // TODO nf-core: Where applicable please provide/convert compressed files as input/output
     //               e.g. "*.fastq.gz" and NOT "*.fastq", "*.bam" and NOT "*.sam" etc.
-    tuple val(meta), path(tumor_bam), path(tumor_bai)
+    tuple val(meta), path(bam), path(bam_bai)
     tuple val(meta2), path(ref)
     tuple val(meta3), path(ref_index)
 
+
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
-    tuple val(meta), path("*snv.vcf.gz"), emit: somatic_vcf
-    tuple val(meta), path("*indel.vcf.gz"), emit: germline_vcf
+    tuple val(meta), path("merge_output.vcf.gz"), emit: germline_vcf
+
     // TODO nf-core: List additional required output channels/values here
     path "versions.yml"           , emit: versions
 
@@ -50,25 +51,27 @@ process CLAIRSTO {
     task.ext.when == null || task.ext.when
 
     script:
-    def platform = meta.platform
-    // Contains ClairS-TO models appropriate for specs in the schema
     def modelMap = [
-        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs'
+        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'r1041_e82_400bps_sup_v500',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'r1041_e82_400bps_sup_v430',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'r1041_e82_400bps_sup_v410',
+        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'r1041_e82_260bps_sup_v400',
     ]
-    
-    // if method meta data is pb, default to the revio model else go to the map
-    def model = (meta.basecall_model == 'hifi') ? 'hifi_revio_ssrs' : modelMap.get(meta.basecall_model.toString().trim())
-    if (model.toString().trim() in modelMap.keySet() || model.toString().trim() == 'hifi') {
+    def model = (meta.basecall_model.toString().trim() == 'hifi') ? 'hifi' : modelMap.get(meta.basecall_model.toString().trim())
+    def platform = (meta.platform == "pb")? "hifi" : "ont"
+   
+    if (model.toString().trim() in modelMap.keySet() || model.toString().trim() == 'pb') {
         model = 'r1041_e82_400bps_sup_v500'
-        log.warn "Warning: ClairS-TO has no appropriate models for ${model} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
+        log.warn "Warning: ClairS-TO has no appropriate models for ${method} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
     }
     else {
-        log.info "Using ${model} model for ClairS-TO"
+        log.info "Using ${model} model for Clair3"
     }
+
+
+    
+    
 
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
@@ -80,33 +83,34 @@ process CLAIRSTO {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    /opt/bin/run_clairs_to \\
-        --tumor_bam_fn ${tumor_bam} \\
-        --ref_fn ${ref} \\
-        --threads ${task.cpus} \\
-        --platform ${model} \\
-        --remove_intermediate_dir \\
-        --output_dir . \\
-        --use_longphase_for_intermediate_phasing True \\
-        --use_longphase_for_intermediate_haplotagging True \\
-        --conda_prefix /opt/micromamba/envs/clairs-to
+    /opt/bin/run_clair3.sh \\
+        --bam_fn=${bam} \\
+        --ref_fn=${ref} \\
+        --threads=${task.cpus} \\
+        --platform="${platform}" \\
+        --model_path="/opt/models/${model}" \\
+        --use_longphase_for_intermediate_phasing \\
+        --output .               
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version | sed 's/ClairS version: //')
+        clair3: \$(samtools --version |& sed '1!d ; s/samtools //')
     END_VERSIONS
     """
 
     stub:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_dir = "${prefix}_clairs_output"
+    // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
+    //               Have a look at the following examples:
+    //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
+    //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
-    mkdir -p ${output_dir}
-    touch ${output_dir}/output.vcf.gz
+    touch ${prefix}.bam
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version | sed 's/ClairS version: //')
+        clair3: \$(samtools --version |& sed '1!d ; s/samtools //')
     END_VERSIONS
     """
 }

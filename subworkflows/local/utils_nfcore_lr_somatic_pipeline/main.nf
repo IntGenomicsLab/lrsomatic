@@ -74,14 +74,14 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, bam_tumor, bam_normal, method, specs ->
+        .map { meta, bam_tumor, bam_normal, method ->
             def paired_data = bam_normal ? true : false
-            def meta_info = meta + [ paired_data: paired_data, method: method, specs: specs ]
+            def meta_info = meta + [ paired_data: paired_data, platform: method]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
-        .groupTuple()
+        //.groupTuple()
         .map { meta, bam_tumor, bam_normal ->
-            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
+           [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
         .flatMap { meta, tumor_bam, normal_bam ->
             def meta_tumor = meta.clone()

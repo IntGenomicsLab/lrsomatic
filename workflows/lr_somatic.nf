@@ -12,18 +12,23 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT        } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX      } from '../modules/nf-core/minimap2/index/main'
-include { CLAIRSTO            } from '../modules/local/clairsto/main'
+include { SAMTOOLS_CAT           } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX         } from '../modules/nf-core/minimap2/index/main'
+include { CLAIR3                 } from '../modules/local/clair3/main'
+include { LONGPHASE_PHASE        } from '../modules/nf-core/longphase/phase/main'
+include { LONGPHASE_HAPLOTAG     } from '../modules/nf-core/longphase/haplotag/main'
+include { SEVERUS } from '../modules/nf-core/severus/main.nf'
 include { MINIMAP2_ALIGN      } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE; CRAMINO as CRAMINO_POST } from '../modules/local/cramino/main'
 include { MOSDEPTH         } from '../modules/nf-core/mosdepth/main'
+include { METAEXTRACT         } from '../modules/local/metaextract/main'
 
 //
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
 include { BAM_STATS_SAMTOOLS          } from '../subworkflows/nf-core/bam_stats_samtools/main'
+include { SAMTOOLS_INDEX } from '../modules/nf-core/samtools/index/main.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,6 +53,20 @@ workflow LR_SOMATIC {
     //
     
     // Take channels where there are multiple bam files in the list
+   // METAEXTRACT(ch_samplesheet) | view { message -> "I say... $message" }
+    basecall_meta = METAEXTRACT(ch_samplesheet)
+
+    ch_samplesheet
+    .join(basecall_meta)
+    .map{ meta, bam, meta_ext ->
+        def meta_new = meta + [ basecall_model: meta_ext]
+        return[ meta_new, bam ]
+    }
+    .groupTuple()
+    .map { meta, bam ->
+           [ meta, bam.flatten()]
+        }
+    .set{ch_samplesheet}
     
     ch_split = ch_samplesheet
         .branch { meta, bam -> 
@@ -110,12 +129,200 @@ workflow LR_SOMATIC {
     MINIMAP2_ALIGN.out.bam 
         .set { ch_minimap_bam } 
 
+    
+    // Need to join the tumor and normal information back together
+    // since both bams need to be phased on the normal clair3 output
+    // if it exists
+    ch_minimap_bam
+    .join(MINIMAP2_ALIGN.out.index) 
+    .map{ meta, bam, bai ->
+        def new_meta = [id: meta.id, 
+                        paired_data: meta.paired_data,
+                        platform: meta.platform,
+                        basecall_model: meta.basecall_model
+                        ]
+        def bam_check = bam ? bam : []
+        return[new_meta , [[type: meta.type], bam_check], [[type: meta.type], bai]]
+    }
+    .groupTuple()
+    .branch {meta, bams, bais ->
+        paired: meta.paired_data
+        tumor_only : !meta.paired_data
+    }
+    .set{reformat_samples}
 
-    CLAIRSTO (
-        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index),
+    // for the paired samples, only send the normal to CLAIR3
+    reformat_samples.paired
+    .map { meta, bams, bais ->
+        def normal_bam = bams[0][0].type == "normal" ? bams[0][1] : bams[1][1]
+        def normal_bai = bais[0][0].type == "normal" ? bais[0][1] : bais[1][1]
+        return [meta, normal_bam, normal_bai]
+    }
+    .set{clair3_reformat_paired}
+
+    // for the tumor only, send the tumor sample to CLAIR3
+    reformat_samples.tumor_only
+    .map{meta, bam, bai ->
+        def tumor_bam = bam[0][1]
+        def tumor_bai = bai[0][1]
+        return [ meta, tumor_bam, tumor_bai]
+    }
+    .mix(clair3_reformat_paired)
+    .set{clair3_reformat_samples}
+    // FORMAT IS [ meta, normal_bam, normal_bai]
+    // (except if its tumor only)
+
+    CLAIR3 (
+        clair3_reformat_samples,
         ch_fasta,
         ch_fai
     )
+
+    clair3_reformat_samples
+    .join(CLAIR3.out.germline_vcf)
+    .map{meta, bam, bai, snps->
+        def svs = []
+        def mods = []
+        return[meta, bam, bai, snps, svs, mods]
+    }
+    .set{clair3_reformat_samples}
+    // FORMAT IS [ meta, normal_bam, normal_bai, germline_vcf]
+    // (except if its tumor only)
+
+   LONGPHASE_PHASE(
+        clair3_reformat_samples,
+        ch_fasta,
+        ch_fai
+    )
+
+    reformat_samples.paired
+    .map { meta, bams, bais ->
+        def normal_bam = bams[0][0].type == "normal" ? bams[0][1] : bams[1][1]
+        def tumor_bam = bams[0][0].type == "tumor" ? bams[0][1] : bams[1][1]
+        def normal_bai = bais[0][0].type == "normal" ? bais[0][1] : bais[1][1]
+        def tumor_bai = bais[0][0].type == "tumor" ? bais[0][1] : bais[1][1]
+
+        return [ meta, normal_bam, tumor_bam, normal_bai, tumor_bai ]
+    }
+    .set{paired_samples}
+
+    reformat_samples.tumor_only
+    .map{meta, bam, bai ->
+        def tumor_bam = bam[0][1]
+        def tumor_bai = bai[0][1]
+        return [ meta, [], tumor_bam, [], tumor_bai]
+    }
+    .mix(paired_samples)
+
+     // Now we need to join the germline snps to the tumor and normal samples
+    reformat_samples.paired
+    .map { meta, bams, bais ->
+        def normal_bam = bams[0][0].type == "normal" ? bams[0][1] : bams[1][1]
+        def tumor_bam = bams[0][0].type == "tumor" ? bams[0][1] : bams[1][1]
+        def normal_bai = bais[0][0].type == "normal" ? bais[0][1] : bais[1][1]
+        def tumor_bai = bais[0][0].type == "tumor" ? bais[0][1] : bais[1][1]
+
+        return [ meta, normal_bam, tumor_bam, normal_bai, tumor_bai ]
+    }
+    .set{paired_samples}
+
+    reformat_samples.tumor_only
+    .map{meta, bam, bai ->
+        def tumor_bam = bam[0][1]
+        def tumor_bai = bai[0][1]
+        return [ meta, [], tumor_bam, [], tumor_bai]
+    }
+    .mix(paired_samples)
+    .join(LONGPHASE_PHASE.out.vcf)
+    .flatMap { meta, normal_bam, tumor_bam, normal_bai, tumor_bai, vcf ->
+            def meta_tumor = meta.clone()
+            meta_tumor.type = 'tumor'
+            def result = [[meta_tumor, tumor_bam, tumor_bai, vcf]]
+            
+            if (normal_bam) {
+                def meta_normal = meta.clone()
+                meta_normal.type = 'normal'
+                result << [meta_normal, normal_bam, normal_bai, vcf]
+            }
+            return result
+        } 
+    .map{ meta, bam, bai, snps ->
+        def snvs = []
+        def mods = []
+        return [ meta, bam, bai, snps, snvs, mods]
+    }
+    .set{longphase_reformat}
+    // FORMAT IS [ meta, bam, bai, phased_snps, [], [] ]
+
+    LONGPHASE_HAPLOTAG(
+        longphase_reformat,
+        ch_fasta,
+        ch_fai
+    )
+    LONGPHASE_HAPLOTAG.out.bam
+    .set{haplotagged_bams}
+
+    SAMTOOLS_INDEX(
+        haplotagged_bams
+    )
+
+    haplotagged_bams
+    .join(SAMTOOLS_INDEX.out.bai)
+    .view()
+    .set{haplotagged_bams}
+
+    longphase_reformat
+    .join(haplotagged_bams)
+    .map{meta, bam, bai, phased_snps, snvs, mods, hap_bam, hap_bai->
+        return[meta, hap_bam, hap_bai, phased_snps]
+    }
+    .map{ meta, hap_bam, bai, vcf ->
+        def new_meta = [id: meta.id, 
+                        paired_data: meta.paired_data,
+                        platform: meta.platform,
+                        basecall_model: meta.basecall_model
+                        ]
+        def bam_check = hap_bam ? hap_bam : []
+        return[new_meta , [[type: meta.type], bam_check], [[type: meta.type], bai], vcf]
+    }
+    .groupTuple()
+    .branch {meta, bams, bais, vcf->
+        paired: meta.paired_data
+        tumor_only : !meta.paired_data
+    }
+    .set{severus_reformat}
+
+    severus_reformat.paired
+    .map { meta, bams, bais, vcf ->
+        def normal_bam = bams[0][0].type == "normal" ? bams[0][1] : bams[1][1]
+        def tumor_bam = bams[0][0].type == "tumor" ? bams[0][1] : bams[1][1]
+        def normal_bai = bais[0][0].type == "normal" ? bais[0][1] : bais[1][1]
+        def tumor_bai = bais[0][0].type == "tumor" ? bais[0][1] : bais[1][1]
+
+        return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ]
+    }
+    .set{paired_samples}
+
+    severus_reformat.tumor_only
+    .map{meta, bam, bai, vcf->
+        def tumor_bam = bam[0][1]
+        def tumor_bai = bai[0][1]
+        return [ meta,tumor_bam, tumor_bai, [], [], vcf]
+    }
+    .mix(paired_samples)
+    .view()
+    .set{severus_reformat}
+    // FORMAT IS [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
+
+    bed_pon = Channel.of([[:], params.bed_file, params.pon_file])
+    //bed_pon = [[:], params.bed_file, params.pon_file]
+    //bed_pon.view()
+
+    SEVERUS(
+        severus_reformat,
+        bed_pon
+    )
+    
     // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
     
     // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
