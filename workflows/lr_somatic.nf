@@ -51,7 +51,6 @@ workflow LR_SOMATIC {
     //
     
     // Take channels where there are multiple bam files in the list
-    
     ch_split = ch_samplesheet
         .branch { meta, bam -> 
             single: bam.size() == 1
@@ -64,12 +63,10 @@ workflow LR_SOMATIC {
         .set { ch_cat_ubams }
     ch_versions = ch_versions.mix (SAMTOOLS_CAT.out.versions)
     
-    /*
-    // TODO: Add pre-alignment QC step here
-    // Maybe add a subworkflow with all pre-alignment QC together if there will be more than CRAMINO
     //
     // MODULE: CRAMINO
-    */
+    //
+    
     CRAMINO_PRE ( ch_cat_ubams )
 
     ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
@@ -128,7 +125,6 @@ workflow LR_SOMATIC {
     )
     // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
     
-    // TODO: Add post-alignment QC step here, maybe add a subworkflow with all post-alignment QC together
     // 
     // MODULE: CRAMINO
     // 
