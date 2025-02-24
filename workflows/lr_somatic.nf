@@ -44,7 +44,6 @@ workflow LR_SOMATIC {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    
 
     //
     // MODULE: Combine bam files from the same sample 
@@ -70,7 +69,6 @@ workflow LR_SOMATIC {
     CRAMINO_PRE ( ch_cat_ubams )
 
     ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
-    
     
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -132,9 +130,6 @@ workflow LR_SOMATIC {
     CRAMINO_POST ( ch_minimap_bam )
 
     ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
-
-
-    
     
     //
     // Module: MOSDEPTH
@@ -148,7 +143,6 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
 
-    
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
@@ -162,7 +156,7 @@ workflow LR_SOMATIC {
     //
     // MODULE: ASCAT
     //
-    
+    //TODO: Reformat input channel and add that to ASCAT -- then test
     ASCAT (
         // input channel,
         params.allele_files,
