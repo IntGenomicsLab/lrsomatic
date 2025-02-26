@@ -35,7 +35,8 @@ process WAKHAN {
     //               https://github.com/nf-core/modules/blob/master/modules/nf-core/bwa/index/main.nf
     // TODO nf-core: Where applicable please provide/convert compressed files as input/output
     //               e.g. "*.fastq.gz" and NOT "*.fastq", "*.bam" and NOT "*.sam" etc.
-    tuple val(meta), path(bam)
+    tuple val(meta), path(tumor_bam), path(tumor_index), path(normal_bam), path(normal_index), path(phased_vcf), path(breakpoints_vcf)
+    tuple val(meta2), path(reference)
 
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
@@ -49,6 +50,11 @@ process WAKHAN {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def paired_command = normal_bam ? "--control-bam $normal_bam --normal-phased-vcf $phased_vcf" : 
+                                      "--tumor-vcf $phased_vcf"
+    def VERSION = '0.1.0'
+    // WARN: Version information not provided by tool on CLI. Please update this string when bumping version
+    
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
     //               e.g. https://github.com/nf-core/modules/blob/master/modules/nf-core/homer/annotatepeaks/main.nf
@@ -59,23 +65,27 @@ process WAKHAN {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    samtools \\
-        sort \\
-        $args \\
-        -@ $task.cpus \\
-        -o ${prefix}.bam \\
-        -T $prefix \\
-        $bam
-
+    wakhan \\
+        ${args} \\
+        ${paired_command} \\
+        --threads ${task.cpus} \\
+        --reference ${reference} \\
+        --target-bam ${tumor_bam} \\
+        --breakpoints ${breakpoints_vcf} 
+        
+        
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        wakhan: \$(samtools --version |& sed '1!d ; s/samtools //')
+        wakhan: ${VERSION}
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def VERSION = '0.1.0'
+    // WARN: Version information not provided by tool on CLI. Please update this string when bumping version
+    
     // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
     //               Have a look at the following examples:
     //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
@@ -85,7 +95,7 @@ process WAKHAN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        wakhan: \$(samtools --version |& sed '1!d ; s/samtools //')
+        wakhan: ${VERSION}
     END_VERSIONS
     """
 }

@@ -167,6 +167,13 @@ workflow LR_SOMATIC {
         [:]
     )
     
+    //
+    // MODULE: WAKHAN
+    //
+    WAKHAN (
+        severus_reformat,
+        ch_fasta
+    )
     
     //
     // Collate and save software versions
