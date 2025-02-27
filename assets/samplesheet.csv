@@ -1,5 +1,5 @@
 sample,bam_tumor,bam_normal,platform
-sample1,//staging/leuven/stg_00096/home/hackathon/PTCL1/GC151233_chr19_sorted_50k.bam,/staging/leuven/stg_00096/home/hackathon/PTCL1/GC151233_chr19_sorted_50k.bam,pb
-sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19_50k.bam,pb
+sample1,/staging/leuven/stg_00096/home/hackathon/PTCL1/GC151233_chr19_sorted.bam,,ont
+sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19.bam,pb
 sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k.bam,,ont
-sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19_50k.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19_50k.bam,pb
+sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k_rep2.bam,,ont
