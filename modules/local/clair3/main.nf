@@ -57,44 +57,44 @@ process CLAIR3 {
         'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
         'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'r1041_e82_400bps_sup_v410',
         'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'r1041_e82_260bps_sup_v400',
+        'hifi_revio'                        : 'hifi_revio'
     ]
-    def model = (meta.basecall_model.toString().trim() == 'hifi') ? 'hifi' : modelMap.get(meta.basecall_model.toString().trim())
-    def platform = (meta.platform == "pb")? "hifi" : "ont"
-   
-    if (model.toString().trim() in modelMap.keySet() || model.toString().trim() == 'pb') {
+    def model = modelMap.get(meta.basecall_model.toString().trim())
+    def platform = (meta.platform == "pb") ? "hifi" : "ont"
+
+    if (!model in modelMap.keySet() ) {
         model = 'r1041_e82_400bps_sup_v500'
-        log.warn "Warning: ClairS-TO has no appropriate models for ${method} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
+        log.warn "Warning: ClairS-TO has no appropriate models for ${model} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
     }
     else {
         log.info "Using ${model} model for Clair3"
     }
-
-
+    
+    // Download model command
+    def download_prefix = ( model == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
     
     
+    // Specify runtype for conda vs docker/singularity
+    // Both the initial clair3 call and the model_path call will not work with conda
+    //TODO:
 
-    // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
-    //               If the software is unable to output a version number on the command-line then it can be manually specified
-    //               e.g. https://github.com/nf-core/modules/blob/master/modules/nf-core/homer/annotatepeaks/main.nf
-    //               Each software used MUST provide the software name and version number in the YAML version file (versions.yml)
-    // TODO nf-core: It MUST be possible to pass additional parameters to the tool as a command-line string via the "task.ext.args" directive
-    // TODO nf-core: If the tool supports multi-threading then you MUST provide the appropriate parameter
-    //               using the Nextflow "task" variable e.g. "--threads $task.cpus"
-    // TODO nf-core: Please replace the example samtools command below with your module's command
-    // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
+                
     """
+    wget ${download_prefix}/${model}.tar.gz
+    tar -xvzf ${model}.tar.gz
+    
     /opt/bin/run_clair3.sh \\
         --bam_fn=${bam} \\
         --ref_fn=${ref} \\
         --threads=${task.cpus} \\
         --platform="${platform}" \\
-        --model_path="/opt/models/${model}" \\
+        --model_path="${model}" \\
         --use_longphase_for_intermediate_phasing \\
         --output .               
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clair3: \$(samtools --version |& sed '1!d ; s/samtools //')
+        clair3: \$( /opt/bin/run_clair3.sh --version |& sed 's/Clair3 v//' )
     END_VERSIONS
     """
 
@@ -110,7 +110,7 @@ process CLAIR3 {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clair3: \$(samtools --version |& sed '1!d ; s/samtools //')
+        clair3: \$( /opt/bin/run_clair3.sh --version |& sed 's/Clair3 v//' )
     END_VERSIONS
     """
 }
