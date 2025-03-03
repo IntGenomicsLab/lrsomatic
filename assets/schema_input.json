@@ -32,7 +32,12 @@
                 "enum": ["pb", "ont"],
                 "errorMessage": "Method must be one of the following: 'pb' or 'ont'"
             },
+            "sex": {
+                "type": "string",
+                "enum": ["male", "female"],
+                "errorMessage": "Biological sex must be either 'male' or 'female'"
+            }
         },
-        "required": ["sample", "bam_tumor","platform"]
+        "required": ["sample", "bam_tumor", "platform", "sex"]
     }
 }
