@@ -23,7 +23,7 @@ process LONGPHASE_PHASE {
     script:
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}_germline"
     def sv_file = svs ? "--sv-file ${svs}" : ""
     def mod_file = mods ? "--mod-file ${mods}" : ""
 
