@@ -225,7 +225,7 @@ workflow LR_SOMATIC {
         }
         .mix(paired_samples)
 
-     // Now we need to join the germline snps to the tumor and normal samples
+    // Now we need to join the germline snps to the tumor and normal samples
     reformat_samples.paired
         .map { meta, bams, bais ->
             def normal_bam = bams[0][0].type == "normal" ? bams[0][1] : bams[1][1]
@@ -262,7 +262,6 @@ workflow LR_SOMATIC {
             def mods = []
             return [ meta, bam, bai, snps, snvs, mods]
         }
-        .view()
         .set{longphase_reformat}
         // FORMAT IS [ meta, bam, bai, phased_snps, [], [] ]
     
@@ -369,16 +368,25 @@ workflow LR_SOMATIC {
     // MODULE: ASCAT
     //
     //TODO: Reformat input channel and add that to ASCAT -- then test
-    /*
+    severus_reformat
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+        }
+        .view()
+        .set { ascat_ch }
+    
+    allele_files.view()
+    loci_files.view()
+    
     ASCAT (
-        severus_reformat,
+        ascat_ch,
         allele_files,
         loci_files,
         [],
         [],
         [],
         []
-    )*/
+    )
     /*
     //
     // MODULE: WAKHAN
