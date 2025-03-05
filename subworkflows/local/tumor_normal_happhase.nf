@@ -22,6 +22,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         def new_meta = [id: meta.id,
                         paired_data: meta.paired_data,
                         platform: meta.platform,
+                        sex: sex,
                         basecall_model: meta.basecall_model]
         return[new_meta, bam, bai]
     }
@@ -32,6 +33,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         def new_meta = [id: meta.id,
                         paired_data: meta.paired_data,
                         platform: meta.platform,
+                        sex: sex,
                         basecall_model: meta.basecall_model]
         return[new_meta, bam, bai]
     }
@@ -102,6 +104,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         def new_meta = [id: meta.id,
                         paired_data: meta.paired_data,
                         platform: meta.platform,
+                        sex: sex,
                         basecall_model: meta.basecall_model]
         return[new_meta , [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
     
