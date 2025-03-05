@@ -174,8 +174,12 @@ workflow LR_SOMATIC {
     .set{severus_reformat}
     // FORMAT IS [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
+    clairs_input = TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+        }
     CLAIRS(
-        TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus,
+        clairs_input,
         ch_fasta,
         ch_fai
     )
