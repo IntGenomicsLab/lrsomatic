@@ -15,9 +15,9 @@
 // TODO nf-core: Optional inputs are not currently supported by Nextflow. However, using an empty
 //               list (`[]`) instead of a file can be used to work around this issue.
 
-process CLAIRSTO {
+process VCFSPLIT {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_single'
 
     // TODO nf-core: List required Conda package(s).
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").
@@ -25,8 +25,8 @@ process CLAIRSTO {
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://hkubal/clairs-to:v0.3.1':
-        'hkubal/clairs-to:v0.3.1' }"
+        'https://depot.galaxyproject.org/singularity/bcftools:1.20--h8b25389_0':
+        'biocontainers/bcftools:1.20--h8b25389_0' }"
 
     input:
     // TODO nf-core: Where applicable all sample-specific information e.g. "id", "single_end", "read_group"
@@ -35,13 +35,13 @@ process CLAIRSTO {
     //               https://github.com/nf-core/modules/blob/master/modules/nf-core/bwa/index/main.nf
     // TODO nf-core: Where applicable please provide/convert compressed files as input/output
     //               e.g. "*.fastq.gz" and NOT "*.fastq", "*.bam" and NOT "*.sam" etc.
-    tuple val(meta), path(tumor_bam), path(tumor_bai)
-    tuple val(meta2), path(ref)
-    tuple val(meta3), path(ref_index)
+    tuple val(meta), path(indel_vcf), path(snv_vcf)
 
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
-    tuple val(meta), path("*snv.vcf.gz"), path("*indel.vcf.gz"), emit: vcfs
+    tuple val(meta), path("*somatic.vcf.gz"), emit: somatic_vcf
+    tuple val(meta), path("*germline.vcf.gz"), emit: germline_vcf
+
     // TODO nf-core: List additional required output channels/values here
     path "versions.yml"           , emit: versions
 
@@ -49,28 +49,8 @@ process CLAIRSTO {
     task.ext.when == null || task.ext.when
 
     script:
-    def platform = meta.platform
-    // Contains ClairS-TO models appropriate for specs in the schema
-    def modelMap = [
-        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'hifi_revio'                        : 'hifi_revio_ss'
-    ]
-    
-    // if method meta data is pb, default to the revio model else go to the map
-    def model = modelMap.get(meta.basecall_model.toString().trim())
-
-    if (!model in modelMap.keySet() ) {
-        model = 'ont_r10_dorado_sup_5khz_ssrs'
-        log.warn "Warning: ClairS-TO has no appropriate models for ${model} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
-    }
-    else {
-        log.info "Using ${model} model for Clair3"
-    }
-
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     // TODO nf-core: Where possible, a command MUST be provided to obtain the version number of the software e.g. 1.10
     //               If the software is unable to output a version number on the command-line then it can be manually specified
     //               e.g. https://github.com/nf-core/modules/blob/master/modules/nf-core/homer/annotatepeaks/main.nf
@@ -81,33 +61,46 @@ process CLAIRSTO {
     // TODO nf-core: Please replace the example samtools command below with your module's command
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
-    /opt/bin/run_clairs_to \\
-        --tumor_bam_fn ${tumor_bam} \\
-        --ref_fn ${ref} \\
-        --threads ${task.cpus} \\
-        --platform ${model} \\
-        --remove_intermediate_dir \\
-        --output_dir . \\
-        --use_longphase_for_intermediate_phasing True \\
-        --use_longphase_for_intermediate_haplotagging True \\
-        --conda_prefix /opt/micromamba/envs/clairs-to
+
+    # Extract PASS entries from both VCF files, compress, index, and merge
+    bcftools view -i 'FILTER="PASS"' $indel_vcf | bgzip -c > indels_pass.vcf.gz
+    bcftools view -i 'FILTER="PASS"' $snv_vcf | bgzip -c > snv_pass.vcf.gz
+    tabix -p vcf indels_pass.vcf.gz
+    tabix -p vcf snv_pass.vcf.gz
+    bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
+    tabix -p vcf somatic.vcf.gz
+
+    # Extract ONLY NonSomatic entries, compress, index, and merge
+    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_nonsomatic.vcf.gz
+    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_nonsomatic.vcf.gz
+    tabix -p vcf indels_nonsomatic.vcf.gz
+    tabix -p vcf snv_nonsomatic.vcf.gz
+    bcftools concat -a -Oz -o germline.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
+    tabix -p vcf germline.vcf.gz
+
+    # Cleanup intermediate files
+    rm indels_pass.vcf.gz snv_pass.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
+    rm indels_pass.vcf.gz.tbi snv_pass.vcf.gz.tbi indels_nonsomatic.vcf.gz.tbi snv_nonsomatic.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version | sed 's/ClairS version: //')
+        vcfsplit: \$(samtools --version |& sed '1!d ; s/samtools //')
     END_VERSIONS
     """
 
     stub:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def output_dir = "${prefix}_clairs_output"
+    // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
+    //               Have a look at the following examples:
+    //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
+    //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
-    mkdir -p ${output_dir}
-    touch ${output_dir}/output.vcf.gz
+    touch ${prefix}.bam
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version | sed 's/ClairS version: //')
+        vcfsplit: \$(samtools --version |& sed '1!d ; s/samtools //')
     END_VERSIONS
     """
 }
