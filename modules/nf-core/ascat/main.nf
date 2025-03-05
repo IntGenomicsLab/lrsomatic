@@ -4,8 +4,8 @@ process ASCAT {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:ba3e6d2157eac2d38d22e62ec87675e12adb1010-0':
-        'biocontainers/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:ba3e6d2157eac2d38d22e62ec87675e12adb1010-0' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0':
+        'biocontainers/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0' }"
 
     input:
     tuple val(meta), path(input_normal), path(index_normal), path(input_tumor), path(index_tumor)
@@ -49,8 +49,9 @@ process ASCAT {
     def skip_allele_counting_tumour_arg  = args.skip_allele_counting_tumour   ?  ",skip_allele_counting_tumour = $args.skip_allele_counting_tumour" : ""
     def skip_allele_counting_normal_arg  = args.skip_allele_counting_normal   ?  ",skip_allele_counting_normal = $args.skip_allele_counting_normal" : ""
     
+    def normal_exists                    = input_normal                       ? 'TRUE' : 'FALSE'
     def normal_bam                       = input_normal                       ? ",normalseqfile = '$input_normal'" : ""
-    def normal_name                      = input_normal                       ? ",normalname = $prefix.normal" : ""
+    def normal_name                      = input_normal                       ? ",normalname = '${prefix}.normal'" : ""
     def longread_bins                    = args.longread_bins                 ? ",loci_binsize = $args.longread_bins" : ""
     def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : "" 
     """
@@ -76,12 +77,15 @@ process ASCAT {
         gender = "$gender",
         genomeVersion = "$genomeVersion",
         nthreads = $task.cpus
+        $normal_bam
+        $normal_name
         $minCounts_arg
         $bed_file_arg
         $chrom_names_arg
         $min_base_qual_arg
         $min_map_qual_arg
         $fasta_arg
+        $allele_counter_flags
         $skip_allele_counting_tumour_arg
         $skip_allele_counting_normal_arg,
         seed = 42
@@ -89,14 +93,28 @@ process ASCAT {
 
 
     #Load the data
-    ascat.bc = ascat.loadData(
-        Tumor_LogR_file = paste0("$prefix", ".tumour_tumourLogR.txt"),
-        Tumor_BAF_file = paste0("$prefix", ".tumour_tumourBAF.txt"),
-        Germline_LogR_file = paste0("$prefix", ".tumour_normalLogR.txt"),
-        Germline_BAF_file = paste0("$prefix", ".tumour_normalBAF.txt"),
-        genomeVersion = "$genomeVersion",
-        gender = "$gender"
-    )
+    if($normal_exists) {
+        print("normal exists")
+        ascat.bc = ascat.loadData(
+            Tumor_LogR_file = paste0("$prefix", ".tumour_tumourLogR.txt"),
+            Tumor_BAF_file = paste0("$prefix", ".tumour_tumourBAF.txt"),
+            Germline_LogR_file = paste0("$prefix", ".tumour_normalLogR.txt"),
+            Germline_BAF_file = paste0("$prefix", ".tumour_normalBAF.txt"),
+            genomeVersion = "$genomeVersion",
+            gender = "$gender"
+        )
+    } else {
+        print("normal does not exist")
+        ascat.bc = ascat.loadData(
+            Tumor_LogR_file = paste0("$prefix", ".tumour_tumourLogR.txt"),
+            Tumor_BAF_file = paste0("$prefix", ".tumour_tumourBAF.txt"),
+            genomeVersion = "$genomeVersion",
+            gender = "$gender")
+        gg = ascat.predictGermlineGenotypes(ascat.bc, platform = "WGS_hg38_50X")
+        
+    }
+    print("printing ascat.bc")
+    print(ascat.bc)
 
     #Plot the raw data
     ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".before_correction."))
@@ -119,7 +137,11 @@ process ASCAT {
     }
 
     #Segment the data
-    ascat.bc = ascat.aspcf(ascat.bc, seed=42)
+    if($normal_exists) {
+        ascat.bc = ascat.aspcf(ascat.bc, seed=42)
+    } else {
+        ascat.bc = ascat.aspcf(ascat.bc, seed=42, ascat.gg = gg)
+    }
 
     #Plot the segmented data
     ascat.plotSegmentedData(ascat.bc)

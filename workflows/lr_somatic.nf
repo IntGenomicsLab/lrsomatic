@@ -220,16 +220,25 @@ workflow LR_SOMATIC {
     // MODULE: ASCAT
     //
     //TODO: Reformat input channel and add that to ASCAT -- then test
-    /*
+    severus_reformat
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+        }
+        .view()
+        .set { ascat_ch }
+    
+    allele_files.view()
+    loci_files.view()
+    
     ASCAT (
-        severus_reformat,
+        ascat_ch,
         allele_files,
         loci_files,
         [],
         [],
         [],
         []
-    )*/
+    )
     /*
     //
     // MODULE: WAKHAN
