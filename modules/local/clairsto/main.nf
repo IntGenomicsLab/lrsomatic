@@ -25,8 +25,8 @@ process CLAIRSTO {
     // TODO nf-core: See section in main README for further information regarding finding and adding container addresses to the section below.
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://hkubal/clairs-to:v0.3.1':
-        'hkubal/clairs-to:v0.3.1' }"
+        'docker://hkubal/clairs-to:v0.4.0':
+        'hkubal/clairs-to:v0.4.0' }"
 
     input:
     // TODO nf-core: Where applicable all sample-specific information e.g. "id", "single_end", "read_group"
