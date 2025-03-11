@@ -84,7 +84,7 @@ process VCFSPLIT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        vcfsplit: \$(samtools --version |& sed '1!d ; s/samtools //')
+        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
     END_VERSIONS
     """
 
@@ -100,7 +100,7 @@ process VCFSPLIT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        vcfsplit: \$(samtools --version |& sed '1!d ; s/samtools //')
+        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
     END_VERSIONS
     """
 }

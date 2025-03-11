@@ -92,7 +92,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(samtools --version |& sed '1!d ; s/samtools //')
+         clairs: \$( /opt/bin/run_clairs --version |& sed 's/ClairS v//' )
     END_VERSIONS
     """
 
@@ -108,7 +108,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(samtools --version |& sed '1!d ; s/samtools //')
+         clairs: \$( /opt/bin/run_clairs --version |& sed 's/ClairS v//' )
     END_VERSIONS
     """
 }
