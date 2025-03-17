@@ -17,7 +17,7 @@
 
 process CLAIRSTO {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
 
     // TODO nf-core: List required Conda package(s).
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").

@@ -228,21 +228,17 @@ workflow LR_SOMATIC {
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
             return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
         }
-        .view()
         .set { ascat_ch }
     
-    allele_files.view()
-    loci_files.view()
-    
-    ASCAT (
-        ascat_ch,
-        allele_files,
-        loci_files,
-        [],
-        [],
-        [],
-        []
-    )
+    //ASCAT (
+    //    ascat_ch,
+    //    allele_files,
+    //    loci_files,
+    //    [],
+    //    [],
+    //    [],
+    //    []
+    //)
     /*
     //
     // MODULE: WAKHAN
