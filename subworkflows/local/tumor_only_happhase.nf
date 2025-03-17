@@ -66,7 +66,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     .map{meta, hap_bam, hap_bai, vcf ->
         def new_meta = [id: meta.id,
                         paired_data: meta.paired_data,
-                        platform: meta.platform,
+                        sex: meta.sex,
                         basecall_model: meta.basecall_model]
         return[new_meta, hap_bam, hap_bai, [],[], vcf]
         }
