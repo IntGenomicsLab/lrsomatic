@@ -118,19 +118,7 @@ workflow LR_SOMATIC {
     
     
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
-    /*
-    //
-    // MODULE: Run MINIMAP2_INDEX
-    //
-    if (!params.skip_save_minimap2_index) {
-        
-        //TODO: Do we need a separate index for ont vs pb samples?
-        MINIMAP2_INDEX ( ch_fasta )
-        ch_minimap_index = MINIMAP2_INDEX.out.index
-        
-        ch_versions = ch_versions.mix(MINIMAP2_INDEX.out.versions)
-    }
-    */
+
     //
     // MODULE: MINIMAP2_ALIGN
     //
@@ -223,16 +211,11 @@ workflow LR_SOMATIC {
     //
     // MODULE: ASCAT
     //
-    //TODO: Reformat input channel and add that to ASCAT -- then test
     severus_reformat
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
             return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
         }
-        .view()
         .set { ascat_ch }
-    
-    allele_files.view()
-    loci_files.view()
     
     ASCAT (
         ascat_ch,

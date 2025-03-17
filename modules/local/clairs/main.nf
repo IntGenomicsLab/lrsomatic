@@ -17,7 +17,7 @@
 
 process CLAIRS {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
 
     // TODO nf-core: List required Conda package(s).
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").
@@ -92,7 +92,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(samtools --version |& sed '1!d ; s/samtools //')
+         clairs: \$( /opt/bin/run_clairs --version |& sed 's/ClairS v//' )
     END_VERSIONS
     """
 
@@ -108,7 +108,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(samtools --version |& sed '1!d ; s/samtools //')
+         clairs: \$( /opt/bin/run_clairs --version |& sed 's/ClairS v//' )
     END_VERSIONS
     """
 }

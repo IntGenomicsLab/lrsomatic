@@ -12,7 +12,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     fai
 
     main:
-    tumor_bams.view()
     CLAIRSTO(
         tumor_bams,
         fasta,
