@@ -55,20 +55,19 @@ workflow LR_SOMATIC {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-
+    
     //
-    // MODULE: Combine bam files from the same sample 
+    // MODULE: METAEXTRACT
     //
     
-    // Take channels where there are multiple bam files in the list
     METAEXTRACT( ch_samplesheet )
-
-    basecall_meta = METAEXTRACT.out.basecall_model
+    
     ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
+    basecall_meta = METAEXTRACT.out.basecall_model
 
     ch_samplesheet
         .join(basecall_meta)
-        .map{ meta, bam, meta_ext ->
+        .map { meta, bam, meta_ext ->
             def meta_new = meta + [ basecall_model: meta_ext]
             return[ meta_new, bam ]
         }
@@ -84,6 +83,10 @@ workflow LR_SOMATIC {
             multiple: bam.size() > 1
         }
     
+    //
+    // MODULE: SAMTOOLS_CAT
+    //
+    
     SAMTOOLS_CAT ( ch_split.multiple )
         .bam
         .mix ( ch_split.single )
@@ -94,6 +97,7 @@ workflow LR_SOMATIC {
     //
     // MODULE: CRAMINO
     //
+    
     CRAMINO_PRE ( ch_cat_ubams )
 
     ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
@@ -101,12 +105,14 @@ workflow LR_SOMATIC {
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
     //
+    
     PREPARE_REFERENCE_FILES ( params.fasta,
                               params.ascat_allele_files,
                               params.ascat_loci_files,
                               params.ascat_gc_file,
                               params.ascat_rt_file )
     
+    ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
     
@@ -122,6 +128,7 @@ workflow LR_SOMATIC {
     //
     // MODULE: MINIMAP2_ALIGN
     //
+    
     MINIMAP2_ALIGN ( 
         ch_cat_ubams,
         ch_fasta,
@@ -140,43 +147,61 @@ workflow LR_SOMATIC {
     // if it exists
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
-        .branch{meta, bams, bais ->
+        .branch { meta, bams, bais ->
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
         }
-    .set{branched_minimap}
+        .set { branched_minimap }
 
 
-    TUMOR_NORMAL_HAPPHASE(
+    TUMOR_NORMAL_HAPPHASE (
         branched_minimap.paired,
         ch_fasta,
         ch_fai
     )
-    TUMOR_ONLY_HAPPHASE(
+    
+    ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
+    
+    TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai
     )
+    
+    ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
+    
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
-    .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
-    .set{severus_reformat}
+        .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
+        .set { severus_reformat }
     // FORMAT IS [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
     clairs_input = TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
             return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
         }
-    CLAIRS(
+        
+    //
+    // MODULE: CLAIRS
+    //    
+    
+    CLAIRS (
         clairs_input,
         ch_fasta,
         ch_fai
     )
-    SEVERUS(
+    
+    ch_versions = ch_versions.mix(CLAIRS.out.versions)
+    
+    //
+    // MODULE: SEVERUS
+    //
+    
+    SEVERUS (
         severus_reformat,
         [[:], params.bed_file, params.pon_file]
     )
     
-    // The channel is now [[meta], [bam]] With meta consisting of [id, paired_data, method, specs, type]
+    ch_versions = ch_versions.mix(SEVERUS.out.versions)
     
     // 
     // MODULE: CRAMINO
@@ -191,7 +216,9 @@ workflow LR_SOMATIC {
     //
     
     // prepare mosdepth input channel: we need to specify compulsory path to bed as well
-    ch_minimap_bam.join(MINIMAP2_ALIGN.out.index).map{ meta, bam, bai -> [meta, bam, bai, []]}.set{ch_mosdepth_in}
+    ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
+        .map { meta, bam, bai -> [meta, bam, bai, []] }
+        .set { ch_mosdepth_in }
 
     MOSDEPTH ( ch_mosdepth_in,
         ch_fasta )  
@@ -226,14 +253,19 @@ workflow LR_SOMATIC {
         [],
         []
     )
+    
+    ch_versions = ch_versions.mix(ASCAT.out.versions)
+    
     /*
     //
     // MODULE: WAKHAN
     //
+    
     WAKHAN (
         severus_reformat,
         ch_fasta
     )
+    
     */
     //
     // Collate and save software versions

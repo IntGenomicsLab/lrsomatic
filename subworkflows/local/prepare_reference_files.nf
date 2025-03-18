@@ -19,11 +19,9 @@ workflow PREPARE_REFERENCE_FILES {
 
     main:
         ch_versions = Channel.empty()
+        ch_prepared_fasta = Channel.empty()
 
         // Check if fasta and gtf are zipped
-
-        //
-        ch_prepared_fasta = Channel.empty()
         if (fasta.endsWith('.gz')){
             UNZIP_FASTA( [ [:], fasta ])
 
@@ -36,8 +34,15 @@ workflow PREPARE_REFERENCE_FILES {
         //
         // MODULE: Index the fasta
         //
-        SAMTOOLS_FAIDX( ch_prepared_fasta, [ [:], "$projectDir/assets/dummy_file.txt" ])
+        
+        SAMTOOLS_FAIDX ( 
+            ch_prepared_fasta,
+            [ [:], "$projectDir/assets/dummy_file.txt" ]
+        )
+        
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai
+        
+        ch_versions = ch_versions.mix(SAMTOOLS_FAIDX.out.versions)
         
         //
         // Prepare ASCAT files
@@ -59,7 +64,7 @@ workflow PREPARE_REFERENCE_FILES {
         } else loci_files = Channel.fromPath(ascat_loci).collect()
 
         if (!ascat_loci_gc) gc_file = Channel.value([])
-        else if (ascat_loci_gc.endsWith(".zip")) {
+        else if ( ascat_loci_gc.endsWith(".zip") ) {
             UNZIP_GC(Channel.fromPath(file(ascat_loci_gc)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
             gc_file = UNZIP_GC.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
             ch_versions = ch_versions.mix(UNZIP_GC.out.versions)

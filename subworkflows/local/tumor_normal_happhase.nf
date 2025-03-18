@@ -60,7 +60,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Add germline vcf to normal bams
     normal_bams
         .join(CLAIR3.out.germline_vcf)
-        .map{ meta, bam, bai, vcf ->
+        .map { meta, bam, bai, vcf ->
             def svs = []
             def mods = []
             return [meta, bam, bai, vcf, svs, mods]
@@ -71,7 +71,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: LONGPHASE_PHASE
     //
     
-    LONGPHASE_PHASE(
+    LONGPHASE_PHASE (
         normalbams_germlinevcf,
         fasta,
         fai
@@ -82,7 +82,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Add phased vcf to normal bams
     normal_bams
         .join(LONGPHASE_PHASE.out.vcf)
-        .map{meta, bam, bai, vcf ->
+        .map { meta, bam, bai, vcf ->
             def new_meta = meta + [type: "normal"]
             def snvs = []
             def mods = []
@@ -93,7 +93,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Add phased vcf to tumour bams
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
-        .map{meta, bam, bai, vcf ->
+        .map { meta, bam, bai, vcf ->
             def new_meta = meta + [type: "tumor"]
             def snvs = []
             def mods = []
