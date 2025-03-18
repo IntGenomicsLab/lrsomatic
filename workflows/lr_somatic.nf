@@ -3,11 +3,11 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
+include { MULTIQC                   } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap          } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML    } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
 
 //
 // IMPORT MODULES
@@ -15,7 +15,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 include { SAMTOOLS_CAT              } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX            } from '../modules/nf-core/minimap2/index/main'
 include { CLAIRSTO                  } from '../modules/local/clairsto/main'
-include { CLAIRS } from '../modules/local/clairs/main.nf'
+include { CLAIRS                    } from '../modules/local/clairs/main.nf'
 include { MINIMAP2_ALIGN            } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE    } from '../modules/local/cramino/main'
 include { CRAMINO as CRAMINO_POST   } from '../modules/local/cramino/main'
@@ -32,10 +32,10 @@ include { WAKHAN                    } from '../modules/local/wakhan/main'
 //
 // IMPORT SUBWORKFLOWS
 //
-include { PREPARE_REFERENCE_FILES     } from '../subworkflows/local/prepare_reference_files'
-include { BAM_STATS_SAMTOOLS          } from '../subworkflows/nf-core/bam_stats_samtools/main'
+include { PREPARE_REFERENCE_FILES   } from '../subworkflows/local/prepare_reference_files'
+include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
-include { TUMOR_ONLY_HAPPHASE     } from '../subworkflows/local/tumor_only_happhase'
+include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
 
 
 
@@ -106,11 +106,13 @@ workflow LR_SOMATIC {
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
     //
     
-    PREPARE_REFERENCE_FILES ( params.fasta,
-                              params.ascat_allele_files,
-                              params.ascat_loci_files,
-                              params.ascat_gc_file,
-                              params.ascat_rt_file )
+    PREPARE_REFERENCE_FILES ( 
+        params.fasta,
+        params.ascat_allele_files,
+        params.ascat_loci_files,
+        params.ascat_gc_file,
+        params.ascat_rt_file 
+    )
     
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
@@ -153,7 +155,10 @@ workflow LR_SOMATIC {
         }
         .set { branched_minimap }
 
-
+    //
+    // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
+    //
+    
     TUMOR_NORMAL_HAPPHASE (
         branched_minimap.paired,
         ch_fasta,
@@ -161,6 +166,10 @@ workflow LR_SOMATIC {
     )
     
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
+    
+    //
+    // SUBWORKFLOW: TUMOR_ONLY_HAPPHASE
+    //
     
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
@@ -170,15 +179,18 @@ workflow LR_SOMATIC {
     
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
     
+    // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
         .set { severus_reformat }
-    // FORMAT IS [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
-
-    clairs_input = TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
+    // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
+    
+    // Get ClairS input channel
+    TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
             return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
         }
+        .set { clairs_input }
         
     //
     // MODULE: CLAIRS
@@ -220,14 +232,17 @@ workflow LR_SOMATIC {
         .map { meta, bam, bai -> [meta, bam, bai, []] }
         .set { ch_mosdepth_in }
 
-    MOSDEPTH ( ch_mosdepth_in,
-        ch_fasta )  
+    MOSDEPTH ( 
+        ch_mosdepth_in,
+        ch_fasta 
+    )  
 
     ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
 
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
+    
     BAM_STATS_SAMTOOLS (
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
         ch_fasta
