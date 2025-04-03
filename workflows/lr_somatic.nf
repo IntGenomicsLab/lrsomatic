@@ -281,6 +281,8 @@ workflow LR_SOMATIC {
         ch_fasta
     )
     
+    ch_versions = ch_versions.mix(WAKHAN.out.versions)
+    
     */
     //
     // Collate and save software versions
@@ -297,6 +299,8 @@ workflow LR_SOMATIC {
     //
     // MODULE: MultiQC
     //
+    // TODO: Add channels that need to be fed into multiqc still. E.g. QC output
+    // Check what is compatible with multiqc
     ch_multiqc_config        = Channel.fromPath(
         "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
     ch_multiqc_custom_config = params.multiqc_config ?
