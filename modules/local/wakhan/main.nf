@@ -53,6 +53,15 @@ process WAKHAN {
         ${phased_vcf} \\
         ${args} \\
         --threads ${task.cpus}
+        
+    #micromamba run -n wakhan wakhan \
+    #--target-bam /staging/leuven/stg_00096/home/projects/2023_Cools_B-ALL/FINAL_DNA_ANALYSIS/Variant_calling/CLAIR3/D0/D0_long_tagged_bam_prefix.bam \
+    #--breakpoints /staging/leuven/stg_00096/home/projects/2023_Cools_B-ALL/FINAL_DNA_ANALYSIS/Variant_calling/Severus_run2/all_SVs/severus_all.vcf \
+    #--normal-phased-vcf /staging/leuven/stg_00096/home/projects/2023_Cools_B-ALL/FINAL_DNA_ANALYSIS/Variant_calling/CLAIR3/normal_bam/phased_merge_output.vcf.gz \
+    #--genome-name D0 \
+    #--out-dir-plots ${VSC_SCRATCH}/wakhan_plots \
+    #--reference /staging/leuven/stg_00096/references/GRCh38.alt-masked-V2-noALT/fasta/Homo_sapiens_assembly38_masked_noALT.fa \
+    #--threads 12
 
 
     cat <<-END_VERSIONS > versions.yml
