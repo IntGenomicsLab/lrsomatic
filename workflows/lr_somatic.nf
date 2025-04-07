@@ -51,7 +51,28 @@ workflow LR_SOMATIC {
     ch_samplesheet // channel: samplesheet read in from --input
     // Channel format is [[meta], [bam]]. 
     // Where [meta] is [id, paired_data, method, specs, type]
+
     main:
+
+    def clair3_modelMap = [
+        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'r1041_e82_400bps_sup_v500',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'r1041_e82_400bps_sup_v430',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'r1041_e82_400bps_sup_v410',
+        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'r1041_e82_260bps_sup_v400',
+        'hifi_revio'                        : 'hifi_revio'
+    ]
+
+    //ClairSTO and ClairS have the same set of models
+    def clairs_modelMap = [
+        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'hifi_revio'                        : 'hifi_revio_ss'
+    
+    ]
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -59,11 +80,14 @@ workflow LR_SOMATIC {
     //
     // MODULE: METAEXTRACT
     //
-    
+    // extracts the base calling model from the bam files
+
     METAEXTRACT( ch_samplesheet )
     
     ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
     basecall_meta = METAEXTRACT.out.basecall_model
+
+    // Adds the base calling model to meta.basecall_model
 
     ch_samplesheet
         .join(basecall_meta)
@@ -76,7 +100,12 @@ workflow LR_SOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
+       
     
+
+    // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                   bam:  list of unaligned bams      
+
     ch_split = ch_samplesheet
         .branch { meta, bam -> 
             single: bam.size() == 1
@@ -86,18 +115,23 @@ workflow LR_SOMATIC {
     //
     // MODULE: SAMTOOLS_CAT
     //
-    
+    // concatenates bam files from single sample
+
     SAMTOOLS_CAT ( ch_split.multiple )
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
         
+        
+    // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                 bam:  list of concatenated unaligned bams   
+
     ch_versions = ch_versions.mix(SAMTOOLS_CAT.out.versions)
     
     //
     // MODULE: CRAMINO
     //
-    
+    // QC the unaligned bams
     CRAMINO_PRE ( ch_cat_ubams )
 
     ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
@@ -130,6 +164,7 @@ workflow LR_SOMATIC {
     //
     // MODULE: MINIMAP2_ALIGN
     //
+    // Aligns ubams
     
     MINIMAP2_ALIGN ( 
         ch_cat_ubams,
@@ -139,14 +174,19 @@ workflow LR_SOMATIC {
         "", 
         "" 
     )
-
-    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
     MINIMAP2_ALIGN.out.bam 
         .set { ch_minimap_bam } 
+        
 
-    // Need to join the tumor and normal information back together
-    // since both bams need to be phased on the normal clair3 output
-    // if it exists
+    // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                    bam:  list of concatenated aligned bams  
+
+    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
+
+
+    // ch_minimap_bams into tumor and paired to phase the paired ones on normal
+    // and add index
+
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
         .branch { meta, bams, bais ->
@@ -154,15 +194,22 @@ workflow LR_SOMATIC {
                 tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
+        
+
+    // branched_minimap -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                     bam:  list of concatenated aligned bams
+    //                     bais: indexes for bam files
 
     //
     // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
     //
+    // Phasing/haplotaging/small germline variant calling for tumor-normal samples
     
     TUMOR_NORMAL_HAPPHASE (
         branched_minimap.paired,
         ch_fasta,
-        ch_fai
+        ch_fai,
+        clair3_modelMap
     )
     
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
@@ -170,13 +217,15 @@ workflow LR_SOMATIC {
     //
     // SUBWORKFLOW: TUMOR_ONLY_HAPPHASE
     //
+    // Phasing/haplotagging for tumor only samples
     
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
-        ch_fai
+        ch_fai,
+        clairs_modelMap
     )
-    
+
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
     
     // Get Severus input channel
@@ -188,7 +237,8 @@ workflow LR_SOMATIC {
     // Get ClairS input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+            def model = clairs_modelMap.get(meta.basecall_model.toString().trim())
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }
         

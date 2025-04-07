@@ -10,27 +10,69 @@ workflow TUMOR_ONLY_HAPPHASE {
     tumor_bams
     fasta
     fai
+    clairSTO_modelMap
 
     main:
+
+    tumor_bams
+        .map{ meta, bam, bai ->
+            def clairSTO_model = clairSTO_modelMap.get(meta.basecall_model.toString().trim())
+            return [meta, bam, bai, clairSTO_model]
+        }
+        .set{tumor_bams}
+
+    //
+    // MODULE: CLAIRSTO
+    //
+    // call somatic/non-somatic variants
+    // (* not called as germline * just non-somatic)
+
     CLAIRSTO(
         tumor_bams,
         fasta,
         fai
     )
 
+    CLAIRSTO.out.indel_vcf
+                .join(CLAIRSTO.out.snv_vcf)
+                .set{clairsto_vcf}
+    
+    // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, basecall_model]
+    //                 indel_vcf: vcf for indels
+    //                 snv_vcf:   vcf for snvs
+
+    //
+    // MODULE: VCFSPLIT
+    //
+    // ClairSTO gives outputs in snv.vcf and indel.vcf
+    // reformats them to be in somatic.vcf and nonsomatic.vcf
+
     VCFSPLIT(
-        CLAIRSTO.out.vcfs
+        clairsto_vcf
     )
 
+    // Add the nonsomatic vcf info
+    // remove model info
     tumor_bams
     .join(VCFSPLIT.out.germline_vcf)
-    .map{ meta, bam, bai, snps ->
+    .map{ meta, bam, bai, model, snps ->
         def svs = []
         def mods = []
         return[meta, bam, bai, snps, svs, mods]
     }
     .set{tumor_bams_germlinevcf}
-    // [meta, bam, bai, vcf]
+
+    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                           bam:  list of concatenated aligned bams
+    //                           bai:  indexes for bam files
+    //                           vcf:  tumor small nonsomatic variant vcf
+    //                           svs:  structural variant vcf (empty)
+    //                           mods: modcall-generated VCF with modifications (empty)
+
+    //
+    // MODULES: LONGPHASE_PHASE
+    //
+    // Phase tumor bams on nonsomatic vcf
 
     LONGPHASE_PHASE(
         tumor_bams_germlinevcf,
@@ -38,14 +80,28 @@ workflow TUMOR_ONLY_HAPPHASE {
         fai
     )
 
+    // Add phased nonsomatic vcf info
+    // remove model info
     tumor_bams
     .join(LONGPHASE_PHASE.out.vcf)
-    .map{ meta, bam, bai, snps ->
+    .map{ meta, bam, bai, model, snps ->
         def svs = []
         def mods = []
         return [meta, bam, bai, snps, svs, mods]
     }
     .set{tumor_bams_phasedvcf}
+
+    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                           bam:  list of concatenated aligned bams
+    //                           bai:  indexes for bam files
+    //                           vcf:  phased tumor small nonsomatic variant vcf
+    //                           svs:  structural variant vcf (empty)
+    //                           mods: modcall-generated VCF with modifications (empty)
+
+    // 
+    // MODULES: LONGPHASE_HAPLOTAG
+    //
+    // Haplotag the tumor bams
 
     LONGPHASE_HAPLOTAG(
         tumor_bams_phasedvcf,
@@ -53,13 +109,22 @@ workflow TUMOR_ONLY_HAPPHASE {
         fai
     )
 
+    // grab phased bams
     LONGPHASE_HAPLOTAG.out.bam
         .set{haplotagged_bams}
+        
+    // haplotagged_bams -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    //                     bams: list of concatenated aligned bams
 
+    //
+    // MODULES: SAMTOOLS_INDEX
+    //
+    // index the haplotagged bams
     SAMTOOLS_INDEX(
         haplotagged_bams
     )
 
+    // join information and the phased VCF file
     haplotagged_bams
     .join(SAMTOOLS_INDEX.out.bai)
     .join(LONGPHASE_PHASE.out.vcf)
@@ -72,6 +137,13 @@ workflow TUMOR_ONLY_HAPPHASE {
         return[new_meta, hap_bam, hap_bai, [],[], vcf]
         }
     .set{tumor_only_severus}
+    
+    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, basecall_model]
+    //                         hap_bam:  haplotagged aligned bam for tumor
+    //                         hap_bai:  indexes for tumor bam files
+    //                         normal_bam: haplotagged aligned bam files for normal (empty)
+    //                         normal_bai: indexes for normal bam files (empty)
+    //                         phased_vcf: phased small variant vcf
 
     emit:
     tumor_only_severus

@@ -79,7 +79,6 @@ workflow PIPELINE_INITIALISATION {
             def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
-        //.groupTuple()
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
@@ -97,8 +96,9 @@ workflow PIPELINE_INITIALISATION {
             return result
         }
         .set { ch_samplesheet }
-        // Channel is now [[meta], [bam]]       
-        // With meta consisting of [id, paired_data, method, specs, type]
+
+        // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
+        //                   bam:  unaligned bams  
         
     emit:
     samplesheet = ch_samplesheet
