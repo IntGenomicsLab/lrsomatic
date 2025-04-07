@@ -1,7 +1,7 @@
 
 process CLAIRSTO {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'docker.io/hkubal/clairs-to:v0.4.0':
