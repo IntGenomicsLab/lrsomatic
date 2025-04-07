@@ -116,13 +116,9 @@
                 "bed_file": {
                     "type": "string",
                     "description": "Path to bed file"
-                },
-                "centromere_bed": {
-                    "type": "string",
-                    "default": "https://raw.githubusercontent.com/KolmogorovLab/Wakhan/refs/heads/main/src/annotations/chm13v2_cen_coord.bed",
-                    "description": "Path to centromere locaiton bed file"
                 }
-            }
+            },
+            "required": ["pon_file", "bed_file"]
         },
         "ascat_parameters": {
             "title": "ASCAT parameters",
@@ -187,6 +183,18 @@
                 "ascat_rt_files": {
                     "type": "string",
                     "description": "path to (zip) of RT files"
+                }
+            }
+        },
+        "wakhan_parameters": {
+            "title": "Wakhan parameters",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "centromere_bed": {
+                    "type": "string",
+                    "description": "Path to centromere location bed file for Wakhan"
                 }
             }
         },
@@ -387,6 +395,9 @@
         },
         {
             "$ref": "#/$defs/ascat_parameters"
+        },
+        {
+            "$ref": "#/$defs/wakhan_parameters"
         },
         {
             "$ref": "#/$defs/skip_options"
