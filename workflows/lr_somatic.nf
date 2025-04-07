@@ -122,7 +122,7 @@ workflow LR_SOMATIC {
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
     
-    // ASCAT files
+    // ASCAT files   
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
     loci_files = PREPARE_REFERENCE_FILES.out.loci_files
     gc_file = PREPARE_REFERENCE_FILES.out.gc_file
