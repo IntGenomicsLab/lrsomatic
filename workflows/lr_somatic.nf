@@ -251,7 +251,6 @@ workflow LR_SOMATIC {
 
         ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     }
-    
 
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
@@ -266,7 +265,6 @@ workflow LR_SOMATIC {
         
         ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
     }
-    
     
     //
     // MODULE: ASCAT
@@ -292,19 +290,21 @@ workflow LR_SOMATIC {
         ch_versions = ch_versions.mix(ASCAT.out.versions)
     }
     
-
-    
     /*
     //
     // MODULE: WAKHAN
     //
     
-    WAKHAN (
-        severus_reformat,
-        ch_fasta
-    )
-    
-    ch_versions = ch_versions.mix(WAKHAN.out.versions)
+    if (!skip_wakhan) {
+        
+        WAKHAN (
+            severus_reformat,
+            ch_fasta
+        )
+        
+        ch_versions = ch_versions.mix(WAKHAN.out.versions)
+    }
+
     
     */
     //
