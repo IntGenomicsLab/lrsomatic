@@ -98,9 +98,13 @@ workflow LR_SOMATIC {
     // MODULE: CRAMINO
     //
     
-    CRAMINO_PRE ( ch_cat_ubams )
+    if (!params.skip_qc && !params.skip_cramino) {
+        
+        CRAMINO_PRE ( ch_cat_ubams )
 
-    ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
+        ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
+    }
+
     
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -118,7 +122,7 @@ workflow LR_SOMATIC {
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
     
-    // ASCAT files
+    // ASCAT files   
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
     loci_files = PREPARE_REFERENCE_FILES.out.loci_files
     gc_file = PREPARE_REFERENCE_FILES.out.gc_file
@@ -208,80 +212,99 @@ workflow LR_SOMATIC {
     // MODULE: SEVERUS
     //
     
-    SEVERUS (
-        severus_reformat,
-        [[:], params.bed_file, params.pon_file]
-    )
-    
-    ch_versions = ch_versions.mix(SEVERUS.out.versions)
+    if (!params.skip_severus) {
+        
+        SEVERUS (
+            severus_reformat,
+            [[:], params.bed_file, params.pon_file]
+        )
+        
+        ch_versions = ch_versions.mix(SEVERUS.out.versions)
+    }
     
     // 
     // MODULE: CRAMINO
     // 
     
-    CRAMINO_POST ( ch_minimap_bam )
+    if (!params.skip_qc && !params.skip_cramino) {
+        
+        CRAMINO_POST ( ch_minimap_bam )
 
-    ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
+        ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
+    }
     
     //
     // Module: MOSDEPTH
     //
     
-    // prepare mosdepth input channel: we need to specify compulsory path to bed as well
-    ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
-        .map { meta, bam, bai -> [meta, bam, bai, []] }
-        .set { ch_mosdepth_in }
+    if (!params.skip_qc && params.skip_mosdepth) {
+        
+        // prepare mosdepth input channel: we need to specify compulsory path to bed as well
+        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
+            .map { meta, bam, bai -> [meta, bam, bai, []] }
+            .set { ch_mosdepth_in }
 
-    MOSDEPTH ( 
-        ch_mosdepth_in,
-        ch_fasta 
-    )  
+        MOSDEPTH ( 
+            ch_mosdepth_in,
+            ch_fasta 
+        )  
 
-    ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
+        ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
+    }
 
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
     
-    BAM_STATS_SAMTOOLS (
-        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
-        ch_fasta
-    )
-    
-    ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
+    if (!params.skip_qc && params.skip_bamstats ) {
+        
+        BAM_STATS_SAMTOOLS (
+            ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
+            ch_fasta
+        )
+        
+        ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
+    }
     
     //
     // MODULE: ASCAT
     //
-    severus_reformat
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
-        }
-        .set { ascat_ch }
     
-    ASCAT (
-        ascat_ch,
-        allele_files,
-        loci_files,
-        [],
-        [],
-        [],
-        []
-    )
-    
-    ch_versions = ch_versions.mix(ASCAT.out.versions)
+    if (!skip_ascat) {
+        severus_reformat
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+                return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+            }
+            .set { ascat_ch }
+        
+        ASCAT (
+            ascat_ch,
+            allele_files,
+            loci_files,
+            [],
+            [],
+            [],
+            []
+        )
+        
+        ch_versions = ch_versions.mix(ASCAT.out.versions)
+    }
     
     /*
     //
     // MODULE: WAKHAN
     //
     
-    WAKHAN (
-        severus_reformat,
-        ch_fasta
-    )
-    
-    ch_versions = ch_versions.mix(WAKHAN.out.versions)
+    if (!skip_wakhan) {
+        
+        WAKHAN (
+            severus_reformat,
+            ch_fasta
+        )
+        
+        ch_versions = ch_versions.mix(WAKHAN.out.versions)
+    }
+
     
     */
     //
@@ -299,8 +322,6 @@ workflow LR_SOMATIC {
     //
     // MODULE: MultiQC
     //
-    // TODO: Add channels that need to be fed into multiqc still. E.g. QC output
-    // Check what is compatible with multiqc
     ch_multiqc_config        = Channel.fromPath(
         "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
     ch_multiqc_custom_config = params.multiqc_config ?
@@ -330,8 +351,13 @@ workflow LR_SOMATIC {
     )
     
     // Collect MultiQC files
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
+    
+    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
+    
     
     MULTIQC (
         ch_multiqc_files.collect(),
