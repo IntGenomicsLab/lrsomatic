@@ -357,10 +357,12 @@ workflow LR_SOMATIC {
     // Module: MOSDEPTH
     //
     
+            
+    ch_mosdepth_global = Channel.empty()
+    ch_mosdepth_summary = Channel.empty()
+    
     if (!params.skip_qc && params.skip_mosdepth) {
-        
-        ch_mosdepth_global = Channel.empty()
-        ch_mosdepth_summary = Channel.empty()
+
         
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
