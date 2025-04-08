@@ -28,6 +28,11 @@ include { SEVERUS                   } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT               } from '../modules/local/metaextract/main'
 include { SAMTOOLS_INDEX            } from '../modules/nf-core/samtools/index/main.nf'
 include { WAKHAN                    } from '../modules/local/wakhan/main'
+include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predictm6a'
+include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
+include { FIBERTOOLSRS_NUCLEOSOMES } from '../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC          } from '../modules/local/fibertoolsrs/qc'
+
 
 //
 // IMPORT SUBWORKFLOWS
@@ -49,7 +54,7 @@ workflow LR_SOMATIC {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
-    // Channel format is [[meta], [bam]]. 
+    // Channel format is [[meta], [bam]].
     // Where [meta] is [id, paired_data, method, specs, type]
 
     main:
@@ -71,19 +76,19 @@ workflow LR_SOMATIC {
         'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'hifi_revio'                        : 'hifi_revio_ss'
-    
+
     ]
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    
+
     //
     // MODULE: METAEXTRACT
     //
     // extracts the base calling model from the bam files
 
     METAEXTRACT( ch_samplesheet )
-    
+
     ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
     basecall_meta = METAEXTRACT.out.basecall_model
 
@@ -100,18 +105,18 @@ workflow LR_SOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
-       
-    
 
-    // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, basecall_model]
-    //                   bam:  list of unaligned bams      
+
+
+    // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
+    //                   bam:  list of unaligned bams
 
     ch_split = ch_samplesheet
-        .branch { meta, bam -> 
+        .branch { meta, bam ->
             single: bam.size() == 1
             multiple: bam.size() > 1
         }
-    
+
     //
     // MODULE: SAMTOOLS_CAT
     //
@@ -121,69 +126,126 @@ workflow LR_SOMATIC {
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
-        
-        
-    // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, basecall_model]
-    //                 bam:  list of concatenated unaligned bams   
+
+
+    // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
+    //                 bam:  list of concatenated unaligned bams
 
     ch_versions = ch_versions.mix(SAMTOOLS_CAT.out.versions)
-    
+
     //
     // MODULE: CRAMINO
     //
     // QC the unaligned bams
     if (!params.skip_qc && !params.skip_cramino) {
-        
+
         CRAMINO_PRE ( ch_cat_ubams )
 
         ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
     }
 
-    
+
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
     //
-    
-    PREPARE_REFERENCE_FILES ( 
+
+    PREPARE_REFERENCE_FILES (
         params.fasta,
         params.ascat_allele_files,
         params.ascat_loci_files,
         params.ascat_gc_file,
-        params.ascat_rt_file 
+        params.ascat_rt_file
     )
-    
+
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
-    
-    // ASCAT files   
+
+    // ASCAT files
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
     loci_files = PREPARE_REFERENCE_FILES.out.loci_files
     gc_file = PREPARE_REFERENCE_FILES.out.gc_file
     rt_file = PREPARE_REFERENCE_FILES.out.rt_file
-    
-    
+
+
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
 
+    //
+    // MODULE: FIBERTOOLSRS_PREDICTM6A
+    //
+    // predict m6a in unaligned bam
+
+    if (!params.skip_fiber) {
+        ch_cat_ubams
+            .branch{ meta, bams ->
+                pacBio: meta.platform == "pb"
+                ont: meta.platform == "ont"
+            }
+            .set{ch_cat_ubams}
+
+        FIBERTOOLSRS_PREDICTM6A (
+            ch_cat_ubams.pacBio
+        )
+
+        ch_cat_ubams.ont
+            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
+            .set{fiber_branch}
+
+        fiber_branch
+            .branch{ meta, bams ->
+                fiber: meta.fiber == "y"
+                nonFiber: meta.fiber == "n"
+            }
+            .set{fiber_branch}
+
+        //
+        // MODULE: FIBERTOOLSRS_NUCLEOSOMES
+        //
+
+        FIBERTOOLSRS_NUCLEOSOMES (
+            fiber_branch.fiber
+        )
+        //
+        // MODULE: FIBERTOOLSRS_FIRE
+        //
+
+        FIBERTOOLSRS_FIRE (
+            FIBERTOOLSRS_NUCLEOSOMES.out.bam
+        )
+
+
+        fiber_branch.nonFiber
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .set{ch_cat_ubams}
+
+        if(!params.skip_qc) {
+            //
+            // MODULE: FIBERTOOLSRS_QC
+            //
+            FIBERTOOLSRS_QC (
+                FIBERTOOLSRS_FIRE.out.bam
+            )
+        }
+    }
     //
     // MODULE: MINIMAP2_ALIGN
     //
     // Aligns ubams
-    
-    MINIMAP2_ALIGN ( 
+
+    MINIMAP2_ALIGN (
         ch_cat_ubams,
         ch_fasta,
         true,
         'bai',
-        "", 
-        "" 
+        "",
+        ""
     )
-    MINIMAP2_ALIGN.out.bam 
-        .set { ch_minimap_bam } 
-        
+    MINIMAP2_ALIGN.out.bam
+        .set { ch_minimap_bam }
 
-    // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, basecall_model]
-    //                    bam:  list of concatenated aligned bams  
+
+    // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
+    //                    bam:  list of concatenated aligned bams
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
@@ -198,9 +260,9 @@ workflow LR_SOMATIC {
                 tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
-        
 
-    // branched_minimap -> meta: [id, paired_data, platform, sex, type, basecall_model]
+
+    // branched_minimap -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                     bam:  list of concatenated aligned bams
     //                     bais: indexes for bam files
 
@@ -208,21 +270,21 @@ workflow LR_SOMATIC {
     // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
     //
     // Phasing/haplotaging/small germline variant calling for tumor-normal samples
-    
+
     TUMOR_NORMAL_HAPPHASE (
         branched_minimap.paired,
         ch_fasta,
         ch_fai,
         clair3_modelMap
     )
-    
+
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
-    
+
     //
     // SUBWORKFLOW: TUMOR_ONLY_HAPPHASE
     //
     // Phasing/haplotagging for tumor only samples
-    
+
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
@@ -231,13 +293,13 @@ workflow LR_SOMATIC {
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
-    
+
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
-    
+
     // Get ClairS input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
@@ -245,59 +307,59 @@ workflow LR_SOMATIC {
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }
-        
+
     //
     // MODULE: CLAIRS
-    //    
-    
+    //
+
     CLAIRS (
         clairs_input,
         ch_fasta,
         ch_fai
     )
-    
+
     ch_versions = ch_versions.mix(CLAIRS.out.versions)
-    
+
     //
     // MODULE: SEVERUS
     //
-    
+
     if (!params.skip_severus) {
-        
+
         SEVERUS (
             severus_reformat,
             [[:], params.bed_file, params.pon_file]
         )
-        
+
         ch_versions = ch_versions.mix(SEVERUS.out.versions)
     }
-    
-    // 
+
+    //
     // MODULE: CRAMINO
-    // 
-    
+    //
+
     if (!params.skip_qc && !params.skip_cramino) {
-        
+
         CRAMINO_POST ( ch_minimap_bam )
 
         ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
     }
-    
+
     //
     // Module: MOSDEPTH
     //
-    
+
     if (!params.skip_qc && params.skip_mosdepth) {
-        
+
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
 
-        MOSDEPTH ( 
+        MOSDEPTH (
             ch_mosdepth_in,
-            ch_fasta 
-        )  
+            ch_fasta
+        )
 
         ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     }
@@ -305,28 +367,28 @@ workflow LR_SOMATIC {
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
-    
+
     if (!params.skip_qc && params.skip_bamstats ) {
-        
+
         BAM_STATS_SAMTOOLS (
             ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
             ch_fasta
         )
-        
+
         ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
     }
-    
+
     //
     // MODULE: ASCAT
     //
-    
-    if (!skip_ascat) {
+
+    if (!params.skip_ascat) {
         severus_reformat
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
                 return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
-        
+
         ASCAT (
             ascat_ch,
             allele_files,
@@ -336,26 +398,26 @@ workflow LR_SOMATIC {
             [],
             []
         )
-        
+
         ch_versions = ch_versions.mix(ASCAT.out.versions)
     }
-    
+
     /*
     //
     // MODULE: WAKHAN
     //
-    
+
     if (!skip_wakhan) {
-        
+
         WAKHAN (
             severus_reformat,
             ch_fasta
         )
-        
+
         ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }
 
-    
+
     */
     //
     // Collate and save software versions
@@ -385,7 +447,7 @@ workflow LR_SOMATIC {
     ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files    = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    
+
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
         file(params.multiqc_methods_description, checkIfExists: true) :
         file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
@@ -399,16 +461,18 @@ workflow LR_SOMATIC {
             sort: true
         )
     )
-    
+
     // Collect MultiQC files
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
-    
-    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
-    
-    
+    if (!params.skip_qc && params.skip_bamstats ) {
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
+    }
+    if (!params.skip_qc && params.skip_mosdepth) {
+        ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
+    }
+
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
@@ -422,7 +486,7 @@ workflow LR_SOMATIC {
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 
-    
+
 }
 
 /*
