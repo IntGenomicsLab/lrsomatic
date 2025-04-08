@@ -382,7 +382,7 @@ workflow LR_SOMATIC {
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
     ch_bam_stats = Channel.empty()
-    ch_bam_flagstats = Channel.empty()
+    ch_bam_flagstat = Channel.empty()
     ch_bam_idxstats = Channel.empty()
     
     if (!params.skip_qc && params.skip_bamstats ) {
