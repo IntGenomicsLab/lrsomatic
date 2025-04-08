@@ -1,5 +1,5 @@
-sample,bam_tumor,bam_normal,platform,sex
-sample1,/staging/leuven/stg_00096/home/hackathon/PTCL1/GC151233_chr19_sorted.bam,,ont,female
-sample2,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15M_chr19.bam,/staging/leuven/stg_00096/home/hackathon/CCS15/CCS15N_chr19.bam,pb,female
-sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k.bam,,ont,female
-sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k_rep2.bam,,ont,female
+sample,bam_tumor,bam_normal,platform,sex,fiber
+sample1,/staging/leuven/stg_00096/home/hackathon/PTCL1/GC151233_chr19_sorted.bam,,ont,female,n
+sample2,/scratch/leuven/351/vsc35115/downsampled.bam,,pb,female,y
+sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k.bam,,ont,female,n
+sample3,/staging/leuven/stg_00096/home/hackathon/DNA_PTCL_B2233535_500k_rep2.bam,,ont,female,n
