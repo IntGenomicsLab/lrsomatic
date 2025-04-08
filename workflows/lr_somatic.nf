@@ -356,9 +356,12 @@ workflow LR_SOMATIC {
     //
     // Module: MOSDEPTH
     //
-
+    
     if (!params.skip_qc && params.skip_mosdepth) {
-
+        
+        ch_mosdepth_global = Channel.empty()
+        ch_mosdepth_summary = Channel.empty()
+        
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
             .map { meta, bam, bai -> [meta, bam, bai, []] }
@@ -368,20 +371,30 @@ workflow LR_SOMATIC {
             ch_mosdepth_in,
             ch_fasta
         )
-
+        
+        ch_mosdepth_global = MOSDEPTH.out.global_txt
+        ch_mosdepth_summary = MOSDEPTH.out.summary_txt
+        
         ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     }
 
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
-
+    ch_bam_stats = Channel.empty()
+    ch_bam_flagstats = Channel.empty()
+    ch_bam_idxstats = Channel.empty()
+    
     if (!params.skip_qc && params.skip_bamstats ) {
 
         BAM_STATS_SAMTOOLS (
             ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
             ch_fasta
         )
+        
+        bam_stats_ch = BAM_STATS_SAMTOOLS.out.stats
+        bam_flagstat_ch = BAM_STATS_SAMTOOLS.out.flagstat
+        bam_idxstats_ch = BAM_STATS_SAMTOOLS.out.idxstats
 
         ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
     }
@@ -471,12 +484,12 @@ workflow LR_SOMATIC {
     )
 
     // Collect MultiQC files
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_stats.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_flagstat.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_idxstats.collect{it[1]}.ifEmpty([]))
 
-    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it[1]}.ifEmpty([]))
 
 
     MULTIQC (
