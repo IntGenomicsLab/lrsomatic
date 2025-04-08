@@ -186,6 +186,8 @@ workflow LR_SOMATIC {
         FIBERTOOLSRS_PREDICTM6A (
             ch_cat_ubams.pacBio
         )
+        
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
         ch_cat_ubams.ont
             .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
@@ -205,6 +207,9 @@ workflow LR_SOMATIC {
         FIBERTOOLSRS_NUCLEOSOMES (
             fiber_branch.fiber
         )
+        
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_NUCLEOSOMES.out.versions)
+        
         //
         // MODULE: FIBERTOOLSRS_FIRE
         //
@@ -212,7 +217,8 @@ workflow LR_SOMATIC {
         FIBERTOOLSRS_FIRE (
             FIBERTOOLSRS_NUCLEOSOMES.out.bam
         )
-
+        
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
 
         fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
@@ -225,6 +231,8 @@ workflow LR_SOMATIC {
             FIBERTOOLSRS_QC (
                 FIBERTOOLSRS_FIRE.out.bam
             )
+            
+            ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
         }
     }
     //
@@ -463,15 +471,13 @@ workflow LR_SOMATIC {
     )
 
     // Collect MultiQC files
-    if (!params.skip_qc && params.skip_bamstats ) {
-        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
-    }
-    if (!params.skip_qc && params.skip_mosdepth) {
-        ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
-    }
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.stats.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.flagstat.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_STATS_SAMTOOLS.out.idxstats.collect{it[1]}.ifEmpty([]))
+
+    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.global_txt.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(MOSDEPTH.out.summary_txt.collect{it[1]}.ifEmpty([]))
+
 
     MULTIQC (
         ch_multiqc_files.collect(),
