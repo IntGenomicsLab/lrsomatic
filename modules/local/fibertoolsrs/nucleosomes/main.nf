@@ -15,7 +15,7 @@
 // TODO nf-core: Optional inputs are not currently supported by Nextflow. However, using an empty
 //               list (`[]`) instead of a file can be used to work around this issue.
 
-process FIBERTOOLSRS_PREDICTM6A {
+process FIBERTOOLSRS_NUCLEOSOMES {
     tag "$meta.id"
     label 'process_very_high'
 
@@ -60,11 +60,11 @@ process FIBERTOOLSRS_PREDICTM6A {
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
     ft \\
-        predict-m6a \\
+        add-nucleosomes \\
         $args \\
         -t $task.cpus \\
         $bam \\
-        ${prefix}_m6a.bam
+        ${prefix}_nuc.bam
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -80,7 +80,7 @@ process FIBERTOOLSRS_PREDICTM6A {
     //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
     //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
-    touch ${prefix}_m6a.bam
+    touch ${prefix}_nuc.bam
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
