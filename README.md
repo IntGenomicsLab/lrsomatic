@@ -65,6 +65,40 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Alexandra Pan�
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
+## Pipeline output
+
+This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report from that combines the output from `mosdepth` and `samtools` into one html report.
+
+Besides QC and and the aligned and phased bam file, we have output from (structural) variant and copy number callers, of which some are optional. The output from these variant callers can be found in their respective folders. For small and structural variant callers (`clairS`, `clairS-TO`, and `severus`) these will contain, among others, `vcf` files with called variants. For `ascat` these contain files with final copy number information and plots of the copy number profiles.
+
+Example output directory structure:
+
+```
+results
+|
+├── multiqc
+│
+├── sample1
+│   ├── bamfiles
+│   ├── qc
+│   │   ├── tumour
+│   │   └── normal
+│   ├── variants
+│   │   ├── severus
+│   │   └── clairs
+│   └── ascat
+│
+└── sample2
+    ├── bamfiles
+    ├── qc
+    │   ├── tumour
+    │   └── normal
+    ├── variants
+    │   ├── severus
+    │   └── clairs
+    └── ascat
+```
+
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
