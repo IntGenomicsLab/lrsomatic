@@ -36,8 +36,8 @@ workflow TUMOR_ONLY_HAPPHASE {
     CLAIRSTO.out.indel_vcf
                 .join(CLAIRSTO.out.snv_vcf)
                 .set{clairsto_vcf}
-    
-    // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, basecall_model]
+
+    // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 indel_vcf: vcf for indels
     //                 snv_vcf:   vcf for snvs
 
@@ -62,7 +62,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     }
     .set{tumor_bams_germlinevcf}
 
-    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                           bam:  list of concatenated aligned bams
     //                           bai:  indexes for bam files
     //                           vcf:  tumor small nonsomatic variant vcf
@@ -91,14 +91,14 @@ workflow TUMOR_ONLY_HAPPHASE {
     }
     .set{tumor_bams_phasedvcf}
 
-    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, basecall_model]
+    // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                           bam:  list of concatenated aligned bams
     //                           bai:  indexes for bam files
     //                           vcf:  phased tumor small nonsomatic variant vcf
     //                           svs:  structural variant vcf (empty)
     //                           mods: modcall-generated VCF with modifications (empty)
 
-    // 
+    //
     // MODULES: LONGPHASE_HAPLOTAG
     //
     // Haplotag the tumor bams
@@ -112,8 +112,8 @@ workflow TUMOR_ONLY_HAPPHASE {
     // grab phased bams
     LONGPHASE_HAPLOTAG.out.bam
         .set{haplotagged_bams}
-        
-    // haplotagged_bams -> meta: [id, paired_data, platform, sex, type, basecall_model]
+
+    // haplotagged_bams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                     bams: list of concatenated aligned bams
 
     //
@@ -133,12 +133,13 @@ workflow TUMOR_ONLY_HAPPHASE {
                         paired_data: meta.paired_data,
                         platform: meta.platform,
                         sex: meta.sex,
+                        fiber: meta.fiber,
                         basecall_model: meta.basecall_model]
         return[new_meta, hap_bam, hap_bai, [],[], vcf]
         }
     .set{tumor_only_severus}
-    
-    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, basecall_model]
+
+    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         hap_bam:  haplotagged aligned bam for tumor
     //                         hap_bai:  indexes for tumor bam files
     //                         normal_bam: haplotagged aligned bam files for normal (empty)
@@ -147,5 +148,5 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     emit:
     tumor_only_severus
-    
+
 }

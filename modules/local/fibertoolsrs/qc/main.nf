@@ -17,7 +17,7 @@
 
 process FIBERTOOLSRS_QC {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_very_high'
 
     // TODO nf-core: List required Conda package(s).
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").
@@ -39,7 +39,7 @@ process FIBERTOOLSRS_QC {
 
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
-    tuple val(meta), path("*.bam"), emit: bam
+    tuple val(meta), path("*.txt"), emit: qc_txt
     // TODO nf-core: List additional required output channels/values here
     path "versions.yml"           , emit: versions
 
@@ -64,7 +64,7 @@ process FIBERTOOLSRS_QC {
         $args \\
         -t $task.cpus \\
         $bam \\
-        ${prefix}.bam
+        ${prefix}_qc.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -80,7 +80,7 @@ process FIBERTOOLSRS_QC {
     //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
     //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
-    touch ${prefix}.bam
+    touch ${prefix}_qc.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
