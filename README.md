@@ -20,17 +20,39 @@ It can be run in both **matched tumour-normal** and **tumour-only mode**, offeri
 
 Developed using **Nextflow DSL2**, it offers high portability and scalability across diverse computing environments. By leveraging Docker or Singularity containers, installation is streamlined and results are highly reproducible. Each process runs in an isolated container, simplifying dependency management and updates. Where applicable, pipeline components are sourced from **nf-core/modules**, promoting reuse, interoperability, and consistency within the broader Nextflow and nf-core ecosystems.
 
+## Pipeline summary
+**1) Pre-processing:**
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+   a. Raw read QC ([`cramino`](https://github.com/wdecoster/cramino))
+
+   b.	Alignment to the reference genome ([`minimap2`](https://github.com/lh3/minimap2))
+
+   c. Post alignment QC ([`cramino`](https://github.com/wdecoster/cramino), [`samtools idxstats`](https://github.com/samtools/samtools), [`samtools flagstats`](https://github.com/samtools/samtools), [`samtools stats`](https://github.com/samtools/samtools))
+
+   d. Specific for calling modified base calling ([`Modkit`](https://github.com/nanoporetech/modkit), [`Fibertools`](https://github.com/fiberseq/fibertools-rs))
+
+**2i) Matched mode: small variant calling:**
+   
+   a. Calling Germline SNPs ([`Clair3`](https://github.com/HKU-BAL/Clair3))
+
+   b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+
+   c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
+
+**2ii) Tumour only mode: small variant calling:**
+
+   a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
+
+   b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+
+**3) Large variant calling:**
+
+   a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
+
+   b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-
 ## Usage
 
 > [!NOTE]
