@@ -12,7 +12,14 @@
 
 ## Introduction
 
-**IntGenomicsLab/lr_somatic** is a bioinformatics pipeline that ...
+**IntGenomicsLab/lr_somatic** is a robust bioinformatics pipeline designed for processing and analyzing **somatic DNA sequencing** data for long-read sequencing technologies such as from **Oxford Nanopore** and **PacBio**. It supports both canonical base DNA and modified base calling, including specialized applications such as **Fiber-seq**.
+ 
+This **end-to-end pipeline** handles the entire workflow — **from raw read processing and alignment, to comprehensive somatic variant calling**, including single nucleotide variants, indels, structural variants, copy number alterations, and modified bases. 
+
+It can be run in both **matched tumour-normal** and **tumour-only mode**, offering flexibility depending on the users study design.
+
+Developed using **Nextflow DSL2**, it offers high portability and scalability across diverse computing environments. By leveraging Docker or Singularity containers, installation is streamlined and results are highly reproducible. Each process runs in an isolated container, simplifying dependency management and updates. Where applicable, pipeline components are sourced from **nf-core/modules**, promoting reuse, interoperability, and consistency within the broader Nextflow and nf-core ecosystems.
+
 
 <!-- TODO nf-core:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
