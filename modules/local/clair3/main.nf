@@ -38,9 +38,14 @@ process CLAIR3 {
     if (packaged_model && user_model) {
         error "Two models specified $user_model and $packaged_model, specify one of them."
     }
+    // TODO: fix the channel structure so you don't have to do this
+    def download_prefix = ( model == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
+    wget ${download_prefix}/${packaged_model}.tar.gz
+    tar -xvzf ${model}.tar.gz
+
     run_clair3.sh \\
         --bam_fn=$bam \\
         --ref_fn=$reference \\
