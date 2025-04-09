@@ -36,6 +36,11 @@
                 "type": "string",
                 "enum": ["male", "female"],
                 "errorMessage": "Biological sex must be either 'male' or 'female'"
+            },
+            "fiber": {
+                "type": "string",
+                "enum": ["y", "n"],
+                "errorMessage": "Specifiy (y/n) if sample has had fiberseq performed"
             }
         },
         "required": ["sample", "bam_tumor", "platform", "sex"]

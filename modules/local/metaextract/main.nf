@@ -11,8 +11,8 @@ process METAEXTRACT {
     tuple val(meta), path(bam)
 
     output:
-    tuple val(meta), stdout       , emit: basecall_model
-    path "versions.yml"           , emit: versions
+    tuple val(meta), env(basecall_model),env(kinetics)  , emit: meta_ext
+    path "versions.yml"                        , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,11 +21,13 @@ process METAEXTRACT {
     def args = task.ext.args ?: ''
     def ont = meta.platform == 'ont'
     """
+    basecall_model=""
+    kinetics=""
     if [ $ont = 'true' ]; then
         basecall_model=\$(samtools view -H ${bam} ${args} | awk -F'basecall_model=' '{print \$2}' | awk '{print \$1}'| tr -d '[:space:]')
-        echo "\$basecall_model"
     else
-        echo "hifi_revio"
+        kinetics=\$(samtools view -H ${bam} | awk '/--keep-kinetics/ {found=1} END {print (found ? "true" : "false")}')
+        basecall_model="hifi_revio"
     fi
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

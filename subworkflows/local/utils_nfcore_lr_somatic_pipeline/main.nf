@@ -74,12 +74,11 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, bam_tumor, bam_normal, method, sex ->
+        .map { meta, bam_tumor, bam_normal, method, sex, fiber ->
             def paired_data = bam_normal ? true : false
-            def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex]
+            def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex, fiber: fiber]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
-        //.groupTuple()
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
@@ -87,19 +86,20 @@ workflow PIPELINE_INITIALISATION {
             def meta_tumor = meta.clone()
             meta_tumor.type = 'tumor'
             def result = [[meta_tumor, tumor_bam]]
-            
+
             if (normal_bam) {
                 def meta_normal = meta.clone()
                 meta_normal.type = 'normal'
                 result << [meta_normal, normal_bam]
             }
-            
+
             return result
         }
         .set { ch_samplesheet }
-        // Channel is now [[meta], [bam]]       
-        // With meta consisting of [id, paired_data, method, specs, type]
-        
+
+        // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
+        //                   bam:  unaligned bams
+
     emit:
     samplesheet = ch_samplesheet
     versions    = ch_versions

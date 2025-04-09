@@ -1,85 +1,78 @@
 process CLAIR3 {
     tag "$meta.id"
     label 'process_very_high'
-    
+
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://hkubal/clair3:v1.0.10':
-        'hkubal/clair3:v1.0.10' }"
+        'https://depot.galaxyproject.org/singularity/clair3:1.0.10--py39hd649744_1':
+        'biocontainers/clair3:1.0.10--py39hd649744_1' }"
 
     input:
-    tuple val(meta), path(bam), path(bam_bai)
-    tuple val(meta2), path(ref)
-    tuple val(meta3), path(ref_index)
-
+    tuple val(meta), path(bam), path(bai), val(packaged_model), path(user_model), val(platform)
+    tuple val(meta2), path(reference)
+    tuple val(meta3), path(index)
 
     output:
-    // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
-    tuple val(meta), path("*merge_output.vcf.gz"), emit: germline_vcf
-
-    // TODO nf-core: List additional required output channels/values here
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*merge_output.vcf.gz"),            emit: vcf
+    tuple val(meta), path("*merge_output.vcf.gz.tbi"),        emit: tbi
+    tuple val(meta), path("*phased_merge_output.vcf.gz"),     emit: phased_vcf, optional: true
+    tuple val(meta), path("*phased_merge_output.vcf.gz.tbi"), emit: phased_tbi, optional: true
+    path "versions.yml",                                      emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def modelMap = [
-        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'r1041_e82_400bps_sup_v500',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'r1041_e82_400bps_sup_v430',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'r1041_e82_400bps_sup_v410',
-        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'r1041_e82_260bps_sup_v400',
-        'hifi_revio'                        : 'hifi_revio'
-    ]
-    def model = modelMap.get(meta.basecall_model.toString().trim())
-    def platform = (meta.platform == "pb") ? "hifi" : "ont"
-
-    if (!model in modelMap.keySet() ) {
-        model = 'r1041_e82_400bps_sup_v500'
-        log.warn "Warning: ClairS-TO has no appropriate models for ${model} defaulting to dna_r10.4.1_e8.2_400bps_sup@v5.0.0 for Clair3"
+    def model = ""
+    if (!user_model) {
+        if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+            model = "\${CONDA_PREFIX}/bin/models/${packaged_model}"
+        }
+        else {
+            model = "/usr/local/bin/models/$packaged_model"
+        }
     }
-    else {
-        log.info "Using ${model} model for Clair3"
+    if (!packaged_model) {
+        model = "$user_model"
     }
-    
-    // Download model command
+    if (packaged_model && user_model) {
+        error "Two models specified $user_model and $packaged_model, specify one of them."
+    }
+    // TODO: fix the channel structure so you don't have to do this
     def download_prefix = ( model == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
-    
-    
-    // Specify runtype for conda vs docker/singularity
-    // Both the initial clair3 call and the model_path call will not work with conda
-    //TODO:
-
-                
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    wget ${download_prefix}/${model}.tar.gz
+    wget ${download_prefix}/${packaged_model}.tar.gz
     tar -xvzf ${model}.tar.gz
-    
-    /opt/bin/run_clair3.sh \\
-        --bam_fn=${bam} \\
-        --ref_fn=${ref} \\
-        --threads=${task.cpus} \\
-        --platform="${platform}" \\
-        --model_path="${model}" \\
-        --use_longphase_for_intermediate_phasing \\
-        --output .               
+
+    run_clair3.sh \\
+        --bam_fn=$bam \\
+        --ref_fn=$reference \\
+        --threads=$task.cpus \\
+        --output=. \\
+        --platform=$platform \\
+        --model=$model \\
+        $args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clair3: \$( /opt/bin/run_clair3.sh --version |& sed 's/Clair3 v//' )
+        clair3: \$(run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//')
     END_VERSIONS
     """
 
     stub:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    touch ${prefix}.merge_output.vcf.gz
+    echo "" | gzip > ${prefix}.phased_merge_output.vcf.gz
+    touch ${prefix}.phased_merge_output.vcf.gz.tbi
+    echo "" | gzip > ${prefix}.merge_output.vcf.gz
+    touch ${prefix}.merge_output.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clair3: \$( /opt/bin/run_clair3.sh --version |& sed 's/Clair3 v//' )
+        clair3: \$(run_clair3.sh --version |& sed '1!d ; s/Clair3 v//')
     END_VERSIONS
     """
 }

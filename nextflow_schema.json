@@ -82,6 +82,158 @@
                 }
             }
         },
+        "minimap2_options": {
+            "title": "minimap2 options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "minimap2_ont_model": {
+                    "type": "string",
+                    "description": "Minimap ont model to use"
+                },
+                "minimap2_pb_model": {
+                    "type": "string",
+                    "description": "Minimap Pacbio model to use"
+                },
+                "save_secondary_alignment": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to save secondary alignments"
+                }
+            }
+        },
+        "severus_parameters": {
+            "title": "Severus parameters",
+            "type": "object",
+            "description": "Severus specific parameters",
+            "default": "",
+            "properties": {
+                "pon_file": {
+                    "type": "string",
+                    "description": "Path to Panel of Normal files"
+                },
+                "bed_file": {
+                    "type": "string",
+                    "description": "Path to bed file"
+                }
+            },
+            "required": ["pon_file", "bed_file"]
+        },
+        "ascat_parameters": {
+            "title": "ASCAT parameters",
+            "type": "object",
+            "description": "ASCAT specific parameters",
+            "default": "",
+            "properties": {
+                "ascat_ploidy": {
+                    "type": "string",
+                    "description": "Enforce a ploidy"
+                },
+                "ascat_purity": {
+                    "type": "string",
+                    "description": "Enforce a purity"
+                },
+                "ascat_min_base_qual": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "Minimum base quality for allelecounter"
+                },
+                "ascat_min_counts": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Minimum counts for allelecounter"
+                },
+                "ascat_min_map_qual": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Minimum mapping quality for allelecounter"
+                },
+                "ascat_longread_bins": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Binsize for long-read"
+                },
+                "ascat_allelecounter_flags": {
+                    "type": "string",
+                    "default": "-f 0",
+                    "description": "Additional allelecounter flags to use"
+                },
+                "ascat_chroms": {
+                    "type": "string",
+                    "description": "Chromosomes to process (automatically inferred, only use if you want to run on a subset)"
+                },
+                "genome_name": {
+                    "type": "string",
+                    "default": "CHM13",
+                    "description": "Genome name (hg19, hg38, or CHM13)"
+                },
+                "ascat_allele_files": {
+                    "type": "string",
+                    "description": "Path to (zip) of allele files"
+                },
+                "ascat_loci_files": {
+                    "type": "string",
+                    "description": "path to (zip) of loci files"
+                },
+                "ascat_gc_files": {
+                    "type": "string",
+                    "description": "Path to (zip) of GC files"
+                },
+                "ascat_rt_files": {
+                    "type": "string",
+                    "description": "path to (zip) of RT files"
+                }
+            }
+        },
+        "wakhan_parameters": {
+            "title": "Wakhan parameters",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "centromere_bed": {
+                    "type": "string",
+                    "description": "Path to centromere location bed file for Wakhan"
+                }
+            }
+        },
+        "skip_options": {
+            "title": "Skip options",
+            "type": "object",
+            "description": "Define whether to skip certain steps",
+            "default": "",
+            "properties": {
+                "skip_qc": {
+                    "type": "boolean",
+                    "description": "Skips all QC steps"
+                },
+                "skip_cramino": {
+                    "type": "boolean",
+                    "description": "Skips Cramino"
+                },
+                "skip_mosdepth": {
+                    "type": "boolean",
+                    "description": "Skips Mosdepth"
+                },
+                "skip_bamstats": {
+                    "type": "boolean",
+                    "description": "Skips samtools flagstat, stats, and idxstats"
+                },
+                "skip_wakhan": {
+                    "type": "boolean",
+                    "description": "Skips wakhan"
+                },
+                "skip_fiber": {
+                    "type": "boolean",
+                    "description": "Skip Fibertools steps"
+                },
+                "skip_ascat": {
+                    "type": "boolean",
+                    "description": "Skip ASCAT"
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -234,6 +386,21 @@
         },
         {
             "$ref": "#/$defs/reference_genome_options"
+        },
+        {
+            "$ref": "#/$defs/minimap2_options"
+        },
+        {
+            "$ref": "#/$defs/severus_parameters"
+        },
+        {
+            "$ref": "#/$defs/ascat_parameters"
+        },
+        {
+            "$ref": "#/$defs/wakhan_parameters"
+        },
+        {
+            "$ref": "#/$defs/skip_options"
         },
         {
             "$ref": "#/$defs/institutional_config_options"
