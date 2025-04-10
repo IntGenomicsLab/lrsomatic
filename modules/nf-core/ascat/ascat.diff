@@ -3,7 +3,7 @@ Changes in component 'nf-core/ascat'
 Changes in 'ascat/main.nf':
 --- modules/nf-core/ascat/main.nf
 +++ modules/nf-core/ascat/main.nf
-@@ -4,8 +4,8 @@
+@@ -4,11 +4,12 @@
  
      conda "${moduleDir}/environment.yml"
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -14,6 +14,18 @@ Changes in 'ascat/main.nf':
  
      input:
      tuple val(meta), path(input_normal), path(index_normal), path(input_tumor), path(index_tumor)
++    val(genomeVersion)
+     path(allele_files)
+     path(loci_files)
+     path(bed_file)  // optional
+@@ -34,7 +35,6 @@
+     def args           = task.ext.args        ?: ''
+     def prefix         = task.ext.prefix      ?: "${meta.id}"
+     def gender         = args.gender          ?  "$args.gender" :        "NULL"
+-    def genomeVersion  = args.genomeVersion   ?  "$args.genomeVersion" : "NULL"
+     def purity         = args.purity          ?  "$args.purity" :        "NULL"
+     def ploidy         = args.ploidy          ?  "$args.ploidy" :        "NULL"
+     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
 @@ -48,7 +48,12 @@
      def fasta_arg                        = fasta                              ?  ",ref.fasta = '$fasta'" : ""
      def skip_allele_counting_tumour_arg  = args.skip_allele_counting_tumour   ?  ",skip_allele_counting_tumour = $args.skip_allele_counting_tumour" : ""

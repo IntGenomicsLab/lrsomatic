@@ -350,8 +350,6 @@ workflow LR_SOMATIC {
     //
     // MODULE: SEVERUS
     //
-    println "SEVERUS input channel: $params.pon_file"
-    println "SEVERUS input channel: $params.bed_file"
     
     SEVERUS (
         severus_reformat,
@@ -431,6 +429,7 @@ workflow LR_SOMATIC {
 
         ASCAT (
             ascat_ch,
+            params.genome_name,
             allele_files,
             loci_files,
             [],

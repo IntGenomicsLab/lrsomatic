@@ -1,7 +1,5 @@
 sample,bam_tumor,bam_normal,platform,sex,fiber
-sample1,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_H2009_ONT_UL_chr19_downsampled.bam,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_BL2009_ONT_UL_chr19_downsample.bam,ont,female,n
-sample2,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19.bam,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578BST_HIFI_chr19.bam,pb,female,n
-sample3,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,n
-sample4,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19.bam,,pb,female,n
-sample4,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19_rep2.bam,,pb,female,n
-sample5,/scratch/leuven/351/vsc35115/downsampled.bam,,pb,female,y
+sample1,tumour1.bam,normal1.bam,ont,female,n
+sample2,tumour2.bam,,ont,female,y
+sample3,tumour3.bam,,pb,male,n
+sample4,tumour4.bam,normal4.bam,pb,male,y
