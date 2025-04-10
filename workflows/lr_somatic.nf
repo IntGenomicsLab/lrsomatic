@@ -341,15 +341,12 @@ workflow LR_SOMATIC {
     // MODULE: SEVERUS
     //
 
-    if (!params.skip_severus) {
+    SEVERUS (
+        severus_reformat,
+        [[:], params.bed_file, params.pon_file]
+    )
 
-        SEVERUS (
-            severus_reformat,
-            [[:], params.bed_file, params.pon_file]
-        )
-
-        ch_versions = ch_versions.mix(SEVERUS.out.versions)
-    }
+    ch_versions = ch_versions.mix(SEVERUS.out.versions)
 
     //
     // MODULE: CRAMINO
