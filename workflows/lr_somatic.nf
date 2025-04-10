@@ -8,6 +8,7 @@ include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML    } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
+include { getGenomeAttribute      } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
 
 //
 // IMPORT MODULES
@@ -78,6 +79,15 @@ workflow LR_SOMATIC {
         'hifi_revio'                        : 'hifi_revio_ss'
 
     ]
+    
+    // Load in igenomes
+    params.fasta = getGenomeAttribute('fasta')
+    params.genome_name = getGenomeAttribute('genome_name')
+    params.ascat_allele_files = getGenomeAttribute('ascat_alleles')
+    params.ascat_loci_files = getGenomeAttribute('ascat_loci')
+    params.centromere_bed = getGenomeAttribute('centromere_bed')
+    params.pon_file = getGenomeAttribute('pon_file')
+    params.bed_file = getGenomeAttribute('bed_file')
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -340,7 +350,9 @@ workflow LR_SOMATIC {
     //
     // MODULE: SEVERUS
     //
-
+    println "SEVERUS input channel: $params.pon_file"
+    println "SEVERUS input channel: $params.bed_file"
+    
     SEVERUS (
         severus_reformat,
         [[:], params.bed_file, params.pon_file]
@@ -362,7 +374,6 @@ workflow LR_SOMATIC {
     //
     // Module: MOSDEPTH
     //
-
 
     ch_mosdepth_global = Channel.empty()
     ch_mosdepth_summary = Channel.empty()
