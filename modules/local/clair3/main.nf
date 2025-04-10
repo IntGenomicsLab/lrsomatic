@@ -4,8 +4,8 @@ process CLAIR3 {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/clair3:1.0.10--py39hd649744_1':
-        'biocontainers/clair3:1.0.10--py39hd649744_1' }"
+        'docker://hkubal/clair3:v1.0.10':
+        'hkubal/clair3:v1.0.10' }"
 
     input:
     tuple val(meta), path(bam), path(bai), val(packaged_model), path(user_model), val(platform)
@@ -23,21 +23,21 @@ process CLAIR3 {
     task.ext.when == null || task.ext.when
 
     script:
-    def model = ""
-    if (!user_model) {
-        if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
-            model = "\${CONDA_PREFIX}/bin/models/${packaged_model}"
-        }
-        else {
-            model = "/usr/local/bin/models/$packaged_model"
-        }
-    }
-    if (!packaged_model) {
-        model = "$user_model"
-    }
-    if (packaged_model && user_model) {
-        error "Two models specified $user_model and $packaged_model, specify one of them."
-    }
+    def model = packaged_model
+    //if (!user_model) {
+    //    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+    //        model = "\${CONDA_PREFIX}/bin/models/${packaged_model}"
+    //    }
+    //    else {
+    //        model = "/usr/local/bin/models/$packaged_model"
+    //    }
+    //}
+    //if (!packaged_model) {
+    //    model = "$user_model"
+    //}
+    //if (packaged_model && user_model) {
+    //    error "Two models specified $user_model and $packaged_model, specify one of them."
+    //}
     // TODO: fix the channel structure so you don't have to do this
     def download_prefix = ( model == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
     def args = task.ext.args ?: ''
