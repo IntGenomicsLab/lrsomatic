@@ -36,8 +36,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version |& sed '1!d; s|run_clairs ||'
-)
+        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
     END_VERSIONS
     """
 
@@ -51,8 +50,7 @@ process CLAIRS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        clairs: \$(/opt/bin/run_clairs --version |& sed '1!d; s|run_clairs ||'
-)
+        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
     END_VERSIONS
     """
 }

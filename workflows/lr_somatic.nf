@@ -449,8 +449,8 @@ workflow LR_SOMATIC {
         ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }
 
-
     */
+
     //
     // Collate and save software versions
     //
