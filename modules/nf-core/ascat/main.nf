@@ -9,6 +9,7 @@ process ASCAT {
 
     input:
     tuple val(meta), path(input_normal), path(index_normal), path(input_tumor), path(index_tumor)
+    val(genomeVersion)
     path(allele_files)
     path(loci_files)
     path(bed_file)  // optional
@@ -34,7 +35,6 @@ process ASCAT {
     def args           = task.ext.args        ?: ''
     def prefix         = task.ext.prefix      ?: "${meta.id}"
     def gender         = args.gender          ?  "$args.gender" :        "NULL"
-    def genomeVersion  = args.genomeVersion   ?  "$args.genomeVersion" : "NULL"
     def purity         = args.purity          ?  "$args.purity" :        "NULL"
     def ploidy         = args.ploidy          ?  "$args.ploidy" :        "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
