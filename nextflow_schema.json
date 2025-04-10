@@ -117,8 +117,7 @@
                     "type": "string",
                     "description": "Path to bed file"
                 }
-            },
-            "required": ["pon_file", "bed_file"]
+            }
         },
         "ascat_parameters": {
             "title": "ASCAT parameters",
@@ -165,7 +164,6 @@
                 },
                 "genome_name": {
                     "type": "string",
-                    "default": "CHM13",
                     "description": "Genome name (hg19, hg38, or CHM13)"
                 },
                 "ascat_allele_files": {

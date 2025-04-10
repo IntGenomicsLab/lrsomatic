@@ -91,7 +91,6 @@ workflow LR_SOMATIC {
 
     ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
     basecall_meta = METAEXTRACT.out.meta_ext
-    basecall_meta.view()
     // Adds the base calling model to meta.basecall_model
 
     ch_samplesheet
