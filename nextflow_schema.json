@@ -53,17 +53,8 @@
                     "type": "string",
                     "description": "Name of iGenomes reference.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
-                },
-                "fasta": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
-                    "description": "Path to FASTA genome file.",
-                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code"
+                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details.",
+                    "enum": ["GRCh38", "CHM13"]
                 },
                 "igenomes_ignore": {
                     "type": "boolean",
@@ -100,22 +91,6 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to save secondary alignments"
-                }
-            }
-        },
-        "severus_parameters": {
-            "title": "Severus parameters",
-            "type": "object",
-            "description": "Severus specific parameters",
-            "default": "",
-            "properties": {
-                "pon_file": {
-                    "type": "string",
-                    "description": "Path to Panel of Normal files"
-                },
-                "bed_file": {
-                    "type": "string",
-                    "description": "Path to bed file"
                 }
             }
         },
@@ -162,18 +137,6 @@
                     "type": "string",
                     "description": "Chromosomes to process (automatically inferred, only use if you want to run on a subset)"
                 },
-                "genome_name": {
-                    "type": "string",
-                    "description": "Genome name (hg19, hg38, or CHM13)"
-                },
-                "ascat_allele_files": {
-                    "type": "string",
-                    "description": "Path to (zip) of allele files"
-                },
-                "ascat_loci_files": {
-                    "type": "string",
-                    "description": "path to (zip) of loci files"
-                },
                 "ascat_gc_files": {
                     "type": "string",
                     "description": "Path to (zip) of GC files"
@@ -181,18 +144,6 @@
                 "ascat_rt_files": {
                     "type": "string",
                     "description": "path to (zip) of RT files"
-                }
-            }
-        },
-        "wakhan_parameters": {
-            "title": "Wakhan parameters",
-            "type": "object",
-            "description": "",
-            "default": "",
-            "properties": {
-                "centromere_bed": {
-                    "type": "string",
-                    "description": "Path to centromere location bed file for Wakhan"
                 }
             }
         },
@@ -389,13 +340,7 @@
             "$ref": "#/$defs/minimap2_options"
         },
         {
-            "$ref": "#/$defs/severus_parameters"
-        },
-        {
             "$ref": "#/$defs/ascat_parameters"
-        },
-        {
-            "$ref": "#/$defs/wakhan_parameters"
         },
         {
             "$ref": "#/$defs/skip_options"
