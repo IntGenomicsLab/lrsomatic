@@ -67,7 +67,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-Each row represents a sample. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No. 
+Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No. 
 
 Now, you can run the pipeline using:
 
