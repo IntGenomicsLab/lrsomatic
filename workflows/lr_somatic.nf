@@ -27,7 +27,6 @@ include { LONGPHASE_PHASE           } from '../modules/nf-core/longphase/phase/m
 include { LONGPHASE_HAPLOTAG        } from '../modules/nf-core/longphase/haplotag/main'
 include { SEVERUS                   } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT               } from '../modules/local/metaextract/main'
-include { SAMTOOLS_INDEX            } from '../modules/nf-core/samtools/index/main.nf'
 include { WAKHAN                    } from '../modules/local/wakhan/main'
 include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predictm6a'
 include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
