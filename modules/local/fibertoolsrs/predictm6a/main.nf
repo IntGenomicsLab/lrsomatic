@@ -18,6 +18,7 @@
 process FIBERTOOLSRS_PREDICTM6A {
     tag "$meta.id"
     label 'process_very_high'
+    label 'process_high_memory'
 
     // TODO nf-core: List required Conda package(s).
     //               Software MUST be pinned to channel (i.e. "bioconda"), version (i.e. "1.10").
