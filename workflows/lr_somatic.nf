@@ -185,7 +185,7 @@ workflow LR_SOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
-        ch_cat_ubams.view()
+        //ch_cat_ubams.view()
         ch_cat_ubams
             .branch{ meta, bams ->
                 pacBio: meta.platform == "pb"
