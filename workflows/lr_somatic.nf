@@ -79,7 +79,7 @@ workflow LR_SOMATIC {
         'hifi_revio'                        : 'hifi_revio_ss'
 
     ]
-    
+
     // Load in igenomes
     params.fasta = getGenomeAttribute('fasta')
     params.genome_name = getGenomeAttribute('genome_name')
@@ -185,6 +185,7 @@ workflow LR_SOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
+        ch_cat_ubams.view()
         ch_cat_ubams
             .branch{ meta, bams ->
                 pacBio: meta.platform == "pb"
@@ -350,7 +351,7 @@ workflow LR_SOMATIC {
     //
     // MODULE: SEVERUS
     //
-    
+
     SEVERUS (
         severus_reformat,
         [[:], params.bed_file, params.pon_file]
