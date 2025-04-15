@@ -37,6 +37,7 @@ process ASCAT {
     def gender         = args.gender          ?  "$args.gender" :        "NULL"
     def purity         = args.purity          ?  "$args.purity" :        "NULL"
     def ploidy         = args.ploidy          ?  "$args.ploidy" :        "NULL"
+    def penalty        = args.penalty         ?  "$args.penalty" :       "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
     def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
 
@@ -138,9 +139,9 @@ process ASCAT {
 
     #Segment the data
     if($normal_exists) {
-        ascat.bc = ascat.aspcf(ascat.bc, seed=42)
+        ascat.bc = ascat.aspcf(ascat.bc, seed=42, penalty = $penalty)
     } else {
-        ascat.bc = ascat.aspcf(ascat.bc, seed=42, ascat.gg = gg)
+        ascat.bc = ascat.aspcf(ascat.bc, seed=42, penalty = $penalty, ascat.gg = gg)
     }
 
     #Plot the segmented data
