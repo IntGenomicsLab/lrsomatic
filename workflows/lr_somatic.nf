@@ -376,7 +376,7 @@ workflow LR_SOMATIC {
     ch_mosdepth_global = Channel.empty()
     ch_mosdepth_summary = Channel.empty()
 
-    if (!params.skip_qc && params.skip_mosdepth) {
+    if (!params.skip_qc && !params.skip_mosdepth) {
 
 
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
@@ -402,7 +402,7 @@ workflow LR_SOMATIC {
     ch_bam_flagstat = Channel.empty()
     ch_bam_idxstats = Channel.empty()
 
-    if (!params.skip_qc && params.skip_bamstats ) {
+    if (!params.skip_qc && !params.skip_bamstats ) {
 
         BAM_STATS_SAMTOOLS (
             ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
