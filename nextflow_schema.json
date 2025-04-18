@@ -108,6 +108,11 @@
                     "type": "string",
                     "description": "Enforce a purity"
                 },
+                "ascat_penalty": {
+                    "type": "integer",
+                    "default": 150,
+                    "description": "Penalty value"
+                },
                 "ascat_min_base_qual": {
                     "type": "integer",
                     "default": 20,
