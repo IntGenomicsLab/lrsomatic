@@ -4,4 +4,4 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - "bioconda::cramino=0.15.0"
+  - "bioconda::cramino=1.0.0"
