@@ -1,6 +1,0 @@
-sample,bam_tumor,bam_normal,platform,sex,fiber, clair3_model, clairSTO_model,clairS_model
-sample1,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_H2009_ONT_UL_chr19_downsampled.bam,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_BL2009_ONT_UL_chr19_downsample.bam,ont,female,n,r941_prom_hac_g360+g422,r1041_e82_400bps_hac_v420,r1041_e82_400bps_hac_v410
-sample2,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19.bam,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578BST_HIFI_chr19.bam,pb,female,n,r941_prom_hac_g360+g422_1235,r1041_e82_400bps_hac_v420,r1041_e82_400bps_hac_v410
-sample3,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,n,,,r1041_e82_400bps_hac_v410
-sample4,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19.bam,,pb,female,n,,,
-sample4,https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19_rep2.bam,,pb,female,n,,r1041_e82_400bps_hac_v420,
