@@ -41,8 +41,17 @@
                 "type": "string",
                 "enum": ["y", "n"],
                 "errorMessage": "Specifiy (y/n) if sample has had fiberseq performed"
+            },
+            "clair3_model":{
+                "type": "string"
+            },
+            "clairSTO_model":{
+                "type": "string"
+            },
+            "clairS_model":{
+                "type": "string"
             }
         },
-        "required": ["sample", "bam_tumor", "platform", "sex"]
+        "required": ["sample", "bam_tumor", "platform", "sex","fiber"]
     }
 }
