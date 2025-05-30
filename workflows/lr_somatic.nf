@@ -78,16 +78,6 @@ workflow LR_SOMATIC {
 
     ]
 
-    def clairsto_modelMap = [
-        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'hifi_revio'                        : 'hifi_revio_ss'
-
-    ]
-
     // Load in igenomes
     params.fasta = getGenomeAttribute('fasta')
     params.genome_name = getGenomeAttribute('genome_name')
@@ -325,7 +315,7 @@ workflow LR_SOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairsto_modelMap
+        clairs_modelMap
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
@@ -339,7 +329,7 @@ workflow LR_SOMATIC {
     // Get ClairS input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            def model = (params.specificed_clair_S_model) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : params.specificed_clair_S_model
+            def model = (meta.clairS_model != '[]') ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }

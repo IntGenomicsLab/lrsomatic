@@ -32,7 +32,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            def clair3_model = (params.specificed_clair_3_model == null) ? clair3_modelMap.get(meta.basecall_model.toString().trim()) : params.specificed_clair_3_model
+            def clair3_model = (meta.clair3_model != '[]') ? clair3_modelMap.get(meta.basecall_model.toString().trim()) : meta.clair3_model
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
             return[new_meta, bam, bai, clair3_model, [], platform]
         }
