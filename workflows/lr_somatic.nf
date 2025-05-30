@@ -68,8 +68,17 @@ workflow LR_SOMATIC {
         'hifi_revio'                        : 'hifi_revio'
     ]
 
-    //ClairSTO and ClairS have the same set of models
     def clairs_modelMap = [
+        'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'hifi_revio'                        : 'hifi_revio_ss'
+
+    ]
+
+    def clairsto_modelMap = [
         'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'ont_r10_dorado_sup_4khz',
         'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'ont_r10_dorado_sup_4khz',
         'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
@@ -316,7 +325,7 @@ workflow LR_SOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairs_modelMap
+        clairsto_modelMap
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
@@ -330,7 +339,7 @@ workflow LR_SOMATIC {
     // Get ClairS input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            def model = clairs_modelMap.get(meta.basecall_model.toString().trim())
+            def model = (params.specificed_clair_S_model) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : params.specificed_clair_S_model
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }
