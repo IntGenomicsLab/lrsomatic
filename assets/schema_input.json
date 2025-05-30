@@ -52,6 +52,6 @@
                 "type": "string"
             }
         },
-        "required": ["sample", "bam_tumor", "platform", "sex"]
+        "required": ["sample", "bam_tumor", "platform", "sex","fiber"]
     }
 }
