@@ -435,8 +435,6 @@ workflow LR_SOMATIC {
             [],
             [],
             []
-            //params.ascat_gc_files,
-            //params.ascat_rt_files
         )
 
         ch_versions = ch_versions.mix(ASCAT.out.versions)
