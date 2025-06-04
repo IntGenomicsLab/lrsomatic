@@ -43,7 +43,7 @@ Changes in 'ascat/main.nf':
      """
      #!/usr/bin/env Rscript
      library(RColorBrewer)
-@@ -65,21 +71,22 @@
+@@ -65,21 +71,23 @@
      #prepare from BAM files
      ascat.prepareHTS(
          tumourseqfile = "$input_tumor",
@@ -63,12 +63,13 @@ Changes in 'ascat/main.nf':
          $chrom_names_arg
          $min_base_qual_arg
          $min_map_qual_arg
++        $longread_bins
          $fasta_arg
 +        $allele_counter_flags
          $skip_allele_counting_tumour_arg
          $skip_allele_counting_normal_arg,
          seed = 42
-@@ -87,14 +94,28 @@
+@@ -87,37 +95,55 @@
  
  
      #Load the data
@@ -105,7 +106,25 @@ Changes in 'ascat/main.nf':
  
      #Plot the raw data
      ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".before_correction."))
-@@ -117,7 +138,11 @@
+ 
+     # optional LogRCorrection
+     if("$gc_input" != "NULL") {
+-        gc_input = paste0(normalizePath("$gc_input"), "/", "$gc_input", ".txt")
++        gc_input = paste0(normalizePath("$gc_input"))
+ 
+         if("$rt_input" != "NULL"){
+-            rt_input = paste0(normalizePath("$rt_input"), "/", "$rt_input", ".txt")
++            rt_input = paste0(normalizePath("$rt_input"))
+             ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input, replictimingfile = rt_input)
+             #Plot raw data after correction
+             ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".after_correction_gc_rt."))
+         }
+         else {
+-            ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input, replictimingfile = $rt_input)
++            ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input)
+             #Plot raw data after correction
+             ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".after_correction_gc."))
+         }
      }
  
      #Segment the data
