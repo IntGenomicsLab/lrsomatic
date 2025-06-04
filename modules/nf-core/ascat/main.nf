@@ -85,6 +85,7 @@ process ASCAT {
         $chrom_names_arg
         $min_base_qual_arg
         $min_map_qual_arg
+        $longread_bins
         $fasta_arg
         $allele_counter_flags
         $skip_allele_counting_tumour_arg
@@ -122,16 +123,16 @@ process ASCAT {
 
     # optional LogRCorrection
     if("$gc_input" != "NULL") {
-        gc_input = paste0(normalizePath("$gc_input"), "/", "$gc_input", ".txt")
+        gc_input = paste0(normalizePath("$gc_input"))
 
         if("$rt_input" != "NULL"){
-            rt_input = paste0(normalizePath("$rt_input"), "/", "$rt_input", ".txt")
+            rt_input = paste0(normalizePath("$rt_input"))
             ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input, replictimingfile = rt_input)
             #Plot raw data after correction
             ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".after_correction_gc_rt."))
         }
         else {
-            ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input, replictimingfile = $rt_input)
+            ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = gc_input)
             #Plot raw data after correction
             ascat.plotRawData(ascat.bc, img.prefix = paste0("$prefix", ".after_correction_gc."))
         }
