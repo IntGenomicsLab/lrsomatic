@@ -109,7 +109,8 @@
                         "git_sha": "2d20463181b1c38981a02e90d3084b5f9fa8d540",
                         "installed_by": [
                             "bam_stats_samtools"
-                        ]
+                        ],
+                        "patch": "modules/nf-core/samtools/stats/samtools-stats.diff"
                     },
                     "severus": {
                         "branch": "master",
