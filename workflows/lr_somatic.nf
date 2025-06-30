@@ -329,7 +329,7 @@ workflow LR_SOMATIC {
     // Get ClairS input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            def model = (meta.clairS_model != '[]') ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
+            def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }
