@@ -8,7 +8,7 @@ include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML    } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
-include { getGenomeAttribute      } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
+include { getGenomeAttribute        } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
 
 //
 // IMPORT MODULES
@@ -30,9 +30,8 @@ include { METAEXTRACT               } from '../modules/local/metaextract/main'
 include { WAKHAN                    } from '../modules/local/wakhan/main'
 include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predictm6a'
 include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC          } from '../modules/local/fibertoolsrs/qc'
-
+include { FIBERTOOLSRS_NUCLEOSOMES  } from '../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC           } from '../modules/local/fibertoolsrs/qc'
 
 //
 // IMPORT SUBWORKFLOWS
