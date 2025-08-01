@@ -440,22 +440,24 @@ workflow LR_SOMATIC {
         ch_versions = ch_versions.mix(ASCAT.out.versions)
     }
 
-    /*
     //
     // MODULE: WAKHAN
     //
 
-    if (!skip_wakhan) {
+    if (!params.skip_wakhan) {
+        
+        // Prepare input channel for WAKHAN
+        severus_reformat
+            .join(SEVERUS.out.all_vcf)
+            .set { wakhan_input }
 
         WAKHAN (
-            severus_reformat,
+            wakhan_input,
             ch_fasta
         )
 
         ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }
-
-    */
 
     //
     // Collate and save software versions

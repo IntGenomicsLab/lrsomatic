@@ -21,8 +21,8 @@ process WAKHAN {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/wakhan:0.1.1--pyhdfd78af_1':
-        'biocontainers/wakhan:0.1.1--pyhdfd78af_1' }"
+        'https://depot.galaxyproject.org/singularity/wakhan:0.1.2--pyhdfd78af_0  ':
+        'biocontainers/wakhan:0.1.2--pyhdfd78af_0  ' }"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
@@ -49,7 +49,7 @@ process WAKHAN {
         --breakpoints ${breakpoints} \\
         --reference ${reference} \\
         --genome-name ${prefix} \\
-        --outdir-plots ${prefix} \\
+        --outdir-plots . \\
         ${phased_vcf} \\
         ${args} \\
         --threads ${task.cpus}
