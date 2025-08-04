@@ -77,6 +77,11 @@ workflow PREPARE_REFERENCE_FILES {
                 rt_file = UNZIP_RT.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
                 ch_versions = ch_versions.mix(UNZIP_RT.out.versions)
             } else rt_file = Channel.fromPath(ascat_loci_rt).collect()
+        } else {
+            allele_files = Channel.empty()
+            loci_files = Channel.empty()
+            gc_file = Channel.empty()
+            rt_file = Channel.empty()
         }
 
     emit:
