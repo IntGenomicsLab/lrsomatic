@@ -32,14 +32,11 @@ process CLAIRSTO {
         --ref_fn $reference \\
         --platform $model \\
         --threads $task.cpus \\
-        --output_dir $prefix \\
+        --output_dir . \\
         $conda_prefix \\
         $args \\
         
-    mv $prefix/indel.vcf.gz ./indel.vcf.gz
-    mv $prefix/indel.vcf.gz.tbi ./indel.vcf.gz.tbi
-    mv $prefix/snv.vcf.gz ./snv.vcf.gz
-    mv $prefix/snv.vcf.gz.tbi ./snv.vcf.gz.tbi
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
