@@ -24,8 +24,10 @@ process ASCAT {
     tuple val(meta), path("*LogR.txt"),                        emit: logrs
     tuple val(meta), path("*metrics.txt"),                     emit: metrics
     tuple val(meta), path("*png"),                             emit: png
+    tuple val(meta), path("*pdf"),                             emit: pdf, optional: true
     tuple val(meta), path("*purityploidy.txt"),                emit: purityploidy
     tuple val(meta), path("*segments.txt"),                    emit: segments
+    tuple val(meta), path("*segments_raw.txt"),                emit: segments_raw
     path "versions.yml",                                       emit: versions
 
     when:
