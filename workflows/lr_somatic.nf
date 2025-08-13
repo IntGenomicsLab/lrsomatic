@@ -190,6 +190,7 @@ workflow LR_SOMATIC {
                 tumor: meta.type == "tumor"
                 }
             .set { ch_cat_ubams }
+            normal_bams = ch_cat_ubams.normal
             ch_cat_ubams.tumor
                 .branch{ meta, bams ->
                     pacBio: meta.platform == "pb"
@@ -247,7 +248,7 @@ workflow LR_SOMATIC {
 
             fiber_branch.nonFiber
                 .mix(FIBERTOOLSRS_FIRE.out.bam)
-                .join(ch_cat_ubams.normal)
+                .join(normal_bams)
                 .set{ch_cat_ubams}
 
             if(!params.skip_qc) {
