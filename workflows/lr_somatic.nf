@@ -189,10 +189,10 @@ workflow LR_SOMATIC {
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
-            .set { ch_cat_ubams }
-            normal_bams = ch_cat_ubams.normal
+            .set { ch_cat_ubams_normal_branching }
+            normal_bams = ch_cat_ubams_normal_branching.normal
+            ch_cat_ubams = ch_cat_ubams_normal_branching.tumor
         }
-
             ch_cat_ubams
                 .branch{ meta, bams ->
                     pacBio: meta.platform == "pb"
