@@ -194,82 +194,85 @@ workflow LR_SOMATIC {
             ch_cat_ubams = ch_cat_ubams_normal_branching.tumor
         }
             ch_cat_ubams
-                .branch{ meta, bams ->
-                    pacBio: meta.platform == "pb"
-                    ont: meta.platform == "ont"
-                }
-                .set{ch_cat_ubams}
-            
-            pacbio_bams = ch_cat_ubams.pacBio
-            pacbio_bams
-                .branch{meta, bams ->
-                    kinetics: meta.kinetics == "true"
-                    noKinetics: meta.kinetics == "false"
-                }
-                .set{pacbio_bams}
+            .branch{ meta, bams ->
+                pacBio: meta.platform == "pb"
+                ont: meta.platform == "ont"
+            }
+            .set{ch_cat_ubams}
+        pacbio_bams = ch_cat_ubams.pacBio
+        pacbio_bams
+            .branch{meta, bams ->
+                kinetics: meta.kinetics == "true"
+                noKinetics: meta.kinetics == "false"
+            }
+            .set{pacbio_bams}
 
-            FIBERTOOLSRS_PREDICTM6A (
-                pacbio_bams.kinetics
-            )
-            pacbio_bams.noKinetics
-                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-                .set{predicted_bams}
+        FIBERTOOLSRS_PREDICTM6A (
+            pacbio_bams.kinetics
+        )
+        pacbio_bams.noKinetics
+            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
+            .set{predicted_bams}
 
-            ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
-            ch_cat_ubams.ont
-                .mix(predicted_bams)
-                .set{fiber_branch}
+        ch_cat_ubams.ont
+            .mix(predicted_bams)
+            .set{fiber_branch}
+
+        fiber_branch
+            .branch{ meta, bams ->
+                fiber: meta.fiber == "y"
+                nonFiber: meta.fiber == "n"
+            }
+            .set{fiber_branch}
+
+        //
+        // MODULE: FIBERTOOLSRS_NUCLEOSOMES
+        //
+
+        FIBERTOOLSRS_NUCLEOSOMES (
+            fiber_branch.fiber
+        )
+
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_NUCLEOSOMES.out.versions)
+
+        //
+        // MODULE: FIBERTOOLSRS_FIRE
+        //
+
+        FIBERTOOLSRS_FIRE (
+            FIBERTOOLSRS_NUCLEOSOMES.out.bam
+        )
+
+        ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
         if(!params.normal_fiber){
             fiber_branch.nonFiber
-                .mix(FIBERTOOLSRS_FIRE.out.bam)
-                .join(normal_bams)
-                .set{ch_cat_ubams}
+            .join(normal_bams)
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .set{ch_cat_ubams}
+
         }
         else {
-            fiber_branch
-                .branch{ meta, bams ->
-                    fiber: meta.fiber == "y"
-                    nonFiber: meta.fiber == "n"
-                }
-                .set{fiber_branch}
-        }
-
-            
-            //
-            // MODULE: FIBERTOOLSRS_NUCLEOSOMES
-            //
-
-            FIBERTOOLSRS_NUCLEOSOMES (
-                fiber_branch.fiber
-            )
-
-            ch_versions = ch_versions.mix(FIBERTOOLSRS_NUCLEOSOMES.out.versions)
-
-            //
-            // MODULE: FIBERTOOLSRS_FIRE
-            //
-
-            FIBERTOOLSRS_FIRE (
-                FIBERTOOLSRS_NUCLEOSOMES.out.bam
-            )
-
-            ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
-
             fiber_branch.nonFiber
-                .mix(FIBERTOOLSRS_FIRE.out.bam)
-                .set{ch_cat_ubams}
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .set{ch_cat_ubams}
 
-            if(!params.skip_qc) {
-                //
-                // MODULE: FIBERTOOLSRS_QC
-                //
-                FIBERTOOLSRS_QC (
-                    FIBERTOOLSRS_FIRE.out.bam
-                )
+        }
+        fiber_branch.nonFiber
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .set{ch_cat_ubams}
 
-                ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
-            }
+        if(!params.skip_qc) {
+            //
+            // MODULE: FIBERTOOLSRS_QC
+            //
+            FIBERTOOLSRS_QC (
+                FIBERTOOLSRS_FIRE.out.bam
+            )
+
+            ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
+        }
 
     }
     //
