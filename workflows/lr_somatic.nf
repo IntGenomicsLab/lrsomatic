@@ -189,11 +189,12 @@ workflow LR_SOMATIC {
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
-            .view()
             .set { ch_cat_ubams_normal_branching }
 
             normal_bams = ch_cat_ubams_normal_branching.normal
+            normal_bams.view()
             ubams = ch_cat_ubams_normal_branching.tumor
+            ubams.view()
         }
         else {
             ubams = ch_cat_ubams
@@ -203,16 +204,15 @@ workflow LR_SOMATIC {
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
-            .view()
             .set{ch_cat_ubams_pacbio_ont_branching}
 
         pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
+        pacbio_bams.view()
         pacbio_bams
             .branch{meta, bams ->
                 kinetics: meta.kinetics == "true"
                 noKinetics: meta.kinetics == "false"
             }
-            .view()
             .set{pacbio_bams}
 
         FIBERTOOLSRS_PREDICTM6A (
@@ -233,7 +233,6 @@ workflow LR_SOMATIC {
                 fiber: meta.fiber == "y"
                 nonFiber: meta.fiber == "n"
             }
-            .view()
             .set{fiber_branch}
 
         //
