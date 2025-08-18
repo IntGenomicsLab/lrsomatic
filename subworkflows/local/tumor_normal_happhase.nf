@@ -20,7 +20,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             normal: meta.type == "normal"
             tumor: meta.type == "tumor"
         }
-        .view()
         .set{mixed_bams}
 
     // Get normal bams and add platform/model info for Clair3 usage
