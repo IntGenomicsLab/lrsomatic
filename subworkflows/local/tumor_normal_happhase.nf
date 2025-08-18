@@ -20,6 +20,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             normal: meta.type == "normal"
             tumor: meta.type == "tumor"
         }
+        .view()
         .set{mixed_bams}
 
     // Get normal bams and add platform/model info for Clair3 usage
@@ -36,6 +37,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
             return[new_meta, bam, bai, clair3_model, [], platform]
         }
+        .view()
         .set{normal_bams}
 
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
@@ -58,6 +60,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             basecall_model: meta.basecall_model]
             return[new_meta, bam, bai]
         }
+        .view()
         .set{tumor_bams}
 
     // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]

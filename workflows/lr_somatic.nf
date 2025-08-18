@@ -318,6 +318,7 @@ workflow LR_SOMATIC {
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
         }
+        .view()
         .set { branched_minimap }
 
 
