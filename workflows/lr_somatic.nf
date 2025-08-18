@@ -224,7 +224,7 @@ workflow LR_SOMATIC {
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
-        ch_cat_ubams.ont
+        ubams.ont
             .mix(predicted_bams)
             .set{fiber_branch}
 
