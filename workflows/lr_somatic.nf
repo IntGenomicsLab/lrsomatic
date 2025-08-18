@@ -189,22 +189,30 @@ workflow LR_SOMATIC {
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
+            .view()
             .set { ch_cat_ubams_normal_branching }
+
             normal_bams = ch_cat_ubams_normal_branching.normal
-            ch_cat_ubams = ch_cat_ubams_normal_branching.tumor
+            ubams = ch_cat_ubams_normal_branching.tumor
         }
-            ch_cat_ubams
+        else {
+            ubams = ch_cat_ubams
+        }
+            ubams
             .branch{ meta, bams ->
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
-            .set{ch_cat_ubams}
-        pacbio_bams = ch_cat_ubams.pacBio
+            .view()
+            .set{ch_cat_ubams_pacbio_ont_branching}
+
+        pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
         pacbio_bams
             .branch{meta, bams ->
                 kinetics: meta.kinetics == "true"
                 noKinetics: meta.kinetics == "false"
             }
+            .view()
             .set{pacbio_bams}
 
         FIBERTOOLSRS_PREDICTM6A (
@@ -225,6 +233,7 @@ workflow LR_SOMATIC {
                 fiber: meta.fiber == "y"
                 nonFiber: meta.fiber == "n"
             }
+            .view()
             .set{fiber_branch}
 
         //
@@ -246,16 +255,19 @@ workflow LR_SOMATIC {
         )
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
+
         if(!params.normal_fiber){
             fiber_branch.nonFiber
             .join(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .view()
             .set{ch_cat_ubams}
 
         }
         else {
             fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .view()
             .set{ch_cat_ubams}
 
         }
