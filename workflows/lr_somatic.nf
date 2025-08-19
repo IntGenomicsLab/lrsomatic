@@ -257,7 +257,7 @@ workflow LR_SOMATIC {
 
         if(!params.normal_fiber){
             fiber_branch.nonFiber
-            .join(normal_bams)
+            .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .view()
             .set{ch_cat_ubams}
