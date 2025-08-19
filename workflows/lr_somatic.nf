@@ -266,13 +266,9 @@ workflow LR_SOMATIC {
         else {
             fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .view()
             .set{ch_cat_ubams}
 
         }
-        fiber_branch.nonFiber
-            .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_cat_ubams}
 
         if(!params.skip_qc) {
             //
