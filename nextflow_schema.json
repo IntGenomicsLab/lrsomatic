@@ -130,7 +130,7 @@
                 },
                 "ascat_longread_bins": {
                     "type": "integer",
-                    "default": 1000,
+                    "default": 2000,
                     "description": "Binsize for long-read"
                 },
                 "ascat_allelecounter_flags": {
