@@ -103,7 +103,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Phase normals
 
     LONGPHASE_PHASE (
-        normalbams_germlinevcf,
+        normal_bams_germlinevcf,
         fasta,
         fai
     )
