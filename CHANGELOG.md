@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https://nf-co.re/) template.
 
 ### `Added`
+
 - ClairS-TO Module
 - cramino module
-- modkit pileup module 
+- modkit pileup module
 - mosdepth module
 - minimap2/index module
 - minimap2/align module
@@ -22,6 +23,7 @@ Initial release of IntGenomicsLab/lr_somatic, created with the [nf-core](https:/
 - add longphase/tag and longphase/phase modules
 
 ### `Fixed`
+
 - New channel structure
 - No longer possible to have duplicated naming after samtools cat
 - restructured minimap2

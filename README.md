@@ -14,43 +14,44 @@
 ## Introduction
 
 **IntGenomicsLab/lr_somatic** is a robust bioinformatics pipeline designed for processing and analyzing **somatic DNA sequencing** data for long-read sequencing technologies from **Oxford Nanopore** and **PacBio**. It supports both canonical base DNA and modified base calling, including specialized applications such as **Fiber-seq**.
- 
-This **end-to-end pipeline** handles the entire workflow — **from raw read processing and alignment, to comprehensive somatic variant calling**, including single nucleotide variants, indels, structural variants, copy number alterations, and modified bases. 
+
+This **end-to-end pipeline** handles the entire workflow — **from raw read processing and alignment, to comprehensive somatic variant calling**, including single nucleotide variants, indels, structural variants, copy number alterations, and modified bases.
 
 It can be run in both **matched tumour-normal** and **tumour-only mode**, offering flexibility depending on the users study design.
 
 Developed using **Nextflow DSL2**, it offers high portability and scalability across diverse computing environments. By leveraging Docker or Singularity containers, installation is streamlined and results are highly reproducible. Each process runs in an isolated container, simplifying dependency management and updates. Where applicable, pipeline components are sourced from **nf-core/modules**, promoting reuse, interoperability, and consistency within the broader Nextflow and nf-core ecosystems.
 
 ## Pipeline summary
+
 **1) Pre-processing:**
 
-   a. Raw read QC ([`cramino`](https://github.com/wdecoster/cramino))
+a. Raw read QC ([`cramino`](https://github.com/wdecoster/cramino))
 
-   b.	Alignment to the reference genome ([`minimap2`](https://github.com/lh3/minimap2))
+b. Alignment to the reference genome ([`minimap2`](https://github.com/lh3/minimap2))
 
-   c. Post alignment QC ([`cramino`](https://github.com/wdecoster/cramino), [`samtools idxstats`](https://github.com/samtools/samtools), [`samtools flagstats`](https://github.com/samtools/samtools), [`samtools stats`](https://github.com/samtools/samtools))
+c. Post alignment QC ([`cramino`](https://github.com/wdecoster/cramino), [`samtools idxstats`](https://github.com/samtools/samtools), [`samtools flagstats`](https://github.com/samtools/samtools), [`samtools stats`](https://github.com/samtools/samtools))
 
-   d. Specific for calling modified base calling ([`Modkit`](https://github.com/nanoporetech/modkit), [`Fibertools`](https://github.com/fiberseq/fibertools-rs))
+d. Specific for calling modified base calling ([`Modkit`](https://github.com/nanoporetech/modkit), [`Fibertools`](https://github.com/fiberseq/fibertools-rs))
 
 **2i) Matched mode: small variant calling:**
-   
-   a. Calling Germline SNPs ([`Clair3`](https://github.com/HKU-BAL/Clair3))
 
-   b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+a. Calling Germline SNPs ([`Clair3`](https://github.com/HKU-BAL/Clair3))
 
-   c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
+b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+
+c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
 
 **2ii) Tumour only mode: small variant calling:**
 
-   a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
+a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
 
-   b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
 
 **3) Large variant calling:**
 
-   a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
+a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
 
-   b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
+b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
@@ -62,6 +63,7 @@ Developed using **Nextflow DSL2**, it offers high portability and scalability ac
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
 First prepare a samplesheet with your input data that looks as follows:
+
 ```csv
 sample,bam_tumor,bam_normal,platform,sex,fiber
 sample1,tumour.bam,normal.bam,ont,female,n
@@ -70,7 +72,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No. 
+Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No.
 
 Now, you can run the pipeline using:
 
