@@ -37,7 +37,8 @@ workflow PREPARE_REFERENCE_FILES {
         
         SAMTOOLS_FAIDX ( 
             ch_prepared_fasta,
-            [ [:], "$projectDir/assets/dummy_file.txt" ]
+            [ [:], "$projectDir/assets/dummy_file.txt" ],
+            false
         )
         
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai
