@@ -1,6 +1,6 @@
 nextflow_process {
 
-    name "Test Process CLAIRSTP"
+    name "Test Process CLAIRSTO"
     script "../main.nf"
     process "CLAIRSTO"
 
