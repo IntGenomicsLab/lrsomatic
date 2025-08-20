@@ -59,6 +59,7 @@ workflow LR_SOMATIC {
     main:
 
     def clair3_modelMap = [
+        'dna_r10.4.1_e8.2_400bps_sup@v5.2.0': 'r1041_e82_400bps_sup_v520',
         'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'r1041_e82_400bps_sup_v500',
         'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'r1041_e82_400bps_sup_v430',
         'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
@@ -73,6 +74,7 @@ workflow LR_SOMATIC {
         'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
+        'dna_r10.4.1_e8.2_400bps_sup@v5.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'hifi_revio'                        : 'hifi_revio_ss'
 
     ]
