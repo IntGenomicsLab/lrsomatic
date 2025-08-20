@@ -27,7 +27,7 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
-    
+
     output:
     // TODO nf-core: Named file extensions MUST be emitted for ALL output channels
     tuple val(meta), path("*.bam"), emit: bam
@@ -53,7 +53,7 @@ process WAKHAN {
         ${phased_vcf} \\
         ${args} \\
         --threads ${task.cpus}
-        
+
     #micromamba run -n wakhan wakhan \
     #--target-bam /staging/leuven/stg_00096/home/projects/2023_Cools_B-ALL/FINAL_DNA_ANALYSIS/Variant_calling/CLAIR3/D0/D0_long_tagged_bam_prefix.bam \
     #--breakpoints /staging/leuven/stg_00096/home/projects/2023_Cools_B-ALL/FINAL_DNA_ANALYSIS/Variant_calling/Severus_run2/all_SVs/severus_all.vcf \

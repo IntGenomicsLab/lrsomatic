@@ -35,7 +35,7 @@ process CLAIRSTO {
         --output_dir . \\
         $conda_prefix \\
         $args \\
-        
+
 
 
     cat <<-END_VERSIONS > versions.yml
