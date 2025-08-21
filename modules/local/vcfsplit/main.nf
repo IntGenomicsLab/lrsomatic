@@ -69,7 +69,6 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    # Extract NonSomatic entries from both VCFs, concat, set all FILTER columns to PASS, compress, index
     bcftools concat -a $(
         bcftools view -i 'FILTER="NonSomatic"' $indel_vcf
         bcftools view -i 'FILTER="NonSomatic"' $snv_vcf
