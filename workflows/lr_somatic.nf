@@ -268,8 +268,6 @@ workflow LR_SOMATIC {
         "",
         ""
     )
-    MINIMAP2_ALIGN.out.bam
-        .set { ch_minimap_bam }
 
 
     // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
@@ -277,7 +275,7 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
-    ch_minimap_bam
+    MINIMAP2_ALIGN.out.bam
         .join(MINIMAP2_ALIGN.out.index)
         .set(ch_minimap_bams)
 
