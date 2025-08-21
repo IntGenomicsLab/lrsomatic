@@ -1,7 +1,8 @@
-include { CLAIR3 } from '../../modules/local/clair3/main.nf'
-include { LONGPHASE_PHASE } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_HAPLOTAG } from '../../modules/nf-core/longphase/haplotag/main.nf'
-include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIR3                } from '../../modules/local/clair3/main.nf'
+include { LONGPHASE_PHASE       } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_HAPLOTAG    } from '../../modules/nf-core/longphase/haplotag/main.nf'
+include { SAMTOOLS_INDEX        } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIRS                }  from '../../modules/local/clairs/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -9,6 +10,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fasta
     fai
     clair3_modelMap
+    clairs_modelMap
 
     main:
 
@@ -220,6 +222,26 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .join(LONGPHASE_PHASE.out.vcf)
         .set{tumor_normal_severus}
+
+    // Get ClairS input channel
+    tumor_normal_severus
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
+        }
+        .set { clairs_input }
+
+    //
+    // MODULE: CLAIRS
+    //
+
+    CLAIRS (
+        clairs_input,
+        fasta,
+        fai
+    )
+
+    ch_versions = ch_versions.mix(CLAIRS.out.versions)
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files
