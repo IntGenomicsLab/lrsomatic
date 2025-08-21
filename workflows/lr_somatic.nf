@@ -373,7 +373,7 @@ workflow LR_SOMATIC {
 
     if (!params.skip_qc && !params.skip_cramino) {
 
-        CRAMINO_POST ( ch_minimap_bam )
+        CRAMINO_POST ( MINIMAP2_ALIGN.out.bam )
 
         ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
     }
@@ -389,7 +389,7 @@ workflow LR_SOMATIC {
 
 
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
-        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
+        ch_minimap_bams
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
 
@@ -414,7 +414,7 @@ workflow LR_SOMATIC {
     if (!params.skip_qc && !params.skip_bamstats ) {
 
         BAM_STATS_SAMTOOLS (
-            ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
+            ch_minimap_bams, // Join bam channel with index channel
             ch_fasta
         )
 
