@@ -277,7 +277,7 @@ workflow LR_SOMATIC {
 
     MINIMAP2_ALIGN.out.bam
         .join(MINIMAP2_ALIGN.out.index)
-        .set(ch_minimap_bams)
+        .set{ ch_minimap_bams }
 
     MODKIT_PILEUP (
         ch_minimap_bams,
