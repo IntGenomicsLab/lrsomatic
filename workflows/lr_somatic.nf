@@ -282,6 +282,7 @@ workflow LR_SOMATIC {
     MODKIT_PILEUP (
         ch_minimap_bams,
         ch_fasta,
+        ch_fai,
         [[],[]]
 
 
