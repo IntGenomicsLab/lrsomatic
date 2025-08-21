@@ -18,7 +18,18 @@ Changes in 'ascat/main.nf':
      path(allele_files)
      path(loci_files)
      path(bed_file)  // optional
-@@ -34,9 +35,9 @@
+@@ -23,8 +24,10 @@
+     tuple val(meta), path("*LogR.txt"),                        emit: logrs
+     tuple val(meta), path("*metrics.txt"),                     emit: metrics
+     tuple val(meta), path("*png"),                             emit: png
++    tuple val(meta), path("*pdf"),                             emit: pdf, optional: true
+     tuple val(meta), path("*purityploidy.txt"),                emit: purityploidy
+     tuple val(meta), path("*segments.txt"),                    emit: segments
++    tuple val(meta), path("*segments_raw.txt"),                emit: segments_raw
+     path "versions.yml",                                       emit: versions
+ 
+     when:
+@@ -34,9 +37,9 @@
      def args           = task.ext.args        ?: ''
      def prefix         = task.ext.prefix      ?: "${meta.id}"
      def gender         = args.gender          ?  "$args.gender" :        "NULL"
@@ -29,7 +40,7 @@ Changes in 'ascat/main.nf':
      def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
      def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
  
-@@ -48,7 +49,12 @@
+@@ -48,7 +51,12 @@
      def fasta_arg                        = fasta                              ?  ",ref.fasta = '$fasta'" : ""
      def skip_allele_counting_tumour_arg  = args.skip_allele_counting_tumour   ?  ",skip_allele_counting_tumour = $args.skip_allele_counting_tumour" : ""
      def skip_allele_counting_normal_arg  = args.skip_allele_counting_normal   ?  ",skip_allele_counting_normal = $args.skip_allele_counting_normal" : ""
@@ -43,7 +54,7 @@ Changes in 'ascat/main.nf':
      """
      #!/usr/bin/env Rscript
      library(RColorBrewer)
-@@ -65,21 +71,23 @@
+@@ -65,21 +73,23 @@
      #prepare from BAM files
      ascat.prepareHTS(
          tumourseqfile = "$input_tumor",
@@ -69,7 +80,7 @@ Changes in 'ascat/main.nf':
          $skip_allele_counting_tumour_arg
          $skip_allele_counting_normal_arg,
          seed = 42
-@@ -87,37 +95,55 @@
+@@ -87,37 +97,55 @@
  
  
      #Load the data

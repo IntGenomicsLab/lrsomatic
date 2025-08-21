@@ -24,8 +24,10 @@ process ASCAT {
     tuple val(meta), path("*LogR.txt"),                        emit: logrs
     tuple val(meta), path("*metrics.txt"),                     emit: metrics
     tuple val(meta), path("*png"),                             emit: png
+    tuple val(meta), path("*pdf"),                             emit: pdf, optional: true
     tuple val(meta), path("*purityploidy.txt"),                emit: purityploidy
     tuple val(meta), path("*segments.txt"),                    emit: segments
+    tuple val(meta), path("*segments_raw.txt"),                emit: segments_raw, optional: true
     path "versions.yml",                                       emit: versions
 
     when:
@@ -165,6 +167,17 @@ process ASCAT {
 
     #Write out segmented regions (including regions with one copy of each allele)
     write.table(ascat.output[["segments"]], file=paste0("$prefix", ".segments.txt"), sep="\t", quote=F, row.names=F)
+    
+    #Write out raw segmented regions (including regions with one copy of each allele)
+    tryCatch({ # In case segments_raw is not selected
+      write.table(
+        ascat.output[["segments_raw"]],
+        file = paste0(prefix, ".segments_raw.txt"),
+        sep = "\t", quote = FALSE, row.names = FALSE
+      )
+    }, error = function(e) {
+      message("Error in writing segments_raw: ", conditionMessage(e))
+    })
 
     #Write out CNVs in bed format
     cnvs=ascat.output[["segments"]][2:6]

@@ -13,10 +13,10 @@ process CLAIRSTO {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("*/indel.vcf.gz"),     emit: indel_vcf
-    tuple val(meta), path("*/indel.vcf.gz.tbi"),     emit: indel_tbi
-    tuple val(meta), path("*/snv.vcf.gz"),       emit: snv_vcf
-    tuple val(meta), path("*/snv.vcf.gz.tbi"),       emit: snv_tbi
+    tuple val(meta), path("indel.vcf.gz"),     emit: indel_vcf
+    tuple val(meta), path("indel.vcf.gz.tbi"),     emit: indel_tbi
+    tuple val(meta), path("snv.vcf.gz"),       emit: snv_vcf
+    tuple val(meta), path("snv.vcf.gz.tbi"),       emit: snv_tbi
 
     when:
     task.ext.when == null || task.ext.when
@@ -32,9 +32,11 @@ process CLAIRSTO {
         --ref_fn $reference \\
         --platform $model \\
         --threads $task.cpus \\
-        --output_dir $prefix \\
+        --output_dir . \\
         $conda_prefix \\
         $args \\
+        
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
