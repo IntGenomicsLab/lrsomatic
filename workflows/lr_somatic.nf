@@ -32,6 +32,7 @@ include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predic
 include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
 include { FIBERTOOLSRS_NUCLEOSOMES  } from '../modules/local/fibertoolsrs/nucleosomes'
 include { FIBERTOOLSRS_QC           } from '../modules/local/fibertoolsrs/qc'
+include { MODKIT_PILEUP             } from '../modules/nf-core/modkit/pileup/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -276,12 +277,22 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
+    ch_minimap_bam
+        .join(MINIMAP2_ALIGN.out.index)
+        .set(ch_minimap_bams)
+
+    MODKIT_PILEUP (
+        ch_minimap_bams,
+        ch_fasta,
+        [[],[]]
+
+
+    )
 
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
 
-    ch_minimap_bam
-        .join(MINIMAP2_ALIGN.out.index)
+    ch_minimap_bams
         .branch { meta, bams, bais ->
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
