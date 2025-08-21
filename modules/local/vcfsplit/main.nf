@@ -62,7 +62,6 @@ process VCFSPLIT {
     // TODO nf-core: Please indent the command appropriately (4 spaces!!) to help with readability ;)
     """
 
-    # Extract PASS entries from both VCF files, compress, index, and merge
     bcftools view -i 'FILTER="PASS"' $indel_vcf | bgzip -c > indels_pass.vcf.gz
     bcftools view -i 'FILTER="PASS"' $snv_vcf | bgzip -c > snv_pass.vcf.gz
     tabix -p vcf indels_pass.vcf.gz
@@ -70,17 +69,17 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    # Extract ONLY NonSomatic entries, compress, index, and merge
-    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_nonsomatic.vcf.gz
-    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_nonsomatic.vcf.gz
-    tabix -p vcf indels_nonsomatic.vcf.gz
-    tabix -p vcf snv_nonsomatic.vcf.gz
-    bcftools concat -a -Oz -o germline.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
+    bcftools concat -a $(
+        bcftools view -i 'FILTER="NonSomatic"' $indel_vcf
+        bcftools view -i 'FILTER="NonSomatic"' $snv_vcf
+    ) | \
+        awk 'BEGIN{FS=OFS="\t"} /^#/ {print} !/^#/ { $7="PASS"; print }' | \
+        bgzip -c > germline.vcf.gz
     tabix -p vcf germline.vcf.gz
 
     # Cleanup intermediate files
-    rm indels_pass.vcf.gz snv_pass.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
-    rm indels_pass.vcf.gz.tbi snv_pass.vcf.gz.tbi indels_nonsomatic.vcf.gz.tbi snv_nonsomatic.vcf.gz.tbi
+    rm indels_pass.vcf.gz snv_pass.vcf.gz
+    rm indels_pass.vcf.gz.tbi snv_pass.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
