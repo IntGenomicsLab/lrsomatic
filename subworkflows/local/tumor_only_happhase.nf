@@ -155,5 +155,5 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     emit:
     tumor_only_severus
-
+    versions = ch_versions
 }
