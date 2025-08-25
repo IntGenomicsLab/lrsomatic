@@ -288,7 +288,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     CLAIRS (
         clairs_input,
-        ch_fasta,
+        fasta,
         ch_fai
     )
 
