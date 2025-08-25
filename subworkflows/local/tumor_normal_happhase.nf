@@ -289,7 +289,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIRS (
         clairs_input,
         fasta,
-        ch_fai
+        fai
     )
 
     SOMATIC_VEP (
