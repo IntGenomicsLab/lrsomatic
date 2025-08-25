@@ -346,7 +346,7 @@ workflow LR_SOMATIC {
         "homo_sapiens",
         111,
         '',
-        fasta,
+        ch_fasta,
         []
     )
 
