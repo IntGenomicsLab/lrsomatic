@@ -28,7 +28,7 @@ include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predic
 include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
 include { FIBERTOOLSRS_NUCLEOSOMES  } from '../modules/local/fibertoolsrs/nucleosomes'
 include { FIBERTOOLSRS_QC           } from '../modules/local/fibertoolsrs/qc'
-
+include {ENSEMBLVEP_VEP as SV_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -41,7 +41,7 @@ include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_hap
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUN MAIN WORKFLOW
+    RUN MAIN WORKFLOWx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -335,7 +335,20 @@ workflow LR_SOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
+
+
     ch_versions = ch_versions.mix(SEVERUS.out.versions)
+
+
+    SV_VEP (
+        SEVERUS.out.all_vcf,
+        params.genome,
+        "homo_sapiens",
+        111,
+        '',
+        fasta,
+        []
+    )
 
     //
     // MODULE: CRAMINO
