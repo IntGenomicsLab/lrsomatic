@@ -17,6 +17,8 @@ process CLAIRSTO {
     tuple val(meta), path("indel.vcf.gz.tbi"),     emit: indel_tbi
     tuple val(meta), path("snv.vcf.gz"),       emit: snv_vcf
     tuple val(meta), path("snv.vcf.gz.tbi"),       emit: snv_tbi
+    path "versions.yml",                    emit: versions
+
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,7 +37,7 @@ process CLAIRSTO {
         --output_dir . \\
         $conda_prefix \\
         $args \\
-        
+
 
 
     cat <<-END_VERSIONS > versions.yml
