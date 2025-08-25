@@ -76,7 +76,6 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
     tabix -p vcf germline_tmp.vcf.gz
 
-
     bcftools view germline_tmp.vcf.gz | awk 'BEGIN{FS=OFS="\t"} /^#/ {print} !/^#/ { \$7="PASS"; print }' | \
         bgzip -c > germline.vcf.gz
     tabix -p vcf germline.vcf.gz

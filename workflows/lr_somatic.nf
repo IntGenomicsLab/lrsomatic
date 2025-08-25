@@ -319,7 +319,7 @@ workflow LR_SOMATIC {
         clairs_modelMap
     )
 
-    ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
+    ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
 
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
