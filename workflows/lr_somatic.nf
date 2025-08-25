@@ -326,7 +326,6 @@ workflow LR_SOMATIC {
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
-
     //
     // MODULE: SEVERUS
     //

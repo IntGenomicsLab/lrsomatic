@@ -72,6 +72,29 @@ workflow TUMOR_ONLY_HAPPHASE {
         }
         .set{ tumor_bams_germlinevcf }
 
+
+
+    SOMATIC_VEP (
+        VCFSPLIT.out.somatic_vcf,
+        params.genome,
+        "homo_sapiens",
+        111,
+        '',
+        fasta,
+        []
+    )
+
+    GERMLINE_VEP (
+        VCFSPLIT.out.germline_vcf,
+        params.genome,
+        "homo_sapiens",
+        111,
+        '',
+        fasta,
+        []
+    )
+
+
     // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                           bam:  list of concatenated aligned bams
     //                           bai:  indexes for bam files

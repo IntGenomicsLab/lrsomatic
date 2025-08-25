@@ -1,8 +1,10 @@
-include { CLAIR3                } from '../../modules/local/clair3/main.nf'
-include { LONGPHASE_PHASE       } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_HAPLOTAG    } from '../../modules/nf-core/longphase/haplotag/main.nf'
-include { SAMTOOLS_INDEX        } from '../../modules/nf-core/samtools/index/main.nf'
-include { CLAIRS                }  from '../../modules/local/clairs/main.nf'
+include { CLAIR3 } from '../../modules/local/clair3/main.nf'
+include { LONGPHASE_PHASE } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_HAPLOTAG } from '../../modules/nf-core/longphase/haplotag/main.nf'
+include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIRS                    } from '../modules/local/clairs/main.nf'
+include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
+include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -93,6 +95,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
+    
+
     ch_versions = ch_versions.mix(CLAIR3.out.versions)
 
     // Add germline vcf to normal bams
@@ -114,6 +118,16 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                svs:  structural variant vcf (empty)
     //                mods: modcall-generated VCF with modifications (empty)
 
+
+    GERMLINE_VEP (
+        CLAIR3.out.vcf,
+        params.genome,
+        "homo_sapiens",
+        111,
+        '',
+        fasta,
+        []
+    )
 
     //
     // MODULE: LONGPHASE_PHASE
@@ -258,6 +272,37 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                         normal_bam: haplotagged aligned bam files for normal
     //                         normal_bai: indexes for normal bam files
     //                         phased_vcf: phased small variant vcf for normal
+
+      // Get ClairS input channel
+
+    tumor_normal_severus
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
+        }
+        .set { clairs_input }
+
+    //
+    // MODULE: CLAIRS
+    //
+
+    CLAIRS (
+        clairs_input,
+        ch_fasta,
+        ch_fai
+    )
+
+    SOMATIC_VEP (
+        CLAIRS.out.vcf,
+        params.genome,
+        "homo_sapiens",
+        111,
+        '',
+        fasta,
+        []
+    )
+
+    ch_versions = ch_versions.mix(CLAIRS.out.versions)
 
     emit:
     tumor_normal_severus
