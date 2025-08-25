@@ -2,9 +2,9 @@ include { CLAIR3 } from '../../modules/local/clair3/main.nf'
 include { LONGPHASE_PHASE } from '../../modules/nf-core/longphase/phase/main.nf'
 include { LONGPHASE_HAPLOTAG } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
-include { CLAIRS                    } from '../modules/local/clairs/main.nf'
-include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
-include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
+include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
+include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
