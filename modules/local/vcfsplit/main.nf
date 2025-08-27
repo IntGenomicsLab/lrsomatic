@@ -69,11 +69,11 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_nonsomatic.vcf.gz
-    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_nonsomatic.vcf.gz
-    tabix -p vcf indels_nonsomatic.vcf.gz
-    tabix -p vcf snv_nonsomatic.vcf.gz
-    bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_nonsomatic.vcf.gz snv_nonsomatic.vcf.gz
+    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_germline.vcf.gz
+    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_germline.vcf.gz
+    tabix -p vcf indels_germline.vcf.gz
+    tabix -p vcf snv_germline.vcf.gz
+    bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_germline.vcf.gz snv_germline.vcf.gz
     tabix -p vcf germline_tmp.vcf.gz
 
     bcftools view germline_tmp.vcf.gz | awk 'BEGIN{FS=OFS="\t"} /^#/ {print} !/^#/ { \$7="PASS"; print }' | \

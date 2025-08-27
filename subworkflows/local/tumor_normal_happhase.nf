@@ -120,7 +120,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
 
     GERMLINE_VEP (
-        CLAIR3.out.vcf,
+        [CLAIR3.out.vcf,[]],
         params.genome,
         "homo_sapiens",
         111,
@@ -293,7 +293,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     )
 
     SOMATIC_VEP (
-        CLAIRS.out.vcf,
+        [CLAIRS.out.vcf,[]],
         params.genome,
         "homo_sapiens",
         111,

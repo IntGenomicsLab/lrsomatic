@@ -341,7 +341,7 @@ workflow LR_SOMATIC {
 
 
     SV_VEP (
-        SEVERUS.out.all_vcf,
+        [SEVERUS.out.all_vcf,[]],
         params.genome,
         "homo_sapiens",
         111,

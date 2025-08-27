@@ -77,7 +77,7 @@ workflow TUMOR_ONLY_HAPPHASE {
 
 
     SOMATIC_VEP (
-        VCFSPLIT.out.somatic_vcf,
+        [VCFSPLIT.out.somatic_vcf,[]],
         params.genome,
         "homo_sapiens",
         111,
@@ -87,7 +87,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     )
 
     GERMLINE_VEP (
-        VCFSPLIT.out.germline_vcf,
+        [VCFSPLIT.out.germline_vcf,[]],
         params.genome,
         "homo_sapiens",
         111,
