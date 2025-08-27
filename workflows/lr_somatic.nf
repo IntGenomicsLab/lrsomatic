@@ -339,9 +339,15 @@ workflow LR_SOMATIC {
 
     ch_versions = ch_versions.mix(SEVERUS.out.versions)
 
-
+    SEVERUS.out.all_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { sv_vep }
+        
     SV_VEP (
-        [SEVERUS.out.all_vcf,[]],
+        sv_vep,
         params.genome,
         "homo_sapiens",
         111,

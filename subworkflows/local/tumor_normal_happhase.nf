@@ -118,9 +118,15 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                svs:  structural variant vcf (empty)
     //                mods: modcall-generated VCF with modifications (empty)
 
+    CLAIR3.out.vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { germline_vep }
 
     GERMLINE_VEP (
-        [CLAIR3.out.vcf,[]],
+        germline_vep,
         params.genome,
         "homo_sapiens",
         111,
@@ -291,9 +297,15 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fasta,
         fai
     )
-
+    CLAIRS.out.vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { somatic_vep }
+    
     SOMATIC_VEP (
-        [CLAIRS.out.vcf,[]],
+        somatic_vep,
         params.genome,
         "homo_sapiens",
         111,

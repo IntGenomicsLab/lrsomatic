@@ -75,9 +75,22 @@ workflow TUMOR_ONLY_HAPPHASE {
         .set{ tumor_bams_germlinevcf }
 
 
+    VCFSPLIT.out.somatic_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { somatic_vep }
+
+    VCFSPLIT.out.germline_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { germline_vep }
 
     SOMATIC_VEP (
-        [VCFSPLIT.out.somatic_vcf,[]],
+        somatic_vep,
         params.genome,
         "homo_sapiens",
         111,
@@ -87,7 +100,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     )
 
     GERMLINE_VEP (
-        [VCFSPLIT.out.germline_vcf,[]],
+        germline_vep,
         params.genome,
         "homo_sapiens",
         111,
