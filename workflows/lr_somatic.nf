@@ -364,7 +364,7 @@ workflow LR_SOMATIC {
         params.vep_species,
         params.vep_cache_version,
         params.vep_cache,
-        fasta,
+        ch_fasta,
         []
     )
 
