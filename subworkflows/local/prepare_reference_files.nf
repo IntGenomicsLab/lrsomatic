@@ -8,6 +8,8 @@ include { UNZIP as UNZIP_ALLELES         } from '../../modules/nf-core/unzip/mai
 include { UNZIP as UNZIP_GC              } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_LOCI            } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_RT              } from '../../modules/nf-core/unzip/main'
+include { UNTAR                          } from '../../modules/nf-core/untar/main'  
+include { WGET                           } from '../../modules/nf-core/wget/main'   
 
 workflow PREPARE_REFERENCE_FILES {
     take:
@@ -16,6 +18,7 @@ workflow PREPARE_REFERENCE_FILES {
         ascat_loci
         ascat_loci_gc
         ascat_loci_rt
+        basecall_meta
 
     main:
         ch_versions = Channel.empty()
@@ -34,6 +37,30 @@ workflow PREPARE_REFERENCE_FILES {
         } else {
             ch_prepared_fasta = [ [:], fasta ]
         }
+
+
+        basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
+            def meta_new = [id: basecall_model_meta]
+            def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
+            def url = "${download_prefix}/${basecall_model_meta}.tar.gz"
+            return [ meta_new, url ]
+            }
+            .set{ model_urls }
+        
+        WGET ( 
+            model_urls
+        )
+
+        ch_versions = ch_versions.mix(WGET.out.versions)
+
+
+        UNTAR (
+            WGET.out.outfile
+        )
+
+        ch_versions = ch_versions.mix(UNTAR.out.versions)
+
+        WGET.out.outfile.set{ downloaded_model_files }
 
         //
         // MODULE: Index the fasta
@@ -91,6 +118,7 @@ workflow PREPARE_REFERENCE_FILES {
         loci_files
         gc_file
         rt_file
+        downloaded_model_files
 
         versions = ch_versions
 }

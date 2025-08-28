@@ -162,12 +162,15 @@ workflow LR_SOMATIC {
         params.ascat_allele_files,
         params.ascat_loci_files,
         params.ascat_gc_files,
-        params.ascat_rt_files
+        params.ascat_rt_files,
+        basecall_meta
     )
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
+
+    downloaded_model_files = PREPARE_REFERENCE_FILES.out.downloaded_model_files
 
     // ASCAT files
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
@@ -302,7 +305,8 @@ workflow LR_SOMATIC {
         branched_minimap.paired,
         ch_fasta,
         ch_fai,
-        clair3_modelMap
+        clair3_modelMap,
+        downloaded_model_files
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
