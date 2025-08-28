@@ -83,7 +83,10 @@ workflow LR_SOMATIC {
     params.centromere_bed = getGenomeAttribute('centromere_bed')
     params.pon_file = getGenomeAttribute('pon_file')
     params.bed_file = getGenomeAttribute('bed_file')
-
+    params.vep_cache_version = getGenomeAttribute('vep_cache_version')
+    params.vep_genome = getGenomeAttribute('vep_genome')
+    params.vep_species = getGenomeAttribute('vep_species')
+    
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
