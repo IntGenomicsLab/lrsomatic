@@ -348,11 +348,11 @@ workflow LR_SOMATIC {
         
     SV_VEP (
         sv_vep,
-        params.genome,
-        "homo_sapiens",
-        111,
-        '',
-        ch_fasta,
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        params.vep_cache,
+        fasta,
         []
     )
 

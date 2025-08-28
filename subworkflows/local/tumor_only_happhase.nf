@@ -91,20 +91,20 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     SOMATIC_VEP (
         somatic_vep,
-        params.genome,
-        "homo_sapiens",
-        111,
-        '',
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        params.vep_cache,
         fasta,
         []
     )
 
     GERMLINE_VEP (
         germline_vep,
-        params.genome,
-        "homo_sapiens",
-        111,
-        '',
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        params.vep_cache,
         fasta,
         []
     )
