@@ -13,6 +13,10 @@ workflow TUMOR_ONLY_HAPPHASE {
     fasta
     fai
     clairSTO_modelMap
+    vep_genome
+    vep_species
+    vep_cache_version
+    vep_cache
 
     main:
 
@@ -91,20 +95,20 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     SOMATIC_VEP (
         somatic_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        params.vep_cache,
+        vep_genome,
+        vep_species,
+        vep_cache_version,
+        vep_cache,
         fasta,
         []
     )
 
     GERMLINE_VEP (
         germline_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        params.vep_cache,
+        vep_genome,
+        vep_species,
+        vep_cache_version,
+        vep_cache,
         fasta,
         []
     )

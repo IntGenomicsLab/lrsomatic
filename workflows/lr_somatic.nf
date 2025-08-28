@@ -86,7 +86,7 @@ workflow LR_SOMATIC {
     params.vep_cache_version = getGenomeAttribute('vep_cache_version')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
-    
+
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
@@ -304,7 +304,11 @@ workflow LR_SOMATIC {
         ch_fai,
         clair3_modelMap,
         clairs_modelMap,
-        downloaded_model_files
+        downloaded_model_files,
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        params.vep_cache
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
@@ -318,7 +322,12 @@ workflow LR_SOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairs_modelMap
+        clairs_modelMap,
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        params.vep_cache
+
     )
 
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)

@@ -13,6 +13,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fai
     clair3_modelMap
     clairs_modelMap
+    vep_genome
+    vep_species
+    vep_cache_version
+    vep_cache
     downloaded_model_files
 
     main:
@@ -127,10 +131,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     GERMLINE_VEP (
         germline_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        params.vep_cache,
+        vep_genome,
+        vep_species,
+        vep_cache_version,
+        vep_cache,
         fasta,
         []
     )
@@ -306,10 +310,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
     
     SOMATIC_VEP (
         somatic_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        params.vep_cache,
+        vep_genome,
+        vep_species,
+        vep_cache_version,
+        vep_cache,
         fasta,
         []
     )
