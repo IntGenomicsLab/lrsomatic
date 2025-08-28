@@ -41,6 +41,7 @@ workflow TUMOR_ONLY_HAPPHASE {
                 .join(CLAIRSTO.out.snv_vcf)
                 .set{ clairsto_vcf }
 
+    ch_versions = ch_versions.mix(CLAIRSTO.out.versions)
     // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 indel_vcf: vcf for indels
     //                 snv_vcf:   vcf for snvs
@@ -54,6 +55,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     VCFSPLIT (
         clairsto_vcf
     )
+    ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
 
     ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
 
@@ -85,6 +87,7 @@ workflow TUMOR_ONLY_HAPPHASE {
         fasta,
         fai
     )
+    ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
@@ -116,6 +119,7 @@ workflow TUMOR_ONLY_HAPPHASE {
         fasta,
         fai
     )
+    ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
@@ -133,6 +137,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     SAMTOOLS_INDEX (
         haplotagged_bams
     )
+    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
@@ -161,5 +166,4 @@ workflow TUMOR_ONLY_HAPPHASE {
     emit:
     tumor_only_severus
     versions = ch_versions
-
 }

@@ -20,6 +20,10 @@ workflow PREPARE_REFERENCE_FILES {
     main:
         ch_versions = Channel.empty()
         ch_prepared_fasta = Channel.empty()
+        allele_files = Channel.empty()
+        loci_files = Channel.empty()
+        gc_file = Channel.empty()
+        rt_file = Channel.empty()
 
         // Check if fasta and gtf are zipped
         if (fasta.endsWith('.gz')){
