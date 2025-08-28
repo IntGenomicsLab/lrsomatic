@@ -20,6 +20,10 @@ workflow PREPARE_REFERENCE_FILES {
     main:
         ch_versions = Channel.empty()
         ch_prepared_fasta = Channel.empty()
+        allele_files = Channel.empty()
+        loci_files = Channel.empty()
+        gc_file = Channel.empty()
+        rt_file = Channel.empty()
 
         // Check if fasta and gtf are zipped
         if (fasta.endsWith('.gz')){
@@ -30,24 +34,24 @@ workflow PREPARE_REFERENCE_FILES {
         } else {
             ch_prepared_fasta = [ [:], fasta ]
         }
-        
+
         //
         // MODULE: Index the fasta
         //
-        
-        SAMTOOLS_FAIDX ( 
+
+        SAMTOOLS_FAIDX (
             ch_prepared_fasta,
             [ [:], "$projectDir/assets/dummy_file.txt" ]
         )
-        
+
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai
-        
+
         ch_versions = ch_versions.mix(SAMTOOLS_FAIDX.out.versions)
-        
+
         //
         // Prepare ASCAT files
         //
-        
+
         // prepare ascat and controlfreec reference files
         if ( !params.skip_ascat ) {
             if (!ascat_alleles) allele_files = Channel.empty()
@@ -82,11 +86,11 @@ workflow PREPARE_REFERENCE_FILES {
     emit:
         prepped_fasta = ch_prepared_fasta
         prepped_fai = ch_prepared_fai
-        
+
         allele_files
         loci_files
         gc_file
         rt_file
-        
+
         versions = ch_versions
 }
