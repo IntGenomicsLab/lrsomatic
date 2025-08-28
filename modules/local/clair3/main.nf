@@ -4,7 +4,7 @@ process CLAIR3 {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/clair3:1.0.10--py39hd649744_1':
+        'https://depot.galaxyproject.org/singularity/clair3:1.2.0--py310h779eee5_0':
         'quay.io/biocontainers/clair3:1.2.0--py310h779eee5_0' }"
 
     input:
@@ -43,9 +43,6 @@ process CLAIR3 {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    wget ${download_prefix}/${packaged_model}.tar.gz
-    tar -xvzf ${model}.tar.gz
-
     run_clair3.sh \\
         --bam_fn=$bam \\
         --ref_fn=$reference \\
