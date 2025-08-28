@@ -446,7 +446,7 @@ workflow LR_SOMATIC {
     //
 
     if (!params.skip_wakhan) {
-        
+
         // Prepare input channel for WAKHAN
         severus_reformat
             .join(SEVERUS.out.all_vcf)
