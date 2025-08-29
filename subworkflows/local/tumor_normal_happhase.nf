@@ -38,7 +38,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             def basecall_model = meta.basecall_model
             return [ basecall_model, meta, bam, bai ]
         }
-        .view()
         .set { normal_bams_model }
 
     normal_bams_model
