@@ -37,7 +37,13 @@ workflow TUMOR_NORMAL_HAPPHASE {
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = meta.basecall_model
-            return [ basecall_model, meta, bam, bai ]
+            def new_meta = [id: meta.id,
+                            paired_data: meta.paired_data,
+                            platform: meta.platform,
+                            sex: meta.sex,
+                            fiber: meta.fiber,
+                            basecall_model: meta.basecall_model]
+            return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
 
@@ -145,7 +151,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
-
+    tumor_bams.view()
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
         .map { meta, bam, bai, vcf ->
@@ -156,7 +162,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
-
     // mixed_bams_vcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                   bam:  list of concatenated aligned bams
     //                   bai:  indexes for bam files
@@ -168,7 +173,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: LONGPHASE_HAPLOTAG
     //
     // haplotag tumor and normal bams with normal vcf files for both
-
     LONGPHASE_HAPLOTAG (
         mixed_bams_vcf,
         fasta,
@@ -215,7 +219,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return[new_meta , [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
+            return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
         .groupTuple()
         .map{ meta, bam, bai ->
