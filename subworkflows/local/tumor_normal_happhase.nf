@@ -10,6 +10,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fasta
     fai
     clair3_modelMap
+    clairs_modelMap
     downloaded_model_files
 
     main:
@@ -236,7 +237,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
-            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, model]
         }
         .set { clairs_input }
 

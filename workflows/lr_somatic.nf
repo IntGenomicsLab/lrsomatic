@@ -300,6 +300,7 @@ workflow LR_SOMATIC {
         ch_fasta,
         ch_fai,
         clair3_modelMap,
+        clairs_modelMap,
         downloaded_model_files
     )
 
