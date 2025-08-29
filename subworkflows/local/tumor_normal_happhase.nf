@@ -29,7 +29,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     downloaded_model_files
         .map{ meta, file -> 
             def basecall_model = meta.id
-            return [meta, basecall_model, file]
+            return [basecall_model, meta, file]
         }
         .view()
         .set{downloaded_model_files}
@@ -37,18 +37,18 @@ workflow TUMOR_NORMAL_HAPPHASE {
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = meta.basecall_model
-            return [ meta, basecall_model, bam, bai ]
+            return [ basecall_model, meta, bam, bai ]
         }
         .view()
         .set { normal_bams_model }
 
     normal_bams_model
-        .join(downloaded_model_files, by: 1)
-        .map{ meta, basecall_model, bam, bai, meta2, model ->
+        .join(downloaded_model_files)
+        .view()
+        .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
             return [meta, bam, bai, model, platform]
         }
-        .view()
         .set{normal_bams}
 
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
