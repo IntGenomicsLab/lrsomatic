@@ -31,6 +31,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             def basecall_model = meta.id
             return [meta, basecall_model, file]
         }
+        .view()
         .set{downloaded_model_files}
 
      mixed_bams.normal
@@ -38,6 +39,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             def basecall_model = meta.basecall_model
             return [ meta, basecall_model, bam, bai ]
         }
+        .view()
         .set { normal_bams_model }
 
     normal_bams_model
