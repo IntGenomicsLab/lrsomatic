@@ -163,7 +163,8 @@ workflow LR_SOMATIC {
         params.ascat_loci_files,
         params.ascat_gc_files,
         params.ascat_rt_files,
-        basecall_meta
+        basecall_meta,
+        clair3_modelMap
     )
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
