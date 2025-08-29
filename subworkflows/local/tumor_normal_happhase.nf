@@ -151,7 +151,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
-    tumor_bams.view()
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
         .map { meta, bam, bai, vcf ->
