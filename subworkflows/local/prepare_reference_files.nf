@@ -45,6 +45,7 @@ workflow PREPARE_REFERENCE_FILES {
             def url = "${download_prefix}/${basecall_model_meta}.tar.gz"
             return [ meta_new, url ]
             }
+            .unique()
             .set{ model_urls }
         
         WGET ( 
