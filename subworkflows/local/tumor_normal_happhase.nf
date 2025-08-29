@@ -92,7 +92,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(CLAIR3.out.vcf)
-        .map { meta, bam, bai, clair3_model, user_model, platform, vcf ->
+        .map { meta, bam, bai, clair3_model, platform, vcf ->
             def svs = []
             def mods = []
             return [meta, bam, bai, vcf, svs, mods]
@@ -126,7 +126,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(LONGPHASE_PHASE.out.vcf)
-        .map { meta, bam, bai, clair3_model, user_model, platform, vcf ->
+        .map { meta, bam, bai, clair3_model, platform, vcf ->
             def new_meta = meta + [type: "normal"]
             def snvs = []
             def mods = []
