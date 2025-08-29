@@ -44,7 +44,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
-        .view()
         .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
             return [meta, bam, bai, model, platform]
