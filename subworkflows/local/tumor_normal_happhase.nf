@@ -9,6 +9,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fasta
     fai
     clair3_modelMap
+    downloaded_model_files
 
     main:
 
@@ -24,17 +25,26 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Get normal bams and add platform/model info for Clair3 usage
     // remove type from so that information can be merged easier later
-    mixed_bams.normal
+
+    downloaded_model_files
+        .map{ meta, file -> 
+            def basecall_model = meta.id
+            return [basecall_model, meta, file]
+        }
+        .set{downloaded_model_files}
+
+     mixed_bams.normal
         .map{ meta, bam, bai ->
-            def new_meta = [id: meta.id,
-                            paired_data: meta.paired_data,
-                            platform: meta.platform,
-                            sex: meta.sex,
-                            fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
-            def clair3_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(meta.basecall_model.toString().trim()) : meta.clair3_model
+            def basecall_model = meta.basecall_model
+            return [ basecall_model, meta, bam, bai ]
+        }
+        .set { normal_bams_model }
+
+    normal_bams_model
+        .combine(downloaded_model_files,by:0)
+        .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
-            return[new_meta, bam, bai, clair3_model, [], platform]
+            return [meta, bam, bai, model, platform]
         }
         .set{normal_bams}
 
@@ -42,7 +52,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                bam:          list of concatenated aligned bams
     //                bai:          indexes for bam files
     //                clair3_model: clair3 model name
-    //                user_model:   user-defined model path (empty)
     //                platform:     name of sequencing platform
 
 
