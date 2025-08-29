@@ -8,7 +8,7 @@ process CLAIR3 {
         'quay.io/biocontainers/clair3:1.2.0--py310h779eee5_0' }"
 
     input:
-    tuple val(meta), path(bam), path(bai), val(packaged_model), path(user_model), val(platform)
+    tuple val(meta), path(bam), path(bai), path(model), val(platform)
     tuple val(meta2), path(reference)
     tuple val(meta3), path(index)
 
@@ -23,23 +23,7 @@ process CLAIR3 {
     task.ext.when == null || task.ext.when
 
     script:
-    def model = packaged_model
-    //if (!user_model) {
-    //    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
-    //        model = "\${CONDA_PREFIX}/bin/models/${packaged_model}"
-    //    }
-    //    else {
-    //        model = "/usr/local/bin/models/$packaged_model"
-    //    }
-    //}
-    //if (!packaged_model) {
-    //    model = "$user_model"
-    //}
-    //if (packaged_model && user_model) {
-    //    error "Two models specified $user_model and $packaged_model, specify one of them."
-    //}
-    // TODO: fix the channel structure so you don't have to do this
-    def download_prefix = ( model == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
+
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
