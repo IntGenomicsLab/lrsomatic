@@ -27,7 +27,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // remove type from so that information can be merged easier later
 
     downloaded_model_files
-        .map{ meta, file -> 
+        .map{ meta, file ->
             def basecall_model = meta.id
             return [basecall_model, meta, file]
         }
