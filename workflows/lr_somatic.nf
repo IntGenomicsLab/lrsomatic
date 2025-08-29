@@ -178,9 +178,6 @@ workflow LR_SOMATIC {
     gc_file = PREPARE_REFERENCE_FILES.out.gc_file
     rt_file = PREPARE_REFERENCE_FILES.out.rt_file
 
-
-    ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
-
     //
     // MODULE: FIBERTOOLSRS_PREDICTM6A
     //
@@ -450,7 +447,7 @@ workflow LR_SOMATIC {
     //
 
     if (!params.skip_wakhan) {
-        
+
         // Prepare input channel for WAKHAN
         severus_reformat
             .join(SEVERUS.out.all_vcf)

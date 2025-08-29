@@ -8,8 +8,8 @@ include { UNZIP as UNZIP_ALLELES         } from '../../modules/nf-core/unzip/mai
 include { UNZIP as UNZIP_GC              } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_LOCI            } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_RT              } from '../../modules/nf-core/unzip/main'
-include { UNTAR                          } from '../../modules/nf-core/untar/main'  
-include { WGET                           } from '../../modules/nf-core/wget/main'   
+include { UNTAR                          } from '../../modules/nf-core/untar/main'
+include { WGET                           } from '../../modules/nf-core/wget/main'
 
 workflow PREPARE_REFERENCE_FILES {
     take:
@@ -47,13 +47,21 @@ workflow PREPARE_REFERENCE_FILES {
             }
             .unique()
             .set{ model_urls }
-        
-        WGET ( 
+
+        //
+        // MODULE: Download model
+        //
+
+        WGET (
             model_urls
         )
 
         ch_versions = ch_versions.mix(WGET.out.versions)
 
+        //
+        //
+        // MODULE: Untar model
+        //
 
         UNTAR (
             WGET.out.outfile
