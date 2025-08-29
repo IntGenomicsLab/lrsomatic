@@ -60,7 +60,7 @@ workflow PREPARE_REFERENCE_FILES {
 
         ch_versions = ch_versions.mix(UNTAR.out.versions)
 
-        WGET.out.outfile.set{ downloaded_model_files }
+        UNTAR.out.untar.set { downloaded_model_files }
 
         //
         // MODULE: Index the fasta
