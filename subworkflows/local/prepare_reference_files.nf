@@ -19,6 +19,7 @@ workflow PREPARE_REFERENCE_FILES {
         ascat_loci_gc
         ascat_loci_rt
         basecall_meta
+        clair3_modelMap
 
     main:
         ch_versions = Channel.empty()
@@ -41,8 +42,9 @@ workflow PREPARE_REFERENCE_FILES {
 
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
             def meta_new = [id: basecall_model_meta]
+            def model = clair3_modelMap.get(meta.basecall_model.toString().trim())
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
-            def url = "${download_prefix}/${basecall_model_meta}.tar.gz"
+            def url = "${download_prefix}/${model}.tar.gz"
             return [ meta_new, url ]
             }
             .unique()
