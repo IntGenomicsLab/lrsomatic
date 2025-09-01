@@ -41,8 +41,6 @@ workflow PREPARE_REFERENCE_FILES {
 
         
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
-        basecall_meta
-            .map { meta, basecall_model_meta, kinetics_meta ->
             def meta_new = [id: basecall_model_meta]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
@@ -51,7 +49,7 @@ workflow PREPARE_REFERENCE_FILES {
         }
         .unique()
         .set{ model_urls }
-        }
+
 
         //
         // MODULE: Download model
