@@ -27,7 +27,7 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
-    
+
     output:
     tuple val(meta), path("*/*_genes_genome.html")                              , emit: genes_genome_html
     tuple val(meta), path("*/*_genes_genome.pdf")                               , emit: genes_genome_pdf

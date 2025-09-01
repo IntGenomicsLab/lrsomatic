@@ -42,25 +42,23 @@ workflow PREPARE_REFERENCE_FILES {
 
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
             def meta_new = [id: basecall_model_meta]
-            def model = clair3_modelMap.get(meta.basecall_model.toString().trim())
+            def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
             def url = "${download_prefix}/${model}.tar.gz"
             return [ meta_new, url ]
-            }
-            .unique()
-            .set{ model_urls }
+        }
+        .unique()
+        .set{ model_urls }
+
 
         //
         // MODULE: Download model
         //
 
-        WGET (
-            model_urls
-        )
+        WGET ( model_urls )
 
         ch_versions = ch_versions.mix(WGET.out.versions)
 
-        //
         //
         // MODULE: Untar model
         //
@@ -79,7 +77,8 @@ workflow PREPARE_REFERENCE_FILES {
 
         SAMTOOLS_FAIDX (
             ch_prepared_fasta,
-            [ [:], "$projectDir/assets/dummy_file.txt" ]
+            [ [:], "$projectDir/assets/dummy_file.txt" ],
+            false
         )
 
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai

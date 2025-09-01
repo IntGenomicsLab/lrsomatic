@@ -16,7 +16,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [minimap2/index](#minimap2) - Creating minimap2 index
 - [minimap2/align](#minimap2) - Aligning long-read samples to the reference genome
 - [Cramino](#cramino) - Quality check the aligned or unaligned lomg read bam files
-- [Modkit](#modkit) - Tool to process methylation data 
+- [Modkit](#modkit) - Tool to process methylation data
 - [Mosdepth](#mosdepth) - Tool to check the sequencing depth
 - [ClairS-TO](#clairsto) - Small Variant Calling for Tumour only samples
 - [Severus](#severus) - Tool to call somatic and germline structural variants
@@ -31,6 +31,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 [ClairS-TO](https://github.com/HKU-BAL/ClairS-TO) ool in the Clair series to support long-read somatic small variant calling with only tumor samples available. For more information, see <https://github.com/HKU-BAL/ClairS-TO>.
 
 ### Cramino
+
 <details markdown="1">
 <summary>Output files</summary>
 
@@ -41,23 +42,22 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 [Cramino](https://github.com/wdecoster/cramino) is a tool for fast quality check of aligned or unaligned long read sequencing bam files. For more information, check <https://github.com/wdecoster/cramino>.
 
-
-
 ### Modkit
+
 <details markdown="1">
 <summary>Output files</summary>
 
 - `modkit/`
   - `*.bed`: bed file with genomic positions with modified bases
   - `*.bedgraph`: bedgraph file with genomic positions with modified bases
-  - `*log`: log file 
+  - `*log`: log file
 
 </details>
 
 [Modkit](https://github.com/nanoporetech/modkit) is a tool to work with methylated bases from bam files. It allows you to update the bam file modification information, filter the information, or to extract it to other file formarts such as bed file. For more information, see <https://github.com/nanoporetech/modkit>.
 
-
 ### Mosdepth
+
 <details markdown="1">
 <summary>Output files</summary>
 
@@ -85,29 +85,31 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 </details>
 
 ### Severus
+
 <details markdown="1">
 <summary>Output files</summary>
 
 - `severus`
- - `severus.log`: severus log file
- - `read_qual.txt`: the read quality
- - `breakpoints_double.csv`: the breakpoint file
+- `severus.log`: severus log file
+- `read_qual.txt`: the read quality
+- `breakpoints_double.csv`: the breakpoint file
 
 </details>
 
 [Severus](https://github.com/KolmogorovLab/Severus) is a tool to call not only somatic, but also germline structural variant calls. For mor information on the tool and its usage, check out <https://github.com/KolmogorovLab/Severus>.
 
 ### Longphase
+
 <details markdown="1">
 <summary>Output files</summary>
 
 TODO - add description ot output file
+
 - `longphase/`
 
 </details>
 
 [Longphase](https://github.com/twolinin/longphase) isa tool to phase your input variant calls and haplotag your bam. To see more, see <https://github.com/twolinin/longphase>.
-
 
 ### MultiQC
 
