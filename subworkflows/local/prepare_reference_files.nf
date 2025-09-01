@@ -39,7 +39,7 @@ workflow PREPARE_REFERENCE_FILES {
             ch_prepared_fasta = [ [:], fasta ]
         }
 
-        
+
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
             def meta_new = [id: basecall_model_meta]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
