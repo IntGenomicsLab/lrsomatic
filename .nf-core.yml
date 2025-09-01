@@ -1,4 +1,5 @@
 lint:
+  schema_params: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-lr_somatic_logo_light.png

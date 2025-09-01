@@ -1,7 +1,8 @@
-include { CLAIR3 } from '../../modules/local/clair3/main.nf'
-include { LONGPHASE_PHASE } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_HAPLOTAG } from '../../modules/nf-core/longphase/haplotag/main.nf'
-include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIR3                } from '../../modules/local/clair3/main.nf'
+include { LONGPHASE_PHASE       } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_HAPLOTAG    } from '../../modules/nf-core/longphase/haplotag/main.nf'
+include { SAMTOOLS_INDEX        } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIRS                }  from '../../modules/local/clairs/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -9,6 +10,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fasta
     fai
     clair3_modelMap
+    clairs_modelMap
     downloaded_model_files
 
     main:
@@ -27,7 +29,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // remove type from so that information can be merged easier later
 
     downloaded_model_files
-        .map{ meta, file -> 
+        .map{ meta, file ->
             def basecall_model = meta.id
             return [basecall_model, meta, file]
         }
@@ -36,7 +38,13 @@ workflow TUMOR_NORMAL_HAPPHASE {
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = meta.basecall_model
-            return [ basecall_model, meta, bam, bai ]
+            def new_meta = [id: meta.id,
+                            paired_data: meta.paired_data,
+                            platform: meta.platform,
+                            sex: meta.sex,
+                            fiber: meta.fiber,
+                            basecall_model: meta.basecall_model]
+            return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
 
@@ -113,7 +121,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Phase normals
 
     LONGPHASE_PHASE (
-        normalbams_germlinevcf,
+        normal_bams_germlinevcf,
         fasta,
         fai
     )
@@ -144,7 +152,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
-
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
         .map { meta, bam, bai, vcf ->
@@ -155,7 +162,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
-
     // mixed_bams_vcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                   bam:  list of concatenated aligned bams
     //                   bai:  indexes for bam files
@@ -167,7 +173,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: LONGPHASE_HAPLOTAG
     //
     // haplotag tumor and normal bams with normal vcf files for both
-
     LONGPHASE_HAPLOTAG (
         mixed_bams_vcf,
         fasta,
@@ -214,7 +219,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return[new_meta , [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
+            return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
         .groupTuple()
         .map{ meta, bam, bai ->
@@ -226,8 +231,27 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai ]
         }
         .join(LONGPHASE_PHASE.out.vcf)
-        .set{ tumor_normal_severus }
+        .set{tumor_normal_severus}
 
+    // Get ClairS input channel
+    tumor_normal_severus
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, model]
+        }
+        .set { clairs_input }
+
+    //
+    // MODULE: CLAIRS
+    //
+
+    CLAIRS (
+        clairs_input,
+        fasta,
+        fai
+    )
+
+    ch_versions = ch_versions.mix(CLAIRS.out.versions)
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files

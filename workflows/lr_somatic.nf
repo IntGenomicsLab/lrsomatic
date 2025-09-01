@@ -15,16 +15,12 @@ include { getGenomeAttribute        } from '../subworkflows/local/utils_nfcore_l
 //
 include { SAMTOOLS_CAT              } from '../modules/nf-core/samtools/cat/main'
 include { MINIMAP2_INDEX            } from '../modules/nf-core/minimap2/index/main'
-include { CLAIRSTO                  } from '../modules/local/clairsto/main'
-include { CLAIRS                    } from '../modules/local/clairs/main.nf'
 include { MINIMAP2_ALIGN            } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE    } from '../modules/local/cramino/main'
 include { CRAMINO as CRAMINO_POST   } from '../modules/local/cramino/main'
 include { MOSDEPTH                  } from '../modules/nf-core/mosdepth/main'
 include { ASCAT                     } from '../modules/nf-core/ascat/main'
 include { CLAIR3                    } from '../modules/local/clair3/main'
-include { LONGPHASE_PHASE           } from '../modules/nf-core/longphase/phase/main'
-include { LONGPHASE_HAPLOTAG        } from '../modules/nf-core/longphase/haplotag/main'
 include { SEVERUS                   } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT               } from '../modules/local/metaextract/main'
 include { WAKHAN                    } from '../modules/local/wakhan/main'
@@ -304,6 +300,7 @@ workflow LR_SOMATIC {
         ch_fasta,
         ch_fai,
         clair3_modelMap,
+        clairs_modelMap,
         downloaded_model_files
     )
 
@@ -329,25 +326,6 @@ workflow LR_SOMATIC {
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
-    // Get ClairS input channel
-    TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-            def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
-            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
-        }
-        .set { clairs_input }
-
-    //
-    // MODULE: CLAIRS
-    //
-
-    CLAIRS (
-        clairs_input,
-        ch_fasta,
-        ch_fai
-    )
-
-    ch_versions = ch_versions.mix(CLAIRS.out.versions)
 
     //
     // MODULE: SEVERUS
