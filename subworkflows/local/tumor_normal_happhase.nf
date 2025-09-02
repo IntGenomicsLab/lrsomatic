@@ -125,7 +125,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIR3.out.vcf
         .map { meta, vcf ->
             def extra = []
-            return [meta,vcf, extra]
+            return [meta, vcf, extra]
         }
         .set { germline_vep }
 
