@@ -345,6 +345,38 @@ workflow LR_SOMATIC {
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
     somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
 
+    if (!params.skip_vep) {
+        //
+        // MODULE: GERMLINE_VEP
+        //
+
+        GERMLINE_VEP (
+            germline_vep,
+            params.vep_genome,
+            params.vep_species,
+            params.vep_cache_version,
+            vep_cache,
+            ch_fasta,
+            []
+        )
+
+        //
+        // MODULE: SOMATIC_VEP
+        //
+
+        SOMATIC_VEP (
+            somatic_vep,
+            params.vep_genome,
+            params.vep_species,
+            params.vep_cache_version,
+            vep_cache,
+            ch_fasta,
+            []
+        )
+
+        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
+        ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
+    }
     GERMLINE_VEP (
         germline_vep,
         params.vep_genome,
