@@ -297,8 +297,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     emit:
     tumor_normal_severus
-    somatic_vep as somatic_vep
-    germline_vep as germline_vep
+    somatic_vep
+    germline_vep
     versions = ch_versions
 
 }

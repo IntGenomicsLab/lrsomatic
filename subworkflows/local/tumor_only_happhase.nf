@@ -184,8 +184,8 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     emit:
     tumor_only_severus
-    somatic_vep as somatic_vep
-    germline_vep as germline_vep
+    somatic_vep
+    germline_vep
     versions = ch_versions
 
 }
