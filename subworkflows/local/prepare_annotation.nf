@@ -23,7 +23,7 @@ workflow PREPARE_ANNOTATION {
 
 	}
 	else if (!vep_cache) {
-		def vep_species_suffix = vep_custom_args.contains("--merged") ? '_merged' : (vep_custom_args.contains("--refseq") ? '_refseq' : '')
+		def vep_species_suffix = vep_args.contains("--merged") ? '_merged' : (vep_args.contains("--refseq") ? '_refseq' : '')
 		def vep_cache_path_suffix = "${vep_cache_version}_${vep_genome}"
 		def vep_cache_dir = "${vep_cache_path_suffix}${vep_species}${vep_species_suffix}/${vep_cache_version}_${vep_genome}"
         def vep_cache_path_full = file("$vep_cache/$vep_cache_dir", type: 'dir')
