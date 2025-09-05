@@ -374,25 +374,7 @@ workflow LR_SOMATIC {
         ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
         ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
     }
-    GERMLINE_VEP (
-        germline_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        vep_cache,
-        ch_fasta,
-        []
-    )
 
-    SOMATIC_VEP (
-        somatic_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        vep_cache,
-        ch_fasta,
-        []
-    )
 
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
 
