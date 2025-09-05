@@ -11,6 +11,16 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/ascat/ascat.diff"
                     },
+                    "ensemblvep/download": {
+                        "branch": "master",
+                        "git_sha": "2fcc53751152a999bfc9c24f75f494b9e5bb338f",
+                        "installed_by": ["modules"]
+                    },
+                    "ensemblvep/vep": {
+                        "branch": "master",
+                        "git_sha": "48ca3de1737b0144aa9fe05bea2b681f0ae45a95",
+                        "installed_by": ["modules"]
+                    },
                     "longphase/haplotag": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
@@ -89,7 +99,17 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/severus/severus.diff"
                     },
+                    "untar": {
+                        "branch": "master",
+                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "installed_by": ["modules"]
+                    },
                     "unzip": {
+                        "branch": "master",
+                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "installed_by": ["modules"]
+                    },
+                    "wget": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
                         "installed_by": ["modules"]

@@ -28,11 +28,14 @@ include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predic
 include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
 include { FIBERTOOLSRS_NUCLEOSOMES  } from '../modules/local/fibertoolsrs/nucleosomes'
 include { FIBERTOOLSRS_QC           } from '../modules/local/fibertoolsrs/qc'
+include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
+include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
 include {ENSEMBLVEP_VEP as SV_VEP} from '../modules/nf-core/ensemblvep/vep/main.nf'
 //
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES   } from '../subworkflows/local/prepare_reference_files'
+include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annotation'
 include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
 include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
@@ -83,7 +86,6 @@ workflow LR_SOMATIC {
     params.centromere_bed = getGenomeAttribute('centromere_bed')
     params.pon_file = getGenomeAttribute('pon_file')
     params.bed_file = getGenomeAttribute('bed_file')
-    params.vep_cache_version = getGenomeAttribute('vep_cache_version')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
 
@@ -165,6 +167,23 @@ workflow LR_SOMATIC {
         basecall_meta,
         clair3_modelMap
     )
+
+    vep_cache = Channel.empty()
+
+    if (! params.skip_vep) {
+        PREPARE_ANNOTATION (
+            params.vep_cache,
+            params.vep_cache_aws_base,
+            params.vep_cache_version,
+            params.vep_genome,
+            params.vep_args,
+            params.vep_species,
+            params.download_vep_cache
+        )
+
+        vep_cache = PREPARE_ANNOTATION.out.vep_cache
+
+    }
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
@@ -304,11 +323,7 @@ workflow LR_SOMATIC {
         ch_fai,
         clair3_modelMap,
         clairs_modelMap,
-        downloaded_model_files,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        params.vep_cache
+        downloaded_model_files
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
@@ -323,11 +338,31 @@ workflow LR_SOMATIC {
         ch_fasta,
         ch_fai,
         clairs_modelMap,
+        params.skip_vep
+
+    )
+
+    germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
+    somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
+
+    GERMLINE_VEP (
+        germline_vep,
         params.vep_genome,
         params.vep_species,
         params.vep_cache_version,
-        params.vep_cache
+        vep_cache,
+        ch_fasta,
+        []
+    )
 
+    SOMATIC_VEP (
+        somatic_vep,
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        vep_cache,
+        ch_fasta,
+        []
     )
 
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
@@ -363,7 +398,7 @@ workflow LR_SOMATIC {
         params.vep_genome,
         params.vep_species,
         params.vep_cache_version,
-        params.vep_cache,
+        vep_cache,
         ch_fasta,
         []
     )

@@ -3,8 +3,6 @@ include { LONGPHASE_PHASE } from '../../modules/nf-core/longphase/phase/main.nf'
 include { LONGPHASE_HAPLOTAG } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
-include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
-include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -13,10 +11,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fai
     clair3_modelMap
     clairs_modelMap
-    vep_genome
-    vep_species
-    vep_cache_version
-    vep_cache
     downloaded_model_files
 
     main:
@@ -128,16 +122,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { germline_vep }
-
-    GERMLINE_VEP (
-        germline_vep,
-        vep_genome,
-        vep_species,
-        vep_cache_version,
-        vep_cache,
-        fasta,
-        []
-    )
 
     //
     // MODULE: LONGPHASE_PHASE
@@ -301,27 +285,20 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fasta,
         fai
     )
+
     CLAIRS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta,vcf, extra]
         }
         .set { somatic_vep }
-    
-    SOMATIC_VEP (
-        somatic_vep,
-        vep_genome,
-        vep_species,
-        vep_cache_version,
-        vep_cache,
-        fasta,
-        []
-    )
 
     ch_versions = ch_versions.mix(CLAIRS.out.versions)
 
     emit:
     tumor_normal_severus
+    somatic_vep as somatic_vep
+    germline_vep as germline_vep
     versions = ch_versions
 
 }

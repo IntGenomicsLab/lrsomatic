@@ -3,8 +3,6 @@ include { VCFSPLIT                  } from '../../modules/local/vcfsplit/main.nf
 include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phase/main'
 include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
-include {ENSEMBLVEP_VEP as SOMATIC_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
-include {ENSEMBLVEP_VEP as GERMLINE_VEP} from '../../modules/nf-core/ensemblvep/vep/main.nf'
 
 workflow TUMOR_ONLY_HAPPHASE {
 
@@ -13,10 +11,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     fasta
     fai
     clairSTO_modelMap
-    vep_genome
-    vep_species
-    vep_cache_version
-    vep_cache
 
     main:
 
@@ -94,27 +88,6 @@ workflow TUMOR_ONLY_HAPPHASE {
         }
         .view()
         .set { germline_vep }
-
-    SOMATIC_VEP (
-        somatic_vep,
-        vep_genome,
-        vep_species,
-        vep_cache_version,
-        vep_cache,
-        fasta,
-        []
-    )
-
-    GERMLINE_VEP (
-        germline_vep,
-        vep_genome,
-        vep_species,
-        vep_cache_version,
-        vep_cache,
-        fasta,
-        []
-    )
-
 
     // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                           bam:  list of concatenated aligned bams
@@ -211,6 +184,8 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     emit:
     tumor_only_severus
+    somatic_vep as somatic_vep
+    germline_vep as germline_vep
     versions = ch_versions
 
 }
