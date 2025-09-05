@@ -173,7 +173,6 @@ workflow LR_SOMATIC {
     if (! params.skip_vep) {
         PREPARE_ANNOTATION (
             params.vep_cache,
-            params.vep_cache_aws_base,
             params.vep_cache_version,
             params.vep_genome,
             params.vep_args,
