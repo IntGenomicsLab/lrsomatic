@@ -45,7 +45,7 @@ workflow PREPARE_ANNOTATION {
 
 
 	emit:
-	ch_vep_cache as vep_cache
-	ch_versions as versions
+	vep_cache = ensemblvep_cache
+	versions = ch_versions 
 
 }
