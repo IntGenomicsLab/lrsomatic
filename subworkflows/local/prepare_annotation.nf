@@ -13,6 +13,7 @@ workflow PREPARE_ANNOTATION {
 	main:
 
 	ch_versions = Channel.empty()
+	ensemblvep_cache = Channel.empty()
 	
 	if (download_vep_cache) {
 		vep_download_info = Channel.of([[],vep_genome, vep_species, vep_cache_version])
@@ -33,6 +34,7 @@ workflow PREPARE_ANNOTATION {
                 error("Path provided with VEP cache is invalid.\nMake sure there is a directory named ${vep_cache_dir} in ${vep_cache}./n")
             }
         }
+
         ensemblvep_cache = Channel.fromPath(file("${vep_cache}/${vep_annotation_cache_key}"), checkIfExists: true).collect()
 	}
 
