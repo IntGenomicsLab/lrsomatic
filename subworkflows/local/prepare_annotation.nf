@@ -30,7 +30,7 @@ workflow PREPARE_ANNOTATION {
             if (vep_cache == "s3://annotation-cache/vep_cache/") {
                 error("This path is not available within annotation-cache.\nPlease check https://annotation-cache.github.io/ to create a request for it.")
             } else {
-                error("Path provided with VEP cache is invalid.\nMake sure there is a directory named ${vep_cache_dir} in ${vep_cache}./n${help_message}")
+                error("Path provided with VEP cache is invalid.\nMake sure there is a directory named ${vep_cache_dir} in ${vep_cache}./n$")
             }
         }
         ensemblvep_cache = Channel.fromPath(file("${vep_cache}/${vep_annotation_cache_key}"), checkIfExists: true).collect()
