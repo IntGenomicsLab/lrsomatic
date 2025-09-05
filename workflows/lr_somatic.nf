@@ -336,7 +336,6 @@ workflow LR_SOMATIC {
         ch_fasta,
         ch_fai,
         clairs_modelMap,
-        params.skip_vep
 
     )
 
