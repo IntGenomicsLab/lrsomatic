@@ -171,12 +171,16 @@ workflow LR_SOMATIC {
 
     if (! params.skip_vep) {
 
-        params.vep_cache.view()
-        params.vep_cache_version.view()
-        params.vep_genome.view()
-        params.vep_args.view() 
-        params.vep_species.view()
-        params.download_vep_cache.view()
+        Channel
+            .of([
+                vep_cache:          params.vep_cache,
+                vep_cache_version:  params.vep_cache_version,
+                vep_genome:         params.vep_genome,
+                vep_args:           params.vep_args,
+                vep_species:        params.vep_species,
+                download_vep_cache: params.download_vep_cache
+            ])
+            .view()
 
         PREPARE_ANNOTATION (
             params.vep_cache,
