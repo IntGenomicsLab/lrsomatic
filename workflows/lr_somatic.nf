@@ -169,7 +169,7 @@ workflow LR_SOMATIC {
 
     vep_cache = Channel.empty()
 
-    if (!params.skip_vep) {
+    //if (!params.skip_vep) {
 
         Channel
             .of([
@@ -193,7 +193,7 @@ workflow LR_SOMATIC {
 
         vep_cache = PREPARE_ANNOTATION.out.vep_cache
 
-    }
+    //}
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
