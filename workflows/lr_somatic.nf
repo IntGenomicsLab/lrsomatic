@@ -169,7 +169,7 @@ workflow LR_SOMATIC {
 
     vep_cache = Channel.empty()
 
-    if (! params.skip_vep) {
+    if (!params.skip_vep) {
 
         Channel
             .of([
