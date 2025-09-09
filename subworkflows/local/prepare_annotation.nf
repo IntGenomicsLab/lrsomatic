@@ -22,7 +22,7 @@ workflow PREPARE_ANNOTATION {
 			ch_versions = ch_versions.mix(ENSEMBLVEP_DOWNLOAD.out.versions)
 
 		}
-		else if (!vep_cache) {
+		else {
 			def vep_annotation_cache_key = (vep_cache == "s3://annotation-cache/vep_cache/") ? "${vep_cache_version}_${vep_genome}/" : ""
 			def vep_species_suffix = vep_args.contains("--merged") ? '_merged' : (vep_args.contains("--refseq") ? '_refseq' : '')
 			def vep_cache_dir = "${vep_annotation_cache_key}${vep_species}${vep_species_suffix}/${vep_cache_version}_${vep_genome}"
