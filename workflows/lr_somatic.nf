@@ -170,6 +170,14 @@ workflow LR_SOMATIC {
     vep_cache = Channel.empty()
 
     if (! params.skip_vep) {
+
+        params.vep_cache.view()
+        params.vep_cache_version.view()
+        params.vep_genome.view()
+        params.vep_args.view() 
+        params.vep_species.view()
+        params.download_vep_cache.view()
+
         PREPARE_ANNOTATION (
             params.vep_cache,
             params.vep_cache_version,
