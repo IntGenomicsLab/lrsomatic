@@ -239,6 +239,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai ]
         }
         .join(LONGPHASE_PHASE.out.vcf)
+        .join(LONGPHASE_PHASE.out.vcf.tbi)
         .set{tumor_normal_severus}
 
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
@@ -251,7 +252,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
       // Get ClairS input channel
 
     tumor_normal_severus
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }

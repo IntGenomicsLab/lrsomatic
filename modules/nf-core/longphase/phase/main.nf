@@ -15,6 +15,7 @@ process LONGPHASE_PHASE {
 
     output:
     tuple val(meta), path("*.vcf.gz"), emit: vcf
+    tuple val(meta), path("*.vcf.gz.tbi"), emit: tbi
     path "versions.yml"              , emit: versions
 
     when:
@@ -43,6 +44,8 @@ process LONGPHASE_PHASE {
         --threads $task.cpus \\
         $args2 \\
         ${prefix}.vcf
+    
+    tabix -p vcf ${prefix}.vcf.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -55,6 +58,7 @@ process LONGPHASE_PHASE {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | bgzip -c > ${prefix}.vcf.gz
+    echo "" > ${prefix}.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

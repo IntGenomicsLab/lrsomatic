@@ -8,7 +8,7 @@ process SEVERUS {
         'biocontainers/severus:1.6--pyhdfd78af_0' }"
 
     input:
-    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf)
+    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
     tuple val(meta2), path(bed), path(pon_path)
 
     output:
