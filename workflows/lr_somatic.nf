@@ -368,6 +368,8 @@ workflow LR_SOMATIC {
             ch_fasta,
             []
         )
+        
+        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
 
         //
         // MODULE: SOMATIC_VEP
@@ -383,7 +385,6 @@ workflow LR_SOMATIC {
             []
         )
 
-        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
         ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
     }
 
@@ -415,8 +416,8 @@ workflow LR_SOMATIC {
             return [meta,vcf, extra]
         }
         .set { sv_vep }
-        
-    SV_VEP (
+    if(!params.skip_vep) {
+        SV_VEP (
         sv_vep,
         params.vep_genome,
         params.vep_species,
@@ -425,6 +426,10 @@ workflow LR_SOMATIC {
         ch_fasta,
         []
     )
+
+        ch_versions = ch_versions.mix(SV_VEP.out.versions)
+    }
+    
 
     //
     // MODULE: CRAMINO
