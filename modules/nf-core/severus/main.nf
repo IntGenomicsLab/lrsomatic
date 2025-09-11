@@ -53,10 +53,10 @@ process SEVERUS {
         $phasing_vcf \\
         --out-dir ${prefix}
     
-    bgzip -c ./somatic_SVs/severus_somatic.vcf
-    tabix -p vcf ./somatic_SVs/severus_somatic.vcf.gz
-    bgzip -c ./all_SVs/severus_all.vcf
-    tabix -p vcf ./all_SVs/severus_all.vcf.gz
+    bgzip -c ${prefix}/somatic_SVs/severus_somatic.vcf
+    tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    bgzip -c ${prefix}/all_SVs/severus_all.vcf
+    tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
 
 
     cat <<-END_VERSIONS > versions.yml
@@ -80,12 +80,14 @@ process SEVERUS {
     touch ${prefix}/read_ids.csv
     touch ${prefix}/read_qual.txt
     touch ${prefix}/breakpoints_double.csv
-    touch ${prefix}/all_SVs/severus_all.vcf
+    touch ${prefix}/all_SVs/severus_all.vcf.gz
+    touch ${prefix}/all_SVs/severus_all.vcf.gz.tbi
     touch ${prefix}/all_SVs/breakpoints_clusters_list.tsv
     touch ${prefix}/all_SVs/breakpoints_clusters.tsv
     touch ${prefix}/all_SVs/plots/severus_0.html
     touch ${prefix}/all_SVs/plots/severus_1.html
-    touch ${prefix}/somatic_SVs/severus_somatic.vcf
+    touch ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    touch ${prefix}/somatic_SVs/severus_somatic.vcf.gz.tbi
     touch ${prefix}/somatic_SVs/breakpoints_clusters_list.tsv
     touch ${prefix}/somatic_SVs/breakpoints_clusters.tsv
     touch ${prefix}/somatic_SVs/plots/severus_0.html
