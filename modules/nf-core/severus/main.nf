@@ -53,9 +53,9 @@ process SEVERUS {
         $phasing_vcf \\
         --out-dir ${prefix}
     
-    bgzip -c ${prefix}/somatic_SVs/severus_somatic.vcf
+    bgzip -c ${prefix}/somatic_SVs/severus_somatic.vcf > ${prefix}/somatic_SVs/severus_somatic.vcf.gz
     tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
-    bgzip -c ${prefix}/all_SVs/severus_all.vcf
+    bgzip -c ${prefix}/all_SVs/severus_all.vcf > ${prefix}/all_SVs/severus_all.vcf.gz
     tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
 
 
