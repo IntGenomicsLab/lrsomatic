@@ -164,7 +164,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.vcf)
-        .join(LONGPHASE_PHASE.out.vcf.tbi)
+        .join(LONGPHASE_PHASE.out.tbi)
         .map{meta, hap_bam, hap_bai, vcf,tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
