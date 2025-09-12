@@ -86,7 +86,6 @@ workflow TUMOR_ONLY_HAPPHASE {
             def extra = []
             return [meta,vcf, extra]
         }
-        .view()
         .set { germline_vep }
 
     // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
