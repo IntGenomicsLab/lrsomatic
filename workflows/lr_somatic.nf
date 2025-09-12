@@ -180,7 +180,6 @@ workflow LR_SOMATIC {
                 vep_species:        params.vep_species,
                 download_vep_cache: params.download_vep_cache
             ])
-            .view()
 
         PREPARE_ANNOTATION (
             params.vep_cache,
@@ -594,8 +593,8 @@ workflow LR_SOMATIC {
     )
 
     emit:
-    multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+        multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+        versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 
 
