@@ -30,6 +30,7 @@ include { FIBERTOOLSRS_QC                } from '../modules/local/fibertoolsrs/q
 include { ENSEMBLVEP_VEP as SOMATIC_VEP  } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP       } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include {ANNOTSV_ANNOTSV                 } from '../modules/local/annotsv/annotsv/main'
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -38,6 +39,7 @@ include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annota
 include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
 include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
+
 
 
 
@@ -189,7 +191,7 @@ workflow LR_SOMATIC {
             params.vep_species,
             params.download_vep_cache
         )
-
+        ch_versions = ch_versions.mix(PREPARE_ANNOTATION.out.versions)
         vep_cache = PREPARE_ANNOTATION.out.vep_cache
 
     }
@@ -424,6 +426,8 @@ workflow LR_SOMATIC {
         ch_fasta,
         []
     )
+
+
 
         ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
