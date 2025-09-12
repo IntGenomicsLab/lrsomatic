@@ -3,14 +3,12 @@ process VCFSPLIT {
     tag "$meta.id"
     label 'process_single'
 
-
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/bcftools:1.20--h8b25389_0':
         'biocontainers/bcftools:1.20--h8b25389_0' }"
 
     input:
-
     tuple val(meta), path(snv_vcf), path(indel_vcf)
 
     output:
