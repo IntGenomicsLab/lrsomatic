@@ -366,7 +366,7 @@ workflow LR_SOMATIC {
             ch_fasta,
             []
         )
-        
+
         ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
 
         //
@@ -427,7 +427,7 @@ workflow LR_SOMATIC {
 
         ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
-    
+
 
     //
     // MODULE: CRAMINO

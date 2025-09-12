@@ -93,7 +93,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
-    
+
 
     ch_versions = ch_versions.mix(CLAIR3.out.versions)
 

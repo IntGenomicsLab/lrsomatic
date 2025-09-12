@@ -14,7 +14,7 @@ workflow PREPARE_ANNOTATION {
 
 		ch_versions = Channel.empty()
 		ensemblvep_cache = Channel.empty()
-		
+
 		if (download_vep_cache) {
 			vep_download_info = Channel.of([[],vep_genome, vep_species, vep_cache_version])
 			ENSEMBLVEP_DOWNLOAD(vep_download_info)
@@ -47,6 +47,6 @@ workflow PREPARE_ANNOTATION {
 
 	emit:
 		vep_cache = ensemblvep_cache
-		versions = ch_versions 
+		versions = ch_versions
 
 }
