@@ -43,7 +43,7 @@ include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_hap
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUN MAIN WORKFLOWx
+    RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -347,8 +347,7 @@ workflow LR_SOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairs_modelMap,
-
+        clairs_modelMap
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
