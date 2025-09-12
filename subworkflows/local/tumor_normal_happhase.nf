@@ -93,8 +93,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
-
-
     ch_versions = ch_versions.mix(CLAIR3.out.versions)
 
     // Add germline vcf to normal bams
@@ -250,7 +248,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                         phased_vcf: phased small variant vcf for normal
 
       // Get ClairS input channel
-
     tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
