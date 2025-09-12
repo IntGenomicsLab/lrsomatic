@@ -180,7 +180,6 @@ workflow LR_SOMATIC {
                 vep_species:        params.vep_species,
                 download_vep_cache: params.download_vep_cache
             ])
-            .view()
 
         PREPARE_ANNOTATION (
             params.vep_cache,
