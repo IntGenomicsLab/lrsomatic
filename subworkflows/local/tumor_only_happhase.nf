@@ -72,6 +72,22 @@ workflow TUMOR_ONLY_HAPPHASE {
         }
         .set{ tumor_bams_germlinevcf }
 
+
+    VCFSPLIT.out.somatic_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .view()
+        .set { somatic_vep }
+
+    VCFSPLIT.out.germline_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { germline_vep }
+
     // tumor_bams_germlinevcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                           bam:  list of concatenated aligned bams
     //                           bai:  indexes for bam files
@@ -147,14 +163,15 @@ workflow TUMOR_ONLY_HAPPHASE {
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.vcf)
-        .map{meta, hap_bam, hap_bai, vcf ->
+        .join(LONGPHASE_PHASE.out.tbi)
+        .map{meta, hap_bam, hap_bai, vcf,tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return[new_meta, hap_bam, hap_bai, [],[], vcf]
+            return[new_meta, hap_bam, hap_bai, [],[], vcf,tbi]
             }
         .set{ tumor_only_severus }
 
@@ -167,6 +184,8 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     emit:
     tumor_only_severus
+    somatic_vep
+    germline_vep
     versions = ch_versions
 
 }

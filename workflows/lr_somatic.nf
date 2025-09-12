@@ -13,29 +13,33 @@ include { getGenomeAttribute        } from '../subworkflows/local/utils_nfcore_l
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT              } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX            } from '../modules/nf-core/minimap2/index/main'
-include { MINIMAP2_ALIGN            } from '../modules/nf-core/minimap2/align/main'
-include { CRAMINO as CRAMINO_PRE    } from '../modules/local/cramino/main'
-include { CRAMINO as CRAMINO_POST   } from '../modules/local/cramino/main'
-include { MOSDEPTH                  } from '../modules/nf-core/mosdepth/main'
-include { ASCAT                     } from '../modules/nf-core/ascat/main'
-include { CLAIR3                    } from '../modules/local/clair3/main'
-include { SEVERUS                   } from '../modules/nf-core/severus/main.nf'
-include { METAEXTRACT               } from '../modules/local/metaextract/main'
-include { WAKHAN                    } from '../modules/local/wakhan/main'
-include { FIBERTOOLSRS_PREDICTM6A   } from '../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE         } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES  } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC           } from '../modules/local/fibertoolsrs/qc'
-
+include { SAMTOOLS_CAT                   } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX                 } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN                 } from '../modules/nf-core/minimap2/align/main'
+include { CRAMINO as CRAMINO_PRE         } from '../modules/local/cramino/main'
+include { CRAMINO as CRAMINO_POST        } from '../modules/local/cramino/main'
+include { MOSDEPTH                       } from '../modules/nf-core/mosdepth/main'
+include { ASCAT                          } from '../modules/nf-core/ascat/main'
+include { SEVERUS                        } from '../modules/nf-core/severus/main.nf'
+include { METAEXTRACT                    } from '../modules/local/metaextract/main'
+include { WAKHAN                         } from '../modules/local/wakhan/main'
+include { FIBERTOOLSRS_PREDICTM6A        } from '../modules/local/fibertoolsrs/predictm6a'
+include { FIBERTOOLSRS_FIRE              } from '../modules/local/fibertoolsrs/fire'
+include { FIBERTOOLSRS_NUCLEOSOMES       } from '../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC                } from '../modules/local/fibertoolsrs/qc'
+include { ENSEMBLVEP_VEP as SOMATIC_VEP  } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as GERMLINE_VEP } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as SV_VEP       } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include {ANNOTSV_ANNOTSV                 } from '../modules/local/annotsv/annotsv/main'
 //
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES   } from '../subworkflows/local/prepare_reference_files'
+include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annotation'
 include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
 include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
+
 
 
 
@@ -83,6 +87,8 @@ workflow LR_SOMATIC {
     params.centromere_bed = getGenomeAttribute('centromere_bed')
     params.pon_file = getGenomeAttribute('pon_file')
     params.bed_file = getGenomeAttribute('bed_file')
+    params.vep_genome = getGenomeAttribute('vep_genome')
+    params.vep_species = getGenomeAttribute('vep_species')
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -162,6 +168,33 @@ workflow LR_SOMATIC {
         basecall_meta,
         clair3_modelMap
     )
+
+    vep_cache = Channel.empty()
+
+    if (!params.skip_vep) {
+
+        Channel
+            .of([
+                vep_cache:          params.vep_cache,
+                vep_cache_version:  params.vep_cache_version,
+                vep_genome:         params.vep_genome,
+                vep_args:           params.vep_args,
+                vep_species:        params.vep_species,
+                download_vep_cache: params.download_vep_cache
+            ])
+
+        PREPARE_ANNOTATION (
+            params.vep_cache,
+            params.vep_cache_version,
+            params.vep_genome,
+            params.vep_args,
+            params.vep_species,
+            params.download_vep_cache
+        )
+        ch_versions = ch_versions.mix(PREPARE_ANNOTATION.out.versions)
+        vep_cache = PREPARE_ANNOTATION.out.vep_cache
+
+    }
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
@@ -318,6 +351,44 @@ workflow LR_SOMATIC {
         clairs_modelMap
     )
 
+    germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
+    somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
+
+    if (!params.skip_vep) {
+        //
+        // MODULE: GERMLINE_VEP
+        //
+
+        GERMLINE_VEP (
+            germline_vep,
+            params.vep_genome,
+            params.vep_species,
+            params.vep_cache_version,
+            vep_cache,
+            ch_fasta,
+            []
+        )
+
+        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
+
+        //
+        // MODULE: SOMATIC_VEP
+        //
+
+        SOMATIC_VEP (
+            somatic_vep,
+            params.vep_genome,
+            params.vep_species,
+            params.vep_cache_version,
+            vep_cache,
+            ch_fasta,
+            []
+        )
+
+        ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
+    }
+
+
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
 
     // Get Severus input channel
@@ -325,7 +396,6 @@ workflow LR_SOMATIC {
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
-
 
     //
     // MODULE: SEVERUS
@@ -336,7 +406,32 @@ workflow LR_SOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
+
+
     ch_versions = ch_versions.mix(SEVERUS.out.versions)
+
+    SEVERUS.out.all_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { sv_vep }
+    if(!params.skip_vep) {
+        SV_VEP (
+        sv_vep,
+        params.vep_genome,
+        params.vep_species,
+        params.vep_cache_version,
+        vep_cache,
+        ch_fasta,
+        []
+    )
+
+
+
+        ch_versions = ch_versions.mix(SV_VEP.out.versions)
+    }
+
 
     //
     // MODULE: CRAMINO
@@ -501,8 +596,9 @@ workflow LR_SOMATIC {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+    emit:
+        multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+        versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 
 

@@ -1,8 +1,8 @@
-include { CLAIR3                } from '../../modules/local/clair3/main.nf'
-include { LONGPHASE_PHASE       } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_HAPLOTAG    } from '../../modules/nf-core/longphase/haplotag/main.nf'
-include { SAMTOOLS_INDEX        } from '../../modules/nf-core/samtools/index/main.nf'
-include { CLAIRS                }  from '../../modules/local/clairs/main.nf'
+include { CLAIR3                    } from '../../modules/local/clair3/main.nf'
+include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
+include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
+include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -114,6 +114,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                svs:  structural variant vcf (empty)
     //                mods: modcall-generated VCF with modifications (empty)
 
+    CLAIR3.out.vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { germline_vep }
 
     //
     // MODULE: LONGPHASE_PHASE
@@ -231,13 +237,21 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai ]
         }
         .join(LONGPHASE_PHASE.out.vcf)
+        .join(LONGPHASE_PHASE.out.tbi)
         .set{tumor_normal_severus}
 
-    // Get ClairS input channel
+    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
+    //                         tumor_bam:  haplotagged aligned bam for tumor
+    //                         tumor_bai:  indexes for tumor bam files
+    //                         normal_bam: haplotagged aligned bam files for normal
+    //                         normal_bai: indexes for normal bam files
+    //                         phased_vcf: phased small variant vcf for normal
+
+      // Get ClairS input channel
     tumor_normal_severus
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
-            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, model]
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
         }
         .set { clairs_input }
 
@@ -251,16 +265,19 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
+    CLAIRS.out.vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { somatic_vep }
+
     ch_versions = ch_versions.mix(CLAIRS.out.versions)
-    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
-    //                         tumor_bam:  haplotagged aligned bam for tumor
-    //                         tumor_bai:  indexes for tumor bam files
-    //                         normal_bam: haplotagged aligned bam files for normal
-    //                         normal_bai: indexes for normal bam files
-    //                         phased_vcf: phased small variant vcf for normal
 
     emit:
     tumor_normal_severus
+    somatic_vep
+    germline_vep
     versions = ch_versions
 
 }
