@@ -1,0 +1,36 @@
+Changes in component 'nf-core/longphase/phase'
+'modules/nf-core/longphase/phase/meta.yml' is unchanged
+Changes in 'longphase/phase/main.nf':
+--- modules/nf-core/longphase/phase/main.nf
++++ modules/nf-core/longphase/phase/main.nf
+@@ -15,6 +15,7 @@
+ 
+     output:
+     tuple val(meta), path("*.vcf.gz"), emit: vcf
++    tuple val(meta), path("*.vcf.gz.tbi"), emit: tbi
+     path "versions.yml"              , emit: versions
+ 
+     when:
+@@ -43,6 +44,8 @@
+         --threads $task.cpus \\
+         $args2 \\
+         ${prefix}.vcf
++    
++    tabix -p vcf ${prefix}.vcf.gz
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+@@ -55,6 +58,7 @@
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     """
+     echo "" | bgzip -c > ${prefix}.vcf.gz
++    echo "" > ${prefix}.vcf.gz.tbi
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+
+'modules/nf-core/longphase/phase/environment.yml' is unchanged
+'modules/nf-core/longphase/phase/tests/main.nf.test' is unchanged
+'modules/nf-core/longphase/phase/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/longphase/phase/tests/nextflow.config' is unchanged
+************************************************************
