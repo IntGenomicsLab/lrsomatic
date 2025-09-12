@@ -1,4 +1,3 @@
-
 process VCFSPLIT {
     tag "$meta.id"
     label 'process_single'
@@ -12,12 +11,12 @@ process VCFSPLIT {
     tuple val(meta), path(snv_vcf), path(indel_vcf)
 
     output:
-    tuple val(meta), path("*somatic.vcf.gz"), emit: somatic_vcf
-    tuple val(meta), path("*somatic.vcf.gz.tbi"), emit: somatic_tbi
-    tuple val(meta), path("*germline.vcf.gz"), emit: germline_vcf
-    tuple val(meta), path("*germline.vcf.gz.tbi"), emit: germline_tbi
+    tuple val(meta), path("*somatic.vcf.gz")        , emit: somatic_vcf
+    tuple val(meta), path("*somatic.vcf.gz.tbi")    , emit: somatic_tbi
+    tuple val(meta), path("*germline.vcf.gz")       , emit: germline_vcf
+    tuple val(meta), path("*germline.vcf.gz.tbi")   , emit: germline_tbi
 
-    path "versions.yml"           , emit: versions
+    path "versions.yml"                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
