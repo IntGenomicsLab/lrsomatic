@@ -30,7 +30,6 @@ include { FIBERTOOLSRS_QC                } from '../modules/local/fibertoolsrs/q
 include { ENSEMBLVEP_VEP as SOMATIC_VEP  } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP       } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include {ANNOTSV_ANNOTSV                 } from '../modules/local/annotsv/annotsv/main'
 //
 // IMPORT SUBWORKFLOWS
 //
