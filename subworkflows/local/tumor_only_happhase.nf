@@ -78,7 +78,6 @@ workflow TUMOR_ONLY_HAPPHASE {
             def extra = []
             return [meta,vcf, extra]
         }
-        .view()
         .set { somatic_vep }
 
     VCFSPLIT.out.germline_vcf
