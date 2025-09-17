@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IntGenomicsLab/lr_somatic
+    IntGenomicsLab/lrsomatic
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/IntGenomicsLab/lr_somatic
+    Github : https://github.com/IntGenomicsLab/lrsomatic
 ----------------------------------------------------------------------------------------
 */
 
@@ -13,10 +13,10 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { LR_SOMATIC  } from './workflows/lr_somatic'
-include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_lr_somatic_pipeline'
-include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_lr_somatic_pipeline'
-include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_lr_somatic_pipeline'
+include { LRSOMATIC  } from './workflows/lrsomatic'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,7 +38,7 @@ params.fasta = getGenomeAttribute('fasta')
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow INTGENOMICSLAB_LR_SOMATIC {
+workflow INTGENOMICSLAB_LRSOMATIC {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -48,11 +48,11 @@ workflow INTGENOMICSLAB_LR_SOMATIC {
     //
     // WORKFLOW: Run pipeline
     //
-    LR_SOMATIC (
+    LRSOMATIC (
         samplesheet
     )
     emit:
-    multiqc_report = LR_SOMATIC.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = LRSOMATIC.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    INTGENOMICSLAB_LR_SOMATIC (
+    INTGENOMICSLAB_LRSOMATIC (
         PIPELINE_INITIALISATION.out.samplesheet
     )
     //
@@ -91,7 +91,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        INTGENOMICSLAB_LR_SOMATIC.out.multiqc_report
+        INTGENOMICSLAB_LRSOMATIC.out.multiqc_report
     )
 }
 
