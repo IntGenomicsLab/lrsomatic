@@ -88,11 +88,7 @@ nextflow run IntGenomicsLab/lrsomatic \
 
 ## Credits
 
-<<<<<<< HEAD
-IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Alexandra Pančíková, Robert Forsyth, Marios Eftychiou, Ruben Cools, and Jonas Demeulemeester.
-=======
-IntGenomicsLab/lrsomatic was originally written by Jonas Demeulemeester.
->>>>>>> TEMPLATE
+IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, and Jonas Demeulemeester.
 
 ## Pipeline output
 
