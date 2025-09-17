@@ -34,7 +34,7 @@ template:
   description: Workflow for somatic variant calling of long read data
   force: false
   is_nfcore: false
-  name: lr_somatic
+  name: lrsomatic
   org: IntGenomicsLab
   outdir: .
   skip_features:
