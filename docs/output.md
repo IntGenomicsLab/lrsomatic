@@ -1,4 +1,4 @@
-# IntGenomicsLab/lr_somatic: Output
+# IntGenomicsLab/lrsomatic: Output
 
 ## Introduction
 
