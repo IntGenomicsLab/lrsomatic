@@ -6,4 +6,11 @@ multiqc/multiqc_data/multiqc_sources.txt
 multiqc/multiqc_data/multiqc_software_versions.txt
 multiqc/multiqc_plots/{svg,pdf,png}/*.{svg,pdf,png}
 multiqc/multiqc_report.html
+multiqc/multiqc_data/llms-full.txt
+multiqc/multiqc_plots/{pdf,svg,png}/*.{png,svg,pdf}
 pipeline_info/*.{html,json,txt,yml}
+*/VEP/*.{vcf.gz,html}
+*/variants/clair3/merge_output.vcf.gz
+*/variants/severus/read_ids.csv
+*/variants/severus/severus.log
+*/qc/{tumor,normal}/{cramino_ubam,cramino_aln}/*_cramino.txt
