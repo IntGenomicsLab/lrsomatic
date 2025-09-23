@@ -9,7 +9,7 @@ multiqc/multiqc_report.html
 multiqc/multiqc_data/llms-full.txt
 multiqc/multiqc_plots/{pdf,svg,png}/*.{png,svg,pdf}
 pipeline_info/*.{html,json,txt,yml}
-*/VEP/*.{vcf.gz,html}
+*/VEP/{SVs,germline,somatic}/*.{vcf.gz,html}
 */variants/clair3/merge_output.vcf.gz
 */variants/severus/read_ids.csv
 */variants/severus/severus.log
