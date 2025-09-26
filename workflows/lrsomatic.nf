@@ -413,25 +413,23 @@ workflow LRSOMATIC {
     SEVERUS.out.all_vcf
         .map { meta, vcf ->
             def extra = []
-            return [meta,vcf, extra]
+            return [meta, vcf, extra]
         }
         .set { sv_vep }
+        
     if(!params.skip_vep) {
         SV_VEP (
-        sv_vep,
-        params.vep_genome,
-        params.vep_species,
-        params.vep_cache_version,
-        vep_cache,
-        ch_fasta,
-        []
-    )
-
-
-
+            sv_vep,
+            params.vep_genome,
+            params.vep_species,
+            params.vep_cache_version,
+            vep_cache,
+            ch_fasta,
+            []
+        )
+        
         ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
-
 
     //
     // MODULE: CRAMINO
@@ -452,7 +450,6 @@ workflow LRSOMATIC {
     ch_mosdepth_summary = Channel.empty()
 
     if (!params.skip_qc && !params.skip_mosdepth) {
-
 
         // prepare mosdepth input channel: we need to specify compulsory path to bed as well
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
@@ -497,8 +494,8 @@ workflow LRSOMATIC {
 
     if (!params.skip_ascat) {
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
-                return[meta , normal_bam, normal_bai, tumor_bam, tumor_bai]
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+                return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
 
@@ -524,6 +521,9 @@ workflow LRSOMATIC {
 
         // Prepare input channel for WAKHAN
         severus_reformat
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+                return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf]
+            }
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
 
