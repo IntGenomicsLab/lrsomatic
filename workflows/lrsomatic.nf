@@ -416,7 +416,7 @@ workflow LRSOMATIC {
             return [meta, vcf, extra]
         }
         .set { sv_vep }
-        
+
     if(!params.skip_vep) {
         SV_VEP (
             sv_vep,
@@ -427,7 +427,7 @@ workflow LRSOMATIC {
             ch_fasta,
             []
         )
-        
+
         ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
 
