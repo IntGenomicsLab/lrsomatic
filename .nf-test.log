@@ -1,0 +1,18 @@
+Sep-26 11:02:04.136 [main] INFO  com.askimed.nf.test.App - nf-test 0.9.2
+Sep-26 11:02:04.148 [main] INFO  com.askimed.nf.test.App - Arguments: [test, tests/, --profile=+vsc_kul_uhasselt,wice, --update-snapshot]
+Sep-26 11:02:04.838 [main] INFO  com.askimed.nf.test.App - Nextflow Version: 25.09.0
+Sep-26 11:02:04.840 [main] INFO  com.askimed.nf.test.commands.RunTestsCommand - Load config from file /lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic/nf-test.config...
+Sep-26 11:03:07.065 [main] INFO  com.askimed.nf.test.lang.dependencies.DependencyResolver - Loaded 45 files from directory /lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic in 61.818 sec
+Sep-26 11:03:07.068 [main] INFO  com.askimed.nf.test.lang.dependencies.DependencyResolver - Found 1 files containing tests.
+Sep-26 11:03:07.068 [main] DEBUG com.askimed.nf.test.lang.dependencies.DependencyResolver - Found files: [/lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic/tests/default.nf.test]
+Sep-26 11:03:07.206 [main] INFO  com.askimed.nf.test.commands.RunTestsCommand - Found 1 tests to execute.
+Sep-26 11:03:07.206 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Started test plan
+Sep-26 11:03:07.206 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Running testsuite 'Test pipeline' from file '/lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic/tests/default.nf.test'.
+Sep-26 11:03:07.206 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Run test '3c47806f: -profile test'. type: com.askimed.nf.test.lang.pipeline.PipelineTest
+Sep-26 11:24:14.121 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Load snapshots from file '/lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic/tests/default.nf.test.snap'
+Sep-26 11:24:17.953 [main] DEBUG com.askimed.nf.test.lang.extensions.Snapshot - Snapshots '-profile test' do not match. Update snapshots flag set.
+Sep-26 11:24:17.953 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Updated snapshot '-profile test'
+Sep-26 11:24:23.515 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Wrote snapshots to file '/lustre1/project/stg_00104/lharbers/pipelines/IntGenomicsLab-lrsomatic/tests/default.nf.test.snap'
+Sep-26 11:24:23.515 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Test '3c47806f: -profile test' finished. status: PASSED
+Sep-26 11:24:23.517 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Testsuite 'Test pipeline' finished. snapshot file: true, skipped tests: false, failed tests: false
+Sep-26 11:24:23.519 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Executed 1 tests. 0 tests failed. Done!
