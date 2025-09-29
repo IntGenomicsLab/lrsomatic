@@ -89,6 +89,10 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
+    params.dbsnp = getGenomeAttribute('dbsnp')
+    params.colors = getGenomeAttribute('colors')
+    params.onekgenomes = getGenomeAttribute('onekgenomes')
+    params.gnomad = getGenomeAttribute('gnomad')
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -344,11 +348,20 @@ workflow LRSOMATIC {
     //
     // Phasing/haplotagging for tumor only samples
 
+    dbsnp = file(params.dbsnp)
+    colors = file(params.colors)
+    onekgenomes = file(params.onekgenomes)
+    gnomad = file(params.gnomad)
+
     TUMOR_ONLY_HAPPHASE (
-        branched_minimap.tumor_only,
+        tumor_only_mapped,
         ch_fasta,
         ch_fai,
-        clairs_modelMap
+        clairs_modelMap,
+        dbsnp,
+        colors,
+        onekgenomes,
+        gnomad
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
