@@ -72,13 +72,13 @@
                     "default": "s3://ngi-igenomes/igenomes/"
                 },
                 "vep_cache": {
-                    "type": "integer",
+                    "type": "string",
                     "description": "Path to VEP cache directory.",
                     "fa_icon": "fas fa-database",
                     "help_text": "Path to the directory containing the VEP cache. If you are using an iGenomes reference, this will be set automatically. Otherwise, you will need to provide this path yourself."
                 },
                 "vep_cache_version": {
-                    "type": "string",
+                    "type": "integer",
                     "description": "Version of the VEP cache to use.",
                     "fa_icon": "fas fa-hashtag",
                     "help_text": "The version of the VEP cache to use. This should match the version of VEP being used."
