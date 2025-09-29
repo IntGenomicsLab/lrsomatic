@@ -354,7 +354,7 @@ workflow LRSOMATIC {
     gnomad = file(params.gnomad)
 
     TUMOR_ONLY_HAPPHASE (
-        tumor_only_mapped,
+        branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
         clairs_modelMap,
