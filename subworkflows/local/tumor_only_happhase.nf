@@ -15,8 +15,9 @@ workflow TUMOR_ONLY_HAPPHASE {
     main:
 
     ch_versions = Channel.empty()
-
-    ch_versions = Channel.empty()
+    tumor_only_severus = Channel.empty()
+    somatic_vep = Channel.empty()
+    germline_vep = Channel.empty()
 
     tumor_bams
         .map{ meta, bam, bai ->
@@ -163,18 +164,18 @@ workflow TUMOR_ONLY_HAPPHASE {
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.vcf)
         .join(LONGPHASE_PHASE.out.tbi)
-        .map{meta, hap_bam, hap_bai, vcf,tbi ->
+        .map{ meta, hap_bam, hap_bai, vcf, tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return[new_meta, hap_bam, hap_bai, [],[], vcf,tbi]
+            return [new_meta, hap_bam, hap_bai, [], [], vcf, tbi]
             }
         .set{ tumor_only_severus }
 
-    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
+    // tumor_only_severus ->   meta:     [id, paired_data, platform, sex, fiber, basecall_model]
     //                         hap_bam:  haplotagged aligned bam for tumor
     //                         hap_bai:  indexes for tumor bam files
     //                         normal_bam: haplotagged aligned bam files for normal (empty)

@@ -16,6 +16,9 @@ workflow TUMOR_NORMAL_HAPPHASE {
     main:
 
     ch_versions = Channel.empty()
+    tumor_only_severus = Channel.empty()
+    somatic_vep = Channel.empty()
+    germline_vep = Channel.empty()
 
     // Branch input bams in normal and tumour
     mixed_bams
@@ -247,7 +250,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                         normal_bai: indexes for normal bam files
     //                         phased_vcf: phased small variant vcf for normal
 
-      // Get ClairS input channel
+    // Get ClairS input channel
     tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
