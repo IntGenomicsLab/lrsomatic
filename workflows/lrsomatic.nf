@@ -348,10 +348,11 @@ workflow LRSOMATIC {
     //
     // Phasing/haplotagging for tumor only samples
 
-    dbsnp = params.dbsnp ? channel.value([]) : file(params.dbsnp)
-    colors = params.colors ? channel.value([]) : file(params.colors)
-    onekgenomes = params.onekgenomes ? channel.value([]) :file(params.onekgenomes)
-    gnomad = params.gnomad ? channel.value([]): file(params.gnomad)
+    dbsnp = file(params.dbsnp)
+    colors = file(params.colors)
+    onekgenomes = file(params.onekgenomes)
+    gnomad = file(params.gnomad)
+
 
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
