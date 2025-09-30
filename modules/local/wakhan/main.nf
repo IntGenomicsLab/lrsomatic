@@ -50,7 +50,7 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*.pdf")                               , emit: phasing_pdf
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz")                   , emit: rephased_vcf
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz.csi")               , emit: rephased_vcf_index
-    tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot
+    tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
     path "versions.yml"                                                         , emit: versions
 
