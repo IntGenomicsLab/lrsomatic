@@ -317,13 +317,13 @@
                 "sample1.stats:md5,afdcefd9c5a69d5252fe0f9186d349fd",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_all.vcf.gz:md5,e0539cb36c6dce491c9e7e22c18d0ff0",
-                "severus_all.vcf.gz.tbi:md5,ba39e5569eae0dcd5f6c8b3a914ff817",
+                "severus_all.vcf.gz:md5,f6071824aa8fc22dd63bd04a4b756d26",
+                "severus_all.vcf.gz.tbi:md5,8f919ebc536eb691f0cb0b889c2622de",
                 "breakpoints_double.csv:md5,244b62ee8500ddccf63bf1a8eb19d7bf",
                 "read_qual.txt:md5,1ad9d1900f8dcb291c97adc65c9d341c",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_somatic.vcf.gz:md5,09ac9f00d7c5bb915376fa7eeb3071c9",
+                "severus_somatic.vcf.gz:md5,dfd229eca0497efda44ad79a91687cf0",
                 "severus_somatic.vcf.gz.tbi:md5,4cb176febbc8c26d717a6c6e67b9c905",
                 "sample2_normal.bam:md5,c96d49ed1176c787752e7fcf23bd5ffb",
                 "sample2_normal.bam.bai:md5,87d97a08bdca08f6eaf2725dd114d3c3",
@@ -341,13 +341,13 @@
                 "sample2.stats:md5,2904de743414042e112d541ffc0f83ba",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_all.vcf.gz:md5,2720055744aead6531b542e2c79d2664",
-                "severus_all.vcf.gz.tbi:md5,317df1b08af81094aba65c067a50b6b5",
+                "severus_all.vcf.gz:md5,806bd3932f0505983d1851bbe5f887ba",
+                "severus_all.vcf.gz.tbi:md5,de251d60a3a310fbdcc99facb78c9686",
                 "breakpoints_double.csv:md5,6a1d4530feae8258a925d1f0641a63ff",
                 "read_qual.txt:md5,27edf87814aec6fa18546c8606aae4ed",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_somatic.vcf.gz:md5,e4b61a3606671dc18633965a9caeaace",
+                "severus_somatic.vcf.gz:md5,f0fd005299d935e48889f967de29bc7e",
                 "severus_somatic.vcf.gz.tbi:md5,4cb176febbc8c26d717a6c6e67b9c905",
                 "sample3_tumor.bam:md5,c80bbdcb0a6fcfe4164c6d96e6d9ad6a",
                 "sample3_tumor.bam.bai:md5,cdf45221635a6b03be6f28aa60b202bc",
@@ -358,20 +358,20 @@
                 "sample3.stats:md5,48eb55e610bd2a6d13c5d38d3c61d29e",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_all.vcf.gz:md5,b56edd3d5af6501cceadbc384fa199f2",
-                "severus_all.vcf.gz.tbi:md5,d63ffeaa2341f195c73369ce3423bd14",
+                "severus_all.vcf.gz:md5,8640f700ff50532ca2e9442581bcc3b5",
+                "severus_all.vcf.gz.tbi:md5,1dd2bb15ee720e482ed098e297f91fe8",
                 "breakpoints_double.csv:md5,298a01c868eb493baaaa90ced9a9f17e",
                 "read_qual.txt:md5,1b4392f3b9071533e9ea77ff9df6c813",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "severus_somatic.vcf.gz:md5,3a482330e8ca9a346e39c85af52bad28",
-                "severus_somatic.vcf.gz.tbi:md5,32f35ffd4584d552027aef4c8840518b"
+                "severus_somatic.vcf.gz:md5,845fd4aca40afd00e4579307baf383e8",
+                "severus_somatic.vcf.gz.tbi:md5,4535b0d071e2c6032a50d644dce475c9"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
-            "nextflow": "25.04.6"
+            "nextflow": "25.09.0"
         },
-        "timestamp": "2025-09-30T12:02:33.707684068"
+        "timestamp": "2025-10-02T13:53:17.373558071"
     }
 }
