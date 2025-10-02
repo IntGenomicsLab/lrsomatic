@@ -30,7 +30,6 @@ workflow TUMOR_ONLY_HAPPHASE {
         }
         .set{ tumor_bams }
 
-
     //
     // MODULE: CLAIRSTO
     //
