@@ -372,8 +372,11 @@ workflow LRSOMATIC {
         //
         // MODULE: GERMLINE_VEP
         //
-
-        vep_custom = file(params.vep_custom)
+        if (params.vep_custom != null) {
+            vep_custom = file(params.vep_custom)
+        } else {
+            vep_custom = []
+        }
         GERMLINE_VEP (
             germline_vep,
             params.vep_genome,
