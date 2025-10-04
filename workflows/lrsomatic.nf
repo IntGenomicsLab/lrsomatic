@@ -377,6 +377,11 @@ workflow LRSOMATIC {
         } else {
             vep_custom = []
         }
+        if (params.vep_custom_tbi != null) {
+            vep_custom_tbi = file(params.vep_custom_tbi)
+        } else {
+            vep_custom_tbi = []
+        }
         GERMLINE_VEP (
             germline_vep,
             params.vep_genome,
@@ -385,7 +390,8 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
-            vep_custom
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
@@ -402,7 +408,8 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
-            vep_custom
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
@@ -446,7 +453,8 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
-            vep_custom
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(SV_VEP.out.versions)

@@ -15,7 +15,8 @@ process ENSEMBLVEP_VEP {
     path cache
     tuple val(meta2), path(fasta)
     path extra_files
-    path custom_vep
+    path custom_vep     optional true
+    path custom_vep_tbi optional true
 
     output:
     tuple val(meta), path("*.vcf.gz"), emit: vcf, optional: true
