@@ -373,6 +373,7 @@ workflow LRSOMATIC {
         // MODULE: GERMLINE_VEP
         //
 
+        vep_custom = file(params.vep_custom)
         GERMLINE_VEP (
             germline_vep,
             params.vep_genome,
@@ -380,7 +381,8 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom
         )
 
         ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
@@ -396,7 +398,8 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom
         )
 
         ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
@@ -439,7 +442,8 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom
         )
 
         ch_versions = ch_versions.mix(SV_VEP.out.versions)
