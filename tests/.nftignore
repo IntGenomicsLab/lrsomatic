@@ -15,4 +15,5 @@ pipeline_info/*.{html,json,txt,yml}
 */variants/clairsto/*.{vcf.gz,vcf.gz.tbi}
 */variants/severus/read_ids.csv
 */variants/severus/severus.log
+*/variants/severus/{all_SVs,somatic_SVs}/*.{vcf.gz,vcf.gz.tbi}
 */qc/{tumor,normal}/{cramino_ubam,cramino_aln}/*_cramino.txt
