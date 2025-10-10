@@ -60,9 +60,9 @@ process WAKHAN {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-vcf $vcf"
+    def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
     // WARN: Version information not provided by tool on CLI. Please update this string when upgrading BLAZE code
-    def VERSION = "0.1.2"
+    def VERSION = "0.2.0"
     """
     wakhan \\
         --target-bam ${tumor_input} \\
@@ -83,7 +83,7 @@ process WAKHAN {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = "0.1.2"
+    def VERSION = "0.2.0"
 
     // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
     //               Have a look at the following examples:
