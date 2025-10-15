@@ -350,7 +350,7 @@
                 },
                 "normal_fiber": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "do fiber-seq on normal samples",
                     "fa_icon": "fas fa-fiber",
                     "hidden": true
