@@ -347,6 +347,13 @@
                     "fa_icon": "far calendar",
                     "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
                     "hidden": true
+                },
+                "normal_fiber": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "do fiber-seq on normal samples",
+                    "fa_icon": "fas fa-fiber",
+                    "hidden": true
                 }
             }
         }

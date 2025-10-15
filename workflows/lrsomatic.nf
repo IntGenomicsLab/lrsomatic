@@ -219,13 +219,31 @@ workflow LRSOMATIC {
 
     if (!params.skip_fiber) {
         //ch_cat_ubams.view()
-        ch_cat_ubams
+        if(!params.normal_fiber){
+            ch_cat_ubams
+            .branch { meta, bams ->
+                normal: meta.type == "normal"
+                tumor: meta.type == "tumor"
+                }
+            .set { ch_cat_ubams_normal_branching }
+
+            normal_bams = ch_cat_ubams_normal_branching.normal
+            normal_bams.view()
+            ubams = ch_cat_ubams_normal_branching.tumor
+            ubams.view()
+        }
+        else {
+            ubams = ch_cat_ubams
+        }
+            ubams
             .branch{ meta, bams ->
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
-            .set{ch_cat_ubams}
-        pacbio_bams = ch_cat_ubams.pacBio
+            .set{ch_cat_ubams_pacbio_ont_branching}
+
+        pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
+        pacbio_bams.view()
         pacbio_bams
             .branch{meta, bams ->
                 kinetics: meta.kinetics == "true"
@@ -242,7 +260,7 @@ workflow LRSOMATIC {
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
-        ch_cat_ubams.ont
+        ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
             .set{fiber_branch}
 
@@ -273,9 +291,20 @@ workflow LRSOMATIC {
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
 
-        fiber_branch.nonFiber
+        if(!params.normal_fiber){
+            fiber_branch.nonFiber
+            .mix(normal_bams)
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .view()
+            .set{ch_cat_ubams}
+
+        }
+        else {
+            fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
+
+        }
 
         if(!params.skip_qc) {
             //
@@ -287,6 +316,7 @@ workflow LRSOMATIC {
 
             ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
         }
+
     }
     //
     // MODULE: MINIMAP2_ALIGN
