@@ -89,6 +89,10 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
+    params.dbsnp = getGenomeAttribute('dbsnp')
+    params.colors = getGenomeAttribute('colors')
+    params.onekgenomes = getGenomeAttribute('onekgenomes')
+    params.gnomad = getGenomeAttribute('gnomad')
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -215,13 +219,31 @@ workflow LRSOMATIC {
 
     if (!params.skip_fiber) {
         //ch_cat_ubams.view()
-        ch_cat_ubams
+        if(!params.normal_fiber){
+            ch_cat_ubams
+            .branch { meta, bams ->
+                normal: meta.type == "normal"
+                tumor: meta.type == "tumor"
+                }
+            .set { ch_cat_ubams_normal_branching }
+
+            normal_bams = ch_cat_ubams_normal_branching.normal
+            normal_bams.view()
+            ubams = ch_cat_ubams_normal_branching.tumor
+            ubams.view()
+        }
+        else {
+            ubams = ch_cat_ubams
+        }
+            ubams
             .branch{ meta, bams ->
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
-            .set{ch_cat_ubams}
-        pacbio_bams = ch_cat_ubams.pacBio
+            .set{ch_cat_ubams_pacbio_ont_branching}
+
+        pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
+        pacbio_bams.view()
         pacbio_bams
             .branch{meta, bams ->
                 kinetics: meta.kinetics == "true"
@@ -238,7 +260,7 @@ workflow LRSOMATIC {
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
-        ch_cat_ubams.ont
+        ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
             .set{fiber_branch}
 
@@ -269,9 +291,20 @@ workflow LRSOMATIC {
 
         ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
 
-        fiber_branch.nonFiber
+        if(!params.normal_fiber){
+            fiber_branch.nonFiber
+            .mix(normal_bams)
+            .mix(FIBERTOOLSRS_FIRE.out.bam)
+            .view()
+            .set{ch_cat_ubams}
+
+        }
+        else {
+            fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
+
+        }
 
         if(!params.skip_qc) {
             //
@@ -283,6 +316,7 @@ workflow LRSOMATIC {
 
             ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
         }
+
     }
     //
     // MODULE: MINIMAP2_ALIGN
@@ -344,11 +378,21 @@ workflow LRSOMATIC {
     //
     // Phasing/haplotagging for tumor only samples
 
+    dbsnp = file(params.dbsnp)
+    colors = file(params.colors)
+    onekgenomes = file(params.onekgenomes)
+    gnomad = file(params.gnomad)
+
+
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairs_modelMap
+        clairs_modelMap,
+        dbsnp,
+        colors,
+        onekgenomes,
+        gnomad
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
@@ -358,7 +402,16 @@ workflow LRSOMATIC {
         //
         // MODULE: GERMLINE_VEP
         //
-
+        if (params.vep_custom != null) {
+            vep_custom = file(params.vep_custom)
+        } else {
+            vep_custom = []
+        }
+        if (params.vep_custom_tbi != null) {
+            vep_custom_tbi = file(params.vep_custom_tbi)
+        } else {
+            vep_custom_tbi = []
+        }
         GERMLINE_VEP (
             germline_vep,
             params.vep_genome,
@@ -366,7 +419,9 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
@@ -382,7 +437,9 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
@@ -425,7 +482,9 @@ workflow LRSOMATIC {
             params.vep_cache_version,
             vep_cache,
             ch_fasta,
-            []
+            [],
+            vep_custom,
+            vep_custom_tbi
         )
 
         ch_versions = ch_versions.mix(SV_VEP.out.versions)

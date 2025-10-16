@@ -15,6 +15,8 @@ process ENSEMBLVEP_VEP {
     path cache
     tuple val(meta2), path(fasta)
     path extra_files
+    path custom_vep
+    path custom_vep_tbi
 
     output:
     tuple val(meta), path("*.vcf.gz"), emit: vcf, optional: true
@@ -36,6 +38,7 @@ process ENSEMBLVEP_VEP {
     def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
     def reference = fasta ? "--fasta ${fasta}" : ""
     def create_index = file_extension == "vcf" ? "tabix ${args2} ${prefix}.${file_extension}.gz" : ""
+    args = args.replaceAll(/--custom file=[^,]+/, "--custom file=${custom_vep}")
     """
     vep \\
         -i ${vcf} \\

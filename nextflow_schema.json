@@ -78,7 +78,7 @@
                     "help_text": "Path to the directory containing the VEP cache. If you are using an iGenomes reference, this will be set automatically. Otherwise, you will need to provide this path yourself."
                 },
                 "vep_cache_version": {
-                    "type": "string",
+                    "type": "integer",
                     "description": "Version of the VEP cache to use.",
                     "fa_icon": "fas fa-hashtag",
                     "help_text": "The version of the VEP cache to use. This should match the version of VEP being used."
@@ -346,6 +346,13 @@
                     "type": "string",
                     "fa_icon": "far calendar",
                     "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "hidden": true
+                },
+                "normal_fiber": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "do fiber-seq on normal samples",
+                    "fa_icon": "fas fa-fiber",
                     "hidden": true
                 }
             }

@@ -21,8 +21,8 @@ process WAKHAN {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/wakhan:0.1.2--pyhdfd78af_0  ':
-        'biocontainers/wakhan:0.1.2--pyhdfd78af_0  ' }"
+        'https://depot.galaxyproject.org/singularity/wakhan:0.2.0--pyhdfd78af_1':
+        'biocontainers/wakhan:0.2.0--pyhdfd78af_1' }"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
@@ -50,7 +50,7 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*.pdf")                               , emit: phasing_pdf
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz")                   , emit: rephased_vcf
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz.csi")               , emit: rephased_vcf_index
-    tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot
+    tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
     path "versions.yml"                                                         , emit: versions
 
@@ -60,9 +60,9 @@ process WAKHAN {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-vcf $vcf"
+    def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
     // WARN: Version information not provided by tool on CLI. Please update this string when upgrading BLAZE code
-    def VERSION = "0.1.2"
+    def VERSION = "0.2.0"
     """
     wakhan \\
         --target-bam ${tumor_input} \\
@@ -83,7 +83,7 @@ process WAKHAN {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = "0.1.2"
+    def VERSION = "0.2.0"
 
     // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
     //               Have a look at the following examples:

@@ -19,7 +19,8 @@
                     "ensemblvep/vep": {
                         "branch": "master",
                         "git_sha": "48ca3de1737b0144aa9fe05bea2b681f0ae45a95",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/ensemblvep/vep/ensemblvep-vep.diff"
                     },
                     "longphase/haplotag": {
                         "branch": "master",
