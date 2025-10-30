@@ -12,7 +12,9 @@ process CLAIRS {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("*.vcf.gz"),      emit: vcf
+    tuple val(meta), path("${meta.id}.vcf.gz"),      emit: all_vcf
+    tuple val(meta), path("indel.vcf.gz"),         emit: indel_vcf
+    tuple val(meta), path("snv.vcf.gz"),           emit: snv_vcf
     tuple val(meta), path("*.vcf.gz.tbi"),  emit: tbi
     path "versions.yml",                    emit: versions
 
@@ -29,6 +31,8 @@ process CLAIRS {
         --normal_bam_fn $normal_bam \\
         --ref_fn $reference \\
         --threads $task.cpus \\
+        --enable_indel_calling \\
+        --haplotagged_tumor_bam_provided_so_skip_intermediate_phasing_and_haplotagging \\
         --platform $model \\
         --output_dir . \\
         --output_prefix $prefix \\

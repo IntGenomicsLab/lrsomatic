@@ -268,7 +268,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
-    CLAIRS.out.vcf
+    CLAIRS.out.all_vcf
         .map { meta, vcf ->
             def extra = []
             return [meta,vcf, extra]
