@@ -100,6 +100,8 @@ workflow PIPELINE_INITIALISATION {
         }
         .set { ch_samplesheet }
 
+        ch_samplesheet.view()
+
         // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
         //                   bam:  unaligned bams
 

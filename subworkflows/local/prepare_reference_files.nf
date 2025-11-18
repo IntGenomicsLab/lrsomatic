@@ -39,6 +39,7 @@ workflow PREPARE_REFERENCE_FILES {
             ch_prepared_fasta = [ [:], fasta ]
         }
 
+        basecall_meta.view()
 
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
             def meta_new = [id: basecall_model_meta]
@@ -50,6 +51,7 @@ workflow PREPARE_REFERENCE_FILES {
         .unique()
         .set{ model_urls }
 
+        model_urls.view()
 
         //
         // MODULE: Download model

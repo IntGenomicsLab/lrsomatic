@@ -13,10 +13,10 @@ process CLAIRS {
 
     output:
     tuple val(meta), path("${meta.id}.vcf.gz"),      emit: all_vcf
-    tuple val(meta), path("indel.vcf.gz"),         emit: indel_vcf
-    tuple val(meta), path("snv.vcf.gz"),           emit: snv_vcf
-    tuple val(meta), path("*.vcf.gz.tbi"),  emit: tbi
-    path "versions.yml",                    emit: versions
+    tuple val(meta), path("indel.vcf.gz"),           emit: indel_vcf
+    tuple val(meta), path("snv.vcf.gz"),             emit: snv_vcf
+    tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
+    path "versions.yml",                             emit: versions
 
     when:
     task.ext.when == null || task.ext.when
