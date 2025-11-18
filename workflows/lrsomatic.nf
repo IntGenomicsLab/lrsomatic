@@ -218,7 +218,6 @@ workflow LRSOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
-        //ch_cat_ubams.view()
         if(!params.normal_fiber){
             ch_cat_ubams
             .branch { meta, bams ->
@@ -228,9 +227,7 @@ workflow LRSOMATIC {
             .set { ch_cat_ubams_normal_branching }
 
             normal_bams = ch_cat_ubams_normal_branching.normal
-            normal_bams.view()
             ubams = ch_cat_ubams_normal_branching.tumor
-            ubams.view()
         }
         else {
             ubams = ch_cat_ubams
@@ -243,7 +240,6 @@ workflow LRSOMATIC {
             .set{ch_cat_ubams_pacbio_ont_branching}
 
         pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
-        pacbio_bams.view()
         pacbio_bams
             .branch{meta, bams ->
                 kinetics: meta.kinetics == "true"
@@ -295,7 +291,6 @@ workflow LRSOMATIC {
             fiber_branch.nonFiber
             .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .view()
             .set{ch_cat_ubams}
 
         }
