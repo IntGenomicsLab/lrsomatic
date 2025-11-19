@@ -1,11 +1,10 @@
 # IntGenomicsLab/lrsomatic
 
-[![GitHub Actions CI Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/nf-test.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/nf-test.yml)
+[![GitHub Actions CI Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/ci.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/ci.yml)
 [![GitHub Actions Linting Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-[![Nextflow](https://img.shields.io/badge/version-%E2%89%A524.10.5-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
-[![nf-core template version](https://img.shields.io/badge/nf--core_template-3.3.2-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/3.3.2)
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -13,48 +12,16 @@
 
 ## Introduction
 
-**IntGenomicsLab/lrsomatic** is a robust bioinformatics pipeline designed for processing and analyzing **somatic DNA sequencing** data for long-read sequencing technologies from **Oxford Nanopore** and **PacBio**. It supports both canonical base DNA and modified base calling, including specialized applications such as **Fiber-seq**.
+**IntGenomicsLab/lrsomatic** is a bioinformatics pipeline that ...
 
-This **end-to-end pipeline** handles the entire workflow — **from raw read processing and alignment, to comprehensive somatic variant calling**, including single nucleotide variants, indels, structural variants, copy number alterations, and modified bases.
-
-It can be run in both **matched tumour-normal** and **tumour-only mode**, offering flexibility depending on the users study design.
-
-Developed using **Nextflow DSL2**, it offers high portability and scalability across diverse computing environments. By leveraging Docker or Singularity containers, installation is streamlined and results are highly reproducible. Each process runs in an isolated container, simplifying dependency management and updates. Where applicable, pipeline components are sourced from **nf-core/modules**, promoting reuse, interoperability, and consistency within the broader Nextflow and nf-core ecosystems.
-
-## Pipeline summary
-
-**1) Pre-processing:**
-
-a. Raw read QC ([`cramino`](https://github.com/wdecoster/cramino))
-
-b. Alignment to the reference genome ([`minimap2`](https://github.com/lh3/minimap2))
-
-c. Post alignment QC ([`cramino`](https://github.com/wdecoster/cramino), [`samtools idxstats`](https://github.com/samtools/samtools), [`samtools flagstats`](https://github.com/samtools/samtools), [`samtools stats`](https://github.com/samtools/samtools))
-
-d. Specific for calling modified base calling ([`Modkit`](https://github.com/nanoporetech/modkit), [`Fibertools`](https://github.com/fiberseq/fibertools-rs))
-
-**2i) Matched mode: small variant calling:**
-
-a. Calling Germline SNPs ([`Clair3`](https://github.com/HKU-BAL/Clair3))
-
-b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
-
-c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
-
-**2ii) Tumour only mode: small variant calling:**
-
-a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
-
-b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
-
-**3) Large variant calling:**
-
-a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
-
-b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
+<!-- TODO nf-core:
+   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
+   major pipeline sections and the types of output it produces. You're giving an overview to someone new
+   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
+-->
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
+     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
@@ -62,19 +29,25 @@ b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-First prepare a samplesheet with your input data that looks as follows:
+<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
+     Explain what rows and columns represent. For instance (please edit as appropriate):
+
+First, prepare a samplesheet with your input data that looks as follows:
+
+`samplesheet.csv`:
 
 ```csv
-sample,bam_tumor,bam_normal,platform,sex,fiber
-sample1,tumour.bam,normal.bam,ont,female,n
-sample2,tumour.bam,,ont,female,y
-sample3,tumour.bam,,pb,male,n
-sample4,tumour.bam,normal.bam,pb,male,y
+sample,fastq_1,fastq_2
+CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 ```
 
-Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No.
+Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+
+-->
 
 Now, you can run the pipeline using:
+
+<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run IntGenomicsLab/lrsomatic \
@@ -88,41 +61,11 @@ nextflow run IntGenomicsLab/lrsomatic \
 
 ## Credits
 
-IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, and Jonas Demeulemeester.
+IntGenomicsLab/lrsomatic was originally written by Jonas Demeulemeester.
 
-## Pipeline output
+We thank the following people for their extensive assistance in the development of this pipeline:
 
-This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report from that combines the output from `mosdepth` and `samtools` into one html report.
-
-Besides QC and the aligned and phased bam file, we have output from (structural) variant and copy number callers, of which some are optional. The output from these variant callers can be found in their respective folders. For small and structural variant callers (`clairS`, `clairS-TO`, and `severus`) these will contain, among others, `vcf` files with called variants. For `ascat` these contain files with final copy number information and plots of the copy number profiles.
-
-Example output directory structure:
-
-```
-results
-|
-├── multiqc
-│
-├── sample1
-│   ├── bamfiles
-│   ├── qc
-│   │   ├── tumour
-│   │   └── normal
-│   ├── variants
-│   │   ├── severus
-│   │   └── clairs
-│   └── ascat
-│
-└── sample2
-    ├── bamfiles
-    ├── qc
-    │   ├── tumour
-    │   └── normal
-    ├── variants
-    │   ├── severus
-    │   └── clairs
-    └── ascat
-```
+<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
 
