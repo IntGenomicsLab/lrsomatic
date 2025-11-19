@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lr_somatic/main/assets/schema_input.json",
-    "title": "IntGenomicsLab/lr_somatic pipeline - params.input schema",
+    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lrsomatic/master/assets/schema_input.json",
+    "title": "IntGenomicsLab/lrsomatic pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {

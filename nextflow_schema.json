@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lr_somatic/main/nextflow_schema.json",
-    "title": "IntGenomicsLab/lr_somatic pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lrsomatic/master/nextflow_schema.json",
+    "title": "IntGenomicsLab/lrsomatic pipeline parameters",
     "description": "Workflow for somatic variant calling of long read data",
     "type": "object",
     "$defs": {
