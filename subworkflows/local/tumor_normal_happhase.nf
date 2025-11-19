@@ -221,7 +221,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Group everything back together in one channel
     mixed_hapbams.view()
-    
+
     mixed_hapbams
         .map { meta, bam, bai, vcf, snvs, mods, hapbam, hapbai ->
             def new_meta = [id: meta.id,
@@ -232,7 +232,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             basecall_model: meta.basecall_model]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
-        .groupTuple()
+        .groupTuple(size: 2)
         .map{ meta, bam, bai ->
             def normal_bam = bam[0][0].type == "normal" ? bam[0][1] : bam[1][1]
             def tumor_bam = bam[0][0].type == "tumor" ? bam[0][1] : bam[1][1]
