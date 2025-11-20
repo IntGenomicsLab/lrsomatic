@@ -12,7 +12,7 @@ process CLAIRS {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("${meta.id}.vcf.gz"),      emit: all_vcf
+    tuple val(meta), path("${prefix}.vcf.gz"),      emit: all_vcf
     tuple val(meta), path("indel.vcf.gz"),           emit: indel_vcf
     tuple val(meta), path("snv.vcf.gz"),             emit: snv_vcf
     tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
@@ -23,7 +23,7 @@ process CLAIRS {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     /opt/bin/run_clairs \
