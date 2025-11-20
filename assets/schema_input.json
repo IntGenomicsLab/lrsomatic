@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lrsomatic/master/assets/schema_input.json",
+    "$id": "https://raw.githubusercontent.com/IntGenomicsLab/lrsomatic/main/assets/schema_input.json",
     "title": "IntGenomicsLab/lrsomatic pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
@@ -13,21 +13,45 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "bam_tumor": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "Bam file of tumor sample must be provided, cannot contain spaces and must have extension '.bam'"
             },
-            "fastq_2": {
+            "bam_normal": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "Bam file of normal sample must be provided, cannot contain spaces and must have extension '.bam'"
+            },
+            "platform": {
+                "type": "string",
+                "enum": ["pb", "ont"],
+                "errorMessage": "Method must be one of the following: 'pb' or 'ont'"
+            },
+            "sex": {
+                "type": "string",
+                "enum": ["male", "female"],
+                "errorMessage": "Biological sex must be either 'male' or 'female'"
+            },
+            "fiber": {
+                "type": "string",
+                "enum": ["y", "n"],
+                "errorMessage": "Specifiy (y/n) if sample has had fiberseq performed"
+            },
+            "clair3_model": {
+                "type": "string"
+            },
+            "clairSTO_model": {
+                "type": "string"
+            },
+            "clairS_model": {
+                "type": "string"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "bam_tumor", "platform", "sex", "fiber"]
     }
 }
