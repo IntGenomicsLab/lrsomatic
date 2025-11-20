@@ -220,8 +220,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //                  bais: indexes for bam files
 
     // Group everything back together in one channel
-    mixed_hapbams.view()
-
     mixed_hapbams
         .map { meta, bam, bai, vcf, snvs, mods, hapbam, hapbai ->
             def new_meta = [id: meta.id,
