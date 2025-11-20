@@ -1,40 +1,492 @@
 Changes in component 'nf-core/longphase/phase'
-'modules/nf-core/longphase/phase/meta.yml' is unchanged
+Changes in 'longphase/phase/meta.yml':
+--- modules/nf-core/longphase/phase/meta.yml
++++ modules/nf-core/longphase/phase/meta.yml
+@@ -34,7 +34,7 @@
+         description: Index of sorted BAM/CRAM file(s)
+         pattern: "*.{bai,crai,csi}"
+         ontologies: []
+-    - snvs:
++    - snps:
+         type: file
+         description: VCF file with SNPs (and INDELs)
+         pattern: "*.{vcf,vcf.gz}"
+@@ -70,39 +70,15 @@
+         pattern: "*.fai"
+         ontologies: []
+ output:
+-  snv_vcf:
++  vcf:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+             e.g. `[ id:'sample1', single_end:false ]`
+-      - "${prefix}.vcf.gz":
++      - "*.vcf.gz":
+           type: file
+-          description: Compressed VCF file with phased SNVs and indels
+-          pattern: "*.vcf.gz"
+-          ontologies:
+-            - edam: http://edamontology.org/format_3989 # GZIP format
+-  sv_vcf:
+-    - - meta:
+-          type: map
+-          description: |
+-            Groovy Map containing sample information
+-            e.g. `[ id:'sample1', single_end:false ]`
+-      - "${prefix}_SV.vcf.gz":
+-          type: file
+-          description: Compressed VCF file with phased SVs
+-          pattern: "*_SV.vcf.gz"
+-          ontologies:
+-            - edam: http://edamontology.org/format_3989 # GZIP format
+-  mod_vcf:
+-    - - meta:
+-          type: map
+-          description: |
+-            Groovy Map containing sample information
+-            e.g. `[ id:'sample1', single_end:false ]`
+-      - "${prefix}_mod.vcf.gz":
+-          type: file
+-          description: Compressed VCF file with phased modifications
++          description: Compressed VCF file with phased variants
+           pattern: "*.vcf.gz"
+           ontologies:
+             - edam: http://edamontology.org/format_3989 # GZIP format
+
 Changes in 'longphase/phase/main.nf':
 --- modules/nf-core/longphase/phase/main.nf
 +++ modules/nf-core/longphase/phase/main.nf
-@@ -14,8 +14,9 @@
+@@ -4,20 +4,19 @@
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b0/b0184a9a36d8612fbae38bbaad7b52f03b815ad17673740e107cf1f267a1f15d/data':
+-        'community.wave.seqera.io/library/htslib_longphase:3071e61356fc25a4' }"
++        'https://depot.galaxyproject.org/singularity/mulled-v2-d626bb8ec5a659accfbd8490bc1ac4a940722258:682e8c0cc0ceebf9bd38371a58249aabce93b1b3-0':
++        'biocontainers/mulled-v2-d626bb8ec5a659accfbd8490bc1ac4a940722258:682e8c0cc0ceebf9bd38371a58249aabce93b1b3-0' }"
+ 
+     input:
+-    tuple val(meta), path(bam), path(bai), path(snvs), path(svs), path(mods)
++    tuple val(meta), path(bam), path(bai), path(snps), path(svs), path(mods)
+     tuple val(meta2), path(fasta)
+     tuple val(meta3), path(fai)
  
  
      output:
--    tuple val(meta), path("*.vcf.gz"), emit: vcf
--    path "versions.yml"              , emit: versions
+-    tuple val(meta), path("${prefix}.vcf.gz")    , emit: snv_vcf
+-    tuple val(meta), path("${prefix}_SV.vcf.gz") , emit: sv_vcf , optional: true
+-    tuple val(meta), path("${prefix}_mod.vcf.gz"), emit: mod_vcf, optional: true
+-    path "versions.yml"                          , emit: versions
 +    tuple val(meta), path("*.vcf.gz")       , emit: vcf
 +    tuple val(meta), path("*.vcf.gz.tbi")   , emit: tbi
 +    path "versions.yml"                     , emit: versions
  
      when:
      task.ext.when == null || task.ext.when
-@@ -43,6 +44,8 @@
+@@ -25,7 +24,7 @@
+     script:
+     def args = task.ext.args ?: ''
+     def args2 = task.ext.args2 ?: ''
+-    prefix = task.ext.prefix ?: "${meta.id}"
++    def prefix = task.ext.prefix ?: "${meta.id}"
+     def sv_file = svs ? "--sv-file ${svs}" : ""
+     def mod_file = mods ? "--mod-file ${mods}" : ""
+     def bams = bam.collectMany { file -> ["-b", file] }.join(" ")
+@@ -36,7 +35,7 @@
+         --threads $task.cpus \\
+         -o ${prefix} \\
+         --reference ${fasta} \\
+-        --snp-file ${snvs} \\
++        --snp-file ${snps} \\
+         ${bams} \\
+         ${sv_file} \\
+         ${mod_file} \\
+@@ -44,7 +43,9 @@
+     bgzip \\
          --threads $task.cpus \\
          $args2 \\
-         ${prefix}.vcf
+-        ${prefix}*.vcf
++        ${prefix}.vcf
 +    
 +    tabix -p vcf ${prefix}.vcf.gz
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
-@@ -55,6 +58,7 @@
-     def prefix = task.ext.prefix ?: "${meta.id}"
+@@ -54,15 +55,10 @@
+ 
+     stub:
+     def args = task.ext.args ?: ''
+-    prefix = task.ext.prefix ?: "${meta.id}"
+-    def sv_command = svs ? "echo '' | bgzip -c > ${prefix}_SV.vcf.gz" : ""
+-    def mod_command = mods ? "echo '' | bgzip -c > ${prefix}_mod.vcf.gz" : ""
++    def prefix = task.ext.prefix ?: "${meta.id}"
      """
+-    echo $args
      echo "" | bgzip -c > ${prefix}.vcf.gz
+-
+-    $sv_command
+-    $mod_command
 +    echo "" > ${prefix}.vcf.gz.tbi
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
 
-'modules/nf-core/longphase/phase/environment.yml' is unchanged
-'modules/nf-core/longphase/phase/tests/main.nf.test' is unchanged
-'modules/nf-core/longphase/phase/tests/main.nf.test.snap' is unchanged
+Changes in 'longphase/phase/environment.yml':
+--- modules/nf-core/longphase/phase/environment.yml
++++ modules/nf-core/longphase/phase/environment.yml
+@@ -5,5 +5,5 @@
+   - bioconda
+ 
+ dependencies:
+-  - bioconda::htslib=1.22.1
+-  - bioconda::longphase=2.0
++  - bioconda::htslib=1.20
++  - bioconda::longphase=1.7.3
+
+Changes in 'longphase/phase/tests/main.nf.test':
+--- modules/nf-core/longphase/phase/tests/main.nf.test
++++ modules/nf-core/longphase/phase/tests/main.nf.test
+@@ -44,7 +44,7 @@
+ 
+     }
+ 
+-    test("[ bam, bai, snps, svs, [] ], fasta, fai") {
++test("[ bam, bai, snps, svs, [] ], fasta, fai") {
+ 
+         when {
+             process {
+@@ -78,7 +78,7 @@
+ 
+     }
+ 
+-    test("[ bam x2, bai x2, snps, svs, [] ], fasta, fai") {
++test("[ bam x2, bai x2, snps, svs, [] ], fasta, fai") {
+ 
+         when {
+             process {
+@@ -154,38 +154,4 @@
+ 
+     }
+ 
+-    test("[ bam, bai, snps, svs, [] ], fasta, fai - stub") {
+-        options "-stub"
+-
+-        when {
+-            process {
+-                """
+-                input[0] = [
+-                    [ id:'test' ],
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.bam', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.bam.bai', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf.gz', checkIfExists: true),
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/vcf/NA24385_sv.vcf.gz', checkIfExists: true),
+-                    []
+-                ]
+-                input[1] = [
+-                    [ id:'reference' ],
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+-                ]
+-                input[2] = [
+-                    [ id:'reference' ],
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+-                ]
+-                """
+-            }
+-        }
+-
+-        then {
+-            assertAll(
+-                { assert process.success },
+-                { assert snapshot(process.out).match() }
+-            )
+-        }
+-
+-    }
+ }
+
+Changes in 'longphase/phase/tests/main.nf.test.snap':
+--- modules/nf-core/longphase/phase/tests/main.nf.test.snap
++++ modules/nf-core/longphase/phase/tests/main.nf.test.snap
+@@ -1,59 +1,4 @@
+ {
+-    "[ bam, bai, snps, svs, [] ], fasta, fai - stub": {
+-        "content": [
+-            {
+-                "0": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "1": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_SV.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "2": [
+-                    
+-                ],
+-                "3": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ],
+-                "mod_vcf": [
+-                    
+-                ],
+-                "snv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "sv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_SV.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+-                    ]
+-                ],
+-                "versions": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.9.2",
+-            "nextflow": "25.04.5"
+-        },
+-        "timestamp": "2025-11-06T16:06:24.025191062"
+-    },
+     "[ bam, bai, snps, [], [] ], fasta, fai": {
+         "content": [
+             {
+@@ -62,42 +7,30 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test.vcf.gz:md5,77d7ca7d16c841d3f552681abef984dc"
++                        "test.vcf.gz:md5,fd2d21056b2de4722f12d5e883d9cb0a"
+                     ]
+                 ],
+                 "1": [
+-                    
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ],
+-                "2": [
+-                    
+-                ],
+-                "3": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ],
+-                "mod_vcf": [
+-                    
+-                ],
+-                "snv_vcf": [
++                "vcf": [
+                     [
+                         {
+                             "id": "test"
+                         },
+-                        "test.vcf.gz:md5,77d7ca7d16c841d3f552681abef984dc"
++                        "test.vcf.gz:md5,fd2d21056b2de4722f12d5e883d9cb0a"
+                     ]
+                 ],
+-                "sv_vcf": [
+-                    
+-                ],
+                 "versions": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ]
+             }
+         ],
+         "meta": {
+-            "nf-test": "0.9.2",
+-            "nextflow": "25.04.5"
++            "nf-test": "0.8.4",
++            "nextflow": "24.04.2"
+         },
+-        "timestamp": "2025-11-06T16:05:57.029934447"
++        "timestamp": "2024-07-22T12:14:04.269956432"
+     },
+     "[ bam, bai, snps, svs, [] ], fasta, fai": {
+         "content": [
+@@ -107,52 +40,30 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test.vcf.gz:md5,f26bc442f6a1645bcfaabf989ab9483c"
++                        "test.vcf.gz:md5,b0a3effd6e076edbe7e2f1f7cfff547c"
+                     ]
+                 ],
+                 "1": [
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
++                ],
++                "vcf": [
+                     [
+                         {
+                             "id": "test"
+                         },
+-                        "test_SV.vcf.gz:md5,e1b83c15a21bab57f2b228cc7c7d8be8"
+-                    ]
+-                ],
+-                "2": [
+-                    
+-                ],
+-                "3": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ],
+-                "mod_vcf": [
+-                    
+-                ],
+-                "snv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test.vcf.gz:md5,f26bc442f6a1645bcfaabf989ab9483c"
+-                    ]
+-                ],
+-                "sv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_SV.vcf.gz:md5,e1b83c15a21bab57f2b228cc7c7d8be8"
++                        "test.vcf.gz:md5,b0a3effd6e076edbe7e2f1f7cfff547c"
+                     ]
+                 ],
+                 "versions": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ]
+             }
+         ],
+         "meta": {
+-            "nf-test": "0.9.2",
+-            "nextflow": "25.04.5"
++            "nf-test": "0.9.0",
++            "nextflow": "24.04.4"
+         },
+-        "timestamp": "2025-11-06T16:06:03.319855838"
++        "timestamp": "2024-10-04T13:37:16.921910004"
+     },
+     "[ bam x2, bai x2, snps, svs, [] ], fasta, fai": {
+         "content": [
+@@ -162,52 +73,30 @@
+                         {
+                             "id": "test"
+                         },
+-                        "test.vcf.gz:md5,5333ba9fa14233d3fdbd8b9e1786b998"
++                        "test.vcf.gz:md5,04905b6042998e592c9f3b887ae9e09c"
+                     ]
+                 ],
+                 "1": [
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
++                ],
++                "vcf": [
+                     [
+                         {
+                             "id": "test"
+                         },
+-                        "test_SV.vcf.gz:md5,434fd35ae3de2a9187e43932686bfd19"
+-                    ]
+-                ],
+-                "2": [
+-                    
+-                ],
+-                "3": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ],
+-                "mod_vcf": [
+-                    
+-                ],
+-                "snv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test.vcf.gz:md5,5333ba9fa14233d3fdbd8b9e1786b998"
+-                    ]
+-                ],
+-                "sv_vcf": [
+-                    [
+-                        {
+-                            "id": "test"
+-                        },
+-                        "test_SV.vcf.gz:md5,434fd35ae3de2a9187e43932686bfd19"
++                        "test.vcf.gz:md5,04905b6042998e592c9f3b887ae9e09c"
+                     ]
+                 ],
+                 "versions": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ]
+             }
+         ],
+         "meta": {
+-            "nf-test": "0.9.2",
+-            "nextflow": "25.04.5"
++            "nf-test": "0.9.0",
++            "nextflow": "24.04.4"
+         },
+-        "timestamp": "2025-11-06T16:06:10.867281359"
++        "timestamp": "2024-10-04T13:37:23.41768963"
+     },
+     "[ bam, bai, snps, [], [] ], fasta, fai - stub": {
+         "content": [
+@@ -221,18 +110,9 @@
+                     ]
+                 ],
+                 "1": [
+-                    
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ],
+-                "2": [
+-                    
+-                ],
+-                "3": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
+-                ],
+-                "mod_vcf": [
+-                    
+-                ],
+-                "snv_vcf": [
++                "vcf": [
+                     [
+                         {
+                             "id": "test"
+@@ -240,18 +120,15 @@
+                         "test.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                     ]
+                 ],
+-                "sv_vcf": [
+-                    
+-                ],
+                 "versions": [
+-                    "versions.yml:md5,1bc54f97e2b06e354a655d1066245fb4"
++                    "versions.yml:md5,8d8d82510dd1fbe01a91c575c472897f"
+                 ]
+             }
+         ],
+         "meta": {
+-            "nf-test": "0.9.2",
+-            "nextflow": "25.04.5"
++            "nf-test": "0.8.4",
++            "nextflow": "24.04.2"
+         },
+-        "timestamp": "2025-11-06T16:06:17.992733472"
++        "timestamp": "2024-07-22T12:15:40.296227382"
+     }
+ }
 'modules/nf-core/longphase/phase/tests/nextflow.config' is unchanged
 ************************************************************

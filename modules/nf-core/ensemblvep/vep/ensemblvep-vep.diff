@@ -3,7 +3,7 @@ Changes in component 'nf-core/ensemblvep/vep'
 Changes in 'ensemblvep/vep/main.nf':
 --- modules/nf-core/ensemblvep/vep/main.nf
 +++ modules/nf-core/ensemblvep/vep/main.nf
-@@ -1,6 +1,6 @@
+@@ -1,11 +1,11 @@
  process ENSEMBLVEP_VEP {
      tag "${meta.id}"
 -    label 'process_medium'
@@ -11,6 +11,13 @@ Changes in 'ensemblvep/vep/main.nf':
  
      conda "${moduleDir}/environment.yml"
      container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4b/4b5a8c173dc9beaa93effec76b99687fc926b1bd7be47df5d6ce19d7d6b4d6b7/data'
+-        : 'community.wave.seqera.io/library/ensembl-vep:115.2--90ec797ecb088e9a'}"
++        ? 'https://depot.galaxyproject.org/singularity/ensembl-vep:114.2--pl5321h2a3209d_0'
++        : 'biocontainers/ensembl-vep:114.2--pl5321h2a3209d_0'}"
+ 
+     input:
+     tuple val(meta), path(vcf), path(custom_extra_files)
 @@ -15,6 +15,8 @@
      path cache
      tuple val(meta2), path(fasta)
@@ -29,10 +36,96 @@ Changes in 'ensemblvep/vep/main.nf':
      vep \\
          -i ${vcf} \\
 
-'modules/nf-core/ensemblvep/vep/environment.yml' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/main.nf.test' is unchanged
+Changes in 'ensemblvep/vep/environment.yml':
+--- modules/nf-core/ensemblvep/vep/environment.yml
++++ modules/nf-core/ensemblvep/vep/environment.yml
+@@ -4,5 +4,4 @@
+   - conda-forge
+   - bioconda
+ dependencies:
+-  # renovate: datasource=conda depName=bioconda/ensembl-vep
+-  - bioconda::ensembl-vep=115.2=pl5321h2a3209d_1
++  - bioconda::ensembl-vep=114.2
+
+Changes in 'ensemblvep/vep/tests/main.nf.test':
+--- modules/nf-core/ensemblvep/vep/tests/main.nf.test
++++ modules/nf-core/ensemblvep/vep/tests/main.nf.test
+@@ -16,7 +16,7 @@
+         when {
+             process {
+                 """
+-                vep_cache = Channel.of(file('s3://annotation-cache/vep_cache/115_WBcel235/')).collect()
++                vep_cache = Channel.of(file('s3://annotation-cache/vep_cache/113_WBcel235/')).collect()
+ 
+                 input[0] = Channel.of([
+                     [ id:'test' ], // meta map
+@@ -55,7 +55,7 @@
+         when {
+             process {
+                 """
+-                vep_cache = Channel.of(file('s3://annotation-cache/vep_cache/115_WBcel235/')).collect()
++                vep_cache = Channel.of(file('s3://annotation-cache/vep_cache/113_WBcel235/')).collect()
+ 
+                 input[0] = Channel.of([
+                     [ id:'test' ], // meta map
+@@ -79,7 +79,7 @@
+             assert process.success
+             assertAll(
+                 { assert snapshot(process.out.versions).match() },
+-                { assert path(process.out.tab.get(0).get(1)).linesGzip.contains("## ENSEMBL VARIANT EFFECT PREDICTOR v115.2") }
++                { assert path(process.out.tab.get(0).get(1)).linesGzip.contains("## ENSEMBL VARIANT EFFECT PREDICTOR v114.2") }
+             )
+         }
+     }
+
 'modules/nf-core/ensemblvep/vep/tests/vcf.config' is unchanged
 'modules/nf-core/ensemblvep/vep/tests/tab.gz.config' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/nextflow.config' is unchanged
+Changes in 'ensemblvep/vep/tests/main.nf.test.snap':
+--- modules/nf-core/ensemblvep/vep/tests/main.nf.test.snap
++++ modules/nf-core/ensemblvep/vep/tests/main.nf.test.snap
+@@ -2,27 +2,27 @@
+     "test_ensemblvep_vep_fasta_tab_gz": {
+         "content": [
+             [
+-                "versions.yml:md5,1e9ba958f2a6c180c064505b29f843ef"
++                "versions.yml:md5,01653f5a713b20d56ed2468a2dab959a"
+             ]
+         ],
+         "meta": {
+             "nf-test": "0.9.2",
+-            "nextflow": "25.04.7"
++            "nextflow": "25.04.6"
+         },
+-        "timestamp": "2025-09-29T10:00:37.755173"
++        "timestamp": "2025-08-21T13:16:46.760065318"
+     },
+     "test_ensemblvep_vep_fasta_vcf - stub (not really but linting complains otherwise)": {
+         "content": [
+             [
+-                "versions.yml:md5,1e9ba958f2a6c180c064505b29f843ef"
++                "versions.yml:md5,01653f5a713b20d56ed2468a2dab959a"
+             ],
+             "d41d8cd98f00b204e9800998ecf8427e",
+             "test.vcf.gz.tbi"
+         ],
+         "meta": {
+             "nf-test": "0.9.2",
+-            "nextflow": "25.04.7"
++            "nextflow": "25.04.6"
+         },
+-        "timestamp": "2025-09-29T10:00:03.682447"
++        "timestamp": "2025-08-21T13:16:00.65871573"
+     }
+ }
+Changes in 'ensemblvep/vep/tests/nextflow.config':
+--- modules/nf-core/ensemblvep/vep/tests/nextflow.config
++++ modules/nf-core/ensemblvep/vep/tests/nextflow.config
+@@ -1,5 +1,5 @@
+ params {
+-    vep_cache_version   = "115"
++    vep_cache_version   = "113"
+     vep_genome          = "WBcel235"
+     vep_species         = "caenorhabditis_elegans"
+ }
+
 ************************************************************
