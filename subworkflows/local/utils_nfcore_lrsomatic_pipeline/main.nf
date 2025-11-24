@@ -99,6 +99,7 @@ workflow PIPELINE_INITIALISATION {
             return result
         }
         .set { ch_samplesheet }
+        
         ch_samplesheet.view()
 
 

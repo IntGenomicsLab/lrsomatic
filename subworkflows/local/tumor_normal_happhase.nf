@@ -3,6 +3,8 @@ include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phas
 include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
+include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/concat'
+include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -268,10 +270,26 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
-    CLAIRS.out.all_vcf
+    CLAIRS.out.vcfs
+        .join(CLAIRS.out.tbi)
+        .set{clairs_out}
+    
+    BCFTOOLS_CONCAT(
+        clairs_out
+    )
+
+    ch_versions = ch_versions.mix(BCFTOOLS_CONCAT.out.versions)
+
+    BCFTOOLS_SORT(
+        BCFTOOLS_CONCAT.out.vcf
+    )
+
+    ch_versions = ch_versions.mix(BCFTOOLS_SORT.out.versions)
+
+    BCFTOOLS_SORT.out.vcf
         .map { meta, vcf ->
             def extra = []
-            return [meta,vcf, extra]
+            return [meta, vcf, extra]
         }
         .set { somatic_vep }
 
