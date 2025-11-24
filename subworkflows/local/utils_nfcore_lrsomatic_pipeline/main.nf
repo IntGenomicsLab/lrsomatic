@@ -99,8 +99,7 @@ workflow PIPELINE_INITIALISATION {
             return result
         }
         .set { ch_samplesheet }
-        
-        ch_samplesheet.view()
+
 
 
         // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
