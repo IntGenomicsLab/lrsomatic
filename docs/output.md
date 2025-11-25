@@ -50,10 +50,14 @@ The directories listed below will be created in the results directory after the 
 │    │   ├── germline
 │    │   ├── somatic
 │    │   ├── SVs
+├── pipeline_info
 ```
 
 
-### ASCAT
+### `ascat`
+<details markdown="1">
+<summary>Output files</summary>
+
 ```
 ├── ascat
 │   ├── sample.before_correction.sample.tumour.germline.png
@@ -72,6 +76,7 @@ The directories listed below will be created in the results directory after the 
 │   ├── sample.tumour.rawprofile.png
 │   ├── sample.tumour.sunrise.png
 ```
+
 | File    | Description                                                                                                                                                                            |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sample.before_correction.sample.tumour.germline.png`  | LogR and BAF plots from the normal sample |
@@ -93,8 +98,12 @@ The directories listed below will be created in the results directory after the 
 | `sample.tumour.rawprofile.png` | a png file with the raw overall copy number profile with ploidy, purity, and goodness of fit metrics
 | `sample.tumour.sunrise.png` | a png file with a purity and ploidy fit
 
+</details>
 
-### BAM Files
+### `bamfiles`
+<details markdown="1">
+<summary>Output files</summary>
+
 ```
 ├── bamfiles
 │   ├── sample_normal.bam
@@ -109,8 +118,11 @@ The directories listed below will be created in the results directory after the 
 | `sample_normal.bam.bai` | index file for the normal bam file
 | ` sample_tumor.bam` | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the tumor sample
 | `sample_tumor.bam.bai` | index file for the tumor bam file
+</details>
 
-### QC
+### `qc`
+<details markdown="1">
+<summary>Output files</summary>
 
 ```
 ├── qc
@@ -140,17 +152,24 @@ The directories listed below will be created in the results directory after the 
 |`samtools/sample.flagstat` |
 |`samtools/sample.idxstats` |
 |`samtools/sample.stats` |
+</details>
 
-### Variants
+### `variants`
+<details markdown="1">
+<summary>Output files</summary>
 
-#### Clair3
+#### `clair3`
 ```
 ├── clair3
 │   ├── merge_output.vcf.gz
 │   ├── merge_output.vcf.gz.tbi
 ```
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`merge_output.vcf.gz` | Merged germline indel and snv calls in vcf format
+|`merge_output.vcf.gz` | index for germline small variant calls
 
-#### ClairS
+#### `clairS`
 ```
 ├── clairS
 │   ├── indel.vcf.gz
@@ -158,8 +177,14 @@ The directories listed below will be created in the results directory after the 
 │   ├── snv.vcf.gz
 │   ├── snv.vcf.gz.tbi
 ```
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`indel.vcf.gz` | Somatic indel calls in vcf format
+|`indel.vcf.gz.tbi` | Index for somatic indel calls
+|`snv.vcf.gz` | Somatic SNV calls in vcf format
+|`snv.vcf.gz.tbi`| Index for somatic SNV calls
 
-#### ClairS-TO
+#### `clairS-TO`
 ```
 ├── clairS
 │   ├── germline.vcf.gz
@@ -172,7 +197,18 @@ The directories listed below will be created in the results directory after the 
 │   ├── somatic.vcf.gz.tbi
 ```
 
-#### Severus
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`germline.vcf.gz` | SNV and indel calls marked as germline (will not include variants QC)
+|`germline.vcf.gz.tbi` | Index file for germline small variant calls
+|`indel.vcf.gz` | Raw indel calls in vcf format
+|`indel.vcf.gz.tbi` | Index for somatic indel calls
+|`snv.vcf.gz` | Raw SNV calls in vcf format
+|`snv.vcf.gz.tbi`| Index for  SNV calls
+|`somatic.vcf.gz`| SNV and indel calls marked as PASS and without a germline tag
+|`somatic.vcf.gz`| Index for osmatic small variatn calls
+
+#### `severus`
 ```
 ├── severus
 │   ├── all_SVs
@@ -194,8 +230,24 @@ The directories listed below will be created in the results directory after the 
 │   ├── read_qual.txt
 │   ├── severus.log
 ```
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`all_SVs/breakpoint_cluster_list.tsv` | tsv containing the breakpoints in all clustered events
+|`all_SVs/breakpoint_cluster.tsv` | a tsv containing all clustered events
+|`all_SVs/severus_all.vcf.gz` | A vcf file containing all identified structural variants
+|`all_SVs/severus_all.vcf.gz.tbi` | Index for all identified structural variants
+|`somatic_SVs/breakpoint_cluster_list.tsv` | tsv containing the breakpoints in somatic clustered events
+|`somatic_SVs/breakpoint_cluster.tsv` | a tsv containing somatic clustered events
+|`somatic_SVs/severus_somatic.vcf.gz` | A vcf file containing identified somatic structural variants
+|`somatic_SVs/severus_somatic.vcf.gz.tbi` | Index for identified somatic structural variants
 
 
+
+</details>
+
+### `vep`
+
+### `pipeline_info`
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
