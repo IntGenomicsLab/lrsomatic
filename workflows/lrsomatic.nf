@@ -317,7 +317,8 @@ workflow LRSOMATIC {
     // MODULE: MINIMAP2_ALIGN
     //
     // Aligns ubams
-
+    
+    ch_cat_ubams.view()
     MINIMAP2_ALIGN (
         ch_cat_ubams,
         ch_fasta,
