@@ -2,27 +2,184 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+This document describes the output produced by the pipeline. 
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
+### Output Example
+```
+├── Sample 1
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├──clairS-TO
+│    │   ├──severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
+│
+├── Sample 2
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    │    ├── normal
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├── clair3
+│    │   ├── clairS
+│    │   ├── severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
+```
+
+
+### ASCAT
+```
+├── ascat
+│   ├── sample.before_correction.sample.tumour.germline.png
+│   ├── sample.before_correction.sample.tumour.tumour.png
+│   ├── sample.cnvs.txt
+│   ├── sample.metric.txt
+│   ├── sample.normal_alleleFrequencies_chr(1-22,X).txt
+│   ├── sample.purityploidy.txt
+│   ├── sample.segments.txt
+│   ├── sample.tumour_alleleFrequencies_chr(1-22,X).txt
+│   ├── sample.tumour_normalBAF_rawBAF.txt
+│   ├── sample.tumour_normalBAF.txt
+│   ├── sample.tumor_tumourLogR.txt
+│   ├── sample.tumour.ASCATprofile.png
+│   ├── sample.tumour.ASPCF.png
+│   ├── sample.tumour.rawprofile.png
+│   ├── sample.tumour.sunrise.png
+```
+
+### BAM Files
+```
+├── bamfiles
+│   ├── sample_normal.bam
+│   ├── sample_normal.bam.bai
+│   ├── sample_tumor.bam
+│   ├── sample_tumor.bam.bai
+```
+
+### QC
+
+```
+├── qc
+│   ├── tumor
+│   │   ├── cramino_aln
+│   │   │   ├── sample.cramino.txt
+│   │   ├── cramino_ubam
+│   │   │   ├── sample.cramino.txt
+│   │   ├── fibertoolsrs
+│   │   │   ├── sample_qc.txt
+│   │   ├── mosdepth
+│   │   │   ├── sample.mosdepth.global.dist.txt
+│   │   │   ├── sample.mosdepth.summary.txt
+│   │   ├── samtools
+│   │   │   ├── sample.flagstat
+│   │   │   ├── sample.idxstats
+│   │   │   ├── sample.stats
+```
+
+### Variants
+
+#### Clair3
+```
+├── clair3
+│   ├── merge_output.vcf.gz
+│   ├── merge_output.vcf.gz.tbi
+```
+
+#### ClairS
+```
+├── clairS
+│   ├── indel.vcf.gz
+│   ├── indel.vcf.gz.tbi
+│   ├── snv.vcf.gz
+│   ├── snv.vcf.gz.tbi
+```
+
+#### ClairS-TO
+```
+├── clairS
+│   ├── germline.vcf.gz
+│   ├── germline.vcf.gz.tbi
+│   ├── indel.vcf.gz
+│   ├── indel.vcf.gz.tbi
+│   ├── snv.vcf.gz
+│   ├── snv.vcf.gz.tbi
+│   ├── somatic.vcf.gz
+│   ├── somatic.vcf.gz.tbi
+```
+
+#### Severus
+```
+├── severus
+│   ├── all_SVs
+│   │   ├── plots
+│   │   │   ├──
+│   │   ├── breakpoint_cluster_list.tsv
+│   │   ├── breakpoint_clusters.tsv
+│   │   ├── severus_all.vcf.gz
+│   │   ├── severus_all.vcf.gz.tbi
+│   ├── somatic_SVs
+│   │   ├── plots
+│   │   │   ├──
+│   │   ├── breakpoint_cluster_list.tsv
+│   │   ├── breakpoint_clusters.tsv
+│   │   ├── severus_somatic.vcf.gz
+│   │   ├── severus_somatic.vcf.gz.tbi
+│   ├── breakpoints_double.csv
+│   ├── read_ids.csv
+│   ├── read_qual.txt
+│   ├── severus.log
+```
+
 
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
 - [samtools/cat](#samtools_cat) - Concatenate replicates from the same sample
+- [Cramino](#cramino) - Quality check the aligned or unaligned lomg read bam files
+- [fibertools/predictm6a](#fibertools) -
+- [fibertools/nucleosome](#fibertools)-
+- [fibertools/fire](#fibertools) - 
+- [fibertools/qc](#fibertools) -
 - [minimap2/index](#minimap2) - Creating minimap2 index
 - [minimap2/align](#minimap2) - Aligning long-read samples to the reference genome
-- [Cramino](#cramino) - Quality check the aligned or unaligned lomg read bam files
+- [clair3](#clair3) - 
+- [clairsto](#clairsto)-
+- [clairs](#clairs) - 
+- [longphase/phase](#longphase) -
+- [longphase/haplotag](#longphase) -
+- [severus](#severus) - 
+- [wakhan](#wakhan) - 
 - [Modkit](#modkit) - Tool to process methylation data
 - [Mosdepth](#mosdepth) - Tool to check the sequencing depth
-- [ClairS-TO](#clairsto) - Small Variant Calling for Tumour only samples
-- [Severus](#severus) - Tool to call somatic and germline structural variants
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
-- [Longphase](#longphase) - Phase the variants into haplotype blocks
 
 ### samtools
 
