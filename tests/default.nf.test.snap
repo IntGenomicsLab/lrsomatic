@@ -21,13 +21,13 @@
                 "pipeline_info/lrsomatic_software_mqc_versions.yml"
             ],
             [
-                "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f"
+                
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-11-20T13:31:18.762778941"
+        "timestamp": "2025-11-25T12:33:14.698235309"
     }
 }
