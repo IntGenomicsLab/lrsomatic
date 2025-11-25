@@ -96,7 +96,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //
     // small germline variant calling
 
-    normal_bam.view()
+    normal_bams.view()
     tumor_bams.view()
     CLAIR3 (
         normal_bams,
