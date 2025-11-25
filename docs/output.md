@@ -135,7 +135,11 @@ The directories listed below will be created in the results directory after the 
 |`cramino_aln/sample.cramino.txt` | cramino QC summary statistics for the aligned bam file
 | `cramino_ubam/sample.cramino.txt` | cramino QC summary statistics for the unaligned bam files
 | `fibertoolsrs/sample_qc.txt` | fibertools QC summary for the bam file
-| `mosdepth/sample.mosdepth.global.dist.txt` | index file for the tumor bam file
+| `mosdepth/sample.mosdepth.global.dist.txt` | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value
+| `mosdepth/sample.mosdepth.summary.txt` | overall summary file from mosdepth tool
+|`samtools/sample.flagstat` |
+|`samtools/sample.idxstats` |
+|`samtools/sample.stats` |
 
 ### Variants
 
