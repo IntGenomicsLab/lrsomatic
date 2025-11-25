@@ -40,6 +40,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{downloaded_model_files}
 
+    downloaded_model_files.view()
+
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = meta.basecall_model
@@ -52,6 +54,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
+    
+    normal_bams_model.view()
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -92,6 +96,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //
     // small germline variant calling
 
+    normal_bam.view()
+    tumor_bams.view()
     CLAIR3 (
         normal_bams,
         fasta,
