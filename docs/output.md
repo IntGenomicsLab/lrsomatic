@@ -59,7 +59,7 @@ The directories listed below will be created in the results directory after the 
 │   ├── sample.before_correction.sample.tumour.germline.png
 │   ├── sample.before_correction.sample.tumour.tumour.png
 │   ├── sample.cnvs.txt
-│   ├── sample.metric.txt
+│   ├── sample.metrics.txt
 │   ├── sample.normal_alleleFrequencies_chr(1-22,X).txt
 │   ├── sample.purityploidy.txt
 │   ├── sample.segments.txt
@@ -72,6 +72,27 @@ The directories listed below will be created in the results directory after the 
 │   ├── sample.tumour.rawprofile.png
 │   ├── sample.tumour.sunrise.png
 ```
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sample.before_correction.sample.tumour.germline.png`  | LogR and BAF plots from the normal sample |
+| `sample.before_correction.sample.tumour.tumour.png` | LogR and BAF plots from the tumor sample
+| `sample.cnvs.txt` | a tsv file describing each chromosome segment with a copy number alteration and it's major and minor copy number
+| `sample.metrics.txt` | a tsv file describing summary statistics for the sample 
+| `sample.normal_alleleFrequencies_chr(1-22,X).txt` | a tsv file describing the snp counts for the normal sample at each position and their respective depths
+| `sample.purityploidy.txt` | a tsv file describing the purity and ploidy values of the sample
+| `sample.segments.txt` | a tsv file describing each chromosome segment and it's major and minor copy number
+| `sample.tumour_alleleFrequencies_chr(1-22,X).txt` | a tsv file describing the snp counts for the tumor sample at each position and their respective depths
+| `sample.tumour_normalBAF_rawBAF.txt` | a tsv file with the raw BAF values in the normal sample
+| `sample.tumour_normalBAF.txt` | a tsv file with the BAF values in the normal sample
+| `sample.tumour_normalLogR.txt` | a tsv file with the LogR values in the normal sample
+| `sample.tumour_tumourBAF_rawBAF.txt` | a tsv file with the raw BAF values in the tumor sample
+| `sample.tumour_tumourBAF.txt` | a tsv file with the BAF values in the tumor sample
+| `sample.tumour_tumourLogR.txt` | a tsv file with the LogR values in the tumor sample
+| `sample.tumour.ASCATprofile.png` | a png file with the corrected overall copy number profile with ploidy, purity, and goodness of fit metrics
+| `sample.tumour.ASPCF.png` | a png file with the correct LogR and BAF plots of the tumor sample
+| `sample.tumour.rawprofile.png` | a png file with the raw overall copy number profile with ploidy, purity, and goodness of fit metrics
+| `sample.tumour.sunrise.png` | a png file with a purity and ploidy fit
+
 
 ### BAM Files
 ```
@@ -81,6 +102,13 @@ The directories listed below will be created in the results directory after the 
 │   ├── sample_tumor.bam
 │   ├── sample_tumor.bam.bai
 ```
+
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`sample_normal.bam` | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the normal sample
+| `sample_normal.bam.bai` | index file for the normal bam file
+| ` sample_tumor.bam` | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the tumor sample
+| `sample_tumor.bam.bai` | index file for the tumor bam file
 
 ### QC
 
@@ -101,6 +129,13 @@ The directories listed below will be created in the results directory after the 
 │   │   │   ├── sample.idxstats
 │   │   │   ├── sample.stats
 ```
+
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`cramino_aln/sample.cramino.txt` | cramino QC summary statistics for the aligned bam file
+| `cramino_ubam/sample.cramino.txt` | cramino QC summary statistics for the unaligned bam files
+| `fibertoolsrs/sample_qc.txt` | fibertools QC summary for the bam file
+| `mosdepth/sample.mosdepth.global.dist.txt` | index file for the tumor bam file
 
 ### Variants
 
