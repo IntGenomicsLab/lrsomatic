@@ -156,7 +156,6 @@
                 "sample1/variants/clairs",
                 "sample1/variants/clairs/indel.vcf.gz",
                 "sample1/variants/clairs/indel.vcf.gz.tbi",
-                "sample1/variants/clairs/snv.vcf.gz.tbi",
                 "sample1/variants/clairs/snvs.vcf.gz",
                 "sample1/variants/clairs/snvs.vcf.gz.tbi",
                 "sample1/variants/severus",
@@ -225,7 +224,6 @@
                 "sample2/variants/clairs",
                 "sample2/variants/clairs/indel.vcf.gz",
                 "sample2/variants/clairs/indel.vcf.gz.tbi",
-                "sample2/variants/clairs/snv.vcf.gz.tbi",
                 "sample2/variants/clairs/snvs.vcf.gz",
                 "sample2/variants/clairs/snvs.vcf.gz.tbi",
                 "sample2/variants/severus",
@@ -372,6 +370,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-11-24T16:33:33.367615182"
+        "timestamp": "2025-11-26T14:05:05.064407721"
     }
 }

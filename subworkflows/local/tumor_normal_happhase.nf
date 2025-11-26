@@ -44,7 +44,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
-            def basecall_model = meta.basecall_model
+            def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
@@ -61,7 +61,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .combine(downloaded_model_files,by:0)
         .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
-            def clair3_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(meta.basecall_model) : meta.clair3_model
             return [meta, bam, bai, model, platform]
         }
         .set{ normal_bams }

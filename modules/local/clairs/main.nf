@@ -36,6 +36,7 @@ process CLAIRS {
     
     if [[ -f "snv.vcf.gz" ]]; then
         rm snv.vcf.gz
+        rm snv.vcf.gz.tbi
     fi
 
     cat <<-END_VERSIONS > versions.yml
