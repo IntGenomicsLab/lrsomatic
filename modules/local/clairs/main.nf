@@ -33,7 +33,7 @@ process CLAIRS {
         --output_dir . \\
         --output_prefix snvs \\
         $args
-    
+
     if [[ -f "snv.vcf.gz" ]]; then
         rm snv.vcf.gz
         rm snv.vcf.gz.tbi

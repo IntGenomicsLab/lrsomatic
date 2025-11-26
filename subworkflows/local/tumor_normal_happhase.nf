@@ -54,7 +54,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-    
+
     normal_bams_model.view()
 
     normal_bams_model
@@ -278,7 +278,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIRS.out.vcfs
         .join(CLAIRS.out.tbi)
         .set{clairs_out}
-    
+
     BCFTOOLS_CONCAT(
         clairs_out
     )
