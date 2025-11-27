@@ -89,6 +89,8 @@ nextflow run IntGenomicsLab/lrsomatic \
    --outdir <OUTDIR>
 ```
 
+More detail is given in our [usage documentation](/docs/usage.md)
+
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
@@ -105,31 +107,52 @@ Besides QC and the aligned and phased bam file, we have output from (structural)
 Example output directory structure:
 
 ```
-results
-|
-├── multiqc
+├── Sample 1
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├──clairS-TO
+│    │   ├──severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
 │
-├── sample1
-│   ├── bamfiles
-│   ├── qc
-│   │   ├── tumour
-│   │   └── normal
-│   ├── variants
-│   │   ├── severus
-│   │   └── clairs
-│   └── ascat
-│
-└── sample2
-    ├── bamfiles
-    ├── qc
-    │   ├── tumour
-    │   └── normal
-    ├── variants
-    │   ├── severus
-    │   └── clairs
-    └── ascat
+├── Sample 2
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    │    ├── normal
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├── clair3
+│    │   ├── clairS
+│    │   ├── severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
+├── pipeline_info
 ```
 
+more detail is given in our [output documentation](/docs/output.md)
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
