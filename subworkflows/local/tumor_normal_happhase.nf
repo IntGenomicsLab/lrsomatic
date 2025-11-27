@@ -104,6 +104,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
+   CLAIR3.out.vcf.view()
     ch_versions = ch_versions.mix(CLAIR3.out.versions)
 
     // Add germline vcf to normal bams
@@ -133,6 +134,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { germline_vep }
+
+    germline_vep.view()
 
     //
     // MODULE: LONGPHASE_PHASE
