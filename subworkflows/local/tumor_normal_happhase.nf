@@ -40,7 +40,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{downloaded_model_files}
 
-    downloaded_model_files.view()
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
@@ -50,12 +49,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-
-    normal_bams_model.view()
+    
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -81,7 +80,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
@@ -94,9 +94,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: CLAIR3
     //
     // small germline variant calling
-
-    normal_bams.view()
-    tumor_bams.view()
     CLAIR3 (
         normal_bams,
         fasta,
@@ -234,7 +231,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
         .groupTuple(size: 2)
@@ -278,7 +276,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIRS.out.vcfs
         .join(CLAIRS.out.tbi)
         .set{clairs_out}
-
+    
     BCFTOOLS_CONCAT(
         clairs_out
     )

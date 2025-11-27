@@ -318,7 +318,6 @@ workflow LRSOMATIC {
     //
     // Aligns ubams
 
-    ch_cat_ubams.view()
     MINIMAP2_ALIGN (
         ch_cat_ubams,
         ch_fasta,
