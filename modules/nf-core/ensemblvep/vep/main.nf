@@ -19,12 +19,12 @@ process ENSEMBLVEP_VEP {
     path custom_vep_tbi
 
     output:
-    tuple val(meta), path("*.vcf.gz"), emit: vcf, optional: true
-    tuple val(meta), path("*.vcf.gz.tbi"), emit: tbi, optional: true
-    tuple val(meta), path("*.tab.gz"), emit: tab, optional: true
-    tuple val(meta), path("*.json.gz"), emit: json, optional: true
-    path "*.html", emit: report, optional: true
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*.vcf.gz"),      emit: vcf, optional: true
+    tuple val(meta), path("*.vcf.gz.tbi"),  emit: tbi, optional: true
+    tuple val(meta), path("*.tab.gz"),      emit: tab, optional: true
+    tuple val(meta), path("*.json.gz"),     emit: json, optional: true
+    path "*.html",                          emit: report, optional: true
+    path "versions.yml",                    emit: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -1,7 +1,14 @@
 {
     "-profile test": {
         "content": [
+            78,
             {
+                "BCFTOOLS_CONCAT": {
+                    "bcftools": 1.22
+                },
+                "BCFTOOLS_SORT": {
+                    "bcftools": 1.22
+                },
                 "CLAIR3": {
                     "clair3": "1.2.0"
                 },
@@ -149,10 +156,8 @@
                 "sample1/variants/clairs",
                 "sample1/variants/clairs/indel.vcf.gz",
                 "sample1/variants/clairs/indel.vcf.gz.tbi",
-                "sample1/variants/clairs/sample1.vcf.gz",
-                "sample1/variants/clairs/sample1.vcf.gz.tbi",
-                "sample1/variants/clairs/snv.vcf.gz",
-                "sample1/variants/clairs/snv.vcf.gz.tbi",
+                "sample1/variants/clairs/snvs.vcf.gz",
+                "sample1/variants/clairs/snvs.vcf.gz.tbi",
                 "sample1/variants/severus",
                 "sample1/variants/severus/all_SVs",
                 "sample1/variants/severus/all_SVs/breakpoint_clusters.tsv",
@@ -219,10 +224,8 @@
                 "sample2/variants/clairs",
                 "sample2/variants/clairs/indel.vcf.gz",
                 "sample2/variants/clairs/indel.vcf.gz.tbi",
-                "sample2/variants/clairs/sample2.vcf.gz",
-                "sample2/variants/clairs/sample2.vcf.gz.tbi",
-                "sample2/variants/clairs/snv.vcf.gz",
-                "sample2/variants/clairs/snv.vcf.gz.tbi",
+                "sample2/variants/clairs/snvs.vcf.gz",
+                "sample2/variants/clairs/snvs.vcf.gz.tbi",
                 "sample2/variants/severus",
                 "sample2/variants/severus/all_SVs",
                 "sample2/variants/severus/all_SVs/breakpoint_clusters.tsv",
@@ -367,6 +370,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-11-25T13:09:28.07662315"
+        "timestamp": "2025-10-30T17:00:44.230935974"
     }
 }

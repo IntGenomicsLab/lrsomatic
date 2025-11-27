@@ -51,7 +51,6 @@ workflow PREPARE_REFERENCE_FILES {
         .unique()
         .set{ model_urls }
 
-
         //
         // MODULE: Download model
         //
