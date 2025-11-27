@@ -30,7 +30,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{ mixed_bams }
 
-    mixed_bams.view()
 
     // Get normal bams and add platform/model info for Clair3 usage
     // remove type from so that information can be merged easier later
@@ -182,6 +181,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
+
     mixed_bams_vcf.view()
     // mixed_bams_vcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                   bam:  list of concatenated aligned bams
