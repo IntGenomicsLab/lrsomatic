@@ -76,8 +76,8 @@ workflow PIPELINE_INITIALISATION {
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
         .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model ->
             def real_clair3_model = (clair3_model == null ) ? null : clair3_model
-            def real_clairS_model = (clair3_model == null ) ? null : clairSTO_model
-            def real_clairSTO_model = (clair3_model == null ) ? null : clairS_model
+            def real_clairS_model = (clairS_model == null ) ? null : clairS_model
+            def real_clairSTO_model = (clairSTO_model == null ) ? null : clairSTO_model
             def paired_data = bam_normal ? true : false
             def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex, fiber: fiber, clair3_model: real_clair3_model, clairS_model : real_clairS_model, clairSTO_model: real_clairSTO_model]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]

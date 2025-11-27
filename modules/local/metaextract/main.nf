@@ -11,8 +11,8 @@ process METAEXTRACT {
     tuple val(meta), path(bam)
 
     output:
-    tuple val(meta), env(basecall_model),env(kinetics)  , emit: meta_ext
-    path "versions.yml"                        , emit: versions
+    tuple val(meta), env(basecall_model), env(kinetics)  , emit: meta_ext
+    path "versions.yml"                                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

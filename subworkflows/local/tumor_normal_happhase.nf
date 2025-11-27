@@ -3,6 +3,8 @@ include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phas
 include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
+include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/concat'
+include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -40,13 +42,14 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
-            def basecall_model = meta.basecall_model
+            def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
@@ -55,7 +58,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .combine(downloaded_model_files,by:0)
         .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
-            def clair3_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(meta.basecall_model) : meta.clair3_model
             return [meta, bam, bai, model, platform]
         }
         .set{ normal_bams }
@@ -76,7 +78,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
@@ -89,7 +92,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: CLAIR3
     //
     // small germline variant calling
-
     CLAIR3 (
         normal_bams,
         fasta,
@@ -171,6 +173,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
+
     // mixed_bams_vcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                   bam:  list of concatenated aligned bams
     //                   bai:  indexes for bam files
@@ -227,10 +230,11 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model]
+                            basecall_model: meta.basecall_model,
+                            clairS_model: meta.clairS_model]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
-        .groupTuple()
+        .groupTuple(size: 2)
         .map{ meta, bam, bai ->
             def normal_bam = bam[0][0].type == "normal" ? bam[0][1] : bam[1][1]
             def tumor_bam = bam[0][0].type == "tumor" ? bam[0][1] : bam[1][1]
@@ -268,10 +272,34 @@ workflow TUMOR_NORMAL_HAPPHASE {
         fai
     )
 
-    CLAIRS.out.vcf
+    CLAIRS.out.vcfs
+        .join(CLAIRS.out.tbi)
+        .set{clairs_out}
+
+    //
+    // MODULE: BCFTOOLS_CONCAT
+    //
+
+    BCFTOOLS_CONCAT(
+        clairs_out
+    )
+
+    ch_versions = ch_versions.mix(BCFTOOLS_CONCAT.out.versions)
+
+    //
+    // MODULE: BCFTOOLS_SORT
+    //
+
+    BCFTOOLS_SORT(
+        BCFTOOLS_CONCAT.out.vcf
+    )
+
+    ch_versions = ch_versions.mix(BCFTOOLS_SORT.out.versions)
+
+    BCFTOOLS_SORT.out.vcf
         .map { meta, vcf ->
             def extra = []
-            return [meta,vcf, extra]
+            return [meta, vcf, extra]
         }
         .set { somatic_vep }
 

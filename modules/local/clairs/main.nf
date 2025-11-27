@@ -12,9 +12,9 @@ process CLAIRS {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("*.vcf.gz"),      emit: vcf
-    tuple val(meta), path("*.vcf.gz.tbi"),  emit: tbi
-    path "versions.yml",                    emit: versions
+    tuple val(meta), path("*.vcf.gz"),               emit: vcfs
+    tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
+    path "versions.yml",                             emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -31,8 +31,13 @@ process CLAIRS {
         --threads $task.cpus \\
         --platform $model \\
         --output_dir . \\
-        --output_prefix $prefix \\
+        --output_prefix snvs \\
         $args
+
+    if [[ -f "snv.vcf.gz" ]]; then
+        rm snv.vcf.gz
+        rm snv.vcf.gz.tbi
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -45,8 +50,8 @@ process CLAIRS {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    echo "" | gzip > ${prefix}.vcf.gz
-    touch ${prefix}.vcf.gz.tbi
+    echo "" | gzip > snv.vcf.gz
+    touch snv.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
