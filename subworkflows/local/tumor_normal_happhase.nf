@@ -55,7 +55,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-    
+
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -114,7 +114,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, bam, bai, vcf, svs, mods]
         }
         .set{ normal_bams_germlinevcf }
-    
+
 
     // normal_bams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
@@ -281,7 +281,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIRS.out.vcfs
         .join(CLAIRS.out.tbi)
         .set{clairs_out}
-    
+
     BCFTOOLS_CONCAT(
         clairs_out
     )
