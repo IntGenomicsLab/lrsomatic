@@ -96,7 +96,7 @@ More detail is given in our [usage documentation](/docs/usage.md)
 
 ## Credits
 
-IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, and Jonas Demeulemeester.
+IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, Laurens Lambrechts, and Jonas Demeulemeester.
 
 ## Pipeline output
 
