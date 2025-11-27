@@ -50,7 +50,10 @@ The directories listed below will be created in the results directory after the 
 │    │   ├── germline
 │    │   ├── somatic
 │    │   ├── SVs
+│    ├── wakhan
 ├── pipeline_info
+├── multiqc
+
 ```
 
 
@@ -280,6 +283,37 @@ The directories listed below will be created in the results directory after the 
 |`SVs/sample_SV_VEP.vcf.gz.tbi` | Annotated somatic structural variant vcf index file |
 
 </details>
+
+### wakhan
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── wakhan
+│   ├── {ploidy}_{purity}_{confidence}
+│   │   ├── bed_output
+│   │   │   ├── genes_copynumber_states.bed
+│   │   │   ├── loh_regions.bed
+│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_1.bed
+│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_2.bed
+│   │   ├── variation_plots
+│   │   │   ├── chr{1-22,X,Y}_cn.html
+│   │   │   ├── chr{1-22,X,Y}_cn.pdf
+│   │   │   ├── CN_VARIATION_INDEX.html
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.html
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.html
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.pdf
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html
+│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf
+
+
+
+│   ├── solutions_ranks.tsv
+```
+
+| File    | Description                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
 ### pipeline_info
 
