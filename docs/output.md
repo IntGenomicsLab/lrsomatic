@@ -149,9 +149,9 @@ The directories listed below will be created in the results directory after the 
 | `fibertoolsrs/sample_qc.txt` | fibertools QC summary for the bam file
 | `mosdepth/sample.mosdepth.global.dist.txt` | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value
 | `mosdepth/sample.mosdepth.summary.txt` | overall summary file from mosdepth tool
-|`samtools/sample.flagstat` |
-|`samtools/sample.idxstats` |
-|`samtools/sample.stats` |
+|`samtools/sample.flagstat` | a summary of the counts of different samtools flags
+|`samtools/sample.idxstats` | a summary of the number of mapped and unmapped reads
+|`samtools/sample.stats` | summary statistics from the bamfile
 </details>
 
 ### `variants`
