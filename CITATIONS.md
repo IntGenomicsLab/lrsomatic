@@ -14,17 +14,17 @@
 
   > Van Loo P, Nordgard SH, Lingjærde OC, Russnes HG, Rye IH, Sun W, Weigman VJ, Marynen P, Zetterberg A, Naume B, Perou CM, Børresen-Dale AL, Kristensen VN. Allele-specific copy number analysis of tumors. Proc Natl Acad Sci U S A. 2010 Sep 28;107(39):16910-5. doi: 10.1073/pnas.1009843107. Epub 2010 Sep 13. PubMed PMID: 20837533; PubMed Central PMCID: PMC2947907.
 
-- [Clair3](https://pubmed.ncbi.nlm.nih.gov/35017061/)
+- [Clair3](https://www.nature.com/articles/s43588-022-00387-x)
 
-  > Zheng Z, Li S, Su J, Leung AW, Lam TW, Luo R. Symphonizing pileup and full-alignment for deep learning-based long-read variant calling. Nat Comput Sci. 2022 Dec;2(12):797-803. doi: 10.1038/s43588-022-00387-x. Epub 2022 Dec 22. PubMed PMID: 38177366.
+  > Zheng, Z., Li, S., Su, J. et al. Symphonizing pileup and full-alignment for deep learning-based long-read variant calling. Nat Comput Sci 2, 797–803 (2022). https://doi.org/10.1038/s43588-022-00387-x
 
-- [ClairS](https://pubmed.ncbi.nlm.nih.gov/39191961/)
+- [ClairS](https://www.biorxiv.org/content/10.1101/2023.08.17.553778v1)
 
-  > Au CH, Ho DN, Kwong A, Chan TL, Ma ESK. ClairS: a deep-learning method for long-read somatic small variant calling. Brief Bioinform. 2024 Aug 23;25(5):bbae426. doi: 10.1093/bib/bbae426. PubMed PMID: 39191961.
+  >  Zhenxian Zheng, Junhao Su, Lei Chen, Yan-Lam Lee, Tak-Wah Lam, Ruibang Luo. ClairS: a deep-learning method for long-read somatic small variant calling. bioRxiv 2023.08.17.553778; doi: https://doi.org/10.1101/2023.08.17.553778 
 
-- [ClairS-TO](https://pubmed.ncbi.nlm.nih.gov/39251800/)
+- [ClairS-TO](https://pubmed.ncbi.nlm.nih.gov/41173866/)
 
-  > Au CH, Ho DN, Kwong A, Chan TL, Ma ESK. ClairS-TO: A deep-learning method for long-read tumour-only somatic small variant calling. Comput Struct Biotechnol J. 2024 Aug 10;23:3256-3263. doi: 10.1016/j.csbj.2024.08.007. eCollection 2024 Dec. PubMed PMID: 39251800; PubMed Central PMCID: PMC11382123.
+  > Chen L, Zheng Z, Su J, Yu X, Wong AOK, Zhang J, Lee YL, Luo R. ClairS-TO: a deep-learning method for long-read tumor-only somatic small variant calling. Nat Commun. 2025 Oct 31;16(1):9630. doi: 10.1038/s41467-025-64547-z. PMID: 41173866; PMCID: PMC12579226.
 
 - [cramino](https://github.com/wdecoster/cramino)
 
@@ -34,11 +34,11 @@
 
   > McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GR, Thormann A, Flicek P, Cunningham F. The Ensembl Variant Effect Predictor. Genome Biol. 2016 Jun 6;17(1):122. doi: 10.1186/s13059-016-0974-4. PubMed PMID: 27268795; PubMed Central PMCID: PMC4893825.
 
-- [fibertools-rs](https://pubmed.ncbi.nlm.nih.gov/37169966/)
+- [fibertools-rs](https://doi.org/10.1101/gr.279095.124)
 
-  > Vollger MR, Stergachis AB. fibertools-rs: A tool for analyzing and manipulating Fiber-seq data. Nucleic Acids Res. 2023 Jul 5;51(W1):W274-W282. doi: 10.1093/nar/gkad372. PubMed PMID: 37169966; PubMed Central PMCID: PMC10320161.
+  > Jha, A., Bohaczuk, S. C., Mao, Y., Ranchalis, J., Mallory, B. J., Min, A. T., Hamm, M. O., Swanson, E., Dubocanin, D., Finkbeiner, C., Li, T., Whittington, D., Noble, W. S., Stergachis, A. B., & Vollger, M. R. (2024). DNA-m6A calling and integrated long-read epigenetic and genetic analysis with fibertools. Genome Research.
 
-- [LongPhase](https://pubmed.ncbi.nlm.nih.gov/35253834/)
+- [LongPhase](https://pubmed.ncbi.nlm.nih.gov/35104333/)
 
   > Lin JH, Chen LC, Yu SC, Huang YT. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics. 2022 Apr 28;38(9):2452-2455. doi: 10.1093/bioinformatics/btac126. PubMed PMID: 35253834; PubMed Central PMCID: PMC9048675.
 
@@ -62,9 +62,9 @@
 
   > Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, Marth G, Abecasis G, Durbin R; 1000 Genome Project Data Processing Subgroup. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009 Aug 15;25(16):2078-9. doi: 10.1093/bioinformatics/btp352. Epub 2009 Jun 8. PubMed PMID: 19505943; PubMed Central PMCID: PMC2723002.
 
-- [Severus](https://pubmed.ncbi.nlm.nih.gov/39604742/)
+- [Severus](https://www.nature.com/articles/s41587-025-02618-8)
 
-  > Parikh H, Yanover C, Bzureski S, Smith J, Gerstein J, Grunberg I, Boaz M, Kanne O, Kolmogorov M. Severus: accurate detection and characterization of somatic structural variation in tumor genomes using long reads. Nat Biotechnol. 2024 Nov 27. doi: 10.1038/s41587-024-02484-y. Epub ahead of print. PubMed PMID: 39604742.
+  > Keskus, A.G., Bryant, A., Ahmad, T. et al. Severus detects somatic structural variation and complex rearrangements in cancer genomes using long-read sequencing. Nat Biotechnol (2025). https://doi.org/10.1038/s41587-025-02618-8
 
 ## Software packaging/containerisation tools
 
