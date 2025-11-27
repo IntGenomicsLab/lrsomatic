@@ -30,7 +30,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{ mixed_bams }
 
-
     // Get normal bams and add platform/model info for Clair3 usage
     // remove type from so that information can be merged easier later
 
@@ -40,7 +39,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [basecall_model, meta, file]
         }
         .set{downloaded_model_files}
-
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
@@ -55,7 +53,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -115,7 +112,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{ normal_bams_germlinevcf }
 
-
     // normal_bams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
     //                bai:  indexes for bam files
@@ -129,7 +125,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { germline_vep }
-
 
     //
     // MODULE: LONGPHASE_PHASE
@@ -271,7 +266,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: CLAIRS
     //
 
-
     CLAIRS (
         clairs_input,
         fasta,
@@ -282,11 +276,19 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(CLAIRS.out.tbi)
         .set{clairs_out}
 
+    //
+    // MODULE: BCFTOOLS_CONCAT
+    //
+
     BCFTOOLS_CONCAT(
         clairs_out
     )
 
     ch_versions = ch_versions.mix(BCFTOOLS_CONCAT.out.versions)
+
+    //
+    // MODULE: BCFTOOLS_SORT
+    //
 
     BCFTOOLS_SORT(
         BCFTOOLS_CONCAT.out.vcf
