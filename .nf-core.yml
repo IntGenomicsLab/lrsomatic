@@ -1,5 +1,4 @@
 lint:
-  schema_params: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-lrsomatic_logo_light.png
@@ -27,7 +26,8 @@ lint:
     - validation.help.afterText
     - validation.summary.beforeText
     - validation.summary.afterText
-nf_core_version: 3.3.2
+  schema_params: false
+nf_core_version: 3.5.1
 repository_type: pipeline
 template:
   author: Jonas Demeulemeester
