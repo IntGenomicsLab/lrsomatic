@@ -16,17 +16,6 @@
 include { LRSOMATIC  } from './workflows/lrsomatic'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
-include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_lrsomatic_pipeline'
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    GENOME PARAMETER VALUES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// TODO nf-core: Remove this line if you don't need a FASTA file
-//   This is an example of how to use getGenomeAttribute() to fetch parameters
-//   from igenomes.config using `--genome`
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
