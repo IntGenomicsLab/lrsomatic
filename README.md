@@ -31,7 +31,7 @@ b. Alignment to the reference genome ([`minimap2`](https://github.com/lh3/minima
 
 c. Post alignment QC ([`cramino`](https://github.com/wdecoster/cramino), [`samtools idxstats`](https://github.com/samtools/samtools), [`samtools flagstats`](https://github.com/samtools/samtools), [`samtools stats`](https://github.com/samtools/samtools))
 
-d. Specific for calling modified base calling ([`Fibertools`](https://github.com/fiberseq/fibertools-rs))
+d. Specific for calling modified base calling ([`Modkit`](https://github.com/nanoporetech/modkit), [`Fibertools`](https://github.com/fiberseq/fibertools-rs))
 
 **2i) Matched mode: small variant calling:**
 
