@@ -1,18 +1,24 @@
-repository_type: pipeline
-
-nf_core_version: 3.1.1
-
 lint:
+  files_exist:
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
   files_unchanged:
     - CODE_OF_CONDUCT.md
-    - assets/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_dark.png
+    - assets/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/CONTRIBUTING.md
     - .github/PULL_REQUEST_TEMPLATE.md
     - assets/email_template.txt
     - docs/README.md
+  multiqc_config:
+    - report_comment
   nextflow_config:
     - manifest.name
     - manifest.homePage
@@ -20,25 +26,17 @@ lint:
     - validation.help.afterText
     - validation.summary.beforeText
     - validation.summary.afterText
-  multiqc_config:
-    - report_comment
-  files_exist:
-    - CODE_OF_CONDUCT.md
-    - assets/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_dark.png
-    - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/awstest.yml
-    - .github/workflows/awsfulltest.yml
-
+  schema_params: false
+nf_core_version: 3.5.1
+repository_type: pipeline
 template:
-  org: IntGenomicsLab
-  name: lr_somatic
-  description: Workflow for somatic variant calling of long read data
   author: Jonas Demeulemeester
-  version: 1.0.0dev
-  force: true
+  description: Workflow for somatic variant calling of long read data
+  force: false
+  is_nfcore: false
+  name: lrsomatic
+  org: IntGenomicsLab
   outdir: .
   skip_features:
     - fastqc
-  is_nfcore: false
+  version: 1.0.0

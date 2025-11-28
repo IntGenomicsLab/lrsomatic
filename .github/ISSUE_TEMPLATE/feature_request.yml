@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the IntGenomicsLab/lr_somatic pipeline
+description: Suggest an idea for the IntGenomicsLab/lrsomatic pipeline
 labels: enhancement
 body:
   - type: textarea

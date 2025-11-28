@@ -1,0 +1,101 @@
+process SEVERUS {
+    tag "$meta.id"
+    label 'process_medium'
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/severus:1.6--pyhdfd78af_0':
+        'biocontainers/severus:1.6--pyhdfd78af_0' }"
+
+    input:
+    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
+    tuple val(meta2), path(bed), path(pon_path)
+
+    output:
+    tuple val(meta), path("severus.log")                              , emit: log
+    tuple val(meta), path("read_qual.txt")                            , emit: read_qual
+    tuple val(meta), path("breakpoints_double.csv")                   , emit: breakpoints_double
+    tuple val(meta), path("read_alignments")                          , emit: read_alignments                  , optional: true
+    tuple val(meta), path("read_ids.csv")                             , emit: read_ids                         , optional: true
+    tuple val(meta), path("severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
+    tuple val(meta), path("severus_LOH.bed")                          , emit: loh                              , optional: true
+    tuple val(meta), path("all_SVs/severus_all.vcf.gz")               , emit: all_vcf                          , optional: true
+    tuple val(meta), path("all_SVs/severus_all.vcf.gz.tbi")           , emit: all_tbi                          , optional: true
+    tuple val(meta), path("all_SVs/breakpoint_clusters_list.tsv")     , emit: all_breakpoints_clusters_list    , optional: true
+    tuple val(meta), path("all_SVs/breakpoint_clusters.tsv")          , emit: all_breakpoints_clusters         , optional: true
+    tuple val(meta), path("all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
+    tuple val(meta), path("somatic_SVs/severus_somatic.vcf.gz")       , emit: somatic_vcf                      //, optional: true
+    tuple val(meta), path("somatic_SVs/severus_somatic.vcf.gz.tbi")   , emit: somatic_tbi                      , optional: true
+    tuple val(meta), path("somatic_SVs/breakpoint_clusters_list.tsv") , emit: somatic_breakpoints_clusters_list, optional: true
+    tuple val(meta), path("somatic_SVs/breakpoint_clusters.tsv")      , emit: somatic_breakpoints_clusters     , optional: true
+    tuple val(meta), path("somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
+    path "versions.yml"                                               , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${meta.id}"
+
+    def control = control_input ? "--control-bam ${control_input}" : ""
+    def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
+    def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
+    def pon = pon_path && (!control_input) ? "--PON ${pon_path}" : ""
+    """
+    severus \\
+        $args \\
+        --threads $task.cpus \\
+        --target-bam $target_input \\
+        $vntr_bed \\
+        $pon \\
+        $control \\
+        $phasing_vcf \\
+        --out-dir .
+    
+    bgzip somatic_SVs/severus_somatic.vcf
+    tabix -p vcf somatic_SVs/severus_somatic.vcf.gz
+    bgzip all_SVs/severus_all.vcf
+    tabix -p vcf all_SVs/severus_all.vcf.gz
+
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        severus: \$(severus --version)
+    END_VERSIONS
+    """
+
+    stub:
+    def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${meta.id}"
+
+    """
+    mkdir -p all_SVs/plots
+    mkdir -p somatic_SVs/plots
+
+    touch severus_collaped_dup.bed
+    touch severus.log
+    touch severus_LOH.bed
+    touch read_alignments
+    touch read_ids.csv
+    touch read_qual.txt
+    touch breakpoints_double.csv
+    touch all_SVs/severus_all.vcf.gz
+    touch all_SVs/severus_all.vcf.gz.tbi
+    touch all_SVs/breakpoints_clusters_list.tsv
+    touch all_SVs/breakpoints_clusters.tsv
+    touch all_SVs/plots/severus_0.html
+    touch all_SVs/plots/severus_1.html
+    touch somatic_SVs/severus_somatic.vcf.gz
+    touch somatic_SVs/severus_somatic.vcf.gz.tbi
+    touch somatic_SVs/breakpoints_clusters_list.tsv
+    touch somatic_SVs/breakpoints_clusters.tsv
+    touch somatic_SVs/plots/severus_0.html
+    touch somatic_SVs/plots/severus_1.html
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        severus: \$(severus --version)
+    END_VERSIONS
+    """
+}
