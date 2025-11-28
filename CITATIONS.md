@@ -13,7 +13,7 @@
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
 
   > Van Loo P, Nordgard SH, Lingjærde OC, Russnes HG, Rye IH, Sun W, Weigman VJ, Marynen P, Zetterberg A, Naume B, Perou CM, Børresen-Dale AL, Kristensen VN. Allele-specific copy number analysis of tumors. Proc Natl Acad Sci U S A. 2010 Sep 28;107(39):16910-5. doi: 10.1073/pnas.1009843107. Epub 2010 Sep 13. PubMed PMID: 20837533; PubMed Central PMCID: PMC2947907.
-  
+
 - [bcftools](https://pubmed.ncbi.nlm.nih.gov/33590861/)
 
   > Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H. Twelve years of SAMtools and BCFtools. Gigascience. 2021 Feb 16;10(2):giab008. doi: 10.1093/gigascience/giab008. PMID: 33590861; PMCID: PMC7931819.
@@ -24,7 +24,7 @@
 
 - [ClairS](https://www.biorxiv.org/content/10.1101/2023.08.17.553778v1)
 
-  >  Zhenxian Zheng, Junhao Su, Lei Chen, Yan-Lam Lee, Tak-Wah Lam, Ruibang Luo. ClairS: a deep-learning method for long-read somatic small variant calling. bioRxiv 2023.08.17.553778; doi: https://doi.org/10.1101/2023.08.17.553778 
+  > Zhenxian Zheng, Junhao Su, Lei Chen, Yan-Lam Lee, Tak-Wah Lam, Ruibang Luo. ClairS: a deep-learning method for long-read somatic small variant calling. bioRxiv 2023.08.17.553778; doi: https://doi.org/10.1101/2023.08.17.553778
 
 - [ClairS-TO](https://pubmed.ncbi.nlm.nih.gov/41173866/)
 

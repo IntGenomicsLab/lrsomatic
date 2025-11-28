@@ -14,7 +14,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-lrsomatic extracts information from the bam header files to decide which models to use for Clair3, ClairS, or ClairS-TO. However, this can optionally be specified manually. You can do this for one or many samples, if the field is left blank, the pipeline will default to extracting this information.  You can specify this by creating your csv in the following form:
+lrsomatic extracts information from the bam header files to decide which models to use for Clair3, ClairS, or ClairS-TO. However, this can optionally be specified manually. You can do this for one or many samples, if the field is left blank, the pipeline will default to extracting this information. You can specify this by creating your csv in the following form:
 
 ```csv
 sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model
@@ -43,19 +43,17 @@ sample1,tumour3.bam,,pb,male,n
 
 ### Full Description of Samplesheet Columns
 
-
-
-| Column    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `bam_tumor` | Full path to BAM file for the tumor. File must end in `.bam`.                                                            |
-| `bam_normal` | Full path to BAM file for the tumor. File must end in `.bam`.                                                             | 
-|`platform`| A string specifying the platform used for sequencing, can be either `pb` for PacBio sequencing data or `ont` for Oxford Nanopore sequencing data
-| `sex` | A string specifying the biological sex of the sample, can either be `m` or `f`
-|`fiber`| A string specifying if the sample has been subjected to Fiber-seq. Can either be `y` or `n`
-|`clair3_model` | A string describing which model is to be used for Clair3's small variant calling (*optional*)
-|`clairSTO_model` | A string describing which model is to be used for ClairS-TO's small variant calling (*optional*)
-|`clairS_model` | A string describing which model is to be used for ClairS's small variant calling (*optional*)
+| Column           | Description                                                                                                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sample`         | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
+| `bam_tumor`      | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                          |
+| `bam_normal`     | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                          |
+| `platform`       | A string specifying the platform used for sequencing, can be either `pb` for PacBio sequencing data or `ont` for Oxford Nanopore sequencing data                                       |
+| `sex`            | A string specifying the biological sex of the sample, can either be `m` or `f`                                                                                                         |
+| `fiber`          | A string specifying if the sample has been subjected to Fiber-seq. Can either be `y` or `n`                                                                                            |
+| `clair3_model`   | A string describing which model is to be used for Clair3's small variant calling (_optional_)                                                                                          |
+| `clairSTO_model` | A string describing which model is to be used for ClairS-TO's small variant calling (_optional_)                                                                                       |
+| `clairS_model`   | A string describing which model is to be used for ClairS's small variant calling (_optional_)                                                                                          |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
@@ -64,7 +62,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run IntGenomicsLab/lrsomatic --input ./samplesheet.csv --outdir ./results --genome GRCh38 -profile docker 
+nextflow run IntGenomicsLab/lrsomatic --input ./samplesheet.csv --outdir ./results --genome GRCh38 -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -78,6 +76,7 @@ work                # Directory containing the nextflow working files
 # Other nextflow hidden files, eg. history of pipeline runs and old logs.
 
 ```
+
 > [!WARNING]
 > Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
 
@@ -99,54 +98,57 @@ genome: 'GRCh37'
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
 ### Pipeline options
-| Parameter    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|`-input` | Full file path to input samplesheet, must be in `.csv` format and conform to specifications noted above
-|`--genome`| Specified genome assembly, support is given for `GRCh38` and `CHM13`|
-|`--normal_fiber`| A boolean which skips fiber-seq processing on normal files (on those which have fiber-seq for the tumor). Default = `true` (*does not skip fiber-seq processing for normal*)
+
+| Parameter        | Description                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-input`         | Full file path to input samplesheet, must be in `.csv` format and conform to specifications noted above                                                                      |
+| `--genome`       | Specified genome assembly, support is given for `GRCh38` and `CHM13`                                                                                                         |
+| `--normal_fiber` | A boolean which skips fiber-seq processing on normal files (on those which have fiber-seq for the tumor). Default = `true` (_does not skip fiber-seq processing for normal_) |
 
 #### Skipping options:
-| Parameter    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|`--skip_qc` | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false`
-|`--skip_fiber` | A boolean to skip all `fibertools` related modules. Default = `false`
-|`--skip_cramino` | A boolean to skip `cramino`. Default = `false`
-|`--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`
-|`--skip_ascat` | A boolean to skip `ascat`. Default = `false`
-|`--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`
-|`--skip_wakhan` | A boolean to skip `wakhan`. Default = `false`
-|`--skip_vep` | A boolean to skip `vep`. Default = `false`
+
+| Parameter         | Description                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false` |
+| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                       |
+| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                              |
+| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                             |
+| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                |
+| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                             |
+| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                               |
+| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                  |
 
 #### VEP options:
-| Parameter    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|`--vep_cache` | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/).
-|`--vep_cache_version`| Integer specifying version of vep cache. Default = `113`
-|`--vep_args`| A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`
-|`--vep_custom`| A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`
-|`--vep_custom_tbi`| A full path to a index file for cutom vcf for vep. Default = `null`
+
+| Parameter             | Description                                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--vep_cache`         | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
+| `--vep_cache_version` | Integer specifying version of vep cache. Default = `113`                                                                                         |
+| `--vep_args`          | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`                |
+| `--vep_custom`        | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
+| `--vep_custom_tbi`    | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
 
 #### Minimap2 Options
-| Parameter    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--minimap2_ont_model`| specifies which model to use minimap2 with for ONT samples. Default = `null`
-|`--minimap2_pb_model`| specifies which model to use minimap2 with for PacBio samples. Default = `null`
-|`--save_secondary_alignments`| A boolean to specify if secondary alignmetns are kept in aligned bam file. Defualt = `true`
+
+| Parameter                     | Description                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `--minimap2_ont_model`        | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
+| `--minimap2_pb_model`         | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
+| `--save_secondary_alignments` | A boolean to specify if secondary alignmetns are kept in aligned bam file. Defualt = `true` |
 
 #### ASCAT Options
-| Parameter    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-``--ascat_ploidy``| integer to enforce a given ploidy value. Default = `null`
-``--ascat_purity``| integer to enforce a given purity value. Default = `null`
-`--ascat_min_base_qual` | integer to specify a minimum base quality for ascat's allele counter. Default = `20`
-`--ascat_min_counts` | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`
-`--ascat_min_map_qual` | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`
-`--ascat_penalty` | integer to specify a penalty value for ascat. Default = `150`
-`--ascat_longread_bins` | integer to specify the binsize for ascat long reads. Default = `2000`
-`--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`
-`--ascat_chroms` | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null`
 
-
+| Parameter                     | Description                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------- |
+| `--ascat_ploidy`              | integer to enforce a given ploidy value. Default = `null`                                         |
+| `--ascat_purity`              | integer to enforce a given purity value. Default = `null`                                         |
+| `--ascat_min_base_qual`       | integer to specify a minimum base quality for ascat's allele counter. Default = `20`              |
+| `--ascat_min_counts`          | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`          |
+| `--ascat_min_map_qual`        | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`           |
+| `--ascat_penalty`             | integer to specify a penalty value for ascat. Default = `150`                                     |
+| `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                             |
+| `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                       |
+| `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null` |
 
 ### Updating the pipeline
 
