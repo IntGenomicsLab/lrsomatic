@@ -82,7 +82,7 @@
                     "wget": "1.21.4"
                 },
                 "Workflow": {
-                    "IntGenomicsLab/lrsomatic": "v1.0.0"
+                    "IntGenomicsLab/lrsomatic": "v1.1.0dev"
                 }
             },
             [
@@ -369,6 +369,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-11-28T14:26:44.508445086"
+        "timestamp": "2025-11-28T16:07:44.541483428"
     }
 }
