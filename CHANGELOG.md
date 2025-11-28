@@ -5,8 +5,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.1.0 - [date]
 
-
-
 ## v1.0.0 - [28 Nov 2025]
 
 Initial release of IntGenomicsLab/lrsomatic, created with the [nf-core](https://nf-co.re/) template.
