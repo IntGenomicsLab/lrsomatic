@@ -62,10 +62,10 @@ process CLAIRSTO {
 
     """
     mkdir -p output
-    echo "" | gzip > output/snv.vcf.gz
-    touch output/snv.vcf.gz.tbi
-    echo "" | gzip > output/indel.vcf.gz
-    touch output/indel.vcf.gz.tbi
+    echo "" | gzip > snv.vcf.gz
+    touch snv.vcf.gz.tbi
+    echo "" | gzip > indel.vcf.gz
+    touch indel.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -50,8 +50,11 @@ process CLAIRS {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    echo "" | gzip > snv.vcf.gz
-    touch snv.vcf.gz.tbi
+    echo "" | gzip > snvs.vcf.gz
+    touch snvs.vcf.gz.tbi
+    
+    echo "" | gzip > indel.vcf.gz
+    touch indel.vcf.gz.tbi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
