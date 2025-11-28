@@ -53,9 +53,14 @@ a. Somatic structural variant calling ([`Severus`](https://github.com/Kolmogorov
 
 b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
 
+**4) Annotation:**
+
+a. Small variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep))
+
+b. Structural variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep))
+
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
 
@@ -83,12 +88,14 @@ nextflow run IntGenomicsLab/lrsomatic \
    --outdir <OUTDIR>
 ```
 
+More detail is given in our [usage documentation](/docs/usage.md)
+
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 ## Credits
 
-IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, and Jonas Demeulemeester.
+IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, Laurens Lambrechts, and Jonas Demeulemeester.
 
 ## Pipeline output
 
@@ -99,30 +106,52 @@ Besides QC and the aligned and phased bam file, we have output from (structural)
 Example output directory structure:
 
 ```
-results
-|
-├── multiqc
+├── Sample 1
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├──clairS-TO
+│    │   ├──severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
 │
-├── sample1
-│   ├── bamfiles
-│   ├── qc
-│   │   ├── tumour
-│   │   └── normal
-│   ├── variants
-│   │   ├── severus
-│   │   └── clairs
-│   └── ascat
-│
-└── sample2
-    ├── bamfiles
-    ├── qc
-    │   ├── tumour
-    │   └── normal
-    ├── variants
-    │   ├── severus
-    │   └── clairs
-    └── ascat
+├── Sample 2
+│    ├── ascat
+│    ├── bamfiles
+│    ├── qc
+│    │    ├── tumor
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    │    ├── normal
+│    │    │   ├── cramino_aln
+│    │    │   ├── cramino_ubam
+│    │    │   ├── fibertoolsrs
+│    │    │   ├── mosdepth
+│    │    │   ├── samtools
+│    ├── variants
+│    │   ├── clair3
+│    │   ├── clairS
+│    │   ├── severus
+│    ├── vep
+│    │   ├── germline
+│    │   ├── somatic
+│    │   ├── SVs
+├── pipeline_info
 ```
+
+more detail is given in our [output documentation](/docs/output.md)
 
 ## Contributions and Support
 
@@ -132,8 +161,6 @@ If you would like to contribute to this pipeline, please see the [contributing g
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
 <!-- If you use IntGenomicsLab/lrsomatic for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
