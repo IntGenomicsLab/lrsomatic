@@ -52,7 +52,7 @@ process CLAIRS {
     """
     echo "" | gzip > snvs.vcf.gz
     touch snvs.vcf.gz.tbi
-    
+
     echo "" | gzip > indel.vcf.gz
     touch indel.vcf.gz.tbi
 
