@@ -23,6 +23,8 @@ Developed using **Nextflow DSL2**, it offers high portability and scalability ac
 
 ## Pipeline summary
 
+![image](./assets/lrsomatic_1.0.png)
+
 **1) Pre-processing:**
 
 a. Raw read QC ([`cramino`](https://github.com/wdecoster/cramino))
