@@ -212,12 +212,15 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
+    mixed_bams_vcf.view()
+
     // Add index to channel
     mixed_bams_vcf
         .join(mixed_hapbams)
         .join(SAMTOOLS_INDEX.out.bai)
         .set{ mixed_hapbams }
 
+    mixed_hapbams.view()
     // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                  bams: haplotagged aligned bams
     //                  bais: indexes for bam files
@@ -246,7 +249,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(LONGPHASE_PHASE.out.vcf)
         .join(LONGPHASE_PHASE.out.tbi)
         .set{tumor_normal_severus}
-
+    tumor_normal_severus.view()
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files
