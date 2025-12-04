@@ -154,13 +154,13 @@ process ASCAT {
     #Run ASCAT to fit every tumor to a model, inferring ploidy, normal cell contamination, and discrete copy numbers
     #If psi and rho are manually set:
     if (!is.null($purity) && !is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = $pdf_plots)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = "$pdf_plots")
     } else if(!is.null($purity) && is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = $pdf_plots)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = "$pdf_plots")
     } else if(!is.null($ploidy) && is.null($purity)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = $pdf_plots)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = "$pdf_plots")
     } else {
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = $pdf_plots)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = "$pdf_plots")
     }
 
     #Extract metrics from ASCAT profiles
