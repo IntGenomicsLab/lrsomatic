@@ -22,7 +22,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     somatic_vep = Channel.empty()
     germline_vep = Channel.empty()
 
-
     // Branch input bams in normal and tumour
     mixed_bams
         .branch{ meta, bam, bai ->
@@ -40,6 +39,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [basecall_model, meta, file]
         }
         .set{downloaded_model_files}
+
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
@@ -164,7 +164,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
-
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
         .map { meta, bam, bai, vcf ->
@@ -248,6 +247,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(LONGPHASE_PHASE.out.vcf)
         .join(LONGPHASE_PHASE.out.tbi)
         .set{tumor_normal_severus}
+
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files
