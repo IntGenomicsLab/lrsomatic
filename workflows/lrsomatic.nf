@@ -580,13 +580,11 @@ workflow LRSOMATIC {
             }
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
-        wakhan_input.view()
-        ch_fasta.view()
         WAKHAN (
             wakhan_input,
             ch_fasta
         )
-        
+
 
         ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }

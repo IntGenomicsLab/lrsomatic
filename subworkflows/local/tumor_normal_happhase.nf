@@ -22,7 +22,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     somatic_vep = Channel.empty()
     germline_vep = Channel.empty()
 
-    mixed_bams.view()
 
     // Branch input bams in normal and tumour
     mixed_bams
@@ -41,7 +40,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [basecall_model, meta, file]
         }
         .set{downloaded_model_files}
-    downloaded_model_files.view()
      mixed_bams.normal
         .map{ meta, bam, bai ->
             def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
@@ -55,7 +53,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-    normal_bams_model.view()
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -64,7 +61,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, bam, bai, model, platform]
         }
         .set{ normal_bams }
-    normal_bams.view()
 
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:          list of concatenated aligned bams
@@ -88,7 +84,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
-    tumor_bams.view()
 
     // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
@@ -169,8 +164,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
-    tumor_bams.view()
-    LONGPHASE_PHASE.out.vcf.view()
 
     tumor_bams
         .join(LONGPHASE_PHASE.out.vcf)
