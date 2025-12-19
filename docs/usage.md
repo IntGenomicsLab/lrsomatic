@@ -149,6 +149,10 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 | `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                             |
 | `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                       |
 | `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null` |
+| `--ascat_allele_files`              | A full path to a zipped folder containing allele files for  [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`  |
+| `--ascat_loci_files`              | A full path to a zipped folder containing loci files for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`  |
+| `--ascat_gc_file`              | A full path to a GC correction file for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`  |
+| `--ascat_rt_file`              | A full path to a replication timing correction file for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`  |
 
 ### Updating the pipeline
 

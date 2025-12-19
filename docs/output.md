@@ -66,6 +66,8 @@ The directories listed below will be created in the results directory after the 
 ├── ascat
 │   ├── sample.before_correction.sample.tumour.germline.png
 │   ├── sample.before_correction.sample.tumour.tumour.png
+│   ├── sample.after_correction.sample.tumour.germline.png
+│   ├── sample.after_correction.sample.tumour.tumour.png
 │   ├── sample.cnvs.txt
 │   ├── sample.metrics.txt
 │   ├── sample.normal_alleleFrequencies_chr(1-22,X).txt
