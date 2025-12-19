@@ -138,21 +138,21 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 #### ASCAT Options
 
-| Parameter                     | Description                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------- |
-| `--ascat_ploidy`              | integer to enforce a given ploidy value. Default = `null`                                         |
-| `--ascat_purity`              | integer to enforce a given purity value. Default = `null`                                         |
-| `--ascat_min_base_qual`       | integer to specify a minimum base quality for ascat's allele counter. Default = `20`              |
-| `--ascat_min_counts`          | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`          |
-| `--ascat_min_map_qual`        | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`           |
-| `--ascat_penalty`             | integer to specify a penalty value for ascat. Default = `150`                                     |
-| `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                             |
-| `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                       |
-| `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null` |
-| `--ascat_allele_files`              | A full path to a zipped folder containing allele files for  [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`  |
-| `--ascat_loci_files`              | A full path to a zipped folder containing loci files for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`  |
-| `--ascat_gc_file`              | A full path to a GC correction file for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`  |
-| `--ascat_rt_file`              | A full path to a replication timing correction file for [ASCAT]( https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`  |
+| Parameter                     | Description                                                                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--ascat_ploidy`              | integer to enforce a given ploidy value. Default = `null`                                                                                                                                                                   |
+| `--ascat_purity`              | integer to enforce a given purity value. Default = `null`                                                                                                                                                                   |
+| `--ascat_min_base_qual`       | integer to specify a minimum base quality for ascat's allele counter. Default = `20`                                                                                                                                        |
+| `--ascat_min_counts`          | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`                                                                                                                                    |
+| `--ascat_min_map_qual`        | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`                                                                                                                                     |
+| `--ascat_penalty`             | integer to specify a penalty value for ascat. Default = `150`                                                                                                                                                               |
+| `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                                                                                                                                                       |
+| `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                                                                                                                                                 |
+| `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null`                                                                                                                           |
+| `--ascat_allele_files`        | A full path to a zipped folder containing allele files for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`                             |
+| `--ascat_loci_files`          | A full path to a zipped folder containing loci files for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`                               |
+| `--ascat_gc_file`             | A full path to a GC correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`                 |
+| `--ascat_rt_file`             | A full path to a replication timing correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null` |
 
 ### Updating the pipeline
 
