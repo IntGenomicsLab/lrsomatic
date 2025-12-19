@@ -85,7 +85,7 @@ workflow LRSOMATIC {
     params.ascat_allele_files = getGenomeAttribute('ascat_alleles')
     params.ascat_loci_files = getGenomeAttribute('ascat_loci')
     params.ascat_gc_file = getGenomeAttribute('ascat_loci_gc')
-    params.ascat_rt_file = getGenomeAttribute('ascat_loci_rt') 
+    params.ascat_rt_file = getGenomeAttribute('ascat_loci_rt')
     params.centromere_bed = getGenomeAttribute('centromere_bed')
     params.pon_file = getGenomeAttribute('pon_file')
     params.bed_file = getGenomeAttribute('bed_file')
