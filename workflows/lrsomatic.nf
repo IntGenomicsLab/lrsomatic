@@ -169,8 +169,8 @@ workflow LRSOMATIC {
         params.fasta,
         params.ascat_allele_files,
         params.ascat_loci_files,
-        params.ascat_gc_files,
-        params.ascat_rt_files,
+        params.ascat_gc_file,
+        params.ascat_rt_file,
         basecall_meta,
         clair3_modelMap
     )
