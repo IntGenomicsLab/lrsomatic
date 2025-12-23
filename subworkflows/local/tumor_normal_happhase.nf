@@ -48,7 +48,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model,
+                            basecall_model: basecall_model,
                             clairS_model: meta.clairS_model]
             return [ basecall_model, new_meta, bam, bai ]
         }
@@ -73,12 +73,13 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // remove type from so that information can be merged easier later
     mixed_bams.tumor
         .map{ meta, bam, bai ->
+            def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model,
+                            basecall_model: basecall_model,
                             clairS_model: meta.clairS_model]
             return[new_meta, bam, bai]
         }
