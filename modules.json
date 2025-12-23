@@ -71,6 +71,7 @@
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "af27af1be706e6a2bb8fe454175b0cdf77f47b49",
+<<<<<<< HEAD
                         "installed_by": ["modules"]
                     },
                     "pigz/uncompress": {
@@ -127,6 +128,8 @@
                     "wget": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+=======
+>>>>>>> TEMPLATE
                         "installed_by": ["modules"]
                     }
                 }
