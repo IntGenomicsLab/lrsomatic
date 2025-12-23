@@ -1,17 +1,17 @@
 lint:
   files_exist:
     - CODE_OF_CONDUCT.md
-    - assets/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_dark.png
+    - assets/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
   files_unchanged:
     - CODE_OF_CONDUCT.md
-    - assets/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_light.png
-    - docs/images/nf-core-lr_somatic_logo_dark.png
+    - assets/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_light.png
+    - docs/images/nf-core-lrsomatic_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/CONTRIBUTING.md
     - .github/PULL_REQUEST_TEMPLATE.md
@@ -27,7 +27,7 @@ lint:
     - validation.summary.beforeText
     - validation.summary.afterText
   schema_params: false
-nf_core_version: 3.3.2
+nf_core_version: 3.5.1
 repository_type: pipeline
 template:
   author: Jonas Demeulemeester
@@ -39,4 +39,4 @@ template:
   outdir: .
   skip_features:
     - fastqc
-  version: 1.0.0dev
+  version: 1.1.0dev
