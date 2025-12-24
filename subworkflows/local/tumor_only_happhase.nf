@@ -114,10 +114,10 @@ workflow TUMOR_ONLY_HAPPHASE {
     // remove model info
     tumor_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .join(LONGPHASE_PHASE.out.sv_vcf)
-        .join(LONGPHASE_PHASE.out.mod_vcf)
-        .map { meta, bam, bai, vcf, svs, mods ->
+        .map { meta, bam, bai, model, vcf ->
             def new_meta = meta + [type: "tumor"]
+            def svs = []
+            def mods = []
             return [new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ tumor_bams_phasedvcf }

@@ -9,7 +9,7 @@ process SEVERUS {
 
     input:
     tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf)
-    tuple val(meta2), path(bed)
+    tuple val(meta2), path(bed), path(pon_path)
 
     output:
     tuple val(meta), path("${prefix}/severus.log")                              , emit: log
@@ -39,15 +39,23 @@ process SEVERUS {
     def control = control_input ? "--control-bam ${control_input}" : ""
     def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
     def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
+    def pon = pon_path && (!control_input) ? "--PON ${pon_path}" : ""
+
     """
     severus \\
         $args \\
         --threads $task.cpus \\
         --target-bam $target_input \\
         $vntr_bed \\
+        $pon \\
         $control \\
         $phasing_vcf \\
         --out-dir ${prefix}
+        
+    bgzip ${prefix}/somatic_SVs/severus_somatic.vcf
+    tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    bgzip ${prefix}/all_SVs/severus_all.vcf
+    tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -144,10 +144,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .join(LONGPHASE_PHASE.out.sv_vcf)
-        .join(LONGPHASE_PHASE.out.mod_vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf, svs, mods ->
+        .map { meta, bam, bai, clair3_model, platform, vcf ->
             def new_meta = meta + [type: "normal"]
+            def svs = []
+            def mods = []
             return[new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ normal_bams }
@@ -164,10 +164,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // mix with the normal bams
     tumor_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .join(LONGPHASE_PHASE.out.sv_vcf)
-        .join(LONGPHASE_PHASE.out.mod_vcf)
-        .map { meta, bam, bai, vcf, svs, mods ->
+        .map { meta, bam, bai, vcf ->
             def new_meta = meta + [type: "tumor"]
+            def svs = []
+            def mods = []
             return [new_meta, bam, bai, vcf, svs, mods]
         }
         .mix(normal_bams)
@@ -183,6 +183,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //
     // MODULE: LONGPHASE_HAPLOTAG
     //
+
     // haplotag tumor and normal bams with normal vcf files for both
     LONGPHASE_HAPLOTAG (
         mixed_bams_vcf,
@@ -257,7 +258,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     tumor_normal_severus
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
             def model = (!meta.clairS_model || meta.clairS_model.toString().trim() in ['', '[]']) ? clairs_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairS_model
-            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai,model]
+            return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, model]
         }
         .set { clairs_input }
 

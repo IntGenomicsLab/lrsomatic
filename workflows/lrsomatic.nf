@@ -436,6 +436,9 @@ workflow LRSOMATIC {
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf]
+        }
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
