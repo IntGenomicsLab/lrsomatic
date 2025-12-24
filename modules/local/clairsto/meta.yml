@@ -139,7 +139,7 @@ topics:
       - "/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'":
           type: string
           description: The command used to generate the version of the tool
- 
+
 authors:
   - "@robert-a-forsyth"
 maintainers:
