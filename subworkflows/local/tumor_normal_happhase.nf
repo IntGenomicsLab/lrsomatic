@@ -92,7 +92,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     //
     // MODULE: CLAIR3
     // small germline variant calling
-    
+
     CLAIR3 (
         normal_bams,
         fasta,

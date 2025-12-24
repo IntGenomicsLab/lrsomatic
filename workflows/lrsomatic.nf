@@ -247,7 +247,7 @@ workflow LRSOMATIC {
         FIBERTOOLSRS_PREDICTM6A (
             pacbio_bams.kinetics
         )
-        
+
         pacbio_bams.noKinetics
             .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
             .set{predicted_bams}
@@ -297,7 +297,7 @@ workflow LRSOMATIC {
             //
             // MODULE: FIBERTOOLSRS_QC
             //
-            
+
             FIBERTOOLSRS_QC (
                 FIBERTOOLSRS_FIRE.out.bam
             )
