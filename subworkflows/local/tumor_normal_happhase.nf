@@ -91,15 +91,13 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     //
     // MODULE: CLAIR3
-    //
     // small germline variant calling
+    
     CLAIR3 (
         normal_bams,
         fasta,
         fai
     )
-
-    ch_versions = ch_versions.mix(CLAIR3.out.versions)
 
     // Add germline vcf to normal bams
     // remove clair3 model information
@@ -145,12 +143,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // both are needed for mixing with the tumor bams
 
     normal_bams
-        .join(LONGPHASE_PHASE.out.vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf ->
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.sv_vcf)
+        .join(LONGPHASE_PHASE.out.mod_vcf)
+        .map { meta, bam, bai, clair3_model, platform, vcf, svs, mods ->
             def new_meta = meta + [type: "normal"]
-            def snvs = []
-            def mods = []
-            return[new_meta, bam, bai, vcf, snvs, mods]
+            return[new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ normal_bams }
 
@@ -165,12 +163,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
     tumor_bams
-        .join(LONGPHASE_PHASE.out.vcf)
-        .map { meta, bam, bai, vcf ->
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.sv_vcf)
+        .join(LONGPHASE_PHASE.out.mod_vcf)
+        .map { meta, bam, bai, vcf, svs, mods ->
             def new_meta = meta + [type: "tumor"]
-            def snvs = []
-            def mods = []
-            return [new_meta, bam, bai, vcf, snvs, mods]
+            return [new_meta, bam, bai, vcf, svs, mods]
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
@@ -244,8 +242,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
             // Return channel
             return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai ]
         }
-        .join(LONGPHASE_PHASE.out.vcf)
-        .join(LONGPHASE_PHASE.out.tbi)
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.snv_vcf_index)
         .set{tumor_normal_severus}
 
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
@@ -303,8 +301,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { somatic_vep }
-
-    ch_versions = ch_versions.mix(CLAIRS.out.versions)
 
     emit:
     tumor_normal_severus

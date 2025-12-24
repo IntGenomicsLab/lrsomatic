@@ -83,8 +83,6 @@ workflow PREPARE_REFERENCE_FILES {
 
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai
 
-        ch_versions = ch_versions.mix(SAMTOOLS_FAIDX.out.versions)
-
         //
         // Prepare ASCAT files
         //

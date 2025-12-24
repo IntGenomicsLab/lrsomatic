@@ -46,13 +46,10 @@ workflow TUMOR_ONLY_HAPPHASE {
         gnomad
     )
 
-    ch_versions = ch_versions.mix(CLAIRSTO.out.versions)
-
     CLAIRSTO.out.indel_vcf
                 .join(CLAIRSTO.out.snv_vcf)
                 .set{ clairsto_vcf }
 
-    ch_versions = ch_versions.mix(CLAIRSTO.out.versions)
     // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 indel_vcf: vcf for indels
     //                 snv_vcf:   vcf for snvs
@@ -66,9 +63,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     VCFSPLIT (
         clairsto_vcf
     )
-    ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
-
-    ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
 
     // Add the nonsomatic vcf info
     // remove model info
@@ -113,18 +107,18 @@ workflow TUMOR_ONLY_HAPPHASE {
         fasta,
         fai
     )
-    ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
     // Add phased nonsomatic vcf info
     // remove model info
     tumor_bams
-        .join(LONGPHASE_PHASE.out.vcf)
-        .map{ meta, bam, bai, model, snps ->
-            def svs = []
-            def mods = []
-            return [meta, bam, bai, snps, svs, mods]
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.sv_vcf)
+        .join(LONGPHASE_PHASE.out.mod_vcf)
+        .map { meta, bam, bai, vcf, svs, mods ->
+            def new_meta = meta + [type: "tumor"]
+            return [new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ tumor_bams_phasedvcf }
 
@@ -145,7 +139,6 @@ workflow TUMOR_ONLY_HAPPHASE {
         fasta,
         fai
     )
-    ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
@@ -163,15 +156,14 @@ workflow TUMOR_ONLY_HAPPHASE {
     SAMTOOLS_INDEX (
         haplotagged_bams
     )
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     // join information and the phased VCF file
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
-        .join(LONGPHASE_PHASE.out.vcf)
-        .join(LONGPHASE_PHASE.out.tbi)
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.snv_vcf_index)
         .map{ meta, hap_bam, hap_bai, vcf, tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
