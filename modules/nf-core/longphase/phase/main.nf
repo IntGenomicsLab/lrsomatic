@@ -48,10 +48,13 @@ process LONGPHASE_PHASE {
         --threads $task.cpus \\
         $args2 \\
         ${prefix}*.vcf
+        
+    tabix -p vcf ${prefix}*.vcf.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
+        tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
     END_VERSIONS
     """
 
