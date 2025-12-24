@@ -487,8 +487,8 @@ workflow LRSOMATIC {
     // Module: MOSDEPTH
     //
 
-    ch_mosdepth_global = Channel.empty()
-    ch_mosdepth_summary = Channel.empty()
+    ch_mosdepth_global = channel.empty()
+    ch_mosdepth_summary = channel.empty()
 
     if (!params.skip_qc && !params.skip_mosdepth) {
 
@@ -511,9 +511,9 @@ workflow LRSOMATIC {
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
-    ch_bam_stats = Channel.empty()
-    ch_bam_flagstat = Channel.empty()
-    ch_bam_idxstats = Channel.empty()
+    ch_bam_stats = channel.empty()
+    ch_bam_flagstat = channel.empty()
+    ch_bam_idxstats = channel.empty()
 
     if (!params.skip_qc && !params.skip_bamstats ) {
 
@@ -577,7 +577,7 @@ workflow LRSOMATIC {
     //
     // Collate and save software versions
     //
-    def topic_versions = Channel.topic("versions")
+    def topic_versions = channel.topic("versions")
         .distinct()
         .branch { entry ->
             versions_file: entry instanceof Path

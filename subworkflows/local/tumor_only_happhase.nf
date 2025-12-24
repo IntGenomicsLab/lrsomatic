@@ -18,10 +18,10 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     main:
 
-    ch_versions = Channel.empty()
-    tumor_only_severus = Channel.empty()
-    somatic_vep = Channel.empty()
-    germline_vep = Channel.empty()
+    ch_versions = channel.empty()
+    tumor_only_severus = channel.empty()
+    somatic_vep = channel.empty()
+    germline_vep = channel.empty()
 
     tumor_bams
         .map{ meta, bam, bai ->
