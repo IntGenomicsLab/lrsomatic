@@ -42,6 +42,7 @@ process ASCAT {
     def penalty        = args.penalty         ?  "$args.penalty" :       "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
     def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
+    def pdf_plots      = args.pdf_plots       ?  "$args.pdf_plots" :     "NULL"
 
     def minCounts_arg                    = args.minCounts                     ?  ",minCounts = $args.minCounts" : ""
     def bed_file_arg                     = bed_file                           ?  ",BED_file = '$bed_file'": ""
@@ -56,7 +57,7 @@ process ASCAT {
     def normal_bam                       = input_normal                       ? ",normalseqfile = '$input_normal'" : ""
     def normal_name                      = input_normal                       ? ",normalname = '${prefix}.normal'" : ""
     def longread_bins                    = args.longread_bins                 ? ",loci_binsize = $args.longread_bins" : ""
-    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : "" 
+    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : ""
     """
     #!/usr/bin/env Rscript
     library(RColorBrewer)
@@ -153,13 +154,13 @@ process ASCAT {
     #Run ASCAT to fit every tumor to a model, inferring ploidy, normal cell contamination, and discrete copy numbers
     #If psi and rho are manually set:
     if (!is.null($purity) && !is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else if(!is.null($purity) && is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = $pdf_plots)
     } else if(!is.null($ploidy) && is.null($purity)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else {
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = $pdf_plots)
     }
 
     #Extract metrics from ASCAT profiles
