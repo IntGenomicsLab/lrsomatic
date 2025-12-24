@@ -48,7 +48,7 @@ process LONGPHASE_PHASE {
         --threads $task.cpus \\
         $args2 \\
         ${prefix}*.vcf
-        
+
     tabix -p vcf ${prefix}*.vcf.gz
 
     cat <<-END_VERSIONS > versions.yml
