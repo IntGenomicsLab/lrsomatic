@@ -106,7 +106,6 @@ workflow LRSOMATIC {
 
     METAEXTRACT( ch_samplesheet )
 
-    ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
     basecall_meta = METAEXTRACT.out.meta_ext
     // Adds the base calling model to meta.basecall_model
 
@@ -154,12 +153,8 @@ workflow LRSOMATIC {
     //
     // QC the unaligned bams
     if (!params.skip_qc && !params.skip_cramino) {
-
         CRAMINO_PRE ( ch_cat_ubams )
-
-        ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
     }
-
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -175,11 +170,11 @@ workflow LRSOMATIC {
         clair3_modelMap
     )
 
-    vep_cache = Channel.empty()
+    vep_cache = channel.empty()
 
     if (!params.skip_vep) {
 
-        Channel
+        channel
             .of([
                 vep_cache:          params.vep_cache,
                 vep_cache_version:  params.vep_cache_version,
@@ -252,11 +247,10 @@ workflow LRSOMATIC {
         FIBERTOOLSRS_PREDICTM6A (
             pacbio_bams.kinetics
         )
+        
         pacbio_bams.noKinetics
             .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
             .set{predicted_bams}
-
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
@@ -277,8 +271,6 @@ workflow LRSOMATIC {
             fiber_branch.fiber
         )
 
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_NUCLEOSOMES.out.versions)
-
         //
         // MODULE: FIBERTOOLSRS_FIRE
         //
@@ -286,8 +278,6 @@ workflow LRSOMATIC {
         FIBERTOOLSRS_FIRE (
             FIBERTOOLSRS_NUCLEOSOMES.out.bam
         )
-
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
 
         if(!params.normal_fiber){
             fiber_branch.nonFiber
@@ -307,13 +297,11 @@ workflow LRSOMATIC {
             //
             // MODULE: FIBERTOOLSRS_QC
             //
+            
             FIBERTOOLSRS_QC (
                 FIBERTOOLSRS_FIRE.out.bam
             )
-
-            ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
         }
-
     }
     //
     // MODULE: MINIMAP2_ALIGN
@@ -460,8 +448,6 @@ workflow LRSOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
-
-
     ch_versions = ch_versions.mix(SEVERUS.out.versions)
 
     SEVERUS.out.all_vcf
@@ -495,7 +481,6 @@ workflow LRSOMATIC {
 
         CRAMINO_POST ( ch_minimap_bam )
 
-        ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
     }
 
     //
@@ -587,8 +572,6 @@ workflow LRSOMATIC {
             wakhan_input,
             ch_fasta
         )
-
-        ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }
 
     //
