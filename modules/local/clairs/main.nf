@@ -14,7 +14,7 @@ process CLAIRS {
     output:
     tuple val(meta), path("*.vcf.gz"),               emit: vcfs
     tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
-    path "versions.yml",                             emit: versions
+    tuple val("${task.process}"), val('clairs'), eval("/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //'"), topic: versions, emit: versions_clairs
 
     when:
     task.ext.when == null || task.ext.when
@@ -38,11 +38,6 @@ process CLAIRS {
         rm snv.vcf.gz
         rm snv.vcf.gz.tbi
     fi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
-    END_VERSIONS
     """
 
     stub:
@@ -55,10 +50,5 @@ process CLAIRS {
 
     echo "" | gzip > indel.vcf.gz
     touch indel.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
-    END_VERSIONS
     """
 }

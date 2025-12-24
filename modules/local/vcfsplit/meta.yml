@@ -1,66 +1,102 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "vcfsplit"
-## TODO nf-core: Add a description of the module and list keywords
-description: write your description here
+description: Split somatic VCF files into somatic and germline variants based on FILTER field
 keywords:
-  - sort
-  - example
-  - genomics
+  - vcf
+  - somatic
+  - germline
+  - variant-filtering
+  - split
 tools:
-  - "vcfsplit":
-      ## TODO nf-core: Add a description and other details for the software below
-      description: ""
-      homepage: ""
-      documentation: ""
-      tool_dev_url: ""
-      doi: ""
-      licence:
-      identifier:
+  - "bcftools":
+      description: "Tools for variant calling and manipulating VCFs and BCFs"
+      homepage: "http://samtools.github.io/bcftools/bcftools.html"
+      documentation: "http://www.htslib.org/doc/bcftools.html"
+      tool_dev_url: "https://github.com/samtools/bcftools"
+      doi: "10.1093/gigascience/giab008"
+      licence: ["MIT"]
+      identifier: biotools:bcftools
 
-## TODO nf-core: Add a description of all of the variables used as input
 input:
-  # Only when we have meta
   - - meta:
         type: map
         description: |
           Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-
-    ## TODO nf-core: Delete / customise this example input
-    - bam:
+          e.g. `[ id:'sample1' ]`
+    - snv_vcf:
         type: file
-        description: Sorted BAM/CRAM/SAM file
-        pattern: "*.{bam,cram,sam}"
-        ontologies:
-          - edam: "http://edamontology.org/format_25722"
-          - edam: "http://edamontology.org/format_2573"
-          - edam: "http://edamontology.org/format_3462"
+        description: SNV VCF file from somatic caller
+        pattern: "*.vcf.gz"
+    - indel_vcf:
+        type: file
+        description: Indel VCF file from somatic caller
+        pattern: "*.vcf.gz"
 
-## TODO nf-core: Add a description of all of the variables used as output
 output:
-  - bam:
-      #Only when we have meta
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1', single_end:false ]`
-      ## TODO nf-core: Delete / customise this example output
-      - "*.bam":
-          type: file
-          description: Sorted BAM/CRAM/SAM file
-          pattern: "*.{bam,cram,sam}"
-          ontologies:
-            - edam: "http://edamontology.org/format_25722"
-            - edam: "http://edamontology.org/format_2573"
-            - edam: "http://edamontology.org/format_3462"
+  somatic_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*somatic.vcf.gz":
+        type: file
+        description: Somatic variants VCF file
+        pattern: "*somatic.vcf.gz"
+  somatic_tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*somatic.vcf.gz.tbi":
+        type: file
+        description: Somatic variants VCF index file
+        pattern: "*somatic.vcf.gz.tbi"
+  germline_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*germline.vcf.gz":
+        type: file
+        description: Germline variants VCF file
+        pattern: "*germline.vcf.gz"
+  germline_tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*germline.vcf.gz.tbi":
+        type: file
+        description: Germline variants VCF index file
+        pattern: "*germline.vcf.gz.tbi"
 
-  - versions:
-      - "versions.yml":
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version |& sed '1!d ; s/bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version |& sed '1!d ; s/bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
 
 authors:
   - "@robert-a-forsyth"

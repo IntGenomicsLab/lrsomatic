@@ -69,54 +69,72 @@ input:
         description: reference index file
         pattern: "*.fai"
 output:
-  - vcf:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1' ]`
-          pattern: "*.{vcf,vcf.gz}"
-      - "*merge_output.vcf.gz":
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1' ]`
-          pattern: "*.{vcf,vcf.gz}"
-  - tbi:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1' ]`
-      - "*merge_output.vcf.gz.tbi":
-          type: file
-          description: index for vcf files
-          pattern: "*.{vcf.tbi,vcf.tbi.gz}"
-  - phased_vcf:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1' ]`
-      - "*phased_merge_output.vcf.gz":
-          type: file
-          description: phased vcf
-          pattern: "*.{vcf,vcf.gz}"
-  - phased_tbi:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1' ]`
-      - "*phased_merge_output.vcf.gz.tbi":
-          type: file
-          description: index for vcf files
-          pattern: "*.{vcf.tbi,vcf.tbi.gz}"
-  - versions:
-      - versions.yml:
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+  vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+        pattern: "*.{vcf,vcf.gz}"
+    - "*merge_output.vcf.gz":
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+        pattern: "*.{vcf,vcf.gz}"
+  tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "*merge_output.vcf.gz.tbi":
+        type: file
+        description: index for vcf files
+        pattern: "*.{vcf.tbi,vcf.tbi.gz}"
+  phased_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "*phased_merge_output.vcf.gz":
+        type: file
+        description: phased vcf
+        pattern: "*.{vcf,vcf.gz}"
+  phased_tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "*phased_merge_output.vcf.gz.tbi":
+        type: file
+        description: index for vcf files
+        pattern: "*.{vcf.tbi,vcf.tbi.gz}"
+  versions_clair3:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - clair3:
+          type: string
+          description: The tool name
+      - "run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - clair3:
+          type: string
+          description: The tool name
+      - "run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//'":
+          type: string
+          description: The command used to generate the version of the tool
+
 authors:
   - "@robert-a-forsyth"
 maintainers:

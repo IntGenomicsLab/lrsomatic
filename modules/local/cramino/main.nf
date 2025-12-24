@@ -12,7 +12,7 @@ process CRAMINO {
 
     output:
     tuple val(meta), path("*.txt"), emit: txt
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('cramino'), eval("cramino --version |& sed '1!d ; s/cramino //'"), topic: versions, emit: versions_cramino
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,33 +21,14 @@ process CRAMINO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-
-
-
-
     """
     cramino $args $bam > ${prefix}_cramino.txt
-
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cramino: \$(cramino --version |& sed '1!d ; s/cramino //')
-    END_VERSIONS
     """
-
-
-
-
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_cramino.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cramino: \$(cramino --version |& sed '1!d ; s/cramino //')
-    END_VERSIONS
     """
 }

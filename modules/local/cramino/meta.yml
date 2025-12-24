@@ -2,32 +2,29 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "cramino"
 ## TODO nf-core: Add a description of the module and list keywords
-description: write your description here
+description: A tool for quick quality assessment of cram and bam files, intended for long read sequencing.
 keywords:
-  - sort
-  - example
-  - genomics
+  - quality
+  - assessment
+  - cram
+  - bam
+  - long-read
 tools:
   - "cramino":
-      ## TODO nf-core: Add a description and other details for the software below
       description: "A tool for very fast quality assessment of long read cram/bam files."
-      homepage: "None"
-      documentation: "None"
-      tool_dev_url: "None"
-      doi: ""
+      homepage: "https://github.com/wdecoster/cramino"
+      documentation: "https://github.com/wdecoster/cramino"
+      tool_dev_url: "https://github.com/wdecoster/cramino"
+      doi: "10.1093/bioinformatics/btad311"
       licence: ["MIT"]
-      identifier:
+      identifier: biotools:cramino
 
-## TODO nf-core: Add a description of all of the variables used as input
 input:
-  # Only when we have meta
   - - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-
-    ## TODO nf-core: Delete / customise this example input
     - bam:
         type: file
         description: Sorted BAM/CRAM/SAM file
@@ -37,30 +34,41 @@ input:
           - edam: "http://edamontology.org/format_2573"
           - edam: "http://edamontology.org/format_3462"
 
-## TODO nf-core: Add a description of all of the variables used as output
 output:
-  - bam:
-      #Only when we have meta
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1', single_end:false ]`
-      ## TODO nf-core: Delete / customise this example output
-      - "*.bam":
-          type: file
-          description: Sorted BAM/CRAM/SAM file
-          pattern: "*.{bam,cram,sam}"
-          ontologies:
-            - edam: "http://edamontology.org/format_25722"
-            - edam: "http://edamontology.org/format_2573"
-            - edam: "http://edamontology.org/format_3462"
+  txt:
+    #Only when we have meta
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.txt":
+        type: file
+        description: Quality assessment text file
+        pattern: "*.txt"
+  versions_cramino:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - cramino:
+          type: string
+          description: The tool name
+      - "cramino --version |& sed '1!d ; s/cramino //'":
+          type: string
+          description: The command used to generate the version of the tool
 
-  - versions:
-      - "versions.yml":
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - cramino:
+          type: string
+          description: The tool name
+      - "cramino --version |& sed '1!d ; s/cramino //'":
+          type: string
+          description: The command used to generate the version of the tool
+
 
 authors:
   - "@alexanRNA"

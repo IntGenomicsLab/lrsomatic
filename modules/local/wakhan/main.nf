@@ -52,7 +52,8 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz.csi")               , emit: rephased_vcf_index
     tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
-    path "versions.yml"                                                         , emit: versions
+    // WARN: Manually update version information as tool does not provide on CLI
+    tuple val("${task.process}"), val('wakhan'), val("0.2.0"), topic: versions, emit: versions_wakhan
 
     when:
     task.ext.when == null || task.ext.when
@@ -61,8 +62,7 @@ process WAKHAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
-    // WARN: Version information not provided by tool on CLI. Please update this string when upgrading BLAZE code
-    def VERSION = "0.2.0"
+
     """
     wakhan \\
         --target-bam ${tumor_input} \\
@@ -73,28 +73,13 @@ process WAKHAN {
         ${phased_vcf} \\
         ${args} \\
         --threads ${task.cpus}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        wakhan: $VERSION
-    END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = "0.2.0"
 
-    // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
-    //               Have a look at the following examples:
-    //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
-    //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
     touch ${prefix}.bam
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        wakhan: $VERSION
-    END_VERSIONS
     """
 }

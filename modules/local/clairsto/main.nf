@@ -21,7 +21,7 @@ process CLAIRSTO {
     tuple val(meta), path("indel.vcf.gz.tbi"),  emit: indel_tbi
     tuple val(meta), path("snv.vcf.gz"),        emit: snv_vcf
     tuple val(meta), path("snv.vcf.gz.tbi"),    emit: snv_tbi
-    path "versions.yml",                        emit: versions
+    tuple val("${task.process}"), val('clairsto'), eval("run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'"), topic: versions, emit: versions_clairsto
 
     when:
     task.ext.when == null || task.ext.when
@@ -47,13 +47,6 @@ process CLAIRSTO {
         --panel_of_normals_require_allele_matching 'True,True,False,False' \\
         $conda_prefix \\
         $args \\
-
-
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairsto: \$(/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //')
-    END_VERSIONS
     """
 
     stub:
@@ -66,10 +59,5 @@ process CLAIRSTO {
     touch snv.vcf.gz.tbi
     echo "" | gzip > indel.vcf.gz
     touch indel.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairsto: \$(/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //')
-    END_VERSIONS
     """
 }
