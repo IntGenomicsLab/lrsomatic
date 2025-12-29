@@ -2,8 +2,17 @@
     "-profile test": {
         "content": [
             {
+                "BCFTOOLS_CONCAT": {
+                    "bcftools": 1.22
+                },
+                "BCFTOOLS_SORT": {
+                    "bcftools": 1.22
+                },
                 "CLAIR3": {
                     "clair3": "1.2.0"
+                },
+                "CLAIRS": {
+                    "clairs": "0.4.1"
                 },
                 "CLAIRSTO": {
                     "clairsto": "0.4.0"
@@ -17,6 +26,9 @@
                 "GERMLINE_VEP": {
                     "ensemblvep": 114.2,
                     "tabix": 1.21
+                },
+                "LONGPHASE_HAPLOTAG": {
+                    "longphase": 2.0
                 },
                 "LONGPHASE_PHASE": {
                     "longphase": 2.0,
@@ -41,8 +53,14 @@
                 "SAMTOOLS_IDXSTATS": {
                     "samtools": "1.22.1"
                 },
+                "SAMTOOLS_INDEX": {
+                    "samtools": "1.22.1"
+                },
                 "SAMTOOLS_STATS": {
                     "samtools": "1.22.1"
+                },
+                "SEVERUS": {
+                    "severus": 1.6
                 },
                 "SOMATIC_VEP": {
                     "ensemblvep": 114.2,
@@ -97,6 +115,11 @@
                 "pipeline_info",
                 "pipeline_info/lrsomatic_software_mqc_versions.yml",
                 "sample1",
+                "sample1/bamfiles",
+                "sample1/bamfiles/sample1_normal.bam",
+                "sample1/bamfiles/sample1_normal.bam.bai",
+                "sample1/bamfiles/sample1_tumor.bam",
+                "sample1/bamfiles/sample1_tumor.bam.bai",
                 "sample1/qc",
                 "sample1/qc/normal",
                 "sample1/qc/normal/cramino_aln",
@@ -126,12 +149,32 @@
                 "sample1/variants/clair3",
                 "sample1/variants/clair3/merge_output.vcf.gz",
                 "sample1/variants/clair3/merge_output.vcf.gz.tbi",
+                "sample1/variants/clairs",
+                "sample1/variants/clairs/indel.vcf.gz",
+                "sample1/variants/clairs/indel.vcf.gz.tbi",
+                "sample1/variants/clairs/snvs.vcf.gz",
+                "sample1/variants/clairs/snvs.vcf.gz.tbi",
+                "sample1/variants/severus",
+                "sample1/variants/severus/sample1",
+                "sample1/variants/severus/sample1/breakpoints_double.csv",
+                "sample1/variants/severus/sample1/read_ids.csv",
+                "sample1/variants/severus/sample1/read_qual.txt",
+                "sample1/variants/severus/sample1/severus.log",
                 "sample1/vep",
                 "sample1/vep/germline",
                 "sample1/vep/germline/sample1_GERMLINE_VEP.vcf.gz",
                 "sample1/vep/germline/sample1_GERMLINE_VEP.vcf.gz.tbi",
                 "sample1/vep/germline/sample1_GERMLINE_VEP.vcf.gz_summary.html",
+                "sample1/vep/somatic",
+                "sample1/vep/somatic/sample1_SOMATIC_VEP.vcf.gz",
+                "sample1/vep/somatic/sample1_SOMATIC_VEP.vcf.gz.tbi",
+                "sample1/vep/somatic/sample1_SOMATIC_VEP.vcf.gz_summary.html",
                 "sample2",
+                "sample2/bamfiles",
+                "sample2/bamfiles/sample2_normal.bam",
+                "sample2/bamfiles/sample2_normal.bam.bai",
+                "sample2/bamfiles/sample2_tumor.bam",
+                "sample2/bamfiles/sample2_tumor.bam.bai",
                 "sample2/qc",
                 "sample2/qc/normal",
                 "sample2/qc/normal/cramino_aln",
@@ -161,12 +204,30 @@
                 "sample2/variants/clair3",
                 "sample2/variants/clair3/merge_output.vcf.gz",
                 "sample2/variants/clair3/merge_output.vcf.gz.tbi",
+                "sample2/variants/clairs",
+                "sample2/variants/clairs/indel.vcf.gz",
+                "sample2/variants/clairs/indel.vcf.gz.tbi",
+                "sample2/variants/clairs/snvs.vcf.gz",
+                "sample2/variants/clairs/snvs.vcf.gz.tbi",
+                "sample2/variants/severus",
+                "sample2/variants/severus/sample2",
+                "sample2/variants/severus/sample2/breakpoints_double.csv",
+                "sample2/variants/severus/sample2/read_ids.csv",
+                "sample2/variants/severus/sample2/read_qual.txt",
+                "sample2/variants/severus/sample2/severus.log",
                 "sample2/vep",
                 "sample2/vep/germline",
                 "sample2/vep/germline/sample2_GERMLINE_VEP.vcf.gz",
                 "sample2/vep/germline/sample2_GERMLINE_VEP.vcf.gz.tbi",
                 "sample2/vep/germline/sample2_GERMLINE_VEP.vcf.gz_summary.html",
+                "sample2/vep/somatic",
+                "sample2/vep/somatic/sample2_SOMATIC_VEP.vcf.gz",
+                "sample2/vep/somatic/sample2_SOMATIC_VEP.vcf.gz.tbi",
+                "sample2/vep/somatic/sample2_SOMATIC_VEP.vcf.gz_summary.html",
                 "sample3",
+                "sample3/bamfiles",
+                "sample3/bamfiles/sample3_tumor.bam",
+                "sample3/bamfiles/sample3_tumor.bam.bai",
                 "sample3/qc",
                 "sample3/qc/tumor",
                 "sample3/qc/tumor/cramino_aln",
@@ -190,6 +251,12 @@
                 "sample3/variants/clairsto/snv.vcf.gz.tbi",
                 "sample3/variants/clairsto/somatic.vcf.gz",
                 "sample3/variants/clairsto/somatic.vcf.gz.tbi",
+                "sample3/variants/severus",
+                "sample3/variants/severus/sample3",
+                "sample3/variants/severus/sample3/breakpoints_double.csv",
+                "sample3/variants/severus/sample3/read_ids.csv",
+                "sample3/variants/severus/sample3/read_qual.txt",
+                "sample3/variants/severus/sample3/severus.log",
                 "sample3/vep",
                 "sample3/vep/germline",
                 "sample3/vep/germline/sample3_GERMLINE_VEP.vcf.gz",
@@ -201,6 +268,10 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
+                "sample1_normal.bam:md5,60838033f5f24aa90e16a5babcddd45b",
+                "sample1_normal.bam.bai:md5,d77c4e82c8965132967be86d83a4992d",
+                "sample1_tumor.bam:md5,bd73e83253c95a5fdc4db39454ee2253",
+                "sample1_tumor.bam.bai:md5,8b9edeb60b0e3023c97aa4b6e2e61380",
                 "sample1.mosdepth.global.dist.txt:md5,4e1c72f8465c18ffd854c42850eb7c5f",
                 "sample1.mosdepth.summary.txt:md5,cf13d4b24e5ebf31b629a1195a1fff41",
                 "sample1.flagstat:md5,815a5385bd57ef44847714130b80d630",
@@ -211,6 +282,14 @@
                 "sample1.flagstat:md5,34e851b5504d961632f26991160ded5a",
                 "sample1.idxstats:md5,1d43b03114bcc9b70d4333e91498efbe",
                 "sample1.stats:md5,da6ea076dd90b4e35ab2e23b8e6ead25",
+                "breakpoints_double.csv:md5,57e4f0d5509db44179e7c5044c6bc259",
+                "read_ids.csv:md5,afdfd7e588057249e8ed61455793d8e7",
+                "read_qual.txt:md5,1ad9d1900f8dcb291c97adc65c9d341c",
+                "severus.log:md5,34a132520cfde2cf0fa19ebae20c6183",
+                "sample2_normal.bam:md5,7e6cdc6c51235a205548be160d798d38",
+                "sample2_normal.bam.bai:md5,7ad774be4cf80ae968f94d760bddf3c8",
+                "sample2_tumor.bam:md5,9938db44490835ec0e11069b4da37547",
+                "sample2_tumor.bam.bai:md5,202852a62fc5bf4cf1c196676068606a",
                 "sample2.mosdepth.global.dist.txt:md5,6cdc97a81a603db702cb5a113b8bc62a",
                 "sample2.mosdepth.summary.txt:md5,864370930ec1d695d942f4960bcf8fc6",
                 "sample2.flagstat:md5,cce0bb7ca79e14d8369ccc714adf4be3",
@@ -221,17 +300,27 @@
                 "sample2.flagstat:md5,83e7d7d922941691d2b023f0bd9655aa",
                 "sample2.idxstats:md5,fe8a5d1263481ea7902d575b4d95f655",
                 "sample2.stats:md5,defe74842396209b6cff4b32994287c7",
+                "breakpoints_double.csv:md5,c5a59c9ea2486f7bb9d5e40fea8f916d",
+                "read_ids.csv:md5,15b0286b91ea8a98ecbf2cc396a96121",
+                "read_qual.txt:md5,27edf87814aec6fa18546c8606aae4ed",
+                "severus.log:md5,fa3357674974b79101bbdcf61e523c9b",
+                "sample3_tumor.bam:md5,2308beb1b4be1f0e1d6c8e52bd4f9266",
+                "sample3_tumor.bam.bai:md5,840eb3ad5ed3216a97c6a58563d4dcb1",
                 "sample3.mosdepth.global.dist.txt:md5,e04da37ef2b7cd587fa3158b9f36d2cb",
                 "sample3.mosdepth.summary.txt:md5,ef3aefa72ca2e9bbbe5acc91fc1ecde6",
                 "sample3.flagstat:md5,34e851b5504d961632f26991160ded5a",
                 "sample3.idxstats:md5,1d43b03114bcc9b70d4333e91498efbe",
-                "sample3.stats:md5,b0f46b772514f0de08f1b2d88aa5968f"
+                "sample3.stats:md5,b0f46b772514f0de08f1b2d88aa5968f",
+                "breakpoints_double.csv:md5,298a01c868eb493baaaa90ced9a9f17e",
+                "read_ids.csv:md5,a04f6eb95ba70f244f5494fc4e62745a",
+                "read_qual.txt:md5,1b4392f3b9071533e9ea77ff9df6c813",
+                "severus.log:md5,7dbe3de3c12432a1bbca75a1ef9faa7d"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-12-24T16:00:06.528198974"
+        "timestamp": "2025-12-24T17:00:41.795383163"
     }
 }
