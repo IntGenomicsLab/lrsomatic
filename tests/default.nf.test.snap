@@ -12,16 +12,16 @@
                     "clair3": "1.2.0"
                 },
                 "CLAIRS": {
-                    "clairs": "0.4.1"
+                    "clairs": "0.4.4"
                 },
                 "CLAIRSTO": {
-                    "clairsto": "0.4.0"
+                    "clairsto": "0.4.2"
                 },
                 "CRAMINO_POST": {
-                    "cramino": "1.0.0"
+                    "cramino": "1.3.0"
                 },
                 "CRAMINO_PRE": {
-                    "cramino": "1.0.0"
+                    "cramino": "1.3.0"
                 },
                 "GERMLINE_VEP": {
                     "ensemblvep": 114.2,
@@ -155,11 +155,10 @@
                 "sample1/variants/clairs/snvs.vcf.gz",
                 "sample1/variants/clairs/snvs.vcf.gz.tbi",
                 "sample1/variants/severus",
-                "sample1/variants/severus/sample1",
-                "sample1/variants/severus/sample1/breakpoints_double.csv",
-                "sample1/variants/severus/sample1/read_ids.csv",
-                "sample1/variants/severus/sample1/read_qual.txt",
-                "sample1/variants/severus/sample1/severus.log",
+                "sample1/variants/severus/breakpoints_double.csv",
+                "sample1/variants/severus/read_ids.csv",
+                "sample1/variants/severus/read_qual.txt",
+                "sample1/variants/severus/severus.log",
                 "sample1/vep",
                 "sample1/vep/germline",
                 "sample1/vep/germline/sample1_GERMLINE_VEP.vcf.gz",
@@ -210,11 +209,10 @@
                 "sample2/variants/clairs/snvs.vcf.gz",
                 "sample2/variants/clairs/snvs.vcf.gz.tbi",
                 "sample2/variants/severus",
-                "sample2/variants/severus/sample2",
-                "sample2/variants/severus/sample2/breakpoints_double.csv",
-                "sample2/variants/severus/sample2/read_ids.csv",
-                "sample2/variants/severus/sample2/read_qual.txt",
-                "sample2/variants/severus/sample2/severus.log",
+                "sample2/variants/severus/breakpoints_double.csv",
+                "sample2/variants/severus/read_ids.csv",
+                "sample2/variants/severus/read_qual.txt",
+                "sample2/variants/severus/severus.log",
                 "sample2/vep",
                 "sample2/vep/germline",
                 "sample2/vep/germline/sample2_GERMLINE_VEP.vcf.gz",
@@ -252,11 +250,10 @@
                 "sample3/variants/clairsto/somatic.vcf.gz",
                 "sample3/variants/clairsto/somatic.vcf.gz.tbi",
                 "sample3/variants/severus",
-                "sample3/variants/severus/sample3",
-                "sample3/variants/severus/sample3/breakpoints_double.csv",
-                "sample3/variants/severus/sample3/read_ids.csv",
-                "sample3/variants/severus/sample3/read_qual.txt",
-                "sample3/variants/severus/sample3/severus.log",
+                "sample3/variants/severus/breakpoints_double.csv",
+                "sample3/variants/severus/read_ids.csv",
+                "sample3/variants/severus/read_qual.txt",
+                "sample3/variants/severus/severus.log",
                 "sample3/vep",
                 "sample3/vep/germline",
                 "sample3/vep/germline/sample3_GERMLINE_VEP.vcf.gz",
@@ -283,9 +280,7 @@
                 "sample1.idxstats:md5,1d43b03114bcc9b70d4333e91498efbe",
                 "sample1.stats:md5,da6ea076dd90b4e35ab2e23b8e6ead25",
                 "breakpoints_double.csv:md5,57e4f0d5509db44179e7c5044c6bc259",
-                "read_ids.csv:md5,afdfd7e588057249e8ed61455793d8e7",
                 "read_qual.txt:md5,1ad9d1900f8dcb291c97adc65c9d341c",
-                "severus.log:md5,34a132520cfde2cf0fa19ebae20c6183",
                 "sample2_normal.bam:md5,7e6cdc6c51235a205548be160d798d38",
                 "sample2_normal.bam.bai:md5,7ad774be4cf80ae968f94d760bddf3c8",
                 "sample2_tumor.bam:md5,9938db44490835ec0e11069b4da37547",
@@ -301,9 +296,7 @@
                 "sample2.idxstats:md5,fe8a5d1263481ea7902d575b4d95f655",
                 "sample2.stats:md5,defe74842396209b6cff4b32994287c7",
                 "breakpoints_double.csv:md5,c5a59c9ea2486f7bb9d5e40fea8f916d",
-                "read_ids.csv:md5,15b0286b91ea8a98ecbf2cc396a96121",
                 "read_qual.txt:md5,27edf87814aec6fa18546c8606aae4ed",
-                "severus.log:md5,fa3357674974b79101bbdcf61e523c9b",
                 "sample3_tumor.bam:md5,2308beb1b4be1f0e1d6c8e52bd4f9266",
                 "sample3_tumor.bam.bai:md5,840eb3ad5ed3216a97c6a58563d4dcb1",
                 "sample3.mosdepth.global.dist.txt:md5,e04da37ef2b7cd587fa3158b9f36d2cb",
@@ -312,15 +305,13 @@
                 "sample3.idxstats:md5,1d43b03114bcc9b70d4333e91498efbe",
                 "sample3.stats:md5,b0f46b772514f0de08f1b2d88aa5968f",
                 "breakpoints_double.csv:md5,298a01c868eb493baaaa90ced9a9f17e",
-                "read_ids.csv:md5,a04f6eb95ba70f244f5494fc4e62745a",
-                "read_qual.txt:md5,1b4392f3b9071533e9ea77ff9df6c813",
-                "severus.log:md5,7dbe3de3c12432a1bbca75a1ef9faa7d"
+                "read_qual.txt:md5,1b4392f3b9071533e9ea77ff9df6c813"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.0"
         },
-        "timestamp": "2025-12-24T17:00:41.795383163"
+        "timestamp": "2025-12-29T14:07:45.261506087"
     }
 }
