@@ -4,8 +4,8 @@ process CLAIRSTO {
     label 'process_very_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/hkubal/clairs-to:v0.4.0':
-        'docker.io/hkubal/clairs-to:v0.4.0' }"
+        'docker.io/hkubal/clairs-to:v0.4.2':
+        'docker.io/hkubal/clairs-to:v0.4.2' }"
 
     input:
     tuple val(meta), path(tumor_bam), path(tumor_bai), val(model)
