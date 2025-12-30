@@ -101,7 +101,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     // MODULES: LONGPHASE_PHASE
     //
     // Phase tumor bams on nonsomatic vcf
-
     LONGPHASE_PHASE (
         tumor_bams_germlinevcf,
         fasta,
@@ -163,15 +162,14 @@ workflow TUMOR_ONLY_HAPPHASE {
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .join(LONGPHASE_PHASE.out.snv_vcf_index)
-        .map{ meta, hap_bam, hap_bai, vcf, tbi ->
+        .map{ meta, hap_bam, hap_bai, vcf ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return [new_meta, hap_bam, hap_bai, [], [], vcf, tbi]
+            return [new_meta, hap_bam, hap_bai, [], [], vcf]
             }
         .set{ tumor_only_severus }
 
@@ -181,6 +179,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     //                         normal_bam: haplotagged aligned bam files for normal (empty)
     //                         normal_bai: indexes for normal bam files (empty)
     //                         phased_vcf: phased small variant vcf
+    //                         tbi: index for phased small variant vcf
 
     emit:
     tumor_only_severus

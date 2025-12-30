@@ -436,9 +436,6 @@ workflow LRSOMATIC {
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
-            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf]
-        }
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
@@ -538,7 +535,7 @@ workflow LRSOMATIC {
 
     if (!params.skip_ascat) {
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
@@ -565,9 +562,6 @@ workflow LRSOMATIC {
 
         // Prepare input channel for WAKHAN
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
-                return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf]
-            }
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
 
