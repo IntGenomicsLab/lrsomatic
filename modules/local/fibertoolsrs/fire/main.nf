@@ -13,7 +13,7 @@ process FIBERTOOLSRS_FIRE {
 
     output:
     tuple val(meta), path("*.bam"), emit: bam
-    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed '1!d ; s/ft //'"), topic: versions, emit: versions_fibertoolsrs
+    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed -n 's/.*v\([0-9.]\+\).*/\1/p'"), topic: versions, emit: versions_fibertoolsrs
 
     when:
     task.ext.when == null || task.ext.when
