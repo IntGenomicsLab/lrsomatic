@@ -12,7 +12,7 @@ process FIBERTOOLSRS_QC {
 
     output:
     tuple val(meta), path("*.txt"), emit: qc_txt
-    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed 's/^fibertools-rs v//; s/git-details.*//'"), topic: versions, emit: versions_fibertoolsrs
+    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed 's/^fibertools-rs v//; s/\tgit-details.*//'"), topic: versions, emit: versions_fibertoolsrs
 
     when:
     task.ext.when == null || task.ext.when
