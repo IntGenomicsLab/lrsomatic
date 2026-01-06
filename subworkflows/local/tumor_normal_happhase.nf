@@ -42,6 +42,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{downloaded_model_files}
 
+    downloaded_model_files.view()
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
@@ -56,7 +57,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ basecall_model, new_meta, bam, bai ]
         }
         .set { normal_bams_model }
-
+    normal_bams_model.view()
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -66,7 +67,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{ normal_bams }
 
-
+    normal_bams.view()
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:          list of concatenated aligned bams
     //                bai:          indexes for bam files
