@@ -50,13 +50,14 @@ workflow PREPARE_REFERENCE_FILES {
         }
         .unique()
         .set{ model_urls }
+        model_urls.view()
 
         //
         // MODULE: Download model
         //
 
         WGET ( model_urls )
-
+        WGET.out.outfile.view()
         ch_versions = ch_versions.mix(WGET.out.versions)
 
         //
@@ -70,7 +71,7 @@ workflow PREPARE_REFERENCE_FILES {
         ch_versions = ch_versions.mix(UNTAR.out.versions)
 
         UNTAR.out.untar.set { downloaded_model_files }
-
+        downloaded_model_files.view()
         //
         // MODULE: Index the fasta
         //
