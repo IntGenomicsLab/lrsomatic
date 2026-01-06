@@ -23,7 +23,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     germline_vep = Channel.empty()
 
     // Branch input bams in normal and tumour
-    mixed_bams.view()
     mixed_bams
         .branch{ meta, bam, bai ->
             normal: meta.type == "normal"
@@ -41,7 +40,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{downloaded_model_files}
 
-    downloaded_model_files.view()
 
      mixed_bams.normal
         .map{ meta, bam, bai ->
@@ -57,7 +55,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set { normal_bams_model }
 
-    normal_bams_model.view()
 
     normal_bams_model
         .combine(downloaded_model_files,by:0)
@@ -67,7 +64,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{ normal_bams }
 
-    normal_bams.view()
 
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:          list of concatenated aligned bams
@@ -91,7 +87,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
-    tumor_bams.view()
     // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
     //                bai:  indexes for bam files
@@ -205,6 +200,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     LONGPHASE_HAPLOTAG.out.bam
         .set{ mixed_hapbams }
 
+    mixed_hapbams.view()
     // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                  bams: haplotagged aligned bams
 
@@ -225,6 +221,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(mixed_hapbams)
         .join(SAMTOOLS_INDEX.out.bai)
         .set{ mixed_hapbams }
+
+    mixed_hapbams.view()
 
     // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                  bams: haplotagged aligned bams
@@ -255,6 +253,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(LONGPHASE_PHASE.out.tbi)
         .set{tumor_normal_severus}
 
+    tumor_normal_severus.view()
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files
@@ -270,6 +269,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set { clairs_input }
 
+    clairs_input.view()
     //
     // MODULE: CLAIRS
     //
