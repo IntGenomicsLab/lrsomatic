@@ -23,13 +23,14 @@ workflow TUMOR_NORMAL_HAPPHASE {
     germline_vep = Channel.empty()
 
     // Branch input bams in normal and tumour
+    mixed_bams.view()
+
     mixed_bams
         .branch{ meta, bam, bai ->
             normal: meta.type == "normal"
             tumor: meta.type == "tumor"
         }
         .set{ mixed_bams }
-    mixed_bams.view()
 
     // Get normal bams and add platform/model info for Clair3 usage
     // remove type from so that information can be merged easier later
