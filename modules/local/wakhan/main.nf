@@ -10,6 +10,7 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
+    path(centromere_bed)
 
     output:
     tuple val(meta), path("*/*_genes_genome.html")                              , emit: genes_genome_html
@@ -45,6 +46,7 @@ process WAKHAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
+    def centromere = centromere_bed ? "--centromere \$PWD/${centromere_bed}" : ""
 
     """
     wakhan \\
@@ -54,6 +56,7 @@ process WAKHAN {
         --genome-name ${prefix} \\
         --out-dir-plots . \\
         ${phased_vcf} \\
+        ${centromere} \\
         ${args} \\
         --threads ${task.cpus}
     """

@@ -567,7 +567,8 @@ workflow LRSOMATIC {
 
         WAKHAN (
             wakhan_input,
-            ch_fasta
+            ch_fasta,
+            file(params.centromere_bed)
         )
     }
 
