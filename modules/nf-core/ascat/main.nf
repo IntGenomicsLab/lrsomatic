@@ -4,8 +4,8 @@ process ASCAT {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0':
-        'biocontainers/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4c/4cf02c7911ee5e974ce7db978810770efbd8d872ff5ab3462d2a11bcf022fab5/data':
+        'community.wave.seqera.io/library/ascat_cancerit-allelecount:c3e8749fa4af0e99' }"
 
     input:
     tuple val(meta), path(input_normal), path(index_normal), path(input_tumor), path(index_tumor)
@@ -154,13 +154,13 @@ process ASCAT {
     #Run ASCAT to fit every tumor to a model, inferring ploidy, normal cell contamination, and discrete copy numbers
     #If psi and rho are manually set:
     if (!is.null($purity) && !is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = "$pdf_plots")
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else if(!is.null($purity) && is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = "$pdf_plots")
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = $pdf_plots)
     } else if(!is.null($ploidy) && is.null($purity)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = "$pdf_plots")
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else {
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = "$pdf_plots")
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = $pdf_plots)
     }
 
     #Extract metrics from ASCAT profiles
@@ -232,9 +232,8 @@ process ASCAT {
 
     echo "${task.process}:" > versions.yml
     echo ' alleleCounter: 4.3.0' >> versions.yml
-    echo ' ascat: 3.0.0' >> versions.yml
+    echo ' ascat: 3.2.0' >> versions.yml
 
     """
-
 
 }

@@ -96,8 +96,8 @@ workflow LRSOMATIC {
     params.onekgenomes = getGenomeAttribute('onekgenomes')
     params.gnomad = getGenomeAttribute('gnomad')
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
     //
     // MODULE: METAEXTRACT
@@ -106,7 +106,6 @@ workflow LRSOMATIC {
 
     METAEXTRACT( ch_samplesheet )
 
-    ch_versions  = ch_versions.mix(METAEXTRACT.out.versions)
     basecall_meta = METAEXTRACT.out.meta_ext
     // Adds the base calling model to meta.basecall_model
 
@@ -154,12 +153,8 @@ workflow LRSOMATIC {
     //
     // QC the unaligned bams
     if (!params.skip_qc && !params.skip_cramino) {
-
         CRAMINO_PRE ( ch_cat_ubams )
-
-        ch_versions = ch_versions.mix(CRAMINO_PRE.out.versions)
     }
-
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -175,11 +170,11 @@ workflow LRSOMATIC {
         clair3_modelMap
     )
 
-    vep_cache = Channel.empty()
+    vep_cache = channel.empty()
 
     if (!params.skip_vep) {
 
-        Channel
+        channel
             .of([
                 vep_cache:          params.vep_cache,
                 vep_cache_version:  params.vep_cache_version,
@@ -252,11 +247,10 @@ workflow LRSOMATIC {
         FIBERTOOLSRS_PREDICTM6A (
             pacbio_bams.kinetics
         )
+
         pacbio_bams.noKinetics
             .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
             .set{predicted_bams}
-
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_PREDICTM6A.out.versions)
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
@@ -277,8 +271,6 @@ workflow LRSOMATIC {
             fiber_branch.fiber
         )
 
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_NUCLEOSOMES.out.versions)
-
         //
         // MODULE: FIBERTOOLSRS_FIRE
         //
@@ -286,8 +278,6 @@ workflow LRSOMATIC {
         FIBERTOOLSRS_FIRE (
             FIBERTOOLSRS_NUCLEOSOMES.out.bam
         )
-
-        ch_versions = ch_versions.mix(FIBERTOOLSRS_FIRE.out.versions)
 
         if(!params.normal_fiber){
             fiber_branch.nonFiber
@@ -307,13 +297,11 @@ workflow LRSOMATIC {
             //
             // MODULE: FIBERTOOLSRS_QC
             //
+
             FIBERTOOLSRS_QC (
                 FIBERTOOLSRS_FIRE.out.bam
             )
-
-            ch_versions = ch_versions.mix(FIBERTOOLSRS_QC.out.versions)
         }
-
     }
     //
     // MODULE: MINIMAP2_ALIGN
@@ -460,8 +448,6 @@ workflow LRSOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
-
-
     ch_versions = ch_versions.mix(SEVERUS.out.versions)
 
     SEVERUS.out.all_vcf
@@ -495,15 +481,14 @@ workflow LRSOMATIC {
 
         CRAMINO_POST ( ch_minimap_bam )
 
-        ch_versions = ch_versions.mix(CRAMINO_POST.out.versions)
     }
 
     //
     // Module: MOSDEPTH
     //
 
-    ch_mosdepth_global = Channel.empty()
-    ch_mosdepth_summary = Channel.empty()
+    ch_mosdepth_global = channel.empty()
+    ch_mosdepth_summary = channel.empty()
 
     if (!params.skip_qc && !params.skip_mosdepth) {
 
@@ -526,9 +511,9 @@ workflow LRSOMATIC {
     //
     // SUBWORKFLOW: BAM_STATS_SAMTOOLS
     //
-    ch_bam_stats = Channel.empty()
-    ch_bam_flagstat = Channel.empty()
-    ch_bam_idxstats = Channel.empty()
+    ch_bam_stats = channel.empty()
+    ch_bam_flagstat = channel.empty()
+    ch_bam_idxstats = channel.empty()
 
     if (!params.skip_qc && !params.skip_bamstats ) {
 
@@ -550,7 +535,7 @@ workflow LRSOMATIC {
 
     if (!params.skip_ascat) {
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
@@ -577,24 +562,38 @@ workflow LRSOMATIC {
 
         // Prepare input channel for WAKHAN
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
-                return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf]
-            }
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
 
         WAKHAN (
             wakhan_input,
-            ch_fasta
+            ch_fasta,
+            file(params.centromere_bed)
         )
-
-        ch_versions = ch_versions.mix(WAKHAN.out.versions)
     }
 
     //
     // Collate and save software versions
     //
-    softwareVersionsToYAML(ch_versions)
+    def topic_versions = channel.topic("versions")
+        .distinct()
+        .branch { entry ->
+            versions_file: entry instanceof Path
+            versions_tuple: true
+        }
+
+    def topic_versions_string = topic_versions.versions_tuple
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+
+    softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+        .mix(topic_versions_string)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
             name:  'lrsomatic_software_'  + 'mqc_'  + 'versions.yml',
@@ -606,24 +605,25 @@ workflow LRSOMATIC {
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config        = Channel.fromPath(
+    ch_multiqc_config        = channel.fromPath(
         "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
     ch_multiqc_custom_config = params.multiqc_config ?
-        Channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        Channel.empty()
+        channel.fromPath(params.multiqc_config, checkIfExists: true) :
+        channel.empty()
     ch_multiqc_logo          = params.multiqc_logo ?
-        Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        Channel.empty()
+        channel.fromPath(params.multiqc_logo, checkIfExists: true) :
+        channel.empty()
 
-    summary_params      = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files    = ch_multiqc_files.mix(
+    summary_params      = paramsSummaryMap(
+        workflow, parameters_schema: "nextflow_schema.json")
+    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
+    ch_multiqc_files = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
 
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
         file(params.multiqc_methods_description, checkIfExists: true) :
         file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = Channel.value(
+    ch_methods_description                = channel.value(
         methodsDescriptionText(ch_multiqc_custom_methods_description))
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)

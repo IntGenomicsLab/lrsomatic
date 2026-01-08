@@ -18,10 +18,10 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     main:
 
-    ch_versions = Channel.empty()
-    tumor_only_severus = Channel.empty()
-    somatic_vep = Channel.empty()
-    germline_vep = Channel.empty()
+    ch_versions = channel.empty()
+    tumor_only_severus = channel.empty()
+    somatic_vep = channel.empty()
+    germline_vep = channel.empty()
 
     tumor_bams
         .map{ meta, bam, bai ->
@@ -46,13 +46,10 @@ workflow TUMOR_ONLY_HAPPHASE {
         gnomad
     )
 
-    ch_versions = ch_versions.mix(CLAIRSTO.out.versions)
-
     CLAIRSTO.out.indel_vcf
                 .join(CLAIRSTO.out.snv_vcf)
                 .set{ clairsto_vcf }
 
-    ch_versions = ch_versions.mix(CLAIRSTO.out.versions)
     // clairsto_vcf -> meta:      [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 indel_vcf: vcf for indels
     //                 snv_vcf:   vcf for snvs
@@ -66,9 +63,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     VCFSPLIT (
         clairsto_vcf
     )
-    ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
-
-    ch_versions = ch_versions.mix(VCFSPLIT.out.versions)
 
     // Add the nonsomatic vcf info
     // remove model info
@@ -107,24 +101,23 @@ workflow TUMOR_ONLY_HAPPHASE {
     // MODULES: LONGPHASE_PHASE
     //
     // Phase tumor bams on nonsomatic vcf
-
     LONGPHASE_PHASE (
         tumor_bams_germlinevcf,
         fasta,
         fai
     )
-    ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
 
     // Add phased nonsomatic vcf info
     // remove model info
     tumor_bams
-        .join(LONGPHASE_PHASE.out.vcf)
-        .map{ meta, bam, bai, model, snps ->
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .map { meta, bam, bai, model, vcf ->
+            def new_meta = meta + [type: "tumor"]
             def svs = []
             def mods = []
-            return [meta, bam, bai, snps, svs, mods]
+            return [new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ tumor_bams_phasedvcf }
 
@@ -145,7 +138,6 @@ workflow TUMOR_ONLY_HAPPHASE {
         fasta,
         fai
     )
-    ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
     ch_versions = ch_versions.mix(LONGPHASE_HAPLOTAG.out.versions)
 
@@ -163,23 +155,21 @@ workflow TUMOR_ONLY_HAPPHASE {
     SAMTOOLS_INDEX (
         haplotagged_bams
     )
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
 
     // join information and the phased VCF file
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
-        .join(LONGPHASE_PHASE.out.vcf)
-        .join(LONGPHASE_PHASE.out.tbi)
-        .map{ meta, hap_bam, hap_bai, vcf, tbi ->
+        .join(LONGPHASE_PHASE.out.snv_vcf)
+        .map{ meta, hap_bam, hap_bai, vcf ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
                             basecall_model: meta.basecall_model]
-            return [new_meta, hap_bam, hap_bai, [], [], vcf, tbi]
+            return [new_meta, hap_bam, hap_bai, [], [], vcf]
             }
         .set{ tumor_only_severus }
 
@@ -189,6 +179,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     //                         normal_bam: haplotagged aligned bam files for normal (empty)
     //                         normal_bai: indexes for normal bam files (empty)
     //                         phased_vcf: phased small variant vcf
+    //                         tbi: index for phased small variant vcf
 
     emit:
     tumor_only_severus

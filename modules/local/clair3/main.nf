@@ -8,7 +8,7 @@ process CLAIR3 {
         'quay.io/biocontainers/clair3:1.2.0--py310h779eee5_0' }"
 
     input:
-    tuple val(meta), path(bam), path(bai), path(model), val(platform)
+    tuple val(meta) , path(bam), path(bai), path(model), val(platform)
     tuple val(meta2), path(reference)
     tuple val(meta3), path(index)
 
@@ -17,7 +17,7 @@ process CLAIR3 {
     tuple val(meta), path("*merge_output.vcf.gz.tbi"),        emit: tbi
     tuple val(meta), path("*phased_merge_output.vcf.gz"),     emit: phased_vcf, optional: true
     tuple val(meta), path("*phased_merge_output.vcf.gz.tbi"), emit: phased_tbi, optional: true
-    path "versions.yml",                                      emit: versions
+    tuple val("${task.process}"), val('clair3'), eval("run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//'"), topic: versions, emit: versions_clair3
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,11 +35,6 @@ process CLAIR3 {
         --platform=$platform \\
         --model=$model \\
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clair3: \$(run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//')
-    END_VERSIONS
     """
 
     stub:
@@ -50,10 +45,5 @@ process CLAIR3 {
     touch ${prefix}.phased_merge_output.vcf.gz.tbi
     echo "" | gzip > ${prefix}.merge_output.vcf.gz
     touch ${prefix}.merge_output.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clair3: \$(run_clair3.sh --version |& sed '1!d ; s/Clair3 v//')
-    END_VERSIONS
     """
 }

@@ -16,7 +16,7 @@ process VCFSPLIT {
     tuple val(meta), path("*germline.vcf.gz")       , emit: germline_vcf
     tuple val(meta), path("*germline.vcf.gz.tbi")   , emit: germline_tbi
 
-    path "versions.yml"                             , emit: versions
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version |& sed '1!d ; s/bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
     task.ext.when == null || task.ext.when
@@ -47,11 +47,6 @@ process VCFSPLIT {
     # Cleanup intermediate files
     rm indels_pass.vcf.gz snv_pass.vcf.gz
     rm indels_pass.vcf.gz.tbi snv_pass.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
-    END_VERSIONS
     """
 
     stub:
@@ -62,9 +57,5 @@ process VCFSPLIT {
     echo "" | gzip > germline.vcf.gz
     echo "" | gzip > somatic.vcf.gz.tbi
     echo "" | gzip > germline.vcf.gz.tbi
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
-    END_VERSIONS
     """
 }

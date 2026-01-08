@@ -1,20 +1,3 @@
-// TODO nf-core: If in doubt look at other nf-core/modules to see how we are doing things! :)
-//               https://github.com/nf-core/modules/tree/master/modules/nf-core/
-//               You can also ask for help via your pull request or on the #modules channel on the nf-core Slack workspace:
-//               https://nf-co.re/join
-// TODO nf-core: A module file SHOULD only define input and output files as command-line parameters.
-//               All other parameters MUST be provided using the "task.ext" directive, see here:
-//               https://www.nextflow.io/docs/latest/process.html#ext
-//               where "task.ext" is a string.
-//               Any parameters that need to be evaluated in the context of a particular sample
-//               e.g. single-end/paired-end data MUST also be defined and evaluated appropriately.
-// TODO nf-core: Software that can be piped together SHOULD be added to separate module files
-//               unless there is a run-time, storage advantage in implementing in this way
-//               e.g. it's ok to have a single module for bwa to output BAM instead of SAM:
-//                 bwa mem | samtools view -B -T ref.fasta
-// TODO nf-core: Optional inputs are not currently supported by Nextflow. However, using an empty
-//               list (`[]`) instead of a file can be used to work around this issue.
-
 process WAKHAN {
     tag "$meta.id"
     label 'process_medium'
@@ -27,6 +10,7 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
+    path(centromere_bed)
 
     output:
     tuple val(meta), path("*/*_genes_genome.html")                              , emit: genes_genome_html
@@ -52,7 +36,8 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*.rephased.vcf.gz.csi")               , emit: rephased_vcf_index
     tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
-    path "versions.yml"                                                         , emit: versions
+    // WARN: Manually update version information as tool does not provide on CLI
+    tuple val("${task.process}"), val('wakhan'), val("0.2.0"), topic: versions, emit: versions_wakhan
 
     when:
     task.ext.when == null || task.ext.when
@@ -61,8 +46,8 @@ process WAKHAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
-    // WARN: Version information not provided by tool on CLI. Please update this string when upgrading BLAZE code
-    def VERSION = "0.2.0"
+    def centromere = centromere_bed ? "--centromere \$PWD/${centromere_bed}" : ""
+
     """
     wakhan \\
         --target-bam ${tumor_input} \\
@@ -71,30 +56,16 @@ process WAKHAN {
         --genome-name ${prefix} \\
         --out-dir-plots . \\
         ${phased_vcf} \\
+        ${centromere} \\
         ${args} \\
         --threads ${task.cpus}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        wakhan: $VERSION
-    END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = "0.2.0"
 
-    // TODO nf-core: A stub section should mimic the execution of the original module as best as possible
-    //               Have a look at the following examples:
-    //               Simple example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bcftools/annotate/main.nf#L47-L63
-    //               Complex example: https://github.com/nf-core/modules/blob/818474a292b4860ae8ff88e149fbcda68814114d/modules/nf-core/bedtools/split/main.nf#L38-L54
     """
     touch ${prefix}.bam
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        wakhan: $VERSION
-    END_VERSIONS
     """
 }

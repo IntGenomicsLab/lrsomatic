@@ -1,33 +1,29 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-name: "fibertoolssrs_nucleosomes"
-## TODO nf-core: Add a description of the module and list keywords
-description: write your description here
+name: "fibertoolsrs_nucleosomes"
+description: Fibertools-rs add-nucleosomes adds nucleosome positions to fiber-seq BAM files
 keywords:
-  - sort
-  - example
-  - genomics
+  - fiberseq
+  - nucleosomes
+  - long-read
+  - epigenetics
+  - chromatin
 tools:
-  - "fibertoolssrs":
-      ## TODO nf-core: Add a description and other details for the software below
-      description: ""
-      homepage: ""
-      documentation: ""
-      tool_dev_url: ""
-      doi: ""
-      licence:
-      identifier:
+  - "fibertoolsrs":
+      description: "DNA-m6A calling and integrated long-read epigenetic and genetic analysis with fibertools"
+      homepage: "https://fiberseq.github.io/fibertools/fibertools.html"
+      documentation: "https://fiberseq.github.io/fibertools/fibertools.html"
+      tool_dev_url: "https://github.com/fiberseq/fibertools-rs"
+      doi: "10.1101/gr.279095.124"
+      licence: ["MIT"]
 
-## TODO nf-core: Add a description of all of the variables used as input
 input:
-  # Only when we have meta
   - - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
 
-    ## TODO nf-core: Delete / customise this example input
     - bam:
         type: file
         description: Sorted BAM/CRAM/SAM file
@@ -36,31 +32,43 @@ input:
           - edam: "http://edamontology.org/format_25722"
           - edam: "http://edamontology.org/format_2573"
           - edam: "http://edamontology.org/format_3462"
-
-## TODO nf-core: Add a description of all of the variables used as output
 output:
-  - bam:
-      #Only when we have meta
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1', single_end:false ]`
-      ## TODO nf-core: Delete / customise this example output
-      - "*.bam":
-          type: file
-          description: Sorted BAM/CRAM/SAM file
-          pattern: "*.{bam,cram,sam}"
-          ontologies:
-            - edam: "http://edamontology.org/format_25722"
-            - edam: "http://edamontology.org/format_2573"
-            - edam: "http://edamontology.org/format_3462"
+  bam:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.bam":
+        type: file
+        description: Sorted BAM/CRAM/SAM file
+        pattern: "*.{bam,cram,sam}"
+        ontologies:
+          - edam: "http://edamontology.org/format_25722"
+          - edam: "http://edamontology.org/format_2573"
+          - edam: "http://edamontology.org/format_3462"
+  versions_fibertoolsrs:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - fibertoolsrs:
+          type: string
+          description: The tool name
+      - "ft --version |& sed '1!d ; s/ft //'":
+          type: string
+          description: The command used to generate the version of the tool
 
-  - versions:
-      - "versions.yml":
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - fibertoolsrs:
+          type: string
+          description: The tool name
+      - "ft --version |& sed '1!d ; s/ft //'":
+          type: string
+          description: The command used to generate the version of the tool
 
 authors:
   - "@robert-a-forsyth"
