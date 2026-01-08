@@ -170,7 +170,6 @@ workflow LRSOMATIC {
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
 
-    ch_cat_ubams.view()
     // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 bam:  list of concatenated unaligned bams
 
@@ -342,7 +341,6 @@ workflow LRSOMATIC {
 
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
-    ch_minimap_bam.view()
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
         .branch { meta, bams, bais ->
