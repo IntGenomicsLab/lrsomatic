@@ -41,7 +41,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .set{downloaded_clair3_models}
 
     downloaded_clair3_models.view()
-    
+
     mixed_bams.normal
         .map{ meta, bam, bai ->
             return [ meta, meta.clair3_model, bam, bai ]

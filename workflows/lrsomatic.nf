@@ -117,12 +117,12 @@ workflow LRSOMATIC {
             def chosen_clairS_model = meta.clairS_model ?: clairs_modelMap.get(basecall_model_meta)
             def meta_new =[ id: meta.id,
                             paired_data: meta.paired_data,
-                            type: meta.type, 
-                            platform: meta.platform, 
-                            sex: meta.sex, 
-                            fiber: meta.fiber, 
-                            clair3_model: chosen_clair3_model, 
-                            clairS_model : chosen_clairS_model, 
+                            type: meta.type,
+                            platform: meta.platform,
+                            sex: meta.sex,
+                            fiber: meta.fiber,
+                            clair3_model: chosen_clair3_model,
+                            clairS_model : chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
                             kinetics: kinetics_meta]
             return[ meta_new, bam ]
@@ -215,7 +215,7 @@ workflow LRSOMATIC {
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
 
-    
+
 
     // ASCAT files
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files

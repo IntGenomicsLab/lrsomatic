@@ -38,12 +38,12 @@ workflow PREPARE_REFERENCE_FILES {
         } else {
             ch_prepared_fasta = [ [:], fasta ]
         }
-        
+
         // if clair3 model is specified, then download that
         // otherwise use info in bam header and download that
 
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
-            def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta 
+            def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta
             def meta_new = [id: id_new]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
