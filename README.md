@@ -23,8 +23,8 @@ It can be run in both **matched tumour-normal** and **tumour-only mode**, offeri
 Developed using **Nextflow DSL2**, it offers high portability and scalability across diverse computing environments. By leveraging Docker or Singularity containers, installation is streamlined and results are highly reproducible. Each process runs in an isolated container, simplifying dependency management and updates. Where applicable, pipeline components are sourced from **nf-core/modules**, promoting reuse, interoperability, and consistency within the broader Nextflow and nf-core ecosystems.
 
 ## Pipeline summary
-![image](./assets/lrsomatic_1.0.png)
 
+![image](./assets/lrsomatic_1.0.png)
 
 **1) Pre-processing:**
 
