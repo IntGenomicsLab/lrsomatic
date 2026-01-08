@@ -13,7 +13,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     fai
     clair3_modelMap
     clairs_modelMap
-    downloaded_model_files
+    downloaded_clair3_models
 
     main:
 
@@ -33,34 +33,38 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Get normal bams and add platform/model info for Clair3 usage
     // remove type from so that information can be merged easier later
 
-    downloaded_model_files
+    downloaded_clair3_models
         .map{ meta, file ->
-            def basecall_model = meta.id
-            return [basecall_model, meta, file]
+            def clair3_model = meta.id
+            return [meta, clair3_model, file]
         }
-        .set{downloaded_model_files}
+        .set{downloaded_clair3_models}
 
-     mixed_bams.normal
+    downloaded_clair3_models.view()
+    
+    mixed_bams.normal
         .map{ meta, bam, bai ->
-            def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
-            def new_meta = [id: meta.id,
-                            paired_data: meta.paired_data,
-                            platform: meta.platform,
-                            sex: meta.sex,
-                            fiber: meta.fiber,
-                            basecall_model: basecall_model,
-                            clairS_model: meta.clairS_model]
-            return [ basecall_model, new_meta, bam, bai ]
+            return [ meta, meta.clair3_model, bam, bai ]
         }
         .set { normal_bams_model }
 
+    normal_bams_model.view()
+
     normal_bams_model
-        .combine(downloaded_model_files,by:0)
-        .map{ basecall_model, meta, bam, bai, meta2, model ->
+        .combine(downloaded_clair3_models,by:1)
+        .map {clair3_model, meta_bam, bam, bai, meta_model, model ->
+            def platform = (meta_bam.platform == 'pb') ? 'hifi' : meta_bam.platform
+            return [meta_bam, bam, bai, model, platform]
+        }
+        .set{ normal_bams }
+
+    normal_bams.view()
+    /*
+    .map{ basecall_model, meta, bam, bai, meta2, model ->
             def platform = (meta.platform == "pb") ? "hifi" : "ont"
             return [meta, bam, bai, model, platform]
         }
-        .set{ normal_bams }
+    */
 
     // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:          list of concatenated aligned bams

@@ -38,10 +38,12 @@ workflow PREPARE_REFERENCE_FILES {
         } else {
             ch_prepared_fasta = [ [:], fasta ]
         }
-
+        
+        // if clair3 model is specified, then download that
+        // otherwise use info in bam header and download that
 
         basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
-            def id_new = basecall_model_meta ?: meta.clair3_model
+            def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta 
             def meta_new = [id: id_new]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
@@ -49,13 +51,13 @@ workflow PREPARE_REFERENCE_FILES {
             return [ meta_new, url ]
         }
         .unique()
-        .set{ model_urls }
+        .set{ clair3_model_urls }
 
         //
         // MODULE: Download model
         //
 
-        WGET ( model_urls )
+        WGET ( clair3_model_urls )
 
         ch_versions = ch_versions.mix(WGET.out.versions)
 
@@ -69,7 +71,7 @@ workflow PREPARE_REFERENCE_FILES {
 
         ch_versions = ch_versions.mix(UNTAR.out.versions)
 
-        UNTAR.out.untar.set { downloaded_model_files }
+        UNTAR.out.untar.set { downloaded_clair3_models }
 
         //
         // MODULE: Index the fasta
@@ -126,7 +128,7 @@ workflow PREPARE_REFERENCE_FILES {
         loci_files
         gc_file
         rt_file
-        downloaded_model_files
+        downloaded_clair3_models
 
         versions = ch_versions
 }
