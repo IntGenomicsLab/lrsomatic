@@ -19,6 +19,30 @@ nextflow_pipeline {
             def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assertAll(
                 { assert workflow.success},
+                { //files exist
+                    assert file("$launchDir/output/sample1/variants/clair3/merge_output.vcf.gz").exists()
+                    assert file("$launchDir/output/sample1/variants/clair3/merge_output.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample1/variants/clairs/indel.vcf.gz").exists()
+                    assert file("$launchDir/output/sample1/variants/clairs/indel.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample1/variants/clairs/snvs.vcf.gz").exists()
+                    assert file("$launchDir/output/sample1/variants/clairs/snvs.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample1/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    assert file("$launchDir/output/sample2/variants/clair3/merge_output.vcf.gz").exists()
+                    assert file("$launchDir/output/sample2/variants/clair3/merge_output.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample2/variants/clairs/indel.vcf.gz").exists()
+                    assert file("$launchDir/output/sample2/variants/clairs/indel.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample2/variants/clairs/snvs.vcf.gz").exists()
+                    assert file("$launchDir/output/sample2/variants/clairs/snvs.vcf.gz.tbi").exists()
+                    assert file("$launchDir/output/sample2/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    assert file("$launchDir/output/sample1/bamfiles/sample1_normal.bam").exists()
+                    assert file("$launchDir/output/sample1/bamfiles/sample1_tumor.bam").exists()
+                    assert file("$launchDir/output/sample1/bamfiles/sample1_normal.bam.bai").exists()
+                    assert file("$launchDir/output/sample1/bamfiles/sample1_tumor.bam.bai").exists()
+                    assert file("$launchDir/output/sample3/variants/clairsto/indel.vcf.gz").exists()
+                    assert file("$launchDir/output/sample3/variants/clairsto/snv.vcf.gz").exists()
+                    assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
+                    assert file("$launchDir/output/sample3/variants/clairsto/germline.vcf.gz").exists() 
+                },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml"),
