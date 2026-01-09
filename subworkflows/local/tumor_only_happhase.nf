@@ -25,8 +25,7 @@ workflow TUMOR_ONLY_HAPPHASE {
 
     tumor_bams
         .map{ meta, bam, bai ->
-            def clairSTO_model = (!meta.clairSTO_model || meta.clairSTO_model.toString().trim() in ['', '[]']) ? clairSTO_modelMap.get(meta.basecall_model.toString().trim()) : meta.clairSTO_model
-            return [meta, bam, bai, clairSTO_model]
+            return [meta, bam, bai, meta.clairSTO_model]
         }
         .set{ tumor_bams }
 
