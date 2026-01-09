@@ -42,7 +42,7 @@ process ASCAT {
     def penalty        = args.penalty         ?  "$args.penalty" :       "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
     def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
-    def pdf_plots      = args.pdf_plots       ?  "$args.pdf_plots" :     "NULL"
+    def pdf_plots      = args.pdf_plots       ?  ("$args.pdf_plots" == true ? "TRUE": "FALSE") :     "NULL"
 
     def minCounts_arg                    = args.minCounts                     ?  ",minCounts = $args.minCounts" : ""
     def bed_file_arg                     = bed_file                           ?  ",BED_file = '$bed_file'": ""
