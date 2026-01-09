@@ -166,8 +166,11 @@ workflow TUMOR_ONLY_HAPPHASE {
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
-                            fiber: meta.fiber
-                            ]
+                            fiber: meta.fiber,
+                            clair3_model: meta.clair3_model,
+                            clairS_model : meta.clairS_model,
+                            clairSTO_model: meta.clairSTO_model,
+                            kinetics: meta.kinetics]
             return [new_meta, hap_bam, hap_bai, [], [], vcf]
             }
         .set{ tumor_only_severus }

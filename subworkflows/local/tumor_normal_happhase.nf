@@ -21,7 +21,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
     tumor_only_severus = channel.empty()
     somatic_vep = channel.empty()
     germline_vep = channel.empty()
-
     // Branch input bams in normal and tumour
     mixed_bams
         .branch{ meta, bam, bai ->
@@ -43,7 +42,16 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     mixed_bams.normal
         .map{ meta, bam, bai ->
-            return [ meta, meta.clair3_model, bam, bai ]
+            def new_meta = [id: meta.id,
+                            paired_data: meta.paired_data,
+                            platform: meta.platform,
+                            sex: meta.sex,
+                            fiber: meta.fiber,
+                            clair3_model: meta.clair3_model,
+                            clairS_model : meta.clairS_model,
+                            clairSTO_model: meta.clairSTO_model,
+                            kinetics: meta.kinetics]
+            return [ new_meta, meta.clair3_model, bam, bai ]
         }
         .set { normal_bams_model }
 
@@ -74,17 +82,19 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // remove type from so that information can be merged easier later
     mixed_bams.tumor
         .map{ meta, bam, bai ->
-            def basecall_model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? meta.basecall_model : meta.clair3_model
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: basecall_model,
-                            clairS_model: meta.clairS_model]
+                            clair3_model: meta.clair3_model,
+                            clairS_model : meta.clairS_model,
+                            clairSTO_model: meta.clairSTO_model,
+                            kinetics: meta.kinetics]
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
+
 
     // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
@@ -163,6 +173,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
+
     tumor_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
         .map { meta, bam, bai, vcf ->
@@ -212,13 +223,11 @@ workflow TUMOR_NORMAL_HAPPHASE {
     )
 
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
-
     // Add index to channel
     mixed_bams_vcf
         .join(mixed_hapbams)
         .join(SAMTOOLS_INDEX.out.bai)
         .set{ mixed_hapbams }
-
     // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                  bams: haplotagged aligned bams
     //                  bais: indexes for bam files
@@ -231,7 +240,10 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            clairS_model: meta.clairS_model]
+                            clair3_model: meta.clair3_model,
+                            clairS_model : meta.clairS_model,
+                            clairSTO_model: meta.clairSTO_model,
+                            kinetics: meta.kinetics]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
         .groupTuple(size: 2)
@@ -245,7 +257,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .join(LONGPHASE_PHASE.out.snv_vcf)
         .set{tumor_normal_severus}
-
     // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
     //                         tumor_bam:  haplotagged aligned bam for tumor
     //                         tumor_bai:  indexes for tumor bam files
@@ -259,7 +270,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
         }
         .set { clairs_input }
-
     //
     // MODULE: CLAIRS
     //
