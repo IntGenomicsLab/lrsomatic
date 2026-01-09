@@ -231,7 +231,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
-                            basecall_model: meta.basecall_model,
                             clairS_model: meta.clairS_model]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
         }
