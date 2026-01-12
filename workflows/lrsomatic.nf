@@ -122,7 +122,7 @@ workflow LRSOMATIC {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             clair3_model: chosen_clair3_model,
-                            clairS_model : chosen_clairS_model,
+                            clairS_model: chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
                             kinetics: kinetics_meta]
             return[ meta_new, bam ]
@@ -213,8 +213,6 @@ workflow LRSOMATIC {
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
-
-
 
     // ASCAT files
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
@@ -341,6 +339,7 @@ workflow LRSOMATIC {
 
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
+
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
         .branch { meta, bams, bais ->

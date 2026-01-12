@@ -21,6 +21,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     tumor_only_severus = channel.empty()
     somatic_vep = channel.empty()
     germline_vep = channel.empty()
+
     // Branch input bams in normal and tumour
     mixed_bams
         .branch{ meta, bam, bai ->
@@ -39,7 +40,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .set{downloaded_clair3_models}
 
-
     mixed_bams.normal
         .map{ meta, bam, bai ->
             def new_meta = [id: meta.id,
@@ -48,13 +48,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             clair3_model: meta.clair3_model,
-                            clairS_model : meta.clairS_model,
+                            clairS_model: meta.clairS_model,
                             clairSTO_model: meta.clairSTO_model,
                             kinetics: meta.kinetics]
             return [ new_meta, meta.clair3_model, bam, bai ]
         }
         .set { normal_bams_model }
-
 
     normal_bams_model
         .combine(downloaded_clair3_models,by:1)
@@ -88,13 +87,12 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             clair3_model: meta.clair3_model,
-                            clairS_model : meta.clairS_model,
+                            clairS_model: meta.clairS_model,
                             clairSTO_model: meta.clairSTO_model,
                             kinetics: meta.kinetics]
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
-
 
     // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]
     //                bam:  list of concatenated aligned bams
@@ -241,7 +239,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             clair3_model: meta.clair3_model,
-                            clairS_model : meta.clairS_model,
+                            clairS_model: meta.clairS_model,
                             clairSTO_model: meta.clairSTO_model,
                             kinetics: meta.kinetics]
             return[new_meta, [[type: meta.type], hapbam], [[type: meta.type], hapbai]]
