@@ -65,7 +65,7 @@ workflow LRSOMATIC {
         'dna_r10.4.1_e8.2_400bps_sup@v4.2.0': 'r1041_e82_400bps_sup_v420',
         'dna_r10.4.1_e8.2_400bps_sup@v4.1.0': 'r1041_e82_400bps_sup_v410',
         'dna_r10.4.1_e8.2_260bps_sup@v4.0.0': 'r1041_e82_260bps_sup_v400',
-        'hifi_revio'                        : 'hifi_revio'
+        'hifi_revio'                        : 'hifi'
     ]
 
     def clairs_modelMap = [
@@ -75,7 +75,7 @@ workflow LRSOMATIC {
         'dna_r10.4.1_e8.2_400bps_sup@v4.3.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'dna_r10.4.1_e8.2_400bps_sup@v5.0.0': 'ont_r10_dorado_sup_5khz_ssrs',
         'dna_r10.4.1_e8.2_400bps_sup@v5.2.0': 'ont_r10_dorado_sup_5khz_ssrs',
-        'hifi_revio'                        : 'hifi_revio_ss'
+        'hifi_revio'                        : 'hifi_revio_ssrs'
 
     ]
 
@@ -112,7 +112,19 @@ workflow LRSOMATIC {
     ch_samplesheet
         .join(basecall_meta)
         .map { meta, bam, basecall_model_meta, kinetics_meta ->
-            def meta_new = meta + [ basecall_model: basecall_model_meta, kinetics: kinetics_meta]
+            def chosen_clair3_model = meta.clair3_model ?: clair3_modelMap.get(basecall_model_meta)
+            def chosen_clairSTO_model = meta.clairSTO_model ?: clairs_modelMap.get(basecall_model_meta)
+            def chosen_clairS_model = meta.clairS_model ?: clairs_modelMap.get(basecall_model_meta)
+            def meta_new =[ id: meta.id,
+                            paired_data: meta.paired_data,
+                            type: meta.type,
+                            platform: meta.platform,
+                            sex: meta.sex,
+                            fiber: meta.fiber,
+                            clair3_model: chosen_clair3_model,
+                            clairS_model: chosen_clairS_model,
+                            clairSTO_model: chosen_clairSTO_model,
+                            kinetics: kinetics_meta]
             return[ meta_new, bam ]
         }
         .groupTuple()
@@ -121,6 +133,22 @@ workflow LRSOMATIC {
             }
         .set{ch_samplesheet}
 
+
+    //
+    // SUBWORKFLOW: PREPARE_REFERENCE_FILES
+    //
+
+    PREPARE_REFERENCE_FILES (
+        params.fasta,
+        params.ascat_allele_files,
+        params.ascat_loci_files,
+        params.ascat_gc_file,
+        params.ascat_rt_file,
+        basecall_meta,
+        clair3_modelMap
+    )
+
+    downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
 
     // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
@@ -142,7 +170,6 @@ workflow LRSOMATIC {
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
 
-
     // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 bam:  list of concatenated unaligned bams
 
@@ -155,20 +182,6 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_cramino) {
         CRAMINO_PRE ( ch_cat_ubams )
     }
-
-    //
-    // SUBWORKFLOW: PREPARE_REFERENCE_FILES
-    //
-
-    PREPARE_REFERENCE_FILES (
-        params.fasta,
-        params.ascat_allele_files,
-        params.ascat_loci_files,
-        params.ascat_gc_file,
-        params.ascat_rt_file,
-        basecall_meta,
-        clair3_modelMap
-    )
 
     vep_cache = channel.empty()
 
@@ -200,8 +213,6 @@ workflow LRSOMATIC {
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
     ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
     ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
-
-    downloaded_model_files = PREPARE_REFERENCE_FILES.out.downloaded_model_files
 
     // ASCAT files
     allele_files = PREPARE_REFERENCE_FILES.out.allele_files
@@ -353,7 +364,7 @@ workflow LRSOMATIC {
         ch_fai,
         clair3_modelMap,
         clairs_modelMap,
-        downloaded_model_files
+        downloaded_clair3_models
     )
 
     ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)

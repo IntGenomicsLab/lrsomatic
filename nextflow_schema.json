@@ -166,6 +166,10 @@
                 "ascat_rt_files": {
                     "type": "string",
                     "description": "path to (zip) of RT files"
+                },
+                "ascat_pdf_plots": {
+                    "type": "boolean",
+                    "description": "Boolean for ASCAT production of pdf plots (entered as string)"
                 }
             }
         },
