@@ -55,6 +55,7 @@ nextflow_process {
                     process.out.png.collect{it[1].collect{file(it).name}},
                     process.out.purityploidy,
                     process.out.segments,
+                    process.out.segments_raw,
                     process.out.versions,
                     path(process.out.versions[0]).yaml
                 ).match() }
@@ -109,6 +110,7 @@ nextflow_process {
                     process.out.png.collect{it[1].collect{file(it).name}},
                     process.out.purityploidy,
                     process.out.segments,
+                    process.out.segments_raw,
                     process.out.versions,
                     path(process.out.versions[0]).yaml
                 ).match() }
@@ -163,6 +165,7 @@ nextflow_process {
                     process.out.png.collect{it[1].collect{file(it).name}},
                     process.out.purityploidy,
                     process.out.segments,
+                    process.out.segments_raw,
                     process.out.versions,
                     path(process.out.versions[0]).yaml
                 ).match() }
@@ -218,6 +221,7 @@ nextflow_process {
                     process.out.png.collect{it[1].collect{file(it).name}},
                     process.out.purityploidy,
                     process.out.segments,
+                    process.out.segments_raw,
                     process.out.versions,
                     path(process.out.versions[0]).yaml
                 ).match() }
@@ -296,6 +300,7 @@ nextflow_process {
                     process.out.png.collect{it[1].collect{file(it).name}},
                     process.out.purityploidy,
                     process.out.segments,
+                    process.out.segments_raw,
                     process.out.versions,
                     path(process.out.versions[0]).yaml
                 ).match() }

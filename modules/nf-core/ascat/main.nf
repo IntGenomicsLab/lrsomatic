@@ -173,7 +173,7 @@ process ASCAT {
     tryCatch({ # In case segments_raw is not selected
       write.table(
         ascat.output[["segments_raw"]],
-        file = paste0(prefix, ".segments_raw.txt"),
+        file = paste0("$prefix", ".segments_raw.txt"),
         sep = "\t", quote = FALSE, row.names = FALSE
       )
     }, error = function(e) {
@@ -221,6 +221,7 @@ process ASCAT {
     echo stub > ${prefix}.normal_alleleFrequencies_chr22.txt
     echo stub > ${prefix}.purityploidy.txt
     echo stub > ${prefix}.segments.txt
+    echo stub > ${prefix}.segments_raw.txt
     echo stub > ${prefix}.tumour.ASPCF.png
     echo stub > ${prefix}.tumour.sunrise.png
     echo stub > ${prefix}.tumour_alleleFrequencies_chr21.txt
