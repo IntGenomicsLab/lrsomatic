@@ -73,6 +73,7 @@ The directories listed below will be created in the results directory after the 
 │   ├── sample.normal_alleleFrequencies_chr(1-22,X).txt
 │   ├── sample.purityploidy.txt
 │   ├── sample.segments.txt
+│   ├── sample.segments_raw.txt
 │   ├── sample.tumour_alleleFrequencies_chr(1-22,X).txt
 │   ├── sample.tumour_normalBAF_rawBAF.txt
 │   ├── sample.tumour_normalBAF.txt
@@ -92,6 +93,7 @@ The directories listed below will be created in the results directory after the 
 | `sample.normal_alleleFrequencies_chr(1-22,X).txt`     | a tsv file describing the snp counts for the normal sample at each position and their respective depths          |
 | `sample.purityploidy.txt`                             | a tsv file describing the purity and ploidy values of the sample                                                 |
 | `sample.segments.txt`                                 | a tsv file describing each chromosome segment and it's major and minor copy number                               |
+| `sample.segments_raw.txt`                             | a tsv file describing each chromosome segment and it's major and minor rounded and raw copy number               |
 | `sample.tumour_alleleFrequencies_chr(1-22,X).txt`     | a tsv file describing the snp counts for the tumor sample at each position and their respective depths           |
 | `sample.tumour_normalBAF_rawBAF.txt`                  | a tsv file with the raw BAF values in the normal sample                                                          |
 | `sample.tumour_normalBAF.txt`                         | a tsv file with the BAF values in the normal sample                                                              |

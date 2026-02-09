@@ -42,8 +42,7 @@ process ASCAT {
     def penalty        = args.penalty         ?  "$args.penalty" :       "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
     def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
-    def pdf_plots      = args.pdf_plots       ?  ("$args.pdf_plots" == true ? "TRUE": "FALSE") :     "NULL"
-
+    def pdf_plots      = (args.pdf_plots ?: false) ? "TRUE" : "FALSE"
     def minCounts_arg                    = args.minCounts                     ?  ",minCounts = $args.minCounts" : ""
     def bed_file_arg                     = bed_file                           ?  ",BED_file = '$bed_file'": ""
     def chrom_names_arg                  = args.chrom_names                   ?  ",chrom_names = $args.chrom_names" : ""
@@ -173,7 +172,7 @@ process ASCAT {
     tryCatch({ # In case segments_raw is not selected
       write.table(
         ascat.output[["segments_raw"]],
-        file = paste0(prefix, ".segments_raw.txt"),
+        file = paste0("$prefix", ".segments_raw.txt"),
         sep = "\t", quote = FALSE, row.names = FALSE
       )
     }, error = function(e) {
@@ -221,6 +220,7 @@ process ASCAT {
     echo stub > ${prefix}.normal_alleleFrequencies_chr22.txt
     echo stub > ${prefix}.purityploidy.txt
     echo stub > ${prefix}.segments.txt
+    echo stub > ${prefix}.segments_raw.txt
     echo stub > ${prefix}.tumour.ASPCF.png
     echo stub > ${prefix}.tumour.sunrise.png
     echo stub > ${prefix}.tumour_alleleFrequencies_chr21.txt
