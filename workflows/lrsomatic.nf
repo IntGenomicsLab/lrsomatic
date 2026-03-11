@@ -522,9 +522,9 @@ workflow LRSOMATIC {
             ch_fasta
         )
 
-        bam_stats_ch = BAM_STATS_SAMTOOLS.out.stats
-        bam_flagstat_ch = BAM_STATS_SAMTOOLS.out.flagstat
-        bam_idxstats_ch = BAM_STATS_SAMTOOLS.out.idxstats
+        ch_bam_stats = BAM_STATS_SAMTOOLS.out.stats
+        ch_bam_flagstat = BAM_STATS_SAMTOOLS.out.flagstat
+        ch_bam_idxstats = BAM_STATS_SAMTOOLS.out.idxstats
     }
 
     //
