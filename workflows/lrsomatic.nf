@@ -17,8 +17,9 @@ include { SAMTOOLS_CAT                      } from '../modules/nf-core/samtools/
 include { MINIMAP2_INDEX                    } from '../modules/nf-core/minimap2/index/main'
 include { MINIMAP2_ALIGN                    } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE            } from '../modules/local/cramino/main'
-include { CRAMINO as CRAMINO_PRE_REPLICATES } from '../modules/local/cramino/main'
 include { CRAMINO as CRAMINO_POST           } from '../modules/local/cramino/main'
+include { NANOPLOT as NANOPLOT_PRE          } from '../modules/nf-core/nanoplot/main'
+include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/main'
 include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
 include { ASCAT                             } from '../modules/nf-core/ascat/main'
 include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
@@ -153,11 +154,10 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
-    ch_samplesheet.view()
-
 
     if (!params.skip_qc && !params.skip_cramino) {
         CRAMINO_PRE( ch_samplesheet )
+        NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
     }
 
 
@@ -197,7 +197,6 @@ workflow LRSOMATIC {
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
 
-    ch_cat_ubams.view()
     // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 bam:  list of concatenated unaligned bams
 
@@ -511,6 +510,7 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_cramino) {
 
         CRAMINO_POST ( ch_minimap_bam )
+        NANOPLOT_POST(CRAMINO_POST.out.arrow)
 
     }
 

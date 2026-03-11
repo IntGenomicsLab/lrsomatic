@@ -105,7 +105,6 @@ workflow PIPELINE_INITIALISATION {
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
-        .view()
         .flatMap { meta, tumor_bam, normal_bam ->
             def meta_tumor = meta.clone()
             meta_tumor.type = 'tumor'
