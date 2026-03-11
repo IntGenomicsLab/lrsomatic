@@ -269,7 +269,7 @@ workflow LRSOMATIC {
                 .set{predicted_bams}
         }
 
-        
+
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
