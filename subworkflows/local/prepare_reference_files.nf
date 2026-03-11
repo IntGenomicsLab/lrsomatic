@@ -42,7 +42,7 @@ workflow PREPARE_REFERENCE_FILES {
         // if clair3 model is specified, then download that
         // otherwise use info in bam header and download that
 
-        basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
+        basecall_meta.map { meta, basecall_model_meta, _kinetics_meta ->
             def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta
             def meta_new = [id: id_new]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
@@ -75,7 +75,7 @@ workflow PREPARE_REFERENCE_FILES {
         // MODULE: Index the fasta
         //
         SAMTOOLS_FAIDX (
-            ch_prepared_fasta.map { meta, fasta -> [meta, fasta, []] },
+            ch_prepared_fasta.map { meta, fa -> [meta, fa, []] },
             false
         )
 

@@ -10,7 +10,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     tumor_bams
     fasta
     fai
-    clairSTO_modelMap
     dbsnp
     colors
     onekgenomes
@@ -67,7 +66,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     // remove model info
     tumor_bams
         .join(VCFSPLIT.out.germline_vcf)
-        .map{ meta, bam, bai, model, snps ->
+        .map{ meta, bam, bai, _model, snps ->
             def svs = []
             def mods = []
             return[meta, bam, bai, snps, svs, mods]
@@ -112,7 +111,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     // remove model info
     tumor_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map { meta, bam, bai, model, vcf ->
+        .map { meta, bam, bai, _model, vcf ->
             def new_meta = meta + [type: "tumor"]
             def svs = []
             def mods = []

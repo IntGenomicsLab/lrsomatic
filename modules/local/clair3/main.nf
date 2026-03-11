@@ -13,10 +13,10 @@ process CLAIR3 {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("*merge_output.vcf.gz"),            emit: vcf
-    tuple val(meta), path("*merge_output.vcf.gz.tbi"),        emit: tbi
-    tuple val(meta), path("*phased_merge_output.vcf.gz"),     emit: phased_vcf, optional: true
-    tuple val(meta), path("*phased_merge_output.vcf.gz.tbi"), emit: phased_tbi, optional: true
+    tuple val(meta), path("${prefix}/*merge_output.vcf.gz"),            emit: vcf
+    tuple val(meta), path("${prefix}/*merge_output.vcf.gz.tbi"),        emit: tbi
+    tuple val(meta), path("${prefix}/*phased_merge_output.vcf.gz"),     emit: phased_vcf, optional: true
+    tuple val(meta), path("${prefix}/*phased_merge_output.vcf.gz.tbi"), emit: phased_tbi, optional: true
     tuple val("${task.process}"), val('clair3'), eval("run_clair3.sh  --version |& sed '1!d ; s/Clair3 v//'"), topic: versions, emit: versions_clair3
 
     when:
@@ -25,20 +25,19 @@ process CLAIR3 {
     script:
 
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
     """
     run_clair3.sh \\
         --bam_fn=$bam \\
         --ref_fn=$reference \\
         --threads=$task.cpus \\
-        --output=. \\
+        --output=${prefix} \\
         --platform=$platform \\
         --model=$model \\
         $args
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > ${prefix}.phased_merge_output.vcf.gz

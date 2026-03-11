@@ -11,20 +11,18 @@ workflow TUMOR_NORMAL_HAPPHASE {
     mixed_bams
     fasta
     fai
-    clair3_modelMap
-    clairs_modelMap
     downloaded_clair3_models
 
     main:
 
     ch_versions = channel.empty()
-    tumor_only_severus = channel.empty()
+    tumor_normal_severus = channel.empty()
     somatic_vep = channel.empty()
     germline_vep = channel.empty()
 
     // Branch input bams in normal and tumour
     mixed_bams
-        .branch{ meta, bam, bai ->
+        .branch{ meta, _bam, _bai ->
             normal: meta.type == "normal"
             tumor: meta.type == "tumor"
         }
@@ -57,7 +55,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams_model
         .combine(downloaded_clair3_models,by:1)
-        .map {clair3_model, meta_bam, bam, bai, meta_model, model ->
+        .map {_clair3_model, meta_bam, bam, bai, _meta_model, model ->
             def platform = (meta_bam.platform == 'pb') ? 'hifi' : meta_bam.platform
             return [meta_bam, bam, bai, model, platform]
         }
@@ -113,7 +111,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(CLAIR3.out.vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf ->
+        .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def svs = []
             def mods = []
             return [meta, bam, bai, vcf, svs, mods]
@@ -153,7 +151,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf ->
+        .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def new_meta = meta + [type: "normal"]
             def svs = []
             def mods = []
@@ -231,7 +229,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Group everything back together in one channel
     mixed_hapbams
-        .map { meta, bam, bai, vcf, snvs, mods, hapbam, hapbai ->
+        .map { meta, _bam, _bai, _vcf, _snvs, _mods, hapbam, hapbai ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
@@ -265,7 +263,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Get ClairS input channel
     tumor_normal_severus
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf, _tbi ->
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
         }
         .set { clairs_input }
