@@ -23,14 +23,13 @@ process CLAIR3 {
     task.ext.when == null || task.ext.when
 
     script:
-
     def args = task.ext.args ?: ''
     """
     run_clair3.sh \\
         --bam_fn=$bam \\
         --ref_fn=$reference \\
         --threads=$task.cpus \\
-        --output=${prefix} \\
+        --output=. \\
         --platform=$platform \\
         --model=$model \\
         $args
