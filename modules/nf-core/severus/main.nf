@@ -12,21 +12,21 @@ process SEVERUS {
     tuple val(meta2), path(bed), path(pon_path)
 
     output:
-    tuple val(meta), path("severus.log")                              , emit: log
-    tuple val(meta), path("read_qual.txt")                            , emit: read_qual
-    tuple val(meta), path("breakpoints_double.csv")                   , emit: breakpoints_double
-    tuple val(meta), path("read_alignments")                          , emit: read_alignments                  , optional: true
-    tuple val(meta), path("read_ids.csv")                             , emit: read_ids                         , optional: true
-    tuple val(meta), path("severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
-    tuple val(meta), path("severus_LOH.bed")                          , emit: loh                              , optional: true
-    tuple val(meta), path("all_SVs/severus_all.vcf")                  , emit: all_vcf                          , optional: true
-    tuple val(meta), path("all_SVs/breakpoints_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
-    tuple val(meta), path("all_SVs/breakpoints_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
-    tuple val(meta), path("all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
-    tuple val(meta), path("somatic_SVs/severus_somatic.vcf")          , emit: somatic_vcf                      , optional: true
-    tuple val(meta), path("somatic_SVs/breakpoints_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
-    tuple val(meta), path("somatic_SVs/breakpoints_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
-    tuple val(meta), path("somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
+    tuple val(meta), path("${prefix}/severus.log")                              , emit: log
+    tuple val(meta), path("${prefix}/read_qual.txt")                            , emit: read_qual
+    tuple val(meta), path("${prefix}/breakpoints_double.csv")                   , emit: breakpoints_double
+    tuple val(meta), path("${prefix}/read_alignments")                          , emit: read_alignments                  , optional: true
+    tuple val(meta), path("${prefix}/read_ids.csv")                             , emit: read_ids                         , optional: true
+    tuple val(meta), path("${prefix}/severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
+    tuple val(meta), path("${prefix}/severus_LOH.bed")                          , emit: loh                              , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/severus_all.vcf.gz")               , emit: all_vcf                          , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoints_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoints_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/severus_somatic.vcf.gz")       , emit: somatic_vcf                      , optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoints_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoints_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
     path "versions.yml"                                                         , emit: versions
 
     when:
@@ -50,7 +50,12 @@ process SEVERUS {
         $pon \\
         $control \\
         $phasing_vcf \\
-        --out-dir .
+        --out-dir ${prefix}
+
+    bgzip ${prefix}/somatic_SVs/severus_somatic.vcf
+    tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    bgzip ${prefix}/all_SVs/severus_all.vcf
+    tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
