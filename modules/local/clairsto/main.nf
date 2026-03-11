@@ -48,9 +48,6 @@ process CLAIRSTO {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     mkdir -p output
     echo "" | gzip > snv.vcf.gz

@@ -40,9 +40,6 @@ process CLAIRS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     echo "" | gzip > snvs.vcf.gz
     touch snvs.vcf.gz.tbi
