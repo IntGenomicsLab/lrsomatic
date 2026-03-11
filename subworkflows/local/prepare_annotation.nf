@@ -21,11 +21,11 @@ workflow PREPARE_ANNOTATION {
 
 		if (download_vep_cache) {
 			vep_download_info = channel.of([[],vep_genome, vep_species, vep_cache_version])
-			
-			ENSEMBLVEP_DOWNLOAD ( 
+
+			ENSEMBLVEP_DOWNLOAD (
 				vep_download_info
 			)
-			
+
 			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache
 			ch_versions = ch_versions.mix(ENSEMBLVEP_DOWNLOAD.out.versions)
 
