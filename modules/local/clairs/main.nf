@@ -12,8 +12,8 @@ process CLAIRS {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("${prefix}/*.vcf.gz"),               emit: vcfs
-    tuple val(meta), path("${prefix}/*.vcf.gz.tbi"),           emit: tbi
+    tuple val(meta), path("*.vcf.gz"),               emit: vcfs
+    tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
     tuple val("${task.process}"), val('clairs'), eval("/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //'"), topic: versions, emit: versions_clairs
 
     when:
@@ -21,7 +21,6 @@ process CLAIRS {
 
     script:
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     /opt/bin/run_clairs \
@@ -30,7 +29,7 @@ process CLAIRS {
         --ref_fn $reference \\
         --threads $task.cpus \\
         --platform $model \\
-        --output_dir ${prefix} \\
+        --output_dir . \\
         --output_prefix snvs \\
         $args
 
@@ -41,6 +40,9 @@ process CLAIRS {
     """
 
     stub:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     echo "" | gzip > snvs.vcf.gz
     touch snvs.vcf.gz.tbi

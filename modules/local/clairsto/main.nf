@@ -17,10 +17,10 @@ process CLAIRSTO {
     path(gnomad)
 
     output:
-    tuple val(meta), path("${prefix}/indel.vcf.gz"),      emit: indel_vcf
-    tuple val(meta), path("${prefix}/indel.vcf.gz.tbi"),  emit: indel_tbi
-    tuple val(meta), path("${prefix}/snv.vcf.gz"),        emit: snv_vcf
-    tuple val(meta), path("${prefix}/snv.vcf.gz.tbi"),    emit: snv_tbi
+    tuple val(meta), path("indel.vcf.gz"),      emit: indel_vcf
+    tuple val(meta), path("indel.vcf.gz.tbi"),  emit: indel_tbi
+    tuple val(meta), path("snv.vcf.gz"),        emit: snv_vcf
+    tuple val(meta), path("snv.vcf.gz.tbi"),    emit: snv_tbi
     tuple val("${task.process}"), val('clairsto'), eval("run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'"), topic: versions, emit: versions_clairsto
 
     when:
@@ -28,13 +28,11 @@ process CLAIRSTO {
 
     script:
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}"
     def conda_prefix = workflow.containerEngine == 'singularity' ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
     def gnomad_arg = gnomad ?: 'gnomad.r2.1.af-ge-0.001.sites.vcf.gz'
     def dbSNP_arg = dbSNP ?: 'dbsnp.b138.non-somatic.sites.vcf.gz'
     def onekgenomes_arg = onekgenomes ?: '1000g-pon.sites.vcf.gz'
     def colors_arg = colors ?: 'colors-pon.sites.vcf.gz'
-
 
     """
     /opt/bin/run_clairs_to \
@@ -42,7 +40,7 @@ process CLAIRSTO {
         --ref_fn $reference \\
         --platform $model \\
         --threads $task.cpus \\
-        --output_dir ${prefix} \\
+        --output_dir . \\
         --panel_of_normals "${gnomad_arg},${dbSNP_arg},${onekgenomes_arg},${colors_arg}" \\
         --panel_of_normals_require_allele_matching 'True,True,False,False' \\
         $conda_prefix \\
@@ -50,6 +48,9 @@ process CLAIRSTO {
     """
 
     stub:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     mkdir -p output
     echo "" | gzip > snv.vcf.gz
