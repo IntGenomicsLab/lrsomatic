@@ -173,8 +173,6 @@ workflow LRSOMATIC {
     // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 bam:  list of concatenated unaligned bams
 
-    ch_versions = ch_versions.mix(SAMTOOLS_CAT.out.versions)
-
     //
     // MODULE: CRAMINO
     //
@@ -206,7 +204,7 @@ workflow LRSOMATIC {
             params.download_vep_cache
         )
         ch_versions = ch_versions.mix(PREPARE_ANNOTATION.out.versions)
-        vep_cache = PREPARE_ANNOTATION.out.vep_cache
+        vep_cache = PREPARE_ANNOTATION.out.vep_cache.map {cache -> [[:], cache] }
 
     }
 
@@ -334,9 +332,6 @@ workflow LRSOMATIC {
     // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
     //                    bam:  list of concatenated aligned bams
 
-    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
-
-
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
 
@@ -420,8 +415,6 @@ workflow LRSOMATIC {
             vep_custom_tbi
         )
 
-        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
-
         //
         // MODULE: SOMATIC_VEP
         //
@@ -437,16 +430,16 @@ workflow LRSOMATIC {
             vep_custom,
             vep_custom_tbi
         )
-
-        ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
     }
-
 
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
 
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
+        }
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
@@ -480,8 +473,6 @@ workflow LRSOMATIC {
             vep_custom,
             vep_custom_tbi
         )
-
-        ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
 
     //
@@ -515,8 +506,6 @@ workflow LRSOMATIC {
 
         ch_mosdepth_global = MOSDEPTH.out.global_txt
         ch_mosdepth_summary = MOSDEPTH.out.summary_txt
-
-        ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     }
 
     //
@@ -536,8 +525,6 @@ workflow LRSOMATIC {
         bam_stats_ch = BAM_STATS_SAMTOOLS.out.stats
         bam_flagstat_ch = BAM_STATS_SAMTOOLS.out.flagstat
         bam_idxstats_ch = BAM_STATS_SAMTOOLS.out.idxstats
-
-        ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
     }
 
     //
@@ -655,12 +642,11 @@ workflow LRSOMATIC {
 
 
     MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+        ch_multiqc_files
+            .collect()
+            .combine(ch_multiqc_config.mix(ch_multiqc_custom_config).toList())
+            .combine(ch_multiqc_logo.toList())
+            .map { files, config, logo -> [[id: 'multiqc'], files, config, logo, [], []] }
     )
 
     emit:

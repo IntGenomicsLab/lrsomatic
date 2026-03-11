@@ -155,13 +155,12 @@ workflow TUMOR_ONLY_HAPPHASE {
         haplotagged_bams
     )
 
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
-
     // join information and the phased VCF file
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map{ meta, hap_bam, hap_bai, vcf ->
+        .join(LONGPHASE_PHASE.out.snv_vcf_index)
+        .map{ meta, hap_bam, hap_bai, vcf, tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
@@ -171,7 +170,7 @@ workflow TUMOR_ONLY_HAPPHASE {
                             clairS_model: meta.clairS_model,
                             clairSTO_model: meta.clairSTO_model,
                             kinetics: meta.kinetics]
-            return [new_meta, hap_bam, hap_bai, [], [], vcf]
+            return [new_meta, hap_bam, hap_bai, [], [], vcf, tbi]
             }
         .set{ tumor_only_severus }
 

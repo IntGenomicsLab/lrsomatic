@@ -74,10 +74,8 @@ workflow PREPARE_REFERENCE_FILES {
         //
         // MODULE: Index the fasta
         //
-
         SAMTOOLS_FAIDX (
-            ch_prepared_fasta,
-            [ [:], [] ],
+            ch_prepared_fasta.map { meta, fasta -> [meta, fasta, []] },
             false
         )
 
