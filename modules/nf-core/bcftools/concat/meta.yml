@@ -75,8 +75,8 @@ output:
           type: string
           description: The tool name
       - "bcftools --version | sed '1!d; s/^.*bcftools //'":
-          type: string
-          description: The command used to generate the version of the tool
+          type: eval
+          description: The expression to obtain the version of the tool
 topics:
   versions:
     - - ${task.process}:
@@ -86,8 +86,8 @@ topics:
           type: string
           description: The tool name
       - "bcftools --version | sed '1!d; s/^.*bcftools //'":
-          type: string
-          description: The command used to generate the version of the tool
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@abhi18av"
   - "@nvnieuwk"
