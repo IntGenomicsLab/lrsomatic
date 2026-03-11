@@ -86,25 +86,56 @@ workflow PIPELINE_INITIALISATION {
 
     channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model ->
+        .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate ->
             def real_clair3_model = (clair3_model == null ) ? null : clair3_model
             def real_clairS_model = (clairS_model == null ) ? null : clairS_model
             def real_clairSTO_model = (clairSTO_model == null ) ? null : clairSTO_model
             def paired_data = bam_normal ? true : false
-            def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex, fiber: fiber, clair3_model: real_clair3_model, clairS_model : real_clairS_model, clairSTO_model: real_clairSTO_model]
+            def meta_info = meta + [ paired_data: paired_data,
+                                     platform: method,
+                                     sex: sex,
+                                     fiber: fiber,
+                                     clair3_model: real_clair3_model,
+                                     clairS_model : real_clairS_model,
+                                     clairSTO_model: real_clairSTO_model,
+                                     tumor_replicate : tumor_replicate,
+                                     normal_replicate : normal_replicate]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
+        .view()
         .flatMap { meta, tumor_bam, normal_bam ->
             def meta_tumor = meta.clone()
             meta_tumor.type = 'tumor'
+            meta_tumor.replicate = meta_tumor.tumor_replicate
+            meta_tumor = meta_tumor.subMap('id',
+                                            'paired_data',
+                                            'type',
+                                            'platform',
+                                            'sex',
+                                            'fiber',
+                                            'clair3_model',
+                                            'clairS_model',
+                                            'clairSTO_model',
+                                            'replicate')
             def result = [[meta_tumor, tumor_bam]]
 
             if (normal_bam) {
                 def meta_normal = meta.clone()
                 meta_normal.type = 'normal'
+                meta_normal.replicate = meta_normal.normal_replicate
+                meta_normal = meta_normal.subMap('id',
+                                            'paired_data',
+                                            'type',
+                                            'platform',
+                                            'sex',
+                                            'fiber',
+                                            'clair3_model',
+                                            'clairS_model',
+                                            'clairSTO_model',
+                                            'replicate')
                 result << [meta_normal, normal_bam]
             }
 
