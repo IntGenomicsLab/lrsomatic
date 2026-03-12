@@ -50,6 +50,14 @@
             },
             "clairS_model": {
                 "type": "string"
+            },
+            "tumor_replicate": {
+                "type": "integer",
+                "default": 1
+            },
+            "normal_replicate": {
+                "type": "integer",
+                "default": 1
             }
         },
         "required": ["sample", "bam_tumor", "platform", "sex", "fiber"]
