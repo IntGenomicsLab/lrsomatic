@@ -27,6 +27,21 @@
                         "installed_by": ["modules", "vcf_gather_bcftools"],
                         "patch": "modules/nf-core/bcftools/sort/bcftools-sort.diff"
                     },
+                    "deepvariant/callvariants": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant", "modules"]
+                    },
+                    "deepvariant/makeexamples": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant", "modules"]
+                    },
+                    "deepvariant/postprocessvariants": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant", "modules"]
+                    },
                     "ensemblvep/download": {
                         "branch": "master",
                         "git_sha": "90cdd21fd96ccbdb3bc90797ca69570d18391055",
@@ -139,6 +154,11 @@
                     "bam_stats_samtools": {
                         "branch": "master",
                         "git_sha": "7ac6cbe7c17c2dad685da7f70496c8f48ea48687",
+                        "installed_by": ["subworkflows"]
+                    },
+                    "deepvariant": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
                         "installed_by": ["subworkflows"]
                     },
                     "utils_nextflow_pipeline": {
