@@ -15,9 +15,17 @@ workflow PREPARE_ANNOTATION {
 		ch_versions = channel.empty()
 		ensemblvep_cache = channel.empty()
 
+		//
+		// MODULE: ENSEMBLVEP_DOWNLOAD
+		//
+
 		if (download_vep_cache) {
 			vep_download_info = channel.of([[],vep_genome, vep_species, vep_cache_version])
-			ENSEMBLVEP_DOWNLOAD(vep_download_info)
+
+			ENSEMBLVEP_DOWNLOAD (
+				vep_download_info
+			)
+
 			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache
 			ch_versions = ch_versions.mix(ENSEMBLVEP_DOWNLOAD.out.versions)
 
@@ -37,13 +45,6 @@ workflow PREPARE_ANNOTATION {
 
 			ensemblvep_cache = channel.fromPath(file("${vep_cache}/${vep_annotation_cache_key}"), checkIfExists: true).collect()
 		}
-
-
-
-	//
-	// MODULE: ENSEMBLVEP_DOWNLOAD
-	//
-
 
 	emit:
 		vep_cache = ensemblvep_cache

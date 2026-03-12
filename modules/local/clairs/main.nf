@@ -21,7 +21,6 @@ process CLAIRS {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     /opt/bin/run_clairs \
@@ -41,9 +40,6 @@ process CLAIRS {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     echo "" | gzip > snvs.vcf.gz
     touch snvs.vcf.gz.tbi

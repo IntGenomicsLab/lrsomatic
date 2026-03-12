@@ -20,9 +20,11 @@ process METAEXTRACT {
     script:
     def args = task.ext.args ?: ''
     def ont = meta.platform == 'ont'
+    basecall_model = ''
+    kinetics = ''
     """
-    basecall_model=""
-    kinetics=""
+    export basecall_model="${basecall_model}"
+    export kinetics="${kinetics}"
     if [ $ont = 'true' ]; then
         basecall_model=\$(samtools view -H "${bam}" ${args} | awk -F'basecall_model=' '/basecall_model=/ {print \$2; exit}' | awk '{print \$1}' | tr -d '[:space:]')
     else
@@ -32,7 +34,6 @@ process METAEXTRACT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.bam
