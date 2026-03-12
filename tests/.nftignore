@@ -20,4 +20,7 @@ pipeline_info/*.{html,json,txt,yml}
 */qc/{tumor,normal}/{cramino_aln}/*_cramino.txt
 */qc/{tumor,normal}/{cramino_ubam}_*/*_cramino.txt
 */qc/{tumor,normal}/{nanoplot_ubam}_*/*.html
-*/qc/{tumor,normal}/{nanoplot_alt}/*.html
+*/qc/{tumor,normal}/{nanoplot_aln}/*.html
+*/qc/{tumor,normal}/{nanoplot_ubam}_*/*.txt
+*/qc/{tumor,normal}/{nanoplot_aln}/*.txt
+*/qc/{tumor,normal}/{mosdepth}/*.txt
