@@ -99,7 +99,7 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 ## CHM13 Support
 
-Our pipeline supports fully supports CHM13 and most reference and annotation files are automatically downloaded when specifiying `--genome CHM13`. 
+Our pipeline fully supports CHM13 and most reference and annotation files are automatically downloaded when specifiying `--genome CHM13`. 
 
 However, VEP will need a bit of additional setup. The VEP cache for CHM13 needs to be manually downloaded. This can be done using the following code. Feel free to change any of the paths, ensuring that the correct path is pointed to in the pipeline parameters.
 
