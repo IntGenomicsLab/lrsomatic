@@ -1,0 +1,212 @@
+/* ============================================================
+   nf-core-inspired color palette override for Material theme
+   ============================================================ */
+:root {
+  --nfcore-green:        #24B064;
+  --nfcore-green-dark:   #1a7d47;
+  --nfcore-green-light:  #e8f5ee;
+
+  --md-primary-fg-color:        #24B064;
+  --md-primary-fg-color--light: #4ec989;
+  --md-primary-fg-color--dark:  #1a7d47;
+  --md-accent-fg-color:         #24B064;
+}
+
+/* ============================================================
+   Parameter page sections
+   ============================================================ */
+.param-section {
+  margin: 2.5rem 0 3rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  padding-top: 1rem;
+}
+
+.param-section-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--nfcore-green);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
+  color: var(--md-default-fg-color);
+}
+
+.param-section-header i {
+  color: var(--nfcore-green);
+  margin-right: 0.5rem;
+  width: 1.2em;
+  text-align: center;
+}
+
+.param-section-desc {
+  font-style: italic;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.8rem;
+}
+
+.param-page-section {
+  font-size: 1.4rem;
+  border-left: 4px solid var(--nfcore-green);
+  padding-left: 0.75rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   Parameter table
+   ============================================================ */
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  table-layout: fixed;
+}
+
+.param-table thead tr {
+  background-color: var(--nfcore-green);
+  color: white;
+}
+
+.param-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.param-table th:nth-child(1) { width: 28%; }
+.param-table th:nth-child(2) { width: 15%; }
+.param-table th:nth-child(3) { width: 57%; }
+
+.param-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.param-row:hover {
+  background-color: var(--nfcore-green-light);
+}
+
+.param-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.param-no-default {
+  color: var(--md-default-fg-color--light);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.param-badge {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.15em 0.15em 0 0;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.param-required       { background-color: #c0392b; color: #fff; }
+.param-type           { background-color: #2980b9; color: #fff; }
+
+.badge-type-string    { background-color: #2980b9; color: #fff; }
+.badge-type-boolean   { background-color: #8e44ad; color: #fff; }
+.badge-type-integer   { background-color: #e67e22; color: #fff; }
+.badge-type-number    { background-color: #d35400; color: #fff; }
+.badge-type-any       { background-color: #7f8c8d; color: #fff; }
+
+.param-format-badge {
+  background-color: var(--nfcore-green-light);
+  color: var(--nfcore-green-dark);
+  border: 1px solid var(--nfcore-green);
+  font-size: 0.68em;
+}
+
+/* ============================================================
+   Default value
+   ============================================================ */
+.param-default {
+  background-color: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-family: var(--md-code-font-family);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Enum option chips
+   ============================================================ */
+.param-enum {
+  margin-top: 0.4rem;
+  font-size: 0.82em;
+}
+
+.param-enum-val {
+  display: inline-block;
+  background-color: var(--nfcore-green-light);
+  color: var(--nfcore-green-dark);
+  padding: 0.05em 0.4em;
+  border-radius: 3px;
+  margin: 0.1em 0.15em;
+  font-family: var(--md-code-font-family);
+  font-size: 0.9em;
+}
+
+/* ============================================================
+   Format badge wrapper
+   ============================================================ */
+.param-format {
+  margin-top: 0.3rem;
+}
+
+/* ============================================================
+   Help text collapsible
+   ============================================================ */
+.param-help {
+  margin-top: 0.5rem;
+  border-left: 3px solid var(--nfcore-green);
+  padding-left: 0.5rem;
+  font-size: 0.85em;
+}
+
+.param-help summary {
+  color: var(--nfcore-green);
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+}
+
+.param-help summary::-webkit-details-marker { display: none; }
+.param-help summary::before { content: "▶  "; font-size: 0.7em; }
+details[open].param-help summary::before { content: "▼  "; }
+
+.param-help p {
+  margin-top: 0.4rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ============================================================
+   Dark mode overrides
+   ============================================================ */
+[data-md-color-scheme="slate"] {
+  --nfcore-green-light: #16322a;
+  --nfcore-green-dark:  #5dd39e;
+}
+
+[data-md-color-scheme="slate"] .param-table thead tr {
+  background-color: #1a5c3a;
+}
+
+[data-md-color-scheme="slate"] .param-row:hover {
+  background-color: #1a3328;
+}
