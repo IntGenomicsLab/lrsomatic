@@ -253,7 +253,7 @@ workflow LRSOMATIC {
             }
             .set{pacbio_bams}
 
-        if (!params.skip_m6a){
+        if (!params.skip_m6a) {
             FIBERTOOLSRS_PREDICTM6A (
                 pacbio_bams.kinetics
             )
