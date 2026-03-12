@@ -22,8 +22,6 @@ process VCFSPLIT {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
 
     bcftools view -i 'FILTER="PASS"' $indel_vcf | bgzip -c > indels_pass.vcf.gz
@@ -50,8 +48,6 @@ process VCFSPLIT {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > somatic.vcf.gz
     echo "" | gzip > germline.vcf.gz

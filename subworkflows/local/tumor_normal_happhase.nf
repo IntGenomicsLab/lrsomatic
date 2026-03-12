@@ -11,20 +11,18 @@ workflow TUMOR_NORMAL_HAPPHASE {
     mixed_bams
     fasta
     fai
-    clair3_modelMap
-    clairs_modelMap
     downloaded_clair3_models
 
     main:
 
     ch_versions = channel.empty()
-    tumor_only_severus = channel.empty()
+    tumor_normal_severus = channel.empty()
     somatic_vep = channel.empty()
     germline_vep = channel.empty()
 
     // Branch input bams in normal and tumour
     mixed_bams
-        .branch{ meta, bam, bai ->
+        .branch{ meta, _bam, _bai ->
             normal: meta.type == "normal"
             tumor: meta.type == "tumor"
         }
@@ -57,7 +55,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams_model
         .combine(downloaded_clair3_models,by:1)
-        .map {clair3_model, meta_bam, bam, bai, meta_model, model ->
+        .map {_clair3_model, meta_bam, bam, bai, _meta_model, model ->
             def platform = (meta_bam.platform == 'pb') ? 'hifi' : meta_bam.platform
             return [meta_bam, bam, bai, model, platform]
         }
@@ -113,7 +111,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(CLAIR3.out.vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf ->
+        .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def svs = []
             def mods = []
             return [meta, bam, bai, vcf, svs, mods]
@@ -153,7 +151,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     normal_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map { meta, bam, bai, clair3_model, platform, vcf ->
+        .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def new_meta = meta + [type: "normal"]
             def svs = []
             def mods = []
@@ -220,7 +218,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         mixed_hapbams
     )
 
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
     // Add index to channel
     mixed_bams_vcf
         .join(mixed_hapbams)
@@ -232,7 +229,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Group everything back together in one channel
     mixed_hapbams
-        .map { meta, bam, bai, vcf, snvs, mods, hapbam, hapbai ->
+        .map { meta, _bam, _bai, _vcf, _snvs, _mods, hapbam, hapbai ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
@@ -254,17 +251,19 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ meta, tumor_bam, tumor_bai, normal_bam, normal_bai ]
         }
         .join(LONGPHASE_PHASE.out.snv_vcf)
+        .join(LONGPHASE_PHASE.out.snv_vcf_index)
         .set{tumor_normal_severus}
-    // tumor_normal_severus -> meta:       [id, paired_data, platform, sex, fiber, basecall_model]
-    //                         tumor_bam:  haplotagged aligned bam for tumor
-    //                         tumor_bai:  indexes for tumor bam files
-    //                         normal_bam: haplotagged aligned bam files for normal
-    //                         normal_bai: indexes for normal bam files
-    //                         phased_vcf: phased small variant vcf for normal
+    // tumor_normal_severus -> meta:                [id, paired_data, platform, sex, fiber, basecall_model]
+    //                         tumor_bam:           haplotagged aligned bam for tumor
+    //                         tumor_bai:           indexes for tumor bam files
+    //                         normal_bam:          haplotagged aligned bam files for normal
+    //                         normal_bai:          indexes for normal bam files
+    //                         phased_vcf:          phased small variant vcf for normal
+    //                         phased_vcf_index:    phased small variant vcf index for normal
 
     // Get ClairS input channel
     tumor_normal_severus
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf, _tbi ->
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
         }
         .set { clairs_input }
@@ -286,21 +285,17 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // MODULE: BCFTOOLS_CONCAT
     //
 
-    BCFTOOLS_CONCAT(
+    BCFTOOLS_CONCAT (
         clairs_out
     )
-
-    ch_versions = ch_versions.mix(BCFTOOLS_CONCAT.out.versions)
 
     //
     // MODULE: BCFTOOLS_SORT
     //
 
-    BCFTOOLS_SORT(
+    BCFTOOLS_SORT (
         BCFTOOLS_CONCAT.out.vcf
     )
-
-    ch_versions = ch_versions.mix(BCFTOOLS_SORT.out.versions)
 
     BCFTOOLS_SORT.out.vcf
         .map { meta, vcf ->

@@ -32,7 +32,6 @@ process FIBERTOOLSRS_PREDICTM6A {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
