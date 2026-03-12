@@ -253,13 +253,21 @@ workflow LRSOMATIC {
             }
             .set{pacbio_bams}
 
-        FIBERTOOLSRS_PREDICTM6A (
-            pacbio_bams.kinetics
-        )
+        if (!params.skip_m6a) {
+            FIBERTOOLSRS_PREDICTM6A (
+                pacbio_bams.kinetics
+            )
+            pacbio_bams.noKinetics
+                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
+                .set{predicted_bams}
+        }
+        else {
+            pacbio_bams.noKinetics
+                .mix(pacbio_bams.kinetics)
+                .set{predicted_bams}
+        }
 
-        pacbio_bams.noKinetics
-            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-            .set{predicted_bams}
+
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
