@@ -369,7 +369,7 @@ workflow LRSOMATIC {
     // branched_minimap.tumor_only: [meta, bam, bai]
 
     //
-    // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
+    // SUBWORKFLOW: TUMOR_NORMAL_HAPPHASE
     //
     // Phasing/haplotaging/small germline variant calling for tumor-normal samples
 
