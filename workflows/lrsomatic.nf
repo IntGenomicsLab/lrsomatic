@@ -13,23 +13,25 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT                   } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX                 } from '../modules/nf-core/minimap2/index/main'
-include { MINIMAP2_ALIGN                 } from '../modules/nf-core/minimap2/align/main'
-include { CRAMINO as CRAMINO_PRE         } from '../modules/local/cramino/main'
-include { CRAMINO as CRAMINO_POST        } from '../modules/local/cramino/main'
-include { MOSDEPTH                       } from '../modules/nf-core/mosdepth/main'
-include { ASCAT                          } from '../modules/nf-core/ascat/main'
-include { SEVERUS                        } from '../modules/nf-core/severus/main.nf'
-include { METAEXTRACT                    } from '../modules/local/metaextract/main'
-include { WAKHAN                         } from '../modules/local/wakhan/main'
-include { FIBERTOOLSRS_PREDICTM6A        } from '../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE              } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES       } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC                } from '../modules/local/fibertoolsrs/qc'
-include { ENSEMBLVEP_VEP as SOMATIC_VEP  } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include { ENSEMBLVEP_VEP as GERMLINE_VEP } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include { ENSEMBLVEP_VEP as SV_VEP       } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { SAMTOOLS_CAT                      } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX                    } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN                    } from '../modules/nf-core/minimap2/align/main'
+include { CRAMINO as CRAMINO_PRE            } from '../modules/local/cramino/main'
+include { CRAMINO as CRAMINO_POST           } from '../modules/local/cramino/main'
+include { NANOPLOT as NANOPLOT_PRE          } from '../modules/nf-core/nanoplot/main'
+include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/main'
+include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
+include { ASCAT                             } from '../modules/nf-core/ascat/main'
+include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
+include { METAEXTRACT                       } from '../modules/local/metaextract/main'
+include { WAKHAN                            } from '../modules/local/wakhan/main'
+include { FIBERTOOLSRS_PREDICTM6A           } from '../modules/local/fibertoolsrs/predictm6a'
+include { FIBERTOOLSRS_FIRE                 } from '../modules/local/fibertoolsrs/fire'
+include { FIBERTOOLSRS_NUCLEOSOMES          } from '../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsrs/qc'
+include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -122,6 +124,7 @@ workflow LRSOMATIC {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
+                            replicate: meta.replicate,
                             clair3_model: chosen_clair3_model,
                             clairS_model: chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
@@ -134,6 +137,7 @@ workflow LRSOMATIC {
             }
         .set{ch_samplesheet}
     // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
+
 
 
     //
@@ -152,7 +156,32 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
-    ch_split = ch_samplesheet
+    if (!params.skip_qc && !params.skip_cramino) {
+        CRAMINO_PRE( ch_samplesheet )
+        NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
+    }
+
+    ch_samplesheet
+        .map{ meta, bam ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'type',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam]
+        }
+        .set{ch_samplesheet_no_rep}
+
+
+    // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
+    //                   bam:  list of unaligned bams
+
+    ch_split = ch_samplesheet_no_rep
         .branch { _meta, bam ->
             single: bam.size() == 1
             multiple: bam.size() > 1
@@ -168,14 +197,6 @@ workflow LRSOMATIC {
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
     // [meta, bam]  -- single merged unaligned BAM per sample
-
-    //
-    // MODULE: CRAMINO
-    //
-    // QC the unaligned bams
-    if (!params.skip_qc && !params.skip_cramino) {
-        CRAMINO_PRE ( ch_cat_ubams )
-    }
 
     vep_cache = channel.empty()
 
@@ -249,13 +270,21 @@ workflow LRSOMATIC {
             }
             .set{pacbio_bams}
 
-        FIBERTOOLSRS_PREDICTM6A (
-            pacbio_bams.kinetics
-        )
+        if (!params.skip_m6a) {
+            FIBERTOOLSRS_PREDICTM6A (
+                pacbio_bams.kinetics
+            )
+            pacbio_bams.noKinetics
+                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
+                .set{predicted_bams}
+        }
+        else {
+            pacbio_bams.noKinetics
+                .mix(pacbio_bams.kinetics)
+                .set{predicted_bams}
+        }
 
-        pacbio_bams.noKinetics
-            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-            .set{predicted_bams}
+
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
@@ -472,6 +501,7 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_cramino) {
 
         CRAMINO_POST ( ch_minimap_bam )
+        NANOPLOT_POST(CRAMINO_POST.out.arrow)
 
     }
 
