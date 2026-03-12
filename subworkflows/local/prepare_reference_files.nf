@@ -42,7 +42,7 @@ workflow PREPARE_REFERENCE_FILES {
         // if clair3 model is specified, then download that
         // otherwise use info in bam header and download that
 
-        basecall_meta.map { meta, basecall_model_meta, kinetics_meta ->
+        basecall_meta.map { meta, basecall_model_meta, _kinetics_meta ->
             def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta
             def meta_new = [id: id_new]
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
@@ -69,17 +69,13 @@ workflow PREPARE_REFERENCE_FILES {
             WGET.out.outfile
         )
 
-        ch_versions = ch_versions.mix(UNTAR.out.versions)
-
         UNTAR.out.untar.set { downloaded_clair3_models }
 
         //
         // MODULE: Index the fasta
         //
-
         SAMTOOLS_FAIDX (
-            ch_prepared_fasta,
-            [ [:], [] ],
+            ch_prepared_fasta.map { meta, fa -> [meta, fa, []] },
             false
         )
 
@@ -94,28 +90,28 @@ workflow PREPARE_REFERENCE_FILES {
             if (!ascat_alleles) allele_files = channel.empty()
             else if (ascat_alleles.endsWith(".zip")) {
                 UNZIP_ALLELES(channel.fromPath(file(ascat_alleles)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
-                allele_files = UNZIP_ALLELES.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
+                allele_files = UNZIP_ALLELES.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 ch_versions = ch_versions.mix(UNZIP_ALLELES.out.versions)
             } else allele_files = channel.fromPath(ascat_alleles).collect()
 
             if (!ascat_loci) loci_files = channel.empty()
             else if (ascat_loci.endsWith(".zip")) {
                 UNZIP_LOCI(channel.fromPath(file(ascat_loci)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
-                loci_files = UNZIP_LOCI.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
+                loci_files = UNZIP_LOCI.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 ch_versions = ch_versions.mix(UNZIP_LOCI.out.versions)
             } else loci_files = channel.fromPath(ascat_loci).collect()
 
             if (!ascat_loci_gc) gc_file = channel.value([])
             else if ( ascat_loci_gc.endsWith(".zip") ) {
                 UNZIP_GC(channel.fromPath(file(ascat_loci_gc)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
-                gc_file = UNZIP_GC.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
+                gc_file = UNZIP_GC.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 ch_versions = ch_versions.mix(UNZIP_GC.out.versions)
             } else gc_file = channel.fromPath(ascat_loci_gc).collect()
 
             if (!ascat_loci_rt) rt_file = channel.value([])
             else if (ascat_loci_rt.endsWith(".zip")) {
                 UNZIP_RT(channel.fromPath(file(ascat_loci_rt)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
-                rt_file = UNZIP_RT.out.unzipped_archive.flatMap { it[1].listFiles() }.collect()
+                rt_file = UNZIP_RT.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 ch_versions = ch_versions.mix(UNZIP_RT.out.versions)
             } else rt_file = channel.fromPath(ascat_loci_rt).collect()
         }
