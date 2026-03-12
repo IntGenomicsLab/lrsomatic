@@ -220,7 +220,10 @@ workflow LRSOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
-        if(!params.normal_fiber){
+        if (!params.skip_normalfiber){
+            ubams = ch_cat_ubams
+        }
+        else {
             ch_cat_ubams
             .branch { meta, _bams ->
                 normal: meta.type == "normal"
@@ -230,9 +233,6 @@ workflow LRSOMATIC {
 
             normal_bams = ch_cat_ubams_normal_branching.normal
             ubams = ch_cat_ubams_normal_branching.tumor
-        }
-        else {
-            ubams = ch_cat_ubams
         }
             ubams
             .branch{ meta, _bams ->
@@ -292,15 +292,15 @@ workflow LRSOMATIC {
             FIBERTOOLSRS_NUCLEOSOMES.out.bam
         )
 
-        if(!params.normal_fiber){
+        if (!params.skip_normalfiber){
             fiber_branch.nonFiber
-            .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
 
         }
         else {
             fiber_branch.nonFiber
+            .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
 
