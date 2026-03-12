@@ -27,6 +27,21 @@
                         "installed_by": ["modules", "vcf_gather_bcftools"],
                         "patch": "modules/nf-core/bcftools/sort/bcftools-sort.diff"
                     },
+                    "deepvariant/callvariants": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant"]
+                    },
+                    "deepvariant/makeexamples": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant"]
+                    },
+                    "deepvariant/postprocessvariants": {
+                        "branch": "master",
+                        "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
+                        "installed_by": ["deepvariant"]
+                    },
                     "ensemblvep/download": {
                         "branch": "master",
                         "git_sha": "90cdd21fd96ccbdb3bc90797ca69570d18391055",
