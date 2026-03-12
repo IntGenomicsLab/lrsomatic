@@ -107,17 +107,17 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 #### Skipping options:
 
-| Parameter         | Description                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false` |
-| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                       |
-| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                              |
-| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                             |
-| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                |
-| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                             |
-| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                               |
-| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                  |
-| `--skip_m6a`      | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false`                                                                  |
+| Parameter         | Description                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false`                                                                          |
+| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                                                                                                |
+| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                                                                                                       |
+| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                      |
+| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                                                                                         |
+| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                                                                                                      |
+| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                                                                                                        |
+| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                                                                                           |
+| `--skip_m6a`      | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false` |
 
 #### VEP options:
 
