@@ -123,7 +123,7 @@ nextflow run IntGenomicsLab/lrsomatic \
   -profile docker
 ```
 
-If you do not specify `CHM13` with `--genome CHM13` you additionally need to specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
+If you want to run with a CHM13 reference without using `--genome CHM13` (for example, via a custom FASTA or configuration), you must also specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
 
 ### Pipeline options
 
