@@ -23,9 +23,7 @@ process CLAIR3 {
     task.ext.when == null || task.ext.when
 
     script:
-
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     run_clair3.sh \\
         --bam_fn=$bam \\
@@ -38,7 +36,6 @@ process CLAIR3 {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > ${prefix}.phased_merge_output.vcf.gz

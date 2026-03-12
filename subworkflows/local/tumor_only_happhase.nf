@@ -10,7 +10,6 @@ workflow TUMOR_ONLY_HAPPHASE {
     tumor_bams
     fasta
     fai
-    clairSTO_modelMap
     dbsnp
     colors
     onekgenomes
@@ -67,7 +66,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     // remove model info
     tumor_bams
         .join(VCFSPLIT.out.germline_vcf)
-        .map{ meta, bam, bai, model, snps ->
+        .map{ meta, bam, bai, _model, snps ->
             def svs = []
             def mods = []
             return[meta, bam, bai, snps, svs, mods]
@@ -112,7 +111,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     // remove model info
     tumor_bams
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map { meta, bam, bai, model, vcf ->
+        .map { meta, bam, bai, _model, vcf ->
             def new_meta = meta + [type: "tumor"]
             def svs = []
             def mods = []
@@ -155,13 +154,12 @@ workflow TUMOR_ONLY_HAPPHASE {
         haplotagged_bams
     )
 
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
-
     // join information and the phased VCF file
     haplotagged_bams
         .join(SAMTOOLS_INDEX.out.bai)
         .join(LONGPHASE_PHASE.out.snv_vcf)
-        .map{ meta, hap_bam, hap_bai, vcf ->
+        .join(LONGPHASE_PHASE.out.snv_vcf_index)
+        .map{ meta, hap_bam, hap_bai, vcf, tbi ->
             def new_meta = [id: meta.id,
                             paired_data: meta.paired_data,
                             platform: meta.platform,
@@ -171,7 +169,7 @@ workflow TUMOR_ONLY_HAPPHASE {
                             clairS_model: meta.clairS_model,
                             clairSTO_model: meta.clairSTO_model,
                             kinetics: meta.kinetics]
-            return [new_meta, hap_bam, hap_bai, [], [], vcf]
+            return [new_meta, hap_bam, hap_bai, [], [], vcf, tbi]
             }
         .set{ tumor_only_severus }
 

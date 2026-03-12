@@ -182,7 +182,7 @@ workflow LRSOMATIC {
     //                   bam:  list of unaligned bams
 
     ch_split = ch_samplesheet_no_rep
-        .branch { meta, bam ->
+        .branch { _meta, bam ->
             single: bam.size() == 1
             multiple: bam.size() > 1
         }
@@ -199,8 +199,6 @@ workflow LRSOMATIC {
 
     // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                 bam:  list of concatenated unaligned bams
-
-    ch_versions = ch_versions.mix(SAMTOOLS_CAT.out.versions)
 
     vep_cache = channel.empty()
 
@@ -225,7 +223,7 @@ workflow LRSOMATIC {
             params.download_vep_cache
         )
         ch_versions = ch_versions.mix(PREPARE_ANNOTATION.out.versions)
-        vep_cache = PREPARE_ANNOTATION.out.vep_cache
+        vep_cache = PREPARE_ANNOTATION.out.vep_cache.map {cache -> [[:], cache] }
 
     }
 
@@ -247,7 +245,7 @@ workflow LRSOMATIC {
     if (!params.skip_fiber) {
         if(!params.normal_fiber){
             ch_cat_ubams
-            .branch { meta, bams ->
+            .branch { meta, _bams ->
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
@@ -260,7 +258,7 @@ workflow LRSOMATIC {
             ubams = ch_cat_ubams
         }
             ubams
-            .branch{ meta, bams ->
+            .branch{ meta, _bams ->
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
@@ -268,7 +266,7 @@ workflow LRSOMATIC {
 
         pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
         pacbio_bams
-            .branch{meta, bams ->
+            .branch{meta, _bams ->
                 kinetics: meta.kinetics == "true"
                 noKinetics: meta.kinetics == "false"
             }
@@ -287,7 +285,7 @@ workflow LRSOMATIC {
             .set{fiber_branch}
 
         fiber_branch
-            .branch{ meta, bams ->
+            .branch{ meta, _bams ->
                 fiber: meta.fiber == "y"
                 nonFiber: meta.fiber == "n"
             }
@@ -353,15 +351,12 @@ workflow LRSOMATIC {
     // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
     //                    bam:  list of concatenated aligned bams
 
-    ch_versions = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
-
-
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
 
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
-        .branch { meta, bams, bais ->
+        .branch { meta, _bams, _bais ->
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
         }
@@ -381,8 +376,6 @@ workflow LRSOMATIC {
         branched_minimap.paired,
         ch_fasta,
         ch_fai,
-        clair3_modelMap,
-        clairs_modelMap,
         downloaded_clair3_models
     )
 
@@ -398,12 +391,10 @@ workflow LRSOMATIC {
     onekgenomes = file(params.onekgenomes)
     gnomad = file(params.gnomad)
 
-
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        clairs_modelMap,
         dbsnp,
         colors,
         onekgenomes,
@@ -439,8 +430,6 @@ workflow LRSOMATIC {
             vep_custom_tbi
         )
 
-        ch_versions = ch_versions.mix(GERMLINE_VEP.out.versions)
-
         //
         // MODULE: SOMATIC_VEP
         //
@@ -456,16 +445,16 @@ workflow LRSOMATIC {
             vep_custom,
             vep_custom_tbi
         )
-
-        ch_versions = ch_versions.mix(SOMATIC_VEP.out.versions)
     }
-
 
     ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
 
     // Get Severus input channel
     TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
         .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
+            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
+        }
         .set { severus_reformat }
     // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
 
@@ -499,8 +488,6 @@ workflow LRSOMATIC {
             vep_custom,
             vep_custom_tbi
         )
-
-        ch_versions = ch_versions.mix(SV_VEP.out.versions)
     }
 
     //
@@ -535,8 +522,6 @@ workflow LRSOMATIC {
 
         ch_mosdepth_global = MOSDEPTH.out.global_txt
         ch_mosdepth_summary = MOSDEPTH.out.summary_txt
-
-        ch_versions = ch_versions.mix(MOSDEPTH.out.versions)
     }
 
     //
@@ -553,11 +538,9 @@ workflow LRSOMATIC {
             ch_fasta
         )
 
-        bam_stats_ch = BAM_STATS_SAMTOOLS.out.stats
-        bam_flagstat_ch = BAM_STATS_SAMTOOLS.out.flagstat
-        bam_idxstats_ch = BAM_STATS_SAMTOOLS.out.idxstats
-
-        ch_versions = ch_versions.mix(BAM_STATS_SAMTOOLS.out.versions)
+        ch_bam_stats = BAM_STATS_SAMTOOLS.out.stats
+        ch_bam_flagstat = BAM_STATS_SAMTOOLS.out.flagstat
+        ch_bam_idxstats = BAM_STATS_SAMTOOLS.out.idxstats
     }
 
     //
@@ -566,7 +549,7 @@ workflow LRSOMATIC {
 
     if (!params.skip_ascat) {
         severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf ->
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf ->
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
@@ -636,15 +619,6 @@ workflow LRSOMATIC {
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config        = channel.fromPath(
-        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ?
-        channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        channel.empty()
-    ch_multiqc_logo          = params.multiqc_logo ?
-        channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        channel.empty()
-
     summary_params      = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
@@ -666,25 +640,29 @@ workflow LRSOMATIC {
     )
 
     // Collect MultiQC files
-    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_stats.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_flagstat.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_idxstats.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_stats.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_flagstat.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_bam_idxstats.collect{it -> it[1]}.ifEmpty([]))
 
-    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it -> it[1]}.ifEmpty([]))
 
 
     MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+        ch_multiqc_files
+            .collect()
+            .map { files ->
+                def multiqc_config_files = [file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)]
+                if (params.multiqc_config) {
+                    multiqc_config_files += [file(params.multiqc_config, checkIfExists: true)]
+                }
+                def multiqc_logo_file = params.multiqc_logo ? [file(params.multiqc_logo, checkIfExists: true)] : []
+                [[id: 'multiqc'], files, multiqc_config_files, multiqc_logo_file, [], []]
+            }
     )
 
     emit:
-        multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+        multiqc_report = MULTIQC.out.report.map { _meta, report -> report } // channel: /path/to/multiqc_report.html
         versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 

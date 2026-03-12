@@ -11,34 +11,21 @@ Changes in 'ensemblvep/vep/main.nf':
  
      conda "${moduleDir}/environment.yml"
      container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-@@ -15,14 +15,16 @@
-     path cache
-     tuple val(meta2), path(fasta)
+@@ -15,6 +15,8 @@
+     tuple val(meta2), path(cache)
+     tuple val(meta3), path(fasta)
      path extra_files
 +    path custom_vep
 +    path custom_vep_tbi
  
      output:
--    tuple val(meta), path("*.vcf.gz"), emit: vcf, optional: true
--    tuple val(meta), path("*.vcf.gz.tbi"), emit: tbi, optional: true
--    tuple val(meta), path("*.tab.gz"), emit: tab, optional: true
--    tuple val(meta), path("*.json.gz"), emit: json, optional: true
--    path "*.html", emit: report, optional: true
--    path "versions.yml", emit: versions
-+    tuple val(meta), path("*.vcf.gz"),      emit: vcf, optional: true
-+    tuple val(meta), path("*.vcf.gz.tbi"),  emit: tbi, optional: true
-+    tuple val(meta), path("*.tab.gz"),      emit: tab, optional: true
-+    tuple val(meta), path("*.json.gz"),     emit: json, optional: true
-+    path "*.html",                          emit: report, optional: true
-+    path "versions.yml",                    emit: versions
- 
-     when:
-     task.ext.when == null || task.ext.when
-@@ -36,6 +38,7 @@
+     tuple val(meta), path("${prefix}.vcf.gz"), emit: vcf, optional: true
+@@ -38,6 +40,8 @@
      def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
      def reference = fasta ? "--fasta ${fasta}" : ""
      def create_index = file_extension == "vcf" ? "tabix ${args2} ${prefix}.${file_extension}.gz" : ""
 +    args = args.replaceAll(/--custom file=[^,]+/, "--custom file=${custom_vep}")
++    
      """
      vep \\
          -i ${vcf} \\

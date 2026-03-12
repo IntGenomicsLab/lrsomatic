@@ -4,8 +4,8 @@ process WAKHAN {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/wakhan:0.2.0--pyhdfd78af_1':
-        'biocontainers/wakhan:0.2.0--pyhdfd78af_1' }"
+        'https://depot.galaxyproject.org/singularity/wakhan:0.4.2--pyhdfd78af_0':
+        'biocontainers/wakhan:0.4.2--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
@@ -32,8 +32,8 @@ process WAKHAN {
     tuple val(meta), path("coverage_plots/*.pdf")                               , emit: coverage_plots_pdf
     tuple val(meta), path("phasing_output/*.html")                              , emit: phasing_html
     tuple val(meta), path("phasing_output/*.pdf")                               , emit: phasing_pdf
-    tuple val(meta), path("phasing_output/*.rephased.vcf.gz")                   , emit: rephased_vcf
-    tuple val(meta), path("phasing_output/*.rephased.vcf.gz.csi")               , emit: rephased_vcf_index
+    tuple val(meta), path("phasing_output/*rephased.vcf.gz")                    , emit: rephased_vcf
+    tuple val(meta), path("phasing_output/*rephased.vcf.gz.csi")                , emit: rephased_vcf_index
     tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
     // WARN: Manually update version information as tool does not provide on CLI
@@ -62,7 +62,6 @@ process WAKHAN {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
