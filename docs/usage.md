@@ -117,6 +117,7 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 | `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                             |
 | `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                               |
 | `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                  |
+| `--skip_m6a`      | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false`                                                                  |
 
 #### VEP options:
 

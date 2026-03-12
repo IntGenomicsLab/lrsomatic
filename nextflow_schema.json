@@ -206,6 +206,10 @@
                 "skip_ascat": {
                     "type": "boolean",
                     "description": "Skip ASCAT"
+                },
+                "skip_m6a": {
+                    "type": "boolean",
+                    "description": "Skip m6a calling by Fibertools"
                 }
             }
         },
@@ -371,6 +375,7 @@
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
+            
             }
         }
     },
