@@ -162,7 +162,13 @@ If you would like to contribute to this pipeline, please see the [contributing g
 
 ## Citations
 
-If you use IntGenomicsLab/lrsomatic for your analysis, please cite it using the following doi: [10.5281/zenodo.17751829](https://doi.org/10.5281/zenodo.17751829)
+If you use `IntGenomicsLab/lrsomatic` for your analysis, please cite it using the following:
+
+>  LRSomatic: a highly scalable and robust pipeline for somatic variant calling in long-read sequencing data
+> 
+> Robert A. Forsyth*, Luuk Harbers*, Amber Verhasselt, Ana-Lucía Rocha Iraizós, Sidi Yang, Joris Vande Velde, Christopher Davies, Nischalan Pillay, Laurens Lambrechts, Jonas Demeulemeester
+>
+> bioRxiv 2026.02.26.707772; doi: https://doi.org/10.64898/2026.02.26.707772 
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
