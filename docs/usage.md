@@ -99,11 +99,12 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 ## CHM13 Support
 
-Our pipeline fully supports CHM13 and most reference and annotation files are automatically downloaded when specifiying `--genome CHM13`. 
+Our pipeline fully supports CHM13 and most reference and annotation files are automatically downloaded when specifiying `--genome CHM13`.
 
 However, VEP will need a bit of additional setup. The VEP cache for CHM13 needs to be manually downloaded. This can be done using the following code. Feel free to change any of the paths, ensuring that the correct path is pointed to in the pipeline parameters.
 
 Download CHM13 Cache:
+
 ```bash
 cd $HOME/.vep
 curl -O https://ftp.ensembl.org/pub/rapid-release/species/Homo_sapiens/GCA_009914755.4/ensembl/variation/2022_10/indexed_vep_cache/Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
@@ -111,6 +112,7 @@ tar xzf Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
 ```
 
 Then you can run the pipeline as follows:
+
 ```bash
 nextflow run IntGenomicsLab/lrsomatic \
   --input samplesheet.csv \
@@ -121,7 +123,7 @@ nextflow run IntGenomicsLab/lrsomatic \
   -profile docker
 ```
 
-If you do not specify `CHM13` with `--genome CHM13` you additionally need to specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`. 
+If you do not specify `CHM13` with `--genome CHM13` you additionally need to specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
 
 ### Pipeline options
 

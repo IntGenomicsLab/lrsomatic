@@ -10,7 +10,7 @@
 
 ## [LRSomatic](https://doi.org/10.64898/2026.02.26.707772)
 
->  LRSomatic: a highly scalable and robust pipeline for somatic variant calling in long-read sequencing data Robert A. Forsyth*, Luuk Harbers*, Amber Verhasselt, Ana-Lucía Rocha Iraizós, Sidi Yang, Joris Vande Velde, Christopher Davies, Nischalan Pillay, Laurens Lambrechts, Jonas Demeulemeester bioRxiv 2026.02.26.707772; doi: https://doi.org/10.64898/2026.02.26.707772 
+> LRSomatic: a highly scalable and robust pipeline for somatic variant calling in long-read sequencing data Robert A. Forsyth*, Luuk Harbers*, Amber Verhasselt, Ana-Lucía Rocha Iraizós, Sidi Yang, Joris Vande Velde, Christopher Davies, Nischalan Pillay, Laurens Lambrechts, Jonas Demeulemeester bioRxiv 2026.02.26.707772; doi: https://doi.org/10.64898/2026.02.26.707772
 
 ## Pipeline tools
 
