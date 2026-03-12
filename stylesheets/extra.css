@@ -1,15 +1,18 @@
 /* ============================================================
-   nf-core-inspired color palette override for Material theme
+   Pastel purple color palette for IntGenomicsLab/lrsomatic
    ============================================================ */
 :root {
-  --nfcore-green:        #24B064;
-  --nfcore-green-dark:   #1a7d47;
-  --nfcore-green-light:  #e8f5ee;
+  --purple:       #805AD5;
+  --purple-dark:  #6B46C1;
+  --purple-light: #EDE9FE;
 
-  --md-primary-fg-color:        #24B064;
-  --md-primary-fg-color--light: #4ec989;
-  --md-primary-fg-color--dark:  #1a7d47;
-  --md-accent-fg-color:         #24B064;
+  --md-primary-fg-color:        #805AD5;
+  --md-primary-fg-color--light: #9F7AEA;
+  --md-primary-fg-color--dark:  #6B46C1;
+  --md-accent-fg-color:         #805AD5;
+
+  /* Subtle purple-tinted page background */
+  --md-default-bg-color: #FAF8FF;
 }
 
 /* ============================================================
@@ -24,14 +27,14 @@
 .param-section-header {
   font-size: 1.25rem;
   font-weight: 600;
-  border-bottom: 2px solid var(--nfcore-green);
+  border-bottom: 2px solid var(--purple);
   padding-bottom: 0.4rem;
   margin-bottom: 0.6rem;
   color: var(--md-default-fg-color);
 }
 
 .param-section-header i {
-  color: var(--nfcore-green);
+  color: var(--purple);
   margin-right: 0.5rem;
   width: 1.2em;
   text-align: center;
@@ -45,7 +48,7 @@
 
 .param-page-section {
   font-size: 1.4rem;
-  border-left: 4px solid var(--nfcore-green);
+  border-left: 4px solid var(--purple);
   padding-left: 0.75rem;
   margin-top: 3rem;
   margin-bottom: 1.5rem;
@@ -63,7 +66,7 @@
 }
 
 .param-table thead tr {
-  background-color: var(--nfcore-green);
+  background-color: var(--purple);
   color: white;
 }
 
@@ -86,7 +89,7 @@
 }
 
 .param-row:hover {
-  background-color: var(--nfcore-green-light);
+  background-color: var(--purple-light);
 }
 
 .param-name {
@@ -124,9 +127,9 @@
 .badge-type-any       { background-color: #7f8c8d; color: #fff; }
 
 .param-format-badge {
-  background-color: var(--nfcore-green-light);
-  color: var(--nfcore-green-dark);
-  border: 1px solid var(--nfcore-green);
+  background-color: var(--purple-light);
+  color: var(--purple-dark);
+  border: 1px solid var(--purple);
   font-size: 0.68em;
 }
 
@@ -153,8 +156,8 @@
 
 .param-enum-val {
   display: inline-block;
-  background-color: var(--nfcore-green-light);
-  color: var(--nfcore-green-dark);
+  background-color: var(--purple-light);
+  color: var(--purple-dark);
   padding: 0.05em 0.4em;
   border-radius: 3px;
   margin: 0.1em 0.15em;
@@ -174,13 +177,13 @@
    ============================================================ */
 .param-help {
   margin-top: 0.5rem;
-  border-left: 3px solid var(--nfcore-green);
+  border-left: 3px solid var(--purple);
   padding-left: 0.5rem;
   font-size: 0.85em;
 }
 
 .param-help summary {
-  color: var(--nfcore-green);
+  color: var(--purple);
   cursor: pointer;
   font-weight: 500;
   list-style: none;
@@ -199,14 +202,15 @@ details[open].param-help summary::before { content: "▼  "; }
    Dark mode overrides
    ============================================================ */
 [data-md-color-scheme="slate"] {
-  --nfcore-green-light: #16322a;
-  --nfcore-green-dark:  #5dd39e;
+  --purple-light: #2D1B69;
+  --purple-dark:  #C4B5FD;
+  --md-default-bg-color: #1A1525;
 }
 
 [data-md-color-scheme="slate"] .param-table thead tr {
-  background-color: #1a5c3a;
+  background-color: #4C2889;
 }
 
 [data-md-color-scheme="slate"] .param-row:hover {
-  background-color: #1a3328;
+  background-color: #2D1B4E;
 }
