@@ -27,6 +27,11 @@
                         "installed_by": ["modules", "vcf_gather_bcftools"],
                         "patch": "modules/nf-core/bcftools/sort/bcftools-sort.diff"
                     },
+                    "deepsomatic": {
+                        "branch": "master",
+                        "git_sha": "ddb0d667cf6cdee3bab9497241de4bbf6b88d8cc",
+                        "installed_by": ["modules"]
+                    },
                     "deepvariant/callvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
