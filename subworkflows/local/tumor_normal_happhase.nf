@@ -52,6 +52,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ new_meta, meta.clair3_model, bam, bai ]
         }
         .set { normal_bams_model }
+    // [clair3_model_id, meta, bam, bai]  -- keyed by model ID for .combine() with downloaded_clair3_models
 
     normal_bams_model
         .combine(downloaded_clair3_models,by:1)
@@ -60,6 +61,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta_bam, bam, bai, model, platform]
         }
         .set{ normal_bams }
+    // [meta, bam, bai, clair3_model_dir, platform]  -- type excluded from meta; platform is "hifi" for PacBio
 
     /*
     .map{ basecall_model, meta, bam, bai, meta2, model ->
@@ -67,13 +69,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, bam, bai, model, platform]
         }
     */
-
-    // normal_bams -> meta:         [id, paired_data, platform, sex, fiber, basecall_model]
-    //                bam:          list of concatenated aligned bams
-    //                bai:          indexes for bam files
-    //                clair3_model: clair3 model name
-    //                platform:     name of sequencing platform
-
 
     // Get tumour bams
     // remove type from so that information can be merged easier later
@@ -91,10 +86,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[new_meta, bam, bai]
         }
         .set{ tumor_bams }
-
-    // tumor_bams -> meta:  [id, paired_data, platform, sex, fiber, basecall_model]
-    //                bam:  list of concatenated aligned bams
-    //                bai:  indexes for bam files
+    // [meta, bam, bai]  -- type excluded from meta for downstream groupTuple merge
 
     //
     // MODULE: CLAIR3
@@ -117,13 +109,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, bam, bai, vcf, svs, mods]
         }
         .set{ normal_bams_germlinevcf }
-
-    // normal_bams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                bam:  list of concatenated aligned bams
-    //                bai:  indexes for bam files
-    //                vcf:  normal small germline variant vcf
-    //                svs:  structural variant vcf (empty)
-    //                mods: modcall-generated VCF with modifications (empty)
+    // [meta, bam, bai, germline_vcf, [], []]  -- svs and mods are empty placeholders for LONGPHASE_PHASE input
 
     CLAIR3.out.vcf
         .map { meta, vcf ->
@@ -131,6 +117,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { germline_vep }
+    // [meta, clair3_vcf, []]  -- germline small variants for VEP annotation
 
     //
     // MODULE: LONGPHASE_PHASE
@@ -158,14 +145,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[new_meta, bam, bai, vcf, svs, mods]
         }
         .set{ normal_bams }
-
-    // normal_bams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                bam:  list of concatenated aligned bams
-    //                bai:  indexes for bam files
-    //                vcf:  normal small germline variant vcf
-    //                svs:  structural variant vcf (empty)
-    //                mods: modcall-generated VCF with modifications (empty)
-
+    // [meta+{type:"normal"}, bam, bai, phased_vcf, [], []]  -- type re-added; svs and mods are empty placeholders for LONGPHASE_HAPLOTAG
 
     // Add phased vcf to tumour bams and type information
     // mix with the normal bams
@@ -180,13 +160,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         }
         .mix(normal_bams)
         .set{ mixed_bams_vcf }
-
-    // mixed_bams_vcf -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                   bam:  list of concatenated aligned bams
-    //                   bai:  indexes for bam files
-    //                   vcf:  normal small germline variant vcf
-    //                   svs:  structural variant vcf (empty)
-    //                   mods: modcall-generated VCF with modifications (empty)
+    // [meta+{type}, bam, bai, phased_normal_vcf, [], []]  -- tumor and normal items both carry the same phased normal VCF
 
     //
     // MODULE: LONGPHASE_HAPLOTAG
@@ -204,10 +178,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
     // Get final tagged bams
     LONGPHASE_HAPLOTAG.out.bam
         .set{ mixed_hapbams }
-
-    // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                  bams: haplotagged aligned bams
-
+    // [meta+{type}, haplotagged_bam]
 
     //
     // MODULE: SAMTOOLS_INDEX
@@ -223,9 +194,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(mixed_hapbams)
         .join(SAMTOOLS_INDEX.out.bai)
         .set{ mixed_hapbams }
-    // mixed_hapbams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                  bams: haplotagged aligned bams
-    //                  bais: indexes for bam files
+    // [meta+{type}, orig_bam, orig_bai, vcf, svs, mods, hapbam, hapbai]
 
     // Group everything back together in one channel
     mixed_hapbams
@@ -253,13 +222,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .join(LONGPHASE_PHASE.out.snv_vcf)
         .join(LONGPHASE_PHASE.out.snv_vcf_index)
         .set{tumor_normal_severus}
-    // tumor_normal_severus -> meta:                [id, paired_data, platform, sex, fiber, basecall_model]
-    //                         tumor_bam:           haplotagged aligned bam for tumor
-    //                         tumor_bai:           indexes for tumor bam files
-    //                         normal_bam:          haplotagged aligned bam files for normal
-    //                         normal_bai:          indexes for normal bam files
-    //                         phased_vcf:          phased small variant vcf for normal
-    //                         phased_vcf_index:    phased small variant vcf index for normal
+    // [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, phased_vcf, phased_tbi]
 
     // Get ClairS input channel
     tumor_normal_severus
@@ -267,6 +230,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
         }
         .set { clairs_input }
+    // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, clairS_model]
+
     //
     // MODULE: CLAIRS
     //
@@ -303,6 +268,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [meta, vcf, extra]
         }
         .set { somatic_vep }
+    // [meta, sorted_clairs_vcf, []]  -- somatic small variants (SNV+indel merged) for VEP annotation
 
     emit:
     tumor_normal_severus
