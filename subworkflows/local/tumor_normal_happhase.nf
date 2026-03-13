@@ -52,7 +52,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return [ new_meta, meta.clair3_model, bam, bai ]
         }
         .set { normal_bams_model }
-    // [clair3_model_id, meta, bam, bai]  -- keyed by model ID for .combine() with downloaded_clair3_models
+    // [meta, clair3_model_id, bam, bai]  -- keyed by model ID for .combine() with downloaded_clair3_models
 
     normal_bams_model
         .combine(downloaded_clair3_models,by:1)
