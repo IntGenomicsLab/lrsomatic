@@ -626,7 +626,7 @@ workflow LRSOMATIC {
     //
     // MODULE: MultiQC
     //
-    summary_params      = paramsSummaryMap(
+    summary_params = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
@@ -654,6 +654,8 @@ workflow LRSOMATIC {
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it -> it[1]}.ifEmpty([]))
 
+    ch_multiqc_files = ch_multiqc_files.mix(NANOPLOT_PRE.out.txt.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(NANOPLOT_POST.out.txt.collect{it -> it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files
