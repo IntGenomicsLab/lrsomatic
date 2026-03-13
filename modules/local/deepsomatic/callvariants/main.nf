@@ -1,6 +1,7 @@
 process DEEPSOMATIC_CALLVARIANTS {
     tag "$meta.id"
     label 'process_high'
+    label 'process_gpu'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"
