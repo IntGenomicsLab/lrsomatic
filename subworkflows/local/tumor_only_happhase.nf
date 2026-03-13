@@ -4,6 +4,8 @@ include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phas
 include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
+include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
+
 
 workflow TUMOR_ONLY_HAPPHASE {
 
@@ -35,12 +37,28 @@ workflow TUMOR_ONLY_HAPPHASE {
             return [meta,bam,bai, intervals]
         }
         .set{tumor_bams_deepvar}
+    
+    tumor_bams
+        .map { meta, tumor_bam, tumor_bai, _clairSTO_model ->
+            def normal_bam = []
+            def normal_bai = []
+            return [meta,normal_bam,normal_bai,tumor_bam,tumor_bai]
+        }
+        .set{tumor_bams_deepsomatic}
 
     DEEPVARIANT (
         tumor_bams_deepvar,
         fasta,
         fai,
         [[:],[]],
+        [[:],[]]
+    )
+
+    DEEPSOMATIC (
+        tumor_bams_deepsomatic,
+        [[:],[]],
+        fasta,
+        fai,
         [[:],[]]
     )
 

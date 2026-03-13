@@ -6,6 +6,7 @@ include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
 include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
+include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
 
 
 workflow TUMOR_NORMAL_HAPPHASE {
@@ -284,6 +285,21 @@ workflow TUMOR_NORMAL_HAPPHASE {
             return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
         }
         .set { clairs_input }
+
+    tumor_normal_severus
+        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf, _tbi ->
+                return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
+        }
+        .set{ deepsomatic_input }
+
+    DEEPSOMATIC (
+        deepsomatic_input,
+        [[:],[]],
+        fasta,
+        fai,
+        [[:],[]]
+    )
+
     //
     // MODULE: CLAIRS
     //
