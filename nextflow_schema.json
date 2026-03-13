@@ -270,6 +270,9 @@
                 },
                 "skip_normalfiber": {
                     "type": "boolean"
+                "skip_nanoplot": {
+                    "type": "boolean",
+                    "description": "Skip Nanoplot"
                 }
             }
         },
