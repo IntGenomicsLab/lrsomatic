@@ -156,6 +156,8 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
+    ch_split = ch_samplesheet
+
     if (!params.skip_qc && !params.skip_cramino) {
         CRAMINO_PRE( ch_samplesheet )
         NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
