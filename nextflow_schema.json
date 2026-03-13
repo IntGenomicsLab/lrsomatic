@@ -210,6 +210,10 @@
                 "skip_m6a": {
                     "type": "boolean",
                     "description": "Skip m6a calling by Fibertools"
+                },
+                "skip_nanoplot": {
+                    "type": "boolean",
+                    "description": "Skip Nanoplot"
                 }
             }
         },
