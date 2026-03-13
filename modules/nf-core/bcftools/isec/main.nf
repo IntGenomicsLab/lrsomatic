@@ -12,6 +12,7 @@ process BCFTOOLS_ISEC {
 
     output:
     tuple val(meta), path("${prefix}", type: "dir"), emit: results
+    tuple val(meta), path("${prefix}_consensus.vcf.gz"), emit: consensus
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
@@ -27,6 +28,7 @@ process BCFTOOLS_ISEC {
     """
     bcftools isec  \\
         ${args} \\
+        -o ${$prefix}_consensus.vcf.gz
         ${targets_file_args} \\
         ${regions_file_args} \\
         -p ${prefix} \\
