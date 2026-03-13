@@ -216,7 +216,8 @@
                     "description": "Skip Nanoplot"
                 },
                 "skip_whatshapstats": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Skip WhatsHap stats"
                 }
             }
         },
