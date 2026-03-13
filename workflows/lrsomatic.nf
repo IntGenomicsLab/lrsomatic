@@ -156,9 +156,26 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
+    ch_nanoplot_pre_txt = channel.empty()
+
     if (!params.skip_qc && !params.skip_cramino) {
+
+        //
+        // Module: CRAMINO
+        //
+
         CRAMINO_PRE( ch_samplesheet )
-        NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
+
+        if (!params.skip_nanoplot) {
+
+            //
+            // Module: Nanoplot
+            //
+
+            NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
+
+        }
+
     }
 
     ch_samplesheet
@@ -494,16 +511,32 @@ workflow LRSOMATIC {
         )
     }
 
-    //
-    // MODULE: CRAMINO
-    //
+
+    ch_nanoplot_post_txt = channel.empty()
+
 
     if (!params.skip_qc && !params.skip_cramino) {
 
+        //
+        // MODULE: CRAMINO
+        //
+
         CRAMINO_POST ( ch_minimap_bam )
-        NANOPLOT_POST(CRAMINO_POST.out.arrow)
+
+        if (!params.skip_nanoplot) {
+
+            //
+            // Module: Nanoplot
+            //
+
+            NANOPLOT_POST(CRAMINO_POST.out.arrow)
+
+        }
+
 
     }
+
+
 
     //
     // Module: MOSDEPTH
@@ -626,7 +659,7 @@ workflow LRSOMATIC {
     //
     // MODULE: MultiQC
     //
-    summary_params      = paramsSummaryMap(
+    summary_params = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
@@ -654,6 +687,8 @@ workflow LRSOMATIC {
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it -> it[1]}.ifEmpty([]))
 
+    ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_pre_txt.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_post_txt.collect{it -> it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files
