@@ -428,6 +428,8 @@ workflow LRSOMATIC {
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
 
+    whatshap_stats_txt = channel.empty()
+
     if (!params.skip_qc && !params.skip_whatshapstats) {
         
         // Create channel for whatshap stats
@@ -447,6 +449,8 @@ workflow LRSOMATIC {
             true,
             true
         )
+
+        whatshap_stats_txt = WHATSHAP_STATS.OUT.txt
 
     }
 
@@ -562,8 +566,6 @@ workflow LRSOMATIC {
 
 
     }
-
-
 
     //
     // Module: MOSDEPTH
@@ -716,6 +718,9 @@ workflow LRSOMATIC {
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_pre_txt.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_post_txt.collect{it -> it[1]}.ifEmpty([]))
+
+    ch_multiqc_files = ch_multiqc_files.mix(whatshap_stats_txt.collect{it -> it[1]}.ifEmpty([]))
+
 
     MULTIQC (
         ch_multiqc_files

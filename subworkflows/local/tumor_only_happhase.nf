@@ -80,14 +80,6 @@ workflow TUMOR_ONLY_HAPPHASE {
         .set { somatic_vep }
     // [meta, somatic_vcf, []]  -- PASS (somatic) variants for VEP annotation
 
-    VCFSPLIT.out.germline_vcf
-        .map { meta, vcf ->
-            def extra = []
-            return [meta,vcf, extra]
-        }
-        .set { germline_vep }
-    // [meta, germline_vcf, []]  -- non-somatic variants (relabelled PASS) for VEP annotation
-
     //
     // MODULES: LONGPHASE_PHASE
     //
@@ -99,6 +91,15 @@ workflow TUMOR_ONLY_HAPPHASE {
     )
 
     ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
+
+    LONGPHASE_PHASE.out.snv_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta,vcf, extra]
+        }
+        .set { germline_vep }
+    // [meta, germline_vcf, []]  -- non-somatic variants (relabelled PASS) for VEP annotation
+
 
     // Add phased nonsomatic vcf info
     // remove model info

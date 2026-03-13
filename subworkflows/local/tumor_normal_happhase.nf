@@ -111,14 +111,6 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .set{ normal_bams_germlinevcf }
     // [meta, bam, bai, germline_vcf, [], []]  -- svs and mods are empty placeholders for LONGPHASE_PHASE input
 
-    CLAIR3.out.vcf
-        .map { meta, vcf ->
-            def extra = []
-            return [meta, vcf, extra]
-        }
-        .set { germline_vep }
-    // [meta, clair3_vcf, []]  -- germline small variants for VEP annotation
-
     //
     // MODULE: LONGPHASE_PHASE
     //
@@ -131,6 +123,14 @@ workflow TUMOR_NORMAL_HAPPHASE {
     )
 
     ch_versions = ch_versions.mix(LONGPHASE_PHASE.out.versions)
+
+    LONGPHASE_PHASE.out.snv_vcf
+        .map { meta, vcf ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { germline_vep }
+    // [meta, clair3_vcf, []]  -- germline small variants for VEP annotation
 
     // Add phased vcf to normal bams
     // Add type information back
