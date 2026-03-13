@@ -402,12 +402,39 @@ workflow LRSOMATIC {
         gnomad
     )
 
+    // Set channel for phased germline variants
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
     // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
+
+    // Set channel for somatic variants
     somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
+
+    if (!params.skip_qc && !params.skip_whatshapstats) {
+        
+        // Create channel for whatshap stats
+        germline_vep
+            .map { meta, vcf, _extra -> 
+                return [meta, vcf] }
+            .set { ch_whatshap_stats }
+        //
+
+        //
+        // Module: WHATSHAP_STATS
+        //
+
+        WHATSHAP_STATS (
+            ch_whatshap_stats,
+            true,
+            true,
+            true
+        )
+
+    }
+
     if (!params.skip_vep) {
+
         //
         // MODULE: GERMLINE_VEP
         //
