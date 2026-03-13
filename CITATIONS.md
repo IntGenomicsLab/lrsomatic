@@ -8,6 +8,10 @@
 
 > Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C. Nextflow enables reproducible computational workflows. Nat Biotechnol. 2017 Apr 11;35(4):316-319. doi: 10.1038/nbt.3820. PubMed PMID: 28398311.
 
+## [LRSomatic](https://doi.org/10.64898/2026.02.26.707772)
+
+> LRSomatic: a highly scalable and robust pipeline for somatic variant calling in long-read sequencing data Robert A. Forsyth*, Luuk Harbers*, Amber Verhasselt, Ana-Lucía Rocha Iraizós, Sidi Yang, Joris Vande Velde, Christopher Davies, Nischalan Pillay, Laurens Lambrechts, Jonas Demeulemeester bioRxiv 2026.02.26.707772; doi: https://doi.org/10.64898/2026.02.26.707772
+
 ## Pipeline tools
 
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
