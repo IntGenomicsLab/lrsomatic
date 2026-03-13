@@ -5,6 +5,8 @@ include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index
 include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
+include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
+
 
 workflow TUMOR_NORMAL_HAPPHASE {
     take:
@@ -104,6 +106,21 @@ workflow TUMOR_NORMAL_HAPPHASE {
         normal_bams,
         fasta,
         fai
+    )
+    
+    normal_bams
+        .map {meta, bam, bai, _model, _platform ->
+            def intervals = []
+            return [meta, bam, bai, intervals]
+        }
+    .set{deepvar_normal_bams}
+
+    DEEPVARIANT (
+        deepvar_normal_bams,
+        fasta,
+        fai,
+        [[:],[]],
+        [[:],[]]
     )
 
     // Add germline vcf to normal bams

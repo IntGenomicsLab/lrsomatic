@@ -6,7 +6,7 @@ workflow DEEPVARIANT {
     take:
     ch_input   // channel: [ val(meta), path(input), path(index), path(intervals)]
     ch_fasta   // channel: [ val(meta2), path(fasta) ]
-    ch_fai     // channel: [ val(meta3), path(fail) ]
+    ch_fai     // channel: [ val(meta3), path(fai) ]
     ch_gzi     // channel: [ val(meta4), path(gzi) ]
     ch_par_bed // channel: [ val(meta5), path(par_bed) ]
 

@@ -3,6 +3,7 @@ include { VCFSPLIT                  } from '../../modules/local/vcfsplit/main.nf
 include { LONGPHASE_PHASE           } from '../../modules/nf-core/longphase/phase/main'
 include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/haplotag/main.nf'
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
+include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
 
 workflow TUMOR_ONLY_HAPPHASE {
 
@@ -27,6 +28,21 @@ workflow TUMOR_ONLY_HAPPHASE {
             return [meta, bam, bai, meta.clairSTO_model]
         }
         .set{ tumor_bams }
+
+    tumor_bams
+        .map { meta, bam, bai, _clairSTO_model ->
+            def intervals = []
+            return [meta,bam,bai, intervals]
+        }
+        .set{tumor_bams_deepvar}
+
+    DEEPVARIANT (
+        tumor_bams_deepvar,
+        fasta,
+        fai,
+        [[:],[]],
+        [[:],[]]
+    )
 
     //
     // MODULE: CLAIRSTO
