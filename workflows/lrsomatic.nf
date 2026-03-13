@@ -109,6 +109,7 @@ workflow LRSOMATIC {
     METAEXTRACT( ch_samplesheet )
 
     basecall_meta = METAEXTRACT.out.meta_ext
+    // [meta, basecall_model_str, kinetics_str]  -- basecall model and kinetics extracted from BAM header
     // Adds the base calling model to meta.basecall_model
 
     ch_samplesheet
@@ -135,6 +136,7 @@ workflow LRSOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
+    // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
 
 
 
@@ -154,12 +156,10 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
-
     if (!params.skip_qc && !params.skip_cramino) {
         CRAMINO_PRE( ch_samplesheet )
         NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
     }
-
 
     ch_samplesheet
         .map{ meta, bam ->
@@ -196,9 +196,7 @@ workflow LRSOMATIC {
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
-
-    // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                 bam:  list of concatenated unaligned bams
+    // [meta, bam]  -- single merged unaligned BAM per sample
 
     vep_cache = channel.empty()
 
@@ -343,6 +341,7 @@ workflow LRSOMATIC {
     // MODULE: MINIMAP2_ALIGN
     //
     // Aligns ubams
+    // ch_cat_ubams: [meta, bam]  -- may include m6A/nucleosome/FIRE annotations for fiber-seq samples
 
     MINIMAP2_ALIGN (
         ch_cat_ubams,
@@ -354,10 +353,7 @@ workflow LRSOMATIC {
     )
     MINIMAP2_ALIGN.out.bam
         .set { ch_minimap_bam }
-
-
-    // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
-    //                    bam:  list of concatenated aligned bams
+    // [meta, bam]  -- aligned BAM
 
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
@@ -369,14 +365,11 @@ workflow LRSOMATIC {
                 tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
-
-
-    // branched_minimap -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                     bam:  list of concatenated aligned bams
-    //                     bais: indexes for bam files
+    // branched_minimap.paired:     [meta, bam, bai]  -- one item per sample (tumor AND normal flow separately)
+    // branched_minimap.tumor_only: [meta, bam, bai]
 
     //
-    // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
+    // SUBWORKFLOW: TUMOR_NORMAL_HAPPHASE
     //
     // Phasing/haplotaging/small germline variant calling for tumor-normal samples
 
@@ -410,7 +403,9 @@ workflow LRSOMATIC {
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
+    // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
     somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
+    // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
     if (!params.skip_vep) {
         //
@@ -464,7 +459,7 @@ workflow LRSOMATIC {
             return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
         }
         .set { severus_reformat }
-    // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
+    // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi]  -- normal_bam/bai are [] for tumor-only
 
     //
     // MODULE: SEVERUS
@@ -483,6 +478,7 @@ workflow LRSOMATIC {
             return [meta, vcf, extra]
         }
         .set { sv_vep }
+    // [meta, severus_all_vcf, []]  -- all SVs for VEP annotation
 
     if(!params.skip_vep) {
         SV_VEP (
@@ -522,6 +518,7 @@ workflow LRSOMATIC {
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
+        // [meta, bam, bai, []]  -- [] is the required empty BED path for MOSDEPTH
 
         MOSDEPTH (
             ch_mosdepth_in,
@@ -561,6 +558,7 @@ workflow LRSOMATIC {
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
+        // [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
 
         ASCAT (
             ascat_ch,
@@ -586,6 +584,7 @@ workflow LRSOMATIC {
         severus_reformat
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
+        // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi, severus_all_vcf]
 
         WAKHAN (
             wakhan_input,
