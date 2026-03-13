@@ -166,13 +166,13 @@ workflow LRSOMATIC {
 
         CRAMINO_PRE( ch_samplesheet )
 
-        if (!params.skip_nanoplot)
+        if (!params.skip_nanoplot) {
 
             //
             // Module: Nanoplot
             //
 
-            NANOPLOT_POST(CRAMINO_POST.out.arrow)
+            NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
 
         }
 
@@ -523,7 +523,7 @@ workflow LRSOMATIC {
 
         CRAMINO_POST ( ch_minimap_bam )
 
-        if (!params.skip_nanoplot)
+        if (!params.skip_nanoplot) {
 
             //
             // Module: Nanoplot
