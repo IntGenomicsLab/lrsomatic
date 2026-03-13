@@ -466,7 +466,7 @@
                 "sample1.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample1.stats:md5,8cec99bd9c1ba4ee22619b66d4fec02a",
-                "somatic_smallvariants.vcf.gz:md5,4b27cfd8d1c971631d464b4a0c033c9f",
+                "somatic_smallvariants.vcf.gz:md5,600a03c95044fcfe393d1b28cd2da843",
                 "somatic_smallvariants.vcf.gz.tbi:md5,10a8341860d0d4fec1712019cad908c3",
                 "breakpoints_double.csv:md5,fd92fe40bc0ab3b836dedc395b80d6e2",
                 "read_qual.txt:md5,78247dfa2ea336eac0e128eba5e9eef4",
@@ -484,8 +484,8 @@
                 "sample2.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
                 "sample2.stats:md5,7cbbff1faaf2e030470a8c1e69434b48",
-                "somatic_smallvariants.vcf.gz:md5,51980a65fba01f1a611e22179a4f6692",
-                "somatic_smallvariants.vcf.gz.tbi:md5,a17dacb872cab6bad80c02c477118589",
+                "somatic_smallvariants.vcf.gz:md5,e4f97ca54d31c5d4ad7825000bbed360",
+                "somatic_smallvariants.vcf.gz.tbi:md5,d13967f57fe07d2289c4547a0470b1b4",
                 "breakpoints_double.csv:md5,d3f0957887406fb79f9dcc3707324d8c",
                 "read_qual.txt:md5,8b92ff7dc4536188be159b95525511cd",
                 "sample3_tumor.bam:md5,7107cfc84eafca8f1ae918e775111090",
@@ -495,13 +495,13 @@
                 "sample3.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample3.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample3.stats:md5,6825d4e497aef80ed7160afbef5076d9",
-                "somatic_smallvariants.vcf.gz:md5,88c02b870c57252eb964b00aacddb706",
-                "somatic_smallvariants.vcf.gz.tbi:md5,29931b98ac1eb3e63a01f9eada1c789b",
+                "somatic_smallvariants.vcf.gz:md5,aab6f707ba2d3692ca3baf7cfb3e1e50",
+                "somatic_smallvariants.vcf.gz.tbi:md5,8c7f724be3d927cce507f15fa0f3f45d",
                 "breakpoints_double.csv:md5,41bb00e81dd6c319c13e754fa853ca68",
                 "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed"
             ]
         ],
-        "timestamp": "2026-03-13T14:01:29.660410344",
+        "timestamp": "2026-03-13T14:09:46.004582221",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "25.10.0"
