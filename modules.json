@@ -90,6 +90,11 @@
                         "git_sha": "2c73cc8fa92cf48de3da0b643fdf357a8a290b36",
                         "installed_by": ["modules"]
                     },
+                    "nanoplot": {
+                        "branch": "master",
+                        "git_sha": "682f789f93070bd047868300dd018faf3d434e7c",
+                        "installed_by": ["modules"]
+                    },
                     "pigz/uncompress": {
                         "branch": "master",
                         "git_sha": "f84336b7fa91a65aa61d215b8c109fbb8e4b4ac6",
@@ -145,6 +150,11 @@
                     "wget": {
                         "branch": "master",
                         "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "installed_by": ["modules"]
+                    },
+                    "whatshap/stats": {
+                        "branch": "master",
+                        "git_sha": "bfab71f4d68c1aaff09335a3433e7b2836918b2a",
                         "installed_by": ["modules"]
                     }
                 }
