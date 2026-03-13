@@ -32,7 +32,7 @@ include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsr
 include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'                                           
+include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -430,13 +430,13 @@ workflow LRSOMATIC {
     whatshap_stats_txt = channel.empty()
 
     if (!params.skip_qc && !params.skip_whatshapstats) {
-        
+
         // Create channel for whatshap stats
         germline_vep
-            .map { meta, vcf, _extra -> 
+            .map { meta, vcf, _extra ->
                 return [meta, vcf] }
             .set { ch_whatshap_stats }
-        
+
         //
         // Module: WHATSHAP_STATS
         //
