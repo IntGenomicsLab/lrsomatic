@@ -11,14 +11,29 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/ascat/ascat.diff"
                     },
+                    "bcftools/annotate": {
+                        "branch": "master",
+                        "git_sha": "3d9c2f4beaa4f62b3f006928fd9095a496d1e5a8",
+                        "installed_by": ["modules"]
+                    },
                     "bcftools/concat": {
                         "branch": "master",
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
                         "installed_by": ["modules", "vcf_gather_bcftools"]
                     },
+                    "bcftools/isec": {
+                        "branch": "master",
+                        "git_sha": "3b2c3559699a7bca6a7c2b220695a072e030e17d",
+                        "installed_by": ["modules"]
+                    },
                     "bcftools/merge": {
                         "branch": "master",
                         "git_sha": "3d9c2f4beaa4f62b3f006928fd9095a496d1e5a8",
+                        "installed_by": ["modules"]
+                    },
+                    "bcftools/norm": {
+                        "branch": "master",
+                        "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
                         "installed_by": ["modules"]
                     },
                     "bcftools/sort": {
@@ -26,11 +41,6 @@
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
                         "installed_by": ["modules", "vcf_gather_bcftools"],
                         "patch": "modules/nf-core/bcftools/sort/bcftools-sort.diff"
-                    },
-                    "deepsomatic": {
-                        "branch": "master",
-                        "git_sha": "ddb0d667cf6cdee3bab9497241de4bbf6b88d8cc",
-                        "installed_by": ["modules"]
                     },
                     "deepvariant/callvariants": {
                         "branch": "master",
