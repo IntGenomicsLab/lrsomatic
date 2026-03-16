@@ -12,6 +12,7 @@ process CRAMINO {
 
     output:
     tuple val(meta), path("*.txt"), emit: txt
+    tuple val(meta), path("*.arrow"), emit: arrow
     tuple val("${task.process}"), val('cramino'), eval("cramino --version |& sed '1!d ; s/cramino //'"), topic: versions, emit: versions_cramino
 
     when:
@@ -22,7 +23,7 @@ process CRAMINO {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    cramino $args $bam > ${prefix}_cramino.txt
+    cramino $args $bam --arrow ${prefix}.arrow > ${prefix}_cramino.txt
     """
 
     stub:

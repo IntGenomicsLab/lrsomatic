@@ -50,17 +50,17 @@
                     "deepvariant/callvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant", "modules"]
+                        "installed_by": ["deepvariant"]
                     },
                     "deepvariant/makeexamples": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant", "modules"]
+                        "installed_by": ["deepvariant"]
                     },
                     "deepvariant/postprocessvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant", "modules"]
+                        "installed_by": ["deepvariant"]
                     },
                     "ensemblvep/download": {
                         "branch": "master",

@@ -38,6 +38,7 @@ workflow PREPARE_REFERENCE_FILES {
         } else {
             ch_prepared_fasta = [ [:], fasta ]
         }
+        // ch_prepared_fasta: [[:], fasta_path]  -- empty meta; uncompressed if input was .gz
 
         // if clair3 model is specified, then download that
         // otherwise use info in bam header and download that
@@ -52,6 +53,7 @@ workflow PREPARE_REFERENCE_FILES {
         }
         .unique()
         .set{ clair3_model_urls }
+        // [meta(id=clair3_model_id), download_url]  -- one item per unique Clair3 model; deduplicated with .unique()
 
         //
         // MODULE: Download model
@@ -70,6 +72,7 @@ workflow PREPARE_REFERENCE_FILES {
         )
 
         UNTAR.out.untar.set { downloaded_clair3_models }
+        // [meta(id=clair3_model_id), model_dir]  -- extracted Clair3 model directory
 
         //
         // MODULE: Index the fasta
@@ -80,6 +83,7 @@ workflow PREPARE_REFERENCE_FILES {
         )
 
         ch_prepared_fai = SAMTOOLS_FAIDX.out.fai
+        // ch_prepared_fai: [[:], fai_path]  -- empty meta
 
         //
         // Prepare ASCAT files
@@ -117,14 +121,16 @@ workflow PREPARE_REFERENCE_FILES {
         }
 
     emit:
-        prepped_fasta = ch_prepared_fasta
-        prepped_fai = ch_prepared_fai
+        prepped_fasta = ch_prepared_fasta  // [[:], fasta_path]
+        prepped_fai = ch_prepared_fai      // [[:], fai_path]
 
+        // ASCAT reference files -- flat file collections (no meta tuple wrapper)
         allele_files
         loci_files
         gc_file
         rt_file
-        downloaded_clair3_models
+
+        downloaded_clair3_models  // [meta(id=clair3_model_id), model_dir]
 
         versions = ch_versions
 }

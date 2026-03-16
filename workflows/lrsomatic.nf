@@ -13,23 +13,25 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT                   } from '../modules/nf-core/samtools/cat/main'
-include { MINIMAP2_INDEX                 } from '../modules/nf-core/minimap2/index/main'
-include { MINIMAP2_ALIGN                 } from '../modules/nf-core/minimap2/align/main'
-include { CRAMINO as CRAMINO_PRE         } from '../modules/local/cramino/main'
-include { CRAMINO as CRAMINO_POST        } from '../modules/local/cramino/main'
-include { MOSDEPTH                       } from '../modules/nf-core/mosdepth/main'
-include { ASCAT                          } from '../modules/nf-core/ascat/main'
-include { SEVERUS                        } from '../modules/nf-core/severus/main.nf'
-include { METAEXTRACT                    } from '../modules/local/metaextract/main'
-include { WAKHAN                         } from '../modules/local/wakhan/main'
-include { FIBERTOOLSRS_PREDICTM6A        } from '../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE              } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES       } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC                } from '../modules/local/fibertoolsrs/qc'
-include { ENSEMBLVEP_VEP as SOMATIC_VEP  } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include { ENSEMBLVEP_VEP as GERMLINE_VEP } from '../modules/nf-core/ensemblvep/vep/main.nf'
-include { ENSEMBLVEP_VEP as SV_VEP       } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { SAMTOOLS_CAT                      } from '../modules/nf-core/samtools/cat/main'
+include { MINIMAP2_INDEX                    } from '../modules/nf-core/minimap2/index/main'
+include { MINIMAP2_ALIGN                    } from '../modules/nf-core/minimap2/align/main'
+include { CRAMINO as CRAMINO_PRE            } from '../modules/local/cramino/main'
+include { CRAMINO as CRAMINO_POST           } from '../modules/local/cramino/main'
+include { NANOPLOT as NANOPLOT_PRE          } from '../modules/nf-core/nanoplot/main'
+include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/main'
+include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
+include { ASCAT                             } from '../modules/nf-core/ascat/main'
+include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
+include { METAEXTRACT                       } from '../modules/local/metaextract/main'
+include { WAKHAN                            } from '../modules/local/wakhan/main'
+include { FIBERTOOLSRS_PREDICTM6A           } from '../modules/local/fibertoolsrs/predictm6a'
+include { FIBERTOOLSRS_FIRE                 } from '../modules/local/fibertoolsrs/fire'
+include { FIBERTOOLSRS_NUCLEOSOMES          } from '../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsrs/qc'
+include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -107,6 +109,7 @@ workflow LRSOMATIC {
     METAEXTRACT( ch_samplesheet )
 
     basecall_meta = METAEXTRACT.out.meta_ext
+    // [meta, basecall_model_str, kinetics_str]  -- basecall model and kinetics extracted from BAM header
     // Adds the base calling model to meta.basecall_model
 
     ch_samplesheet
@@ -121,6 +124,7 @@ workflow LRSOMATIC {
                             platform: meta.platform,
                             sex: meta.sex,
                             fiber: meta.fiber,
+                            replicate: meta.replicate,
                             clair3_model: chosen_clair3_model,
                             clairS_model: chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
@@ -132,6 +136,8 @@ workflow LRSOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
+    // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
+
 
 
     //
@@ -150,11 +156,49 @@ workflow LRSOMATIC {
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
 
+    ch_nanoplot_pre_txt = channel.empty()
+
+    if (!params.skip_qc && !params.skip_cramino) {
+
+        //
+        // Module: CRAMINO
+        //
+
+        CRAMINO_PRE( ch_samplesheet )
+
+        if (!params.skip_nanoplot) {
+
+            //
+            // Module: Nanoplot
+            //
+
+            NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
+
+        }
+
+    }
+
+    ch_samplesheet
+        .map{ meta, bam ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'type',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam]
+        }
+        .set{ch_samplesheet_no_rep}
+
 
     // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
     //                   bam:  list of unaligned bams
 
-    ch_split = ch_samplesheet
+    ch_split = ch_samplesheet_no_rep
         .branch { _meta, bam ->
             single: bam.size() == 1
             multiple: bam.size() > 1
@@ -169,17 +213,7 @@ workflow LRSOMATIC {
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
-
-    // ch_cat_ubams -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                 bam:  list of concatenated unaligned bams
-
-    //
-    // MODULE: CRAMINO
-    //
-    // QC the unaligned bams
-    if (!params.skip_qc && !params.skip_cramino) {
-        CRAMINO_PRE ( ch_cat_ubams )
-    }
+    // [meta, bam]  -- single merged unaligned BAM per sample
 
     vep_cache = channel.empty()
 
@@ -253,13 +287,21 @@ workflow LRSOMATIC {
             }
             .set{pacbio_bams}
 
-        FIBERTOOLSRS_PREDICTM6A (
-            pacbio_bams.kinetics
-        )
+        if (!params.skip_m6a) {
+            FIBERTOOLSRS_PREDICTM6A (
+                pacbio_bams.kinetics
+            )
+            pacbio_bams.noKinetics
+                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
+                .set{predicted_bams}
+        }
+        else {
+            pacbio_bams.noKinetics
+                .mix(pacbio_bams.kinetics)
+                .set{predicted_bams}
+        }
 
-        pacbio_bams.noKinetics
-            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-            .set{predicted_bams}
+
 
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
@@ -316,6 +358,7 @@ workflow LRSOMATIC {
     // MODULE: MINIMAP2_ALIGN
     //
     // Aligns ubams
+    // ch_cat_ubams: [meta, bam]  -- may include m6A/nucleosome/FIRE annotations for fiber-seq samples
 
     MINIMAP2_ALIGN (
         ch_cat_ubams,
@@ -327,10 +370,7 @@ workflow LRSOMATIC {
     )
     MINIMAP2_ALIGN.out.bam
         .set { ch_minimap_bam }
-
-
-    // ch_minimap_bams -> meta: [id, paired_data, platform, sex, type, fiber,basecall_model]
-    //                    bam:  list of concatenated aligned bams
+    // [meta, bam]  -- aligned BAM
 
     // ch_minimap_bams into tumor and paired to phase the paired ones on normal
     // and add index
@@ -342,14 +382,11 @@ workflow LRSOMATIC {
                 tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
-
-
-    // branched_minimap -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                     bam:  list of concatenated aligned bams
-    //                     bais: indexes for bam files
+    // branched_minimap.paired:     [meta, bam, bai]  -- one item per sample (tumor AND normal flow separately)
+    // branched_minimap.tumor_only: [meta, bam, bai]
 
     //
-    // SUBWORFKLOW: TUMOR_NORMAL_HAPPHASE
+    // SUBWORKFLOW: TUMOR_NORMAL_HAPPHASE
     //
     // Phasing/haplotaging/small germline variant calling for tumor-normal samples
 
@@ -383,7 +420,9 @@ workflow LRSOMATIC {
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
+    // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
     somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
+    // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
     if (!params.skip_vep) {
         //
@@ -437,7 +476,7 @@ workflow LRSOMATIC {
             return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
         }
         .set { severus_reformat }
-    // Format is [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, vcf]
+    // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi]  -- normal_bam/bai are [] for tumor-only
 
     //
     // MODULE: SEVERUS
@@ -456,6 +495,7 @@ workflow LRSOMATIC {
             return [meta, vcf, extra]
         }
         .set { sv_vep }
+    // [meta, severus_all_vcf, []]  -- all SVs for VEP annotation
 
     if(!params.skip_vep) {
         SV_VEP (
@@ -471,15 +511,32 @@ workflow LRSOMATIC {
         )
     }
 
-    //
-    // MODULE: CRAMINO
-    //
+
+    ch_nanoplot_post_txt = channel.empty()
+
 
     if (!params.skip_qc && !params.skip_cramino) {
 
+        //
+        // MODULE: CRAMINO
+        //
+
         CRAMINO_POST ( ch_minimap_bam )
 
+        if (!params.skip_nanoplot) {
+
+            //
+            // Module: Nanoplot
+            //
+
+            NANOPLOT_POST(CRAMINO_POST.out.arrow)
+
+        }
+
+
     }
+
+
 
     //
     // Module: MOSDEPTH
@@ -494,6 +551,7 @@ workflow LRSOMATIC {
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
+        // [meta, bam, bai, []]  -- [] is the required empty BED path for MOSDEPTH
 
         MOSDEPTH (
             ch_mosdepth_in,
@@ -533,6 +591,7 @@ workflow LRSOMATIC {
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
+        // [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
 
         ASCAT (
             ascat_ch,
@@ -558,6 +617,7 @@ workflow LRSOMATIC {
         severus_reformat
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
+        // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi, severus_all_vcf]
 
         WAKHAN (
             wakhan_input,
@@ -599,7 +659,7 @@ workflow LRSOMATIC {
     //
     // MODULE: MultiQC
     //
-    summary_params      = paramsSummaryMap(
+    summary_params = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
@@ -627,6 +687,8 @@ workflow LRSOMATIC {
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_global.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_mosdepth_summary.collect{it -> it[1]}.ifEmpty([]))
 
+    ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_pre_txt.collect{it -> it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_post_txt.collect{it -> it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files

@@ -97,6 +97,34 @@ genome: 'GRCh37'
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
+## CHM13 Support
+
+Our pipeline fully supports CHM13 and most reference and annotation files are automatically downloaded when specifying `--genome CHM13`.
+
+However, VEP will need a bit of additional setup. The VEP cache for CHM13 needs to be manually downloaded. This can be done using the following code. Feel free to change any of the paths, ensuring that the correct path is pointed to in the pipeline parameters.
+
+Download CHM13 Cache:
+
+```bash
+cd $HOME/.vep
+curl -O https://ftp.ensembl.org/pub/rapid-release/species/Homo_sapiens/GCA_009914755.4/ensembl/variation/2022_10/indexed_vep_cache/Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
+tar xzf Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
+```
+
+Then you can run the pipeline as follows:
+
+```bash
+nextflow run IntGenomicsLab/lrsomatic \
+  --input samplesheet.csv \
+  --outdir ./results \
+  --genome CHM13 \
+  --vep_cache $HOME/.vep \
+  --vep_cache_version 107 \
+  -profile docker
+```
+
+If you want to run with a CHM13 reference without using `--genome CHM13` (for example, via a custom FASTA or configuration), you must also specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -107,16 +135,17 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 #### Skipping options:
 
-| Parameter         | Description                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false` |
-| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                       |
-| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                              |
-| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                             |
-| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                |
-| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                             |
-| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                               |
-| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                  |
+| Parameter         | Description                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false`                                                                          |
+| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                                                                                                |
+| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                                                                                                       |
+| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                      |
+| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                                                                                         |
+| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                                                                                                      |
+| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                                                                                                        |
+| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                                                                                           |
+| `--skip_m6a`      | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false` |
 
 #### VEP options:
 
