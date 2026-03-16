@@ -7,6 +7,7 @@ include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/conca
 include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
 include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
 include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
+include { SMALL_VARIANT_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
 
 
 workflow TUMOR_NORMAL_HAPPHASE {
@@ -123,6 +124,32 @@ workflow TUMOR_NORMAL_HAPPHASE {
         [[:],[]],
         [[:],[]]
     )
+
+    DEEPVARIANT.out.vcf
+        .join(DEEPVARIANT.out.vcf_index)
+        .map{ meta, vcf, tbi ->
+            def new_meta = meta + [caller:'deepvariant']
+            return [new_meta, vcf, tbi]
+        }
+        .set{deepvariant_ch}
+
+    CLAIR3.out.vcf
+        .join(CLAIR3.out.tbi)
+        .map { meta, vcf , tbi ->
+            def new_meta = meta + [caller:'clair']
+        }
+        .set{clair3_ch}
+        // [meta,deepvar_vcf,deepvar_index,clair3_vcf,clair3_index]
+    clair3_ch
+        .mix(deepvariant_ch)
+        .set{mixed_vcfs}
+    SMALL_VARIANT_CONSENSUS(
+        mixed_vcfs,
+        fasta,
+        fai
+        params.germline_var_keep
+    )
+    
 
     // Add germline vcf to normal bams
     // remove clair3 model information
