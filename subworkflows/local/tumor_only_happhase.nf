@@ -5,6 +5,7 @@ include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/hapl
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
 include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
+include { SMALL_VARIANT_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
 
 
 workflow TUMOR_ONLY_HAPPHASE {
@@ -94,10 +95,36 @@ workflow TUMOR_ONLY_HAPPHASE {
         clairsto_vcf
     )
 
+    VCFSPLIT.out.germline_vcf
+        .join(VCFSPLIT.out.germline_tbi)
+        .map { meta, vcf, tbi ->
+            def new_meta = meta + [caller:'clairs-to']
+            return [ new_meta, vcf, tbi]
+        }
+        .set{clairsto_germline_ch}
+    
+    DEEPVARIANT.out.vcf
+        .join(DEEPVARIANT.out.vcf_index)
+        .map{ meta, vcf, tbi ->
+            def new_meta = meta + [caller:'deepvariant']
+            return [new_meta, vcf, tbi]
+        }
+        .set{deepvariant_ch}
+
+    clairsto_germline_ch
+        .mix(deepvariant_ch)
+        .set{mixed_vcfs}
+
+    SMALL_VARIANT_CONSENSUS(
+        mixed_vcfs,
+        fasta,
+        fai,
+        params.germline_var_keep
+    )
     // Add the nonsomatic vcf info
     // remove model info
     tumor_bams
-        .join(VCFSPLIT.out.germline_vcf)
+        .join(SMALL_VARIANT_CONSENSUS.out.vcf)
         .map{ meta, bam, bai, _model, snps ->
             def svs = []
             def mods = []

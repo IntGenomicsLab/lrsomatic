@@ -12,7 +12,10 @@ process BCFTOOLS_ISEC {
 
     output:
     tuple val(meta), path("${prefix}", type: "dir"), emit: results
-    tuple val(meta), path("${prefix}_consensus.vcf.gz"), emit: consensus
+    tuple val(meta), path("${prefix}/0000.vcf.gz"), emit: deepvar_style_consensus_vcf
+    tuple val(meta), path("${prefix}/0000.vcf.gz.tbi"), emit: deepvar_style_consensus_tbi
+    tuple val(meta), path("${prefix}/0001.vcf.gz"), emit: clair3_style_consensus_vcf
+    tuple val(meta), path("${prefix}/0001.vcf.gz.tbi"), emit: clair3_style_consensus_tbi
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
@@ -28,11 +31,10 @@ process BCFTOOLS_ISEC {
     """
     bcftools isec  \\
         ${args} \\
-        -o ${$prefix}_consensus.vcf.gz
         ${targets_file_args} \\
         ${regions_file_args} \\
         -p ${prefix} \\
-        ${vcf_files} \\
+        ${vcf_files}
     """
 
     stub:

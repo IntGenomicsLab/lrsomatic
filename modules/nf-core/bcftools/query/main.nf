@@ -14,7 +14,8 @@ process BCFTOOLS_QUERY {
     path samples
 
     output:
-    tuple val(meta), path("*.${suffix}"), emit: output
+    tuple val(meta), path("*.${suffix}.gz"), emit: output
+    tuple val(meta), path("*.${suffix}.gz.tbi"), emit: index
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
@@ -35,6 +36,8 @@ process BCFTOOLS_QUERY {
         ${args} \\
         ${vcf} \\
         > ${prefix}.${suffix}
+    bgzip -c ${prefix}.${suffix} > ${prefix}.${suffix}.gz
+    tabix -s 1 -b 2 -e 2 ${prefix}.${suffix}.gz
     """
 
     stub:

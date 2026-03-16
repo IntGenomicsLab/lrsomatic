@@ -128,26 +128,30 @@ workflow TUMOR_NORMAL_HAPPHASE {
     CLAIR3.out.vcf
         .join(CLAIR3.out.tbi)
         .map { meta, vcf , tbi ->
-            def new_meta = meta + [caller:'clair']
+            def new_meta = meta + [caller:'clair3']
+            return [new_meta, vcf, tbi]
         }
         .set{clair3_ch}
         // [meta,deepvar_vcf,deepvar_index,clair3_vcf,clair3_index]
+    
     clair3_ch
         .mix(deepvariant_ch)
         .set{mixed_vcfs}
+    
     SMALL_VARIANT_CONSENSUS(
         mixed_vcfs,
         fasta,
-        fai
+        fai,
         params.germline_var_keep
     )
     
 
     // Add germline vcf to normal bams
     // remove clair3 model information
-
+    SMALL_VARIANT_CONSENSUS.out.vcf.view()
+    normal_bams.view()
     normal_bams
-        .join(CLAIR3.out.vcf)
+        .join(SMALL_VARIANT_CONSENSUS.out.vcf)
         .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def svs = []
             def mods = []
@@ -156,7 +160,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .set{ normal_bams_germlinevcf }
     // [meta, bam, bai, germline_vcf, [], []]  -- svs and mods are empty placeholders for LONGPHASE_PHASE input
 
-    CLAIR3.out.vcf
+    SMALL_VARIANT_CONSENSUS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta, vcf, extra]
@@ -281,6 +285,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
         }
         .set{ deepsomatic_input }
+
+    
 
     DEEPSOMATIC (
         deepsomatic_input,

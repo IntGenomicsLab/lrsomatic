@@ -1,11 +1,13 @@
 
-include { BCFTOOLS_NORM        } from '../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_ISEC        } from '../../modules/nf-core/bcftools/isec/main'
-include { BCFTOOLS_MERGE        } from '../../modules/nf-core/bcftools/merge/main'
-include { BCFTOOLS_QUERY        } from '../../modules/nf-core/bcftools/merge/main'
+include { BCFTOOLS_NORM            } from '../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_ISEC            } from '../../modules/nf-core/bcftools/isec/main'
+include { BCFTOOLS_MERGE           } from '../../modules/nf-core/bcftools/merge/main'
+include { BCFTOOLS_QUERY           } from '../../modules/nf-core/bcftools/query/main'
+include { BCFTOOLS_ANNOTATE        } from '../../modules/nf-core/bcftools/annotate/main'
 
 
-workflow SMALL_VARIANT_CONSENSUS.nf{
+
+workflow SMALL_VARIANT_CONSENSUS {
     take:
     mixed_vcfs // [meta: w caller_info,mixed_vcfs, mixed_indicies]
     fasta
@@ -17,7 +19,7 @@ workflow SMALL_VARIANT_CONSENSUS.nf{
     BCFTOOLS_NORM(mixed_vcfs, fasta)
 
     BCFTOOLS_NORM.out.vcf   
-             .join(BCFTOOLS_NORM.tbi)
+             .join(BCFTOOLS_NORM.out.tbi)
              .set {normalized_vcfs}
 
     // create annotation file with caller name
@@ -25,12 +27,12 @@ workflow SMALL_VARIANT_CONSENSUS.nf{
 
     normalized_vcfs
         .join(BCFTOOLS_QUERY.out.output)
-        .map{ meta, vcf, tbi, annotations ->
-                    def annotations_index = []
+        .join(BCFTOOLS_QUERY.out.index)
+        .map{ meta, vcf, tbi, annotations, annotations_index ->
                     def columns = []
                     def header_lines = []
                     def rename_chrs = []
-                return [ meta, vcf, tbi,file,annotations,annotations_index, columns, header_lines, rename_chrs ]
+                return [ meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
              }
              .set{annotate_input}
 
@@ -38,7 +40,7 @@ workflow SMALL_VARIANT_CONSENSUS.nf{
     BCFTOOLS_ANNOTATE(annotate_input)
 
     BCFTOOLS_ANNOTATE.out.vcf
-        .join(BCFTOOLS_ANNOTATE.tbi)
+        .join(BCFTOOLS_ANNOTATE.out.tbi)
         .set{annotated_vcfs}
 
     annotated_vcfs
@@ -49,38 +51,84 @@ workflow SMALL_VARIANT_CONSENSUS.nf{
         .set{annotated_vcfs_branched}
 
     clair_ch = annotated_vcfs_branched.clair
-    deepvariant = annotated_vcfs_branched.deepvariant
+    deepvariant_ch = annotated_vcfs_branched.deepvariant
     
     clair_ch.
         map {meta, vcfs, tbi ->
-            meta
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'type',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return [ new_meta, vcfs, tbi]
         }
-    if (var_keep_method == 'consensus') {
+        .set{clair_ch}
 
-        BCFTOOLS_NORM.out.vcf   
-             .join(BCFTOOLS_NORM.tbi)
-             .map{ meta, vcf, tbi ->
+    deepvariant_ch
+        .map {meta, vcfs, tbi ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'type',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return [ new_meta, vcfs, tbi]
+        }
+        .set{deepvariant_ch}
+
+    deepvariant_ch
+        .join(clair_ch)
+        .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+            def vcfs = [deepvar_vcf, clair_vcf]
+            def tbis = [deepvar_tbi, clair_tbi]
+            return [ meta, vcfs, tbis]
+        }
+        .set{mixed_vcfs}
+    
+    if (var_keep_method == 'consensus') {
+        mixed_vcfs
+             .map{ meta, vcfs, tbis ->
                     def file = []
                     def target = []
                     def regions = []
-                return [meta, vcf, tbi, file, target, regions]
+                return [meta, vcfs, tbis, file, target, regions]
              }
              .set{isec_input}
         BCFTOOLS_ISEC(isec_input)
+        BCFTOOLS_ISEC.out.deepvar_style_consensus_vcf
+            .set{vcf}
+        BCFTOOLS_ISEC.out.deepvar_style_consensus_tbi
+            .set{tbi}
     }
+
     else if (var_keep_method == 'all'){
-        
-        BCFTOOLS_ANNOTATE.out.vcf
-            .join(BCFTOOLS_ANNOTATE.out.tbi)
-            .map{ meta, vcf, tbi ->
+        mixed_vcfs
+            .map{ meta, vcfs, tbis ->
                 def bed = []
-                return [ bed ]
+                return [ meta, vcfs, tbis, bed ]
             }
-            .set{ merge input}
+            .set{ merge_input}
         fasta
             .join(fai)
             .set{ fasta_fai }
         BCFTOOLS_MERGE(merge_input, fasta_fai)
+        BCFTOOLS_MERGE.out.vcf
+            .set{vcf}
+        BCFTOOLS_MERGE.out.index
+            .set{tbi}
     }
+
+    emit:
+    vcf
+    tbi
 
 }
