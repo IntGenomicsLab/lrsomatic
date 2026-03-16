@@ -5,9 +5,12 @@ include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index
 include { CLAIRS                    } from '../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../modules/nf-core/bcftools/sort'
-include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
-include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
-include { SMALL_VARIANT_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
+
+include { DEEPVARIANT                                     } from '../../subworkflows/nf-core/deepvariant/main.nf'
+include { DEEPSOMATIC                                     } from '../../subworkflows/local/deepsomatic.nf'
+include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
+include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS    } from '../../subworkflows/local/small_variant_consensus.nf'
+
 
 
 workflow TUMOR_NORMAL_HAPPHASE {
@@ -138,7 +141,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .mix(deepvariant_ch)
         .set{mixed_vcfs}
     
-    SMALL_VARIANT_CONSENSUS(
+    GERMLINE_CONSENSUS(
         mixed_vcfs,
         fasta,
         fai,
@@ -148,10 +151,8 @@ workflow TUMOR_NORMAL_HAPPHASE {
 
     // Add germline vcf to normal bams
     // remove clair3 model information
-    SMALL_VARIANT_CONSENSUS.out.vcf.view()
-    normal_bams.view()
     normal_bams
-        .join(SMALL_VARIANT_CONSENSUS.out.vcf)
+        .join(GERMLINE_CONSENSUS.out.vcf)
         .map { meta, bam, bai, _clair3_model, _platform, vcf ->
             def svs = []
             def mods = []
@@ -160,7 +161,7 @@ workflow TUMOR_NORMAL_HAPPHASE {
         .set{ normal_bams_germlinevcf }
     // [meta, bam, bai, germline_vcf, [], []]  -- svs and mods are empty placeholders for LONGPHASE_PHASE input
 
-    SMALL_VARIANT_CONSENSUS.out.vcf
+    GERMLINE_CONSENSUS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta, vcf, extra]

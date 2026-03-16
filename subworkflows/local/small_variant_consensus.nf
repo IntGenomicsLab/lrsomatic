@@ -42,7 +42,6 @@ workflow SMALL_VARIANT_CONSENSUS {
     BCFTOOLS_ANNOTATE.out.vcf
         .join(BCFTOOLS_ANNOTATE.out.tbi)
         .set{annotated_vcfs}
-
     annotated_vcfs
         .branch { meta, _vcfs, _tbi ->
             deepvariant: meta.caller in [ 'deepvariant', 'deepsomatic' ]
@@ -84,7 +83,8 @@ workflow SMALL_VARIANT_CONSENSUS {
             return [ new_meta, vcfs, tbi]
         }
         .set{deepvariant_ch}
-
+    deepvariant_ch.view()
+    clair_ch.view()
     deepvariant_ch
         .join(clair_ch)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
@@ -93,7 +93,8 @@ workflow SMALL_VARIANT_CONSENSUS {
             return [ meta, vcfs, tbis]
         }
         .set{mixed_vcfs}
-    
+
+    mixed_vcfs.view()
     if (var_keep_method == 'consensus') {
         mixed_vcfs
              .map{ meta, vcfs, tbis ->
@@ -117,10 +118,7 @@ workflow SMALL_VARIANT_CONSENSUS {
                 return [ meta, vcfs, tbis, bed ]
             }
             .set{ merge_input}
-        fasta
-            .join(fai)
-            .set{ fasta_fai }
-        BCFTOOLS_MERGE(merge_input, fasta_fai)
+        BCFTOOLS_MERGE(merge_input, fasta, fai )
         BCFTOOLS_MERGE.out.vcf
             .set{vcf}
         BCFTOOLS_MERGE.out.index
