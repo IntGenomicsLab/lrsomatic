@@ -36,7 +36,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         --ref "${fasta}" \\
         --reads_tumor "${tumor_input}" \\
         ${normalReadsArg} \\
-        --sample_name_tumor "${prefix}_tumor" \\
+        --sample_name_tumor "${prefix}" \\
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
         --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\

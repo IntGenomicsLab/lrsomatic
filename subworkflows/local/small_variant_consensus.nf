@@ -84,8 +84,6 @@ workflow SMALL_VARIANT_CONSENSUS {
             return [ new_meta, vcfs, tbi]
         }
         .set{deepvariant_ch}
-    deepvariant_ch.view()
-    clair_ch.view()
     deepvariant_ch
         .join(clair_ch)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
@@ -95,7 +93,6 @@ workflow SMALL_VARIANT_CONSENSUS {
         }
         .set{mixed_vcfs}
 
-    mixed_vcfs.view()
     if (var_keep_method == 'consensus') {
         mixed_vcfs
              .map{ meta, vcfs, tbis ->
@@ -146,7 +143,6 @@ workflow SMALL_VARIANT_CONSENSUS {
                 .set{concat_input}
             BCFTOOLS_CONCAT(concat_input)
             BCFTOOLS_CONCAT.out.vcf
-                .join(BCFTOOLS_CONCAT.out.tbi)
                 .set{concat_out}
         }
 
@@ -161,10 +157,8 @@ workflow SMALL_VARIANT_CONSENSUS {
                 .set{concat_input}
             BCFTOOLS_CONCAT(concat_input)
             BCFTOOLS_CONCAT.out.vcf
-                .join(BCFTOOLS_CONCAT.tbi)
                 .set{concat_out}
         }
-        concat_out.view()
         BCFTOOLS_SORT(concat_out)
         BCFTOOLS_SORT.out.vcf
             .set{vcf}

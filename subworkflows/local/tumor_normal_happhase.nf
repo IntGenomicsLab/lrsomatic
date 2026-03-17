@@ -326,13 +326,44 @@ workflow TUMOR_NORMAL_HAPPHASE {
     BCFTOOLS_SORT (
         BCFTOOLS_CONCAT.out.vcf
     )
+    BCFTOOLS_SORT.out.vcf.view()
+    BCFTOOLS_SORT.out.tbi.view()
+
+    DEEPSOMATIC.out.vcf
+        .join(DEEPSOMATIC.out.vcf_index)
+        .map{ meta, vcf, tbi ->
+            def new_meta = meta + [caller:'deepsomatic']
+            return [new_meta, vcf, tbi]
+        }
+        .set{deepsomatic_ch}
 
     BCFTOOLS_SORT.out.vcf
+        .join(BCFTOOLS_SORT.out.tbi)
+        .map { meta, vcf , tbi ->
+            def new_meta = meta + [caller:'clairs']
+            return [new_meta, vcf, tbi]
+        }
+        .set{clairs_ch}
+        // [meta,deepvar_vcf,deepvar_index,clair3_vcf,clair3_index]
+    clairs_ch.view()
+    clairs_ch
+        .mix(deepsomatic_ch)
+        .set{mixed_somatic_vcfs}
+    mixed_somatic_vcfs.view()
+    SOMATIC_CONSENSUS(
+        mixed_somatic_vcfs,
+        fasta,
+        fai,
+        params.somatic_var_keep
+    )
+
+    SOMATIC_CONSENSUS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta, vcf, extra]
         }
         .set { somatic_vep }
+        
     // [meta, sorted_clairs_vcf, []]  -- somatic small variants (SNV+indel merged) for VEP annotation
 
     emit:

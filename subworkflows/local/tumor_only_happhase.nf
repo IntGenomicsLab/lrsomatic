@@ -5,7 +5,9 @@ include { LONGPHASE_HAPLOTAG        } from '../../modules/nf-core/longphase/hapl
 include { SAMTOOLS_INDEX            } from '../../modules/nf-core/samtools/index/main.nf'
 include { DEEPVARIANT               } from '../../subworkflows/nf-core/deepvariant/main.nf'
 include { DEEPSOMATIC               } from '../../subworkflows/local/deepsomatic.nf'
-include { SMALL_VARIANT_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
+
+include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../subworkflows/local/small_variant_consensus.nf'
+include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS    } from '../../subworkflows/local/small_variant_consensus.nf'
 
 
 workflow TUMOR_ONLY_HAPPHASE {
@@ -115,16 +117,43 @@ workflow TUMOR_ONLY_HAPPHASE {
         .mix(deepvariant_ch)
         .set{mixed_vcfs}
 
-    SMALL_VARIANT_CONSENSUS(
+    GERMLINE_CONSENSUS(
         mixed_vcfs,
         fasta,
         fai,
         params.germline_var_keep
     )
+
+    VCFSPLIT.out.somatic_vcf
+        .join(VCFSPLIT.out.somatic_tbi)
+        .map { meta, vcf, tbi ->
+            def new_meta = meta + [caller:'clairs-to']
+            return [ new_meta, vcf, tbi]
+        }
+        .set{clairsto_somatic_ch}
+    
+    DEEPSOMATIC.out.vcf
+        .join(DEEPSOMATIC.out.vcf_index)
+        .map{ meta, vcf, tbi ->
+            def new_meta = meta + [caller:'deepsomatic']
+            return [new_meta, vcf, tbi]
+        }
+        .set{deepsomatic_ch}
+
+    clairsto_somatic_ch
+        .mix(deepsomatic_ch)
+        .set{mixed_somatic_vcfs}
+
+    SOMATIC_CONSENSUS(
+        mixed_somatic_vcfs,
+        fasta,
+        fai,
+        params.somatic_var_keep
+    )
     // Add the nonsomatic vcf info
     // remove model info
     tumor_bams
-        .join(SMALL_VARIANT_CONSENSUS.out.vcf)
+        .join(GERMLINE_CONSENSUS.out.vcf)
         .map{ meta, bam, bai, _model, snps ->
             def svs = []
             def mods = []
@@ -133,7 +162,7 @@ workflow TUMOR_ONLY_HAPPHASE {
         .set{ tumor_bams_germlinevcf }
     // [meta, bam, bai, nonsomatic_vcf, [], []]  -- non-somatic variants used for phasing; svs and mods are empty placeholders for LONGPHASE_PHASE input
 
-    VCFSPLIT.out.somatic_vcf
+    SOMATIC_CONSENSUS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta,vcf, extra]
@@ -141,7 +170,7 @@ workflow TUMOR_ONLY_HAPPHASE {
         .set { somatic_vep }
     // [meta, somatic_vcf, []]  -- PASS (somatic) variants for VEP annotation
 
-    VCFSPLIT.out.germline_vcf
+    GERMLINE_CONSENSUS.out.vcf
         .map { meta, vcf ->
             def extra = []
             return [meta,vcf, extra]
