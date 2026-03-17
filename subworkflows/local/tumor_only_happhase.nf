@@ -16,10 +16,7 @@ workflow TUMOR_ONLY_HAPPHASE {
     tumor_bams
     fasta
     fai
-    dbsnp
-    colors
-    onekgenomes
-    gnomad
+    pon_channel
 
     main:
 
@@ -71,15 +68,12 @@ workflow TUMOR_ONLY_HAPPHASE {
     //
     // call somatic/non-somatic variants
     // (* not called as germline * just non-somatic)
-
+    tumor_bams.combine(pon_channel).set{new_combine}
+    new_combine.view()
     CLAIRSTO (
-        tumor_bams,
+        new_combine,
         fasta,
         fai,
-        dbsnp,
-        colors,
-        onekgenomes,
-        gnomad
     )
 
     CLAIRSTO.out.indel_vcf

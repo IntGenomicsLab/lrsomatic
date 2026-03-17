@@ -93,10 +93,33 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
-    params.dbsnp = getGenomeAttribute('dbsnp')
-    params.colors = getGenomeAttribute('colors')
-    params.onekgenomes = getGenomeAttribute('onekgenomes')
-    params.gnomad = getGenomeAttribute('gnomad')
+    
+    if (params.pons_vcfs != null) {
+        pon_files = params.pon_vcfs.collect { file(it) }
+        pon_flags = params.pon_flags
+    }
+    else {
+        pon_files  = [
+            getGenomeAttribute('gnomad'),
+            getGenomeAttribute('dbsnp'),
+            getGenomeAttribute('onekgenomes'),
+            getGenomeAttribute('colors'),
+        ]
+        pon_flags = [
+            "True",
+            "True",
+            "False",
+            "False"
+        ]
+    }
+    if (pon_files.size() != pon_flags.size()) {
+        error "PoN VCFs and allele flags must have same length"
+    }
+    Channel
+        .of( tuple(pon_files, pon_flags) )
+        .set { pon_channel }
+
+    pon_channel.view()
 
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
@@ -404,19 +427,12 @@ workflow LRSOMATIC {
     //
     // Phasing/haplotagging for tumor only samples
 
-    dbsnp = file(params.dbsnp)
-    colors = file(params.colors)
-    onekgenomes = file(params.onekgenomes)
-    gnomad = file(params.gnomad)
 
     TUMOR_ONLY_HAPPHASE (
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        dbsnp,
-        colors,
-        onekgenomes,
-        gnomad
+        pon_channel
     )
 
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
