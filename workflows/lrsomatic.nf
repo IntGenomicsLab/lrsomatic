@@ -32,6 +32,8 @@ include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsr
 include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
+
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -40,9 +42,6 @@ include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annota
 include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
 include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
-
-
-
 
 
 /*
@@ -419,12 +418,42 @@ workflow LRSOMATIC {
         gnomad
     )
 
+    // Set channel for phased germline variants
     germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
     // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
+
+    // Set channel for somatic variants
     somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
+
+    whatshap_stats_txt = channel.empty()
+
+    if (!params.skip_qc && !params.skip_whatshapstats) {
+
+        // Create channel for whatshap stats
+        germline_vep
+            .map { meta, vcf, _extra ->
+                return [meta, vcf] }
+            .set { ch_whatshap_stats }
+
+        //
+        // Module: WHATSHAP_STATS
+        //
+
+        WHATSHAP_STATS (
+            ch_whatshap_stats,
+            true,
+            true,
+            false
+        )
+
+        whatshap_stats_txt = WHATSHAP_STATS.out.tsv
+
+    }
+
     if (!params.skip_vep) {
+
         //
         // MODULE: GERMLINE_VEP
         //
@@ -535,8 +564,6 @@ workflow LRSOMATIC {
 
 
     }
-
-
 
     //
     // Module: MOSDEPTH
@@ -689,6 +716,8 @@ workflow LRSOMATIC {
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_pre_txt.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_post_txt.collect{it -> it[1]}.ifEmpty([]))
+
+    ch_multiqc_files = ch_multiqc_files.mix(whatshap_stats_txt.collect{it -> it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files

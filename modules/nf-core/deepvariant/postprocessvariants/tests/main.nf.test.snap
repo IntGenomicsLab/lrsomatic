@@ -1,0 +1,196 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        "DEEPVARIANT_POSTPROCESSVARIANTS",
+                        "deepvariant",
+                        "1.9.0"
+                    ]
+                ],
+                "gvcf": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "gvcf_index": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "vcf_index": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_deepvariant": [
+                    [
+                        "DEEPVARIANT_POSTPROCESSVARIANTS",
+                        "deepvariant",
+                        "1.9.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T17:22:12.888323156"
+    },
+    "homo_sapiens - wgs": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz:md5,707212230030c8c3efbe5c2e0428da03"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz.tbi:md5,248648ca03f5fda904ebbef8821e0e37"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz:md5,89b2e47883a65bb9cae8f173e782bb17"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz.tbi:md5,1680c67fe988bc1d8220fbb4127c2c18"
+                    ]
+                ],
+                "4": [
+                    [
+                        "DEEPVARIANT_POSTPROCESSVARIANTS",
+                        "deepvariant",
+                        "1.9.0"
+                    ]
+                ],
+                "gvcf": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz:md5,89b2e47883a65bb9cae8f173e782bb17"
+                    ]
+                ],
+                "gvcf_index": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.g.vcf.gz.tbi:md5,1680c67fe988bc1d8220fbb4127c2c18"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz:md5,707212230030c8c3efbe5c2e0428da03"
+                    ]
+                ],
+                "vcf_index": [
+                    [
+                        {
+                            "id": "test",
+                            "single_end": false
+                        },
+                        "test.vcf.gz.tbi:md5,248648ca03f5fda904ebbef8821e0e37"
+                    ]
+                ],
+                "versions_deepvariant": [
+                    [
+                        "DEEPVARIANT_POSTPROCESSVARIANTS",
+                        "deepvariant",
+                        "1.9.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T17:19:32.037352523"
+    }
+}
