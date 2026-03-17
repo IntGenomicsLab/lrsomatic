@@ -36,6 +36,7 @@ process DEEPVARIANT_MAKEEXAMPLES {
         --mode calling \\
         --ref "${fasta}" \\
         --reads "${input}" \\
+        --sample_name ${prefix} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
         --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
         ${regions} \\

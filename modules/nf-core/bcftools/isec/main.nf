@@ -12,10 +12,15 @@ process BCFTOOLS_ISEC {
 
     output:
     tuple val(meta), path("${prefix}", type: "dir"), emit: results
-    tuple val(meta), path("${prefix}/0000.vcf.gz"), emit: deepvar_style_consensus_vcf
-    tuple val(meta), path("${prefix}/0000.vcf.gz.tbi"), emit: deepvar_style_consensus_tbi
-    tuple val(meta), path("${prefix}/0001.vcf.gz"), emit: clair3_style_consensus_vcf
-    tuple val(meta), path("${prefix}/0001.vcf.gz.tbi"), emit: clair3_style_consensus_tbi
+    tuple val(meta), path("${prefix}/0002.vcf.gz"), emit: deepvar_consensus_vcf
+    tuple val(meta), path("${prefix}/0002.vcf.gz.tbi"), emit: deepvar_consensus_tbi
+    tuple val(meta), path("${prefix}/0003.vcf.gz"), emit: clair_consensus_vcf
+    tuple val(meta), path("${prefix}/0003.vcf.gz.tbi"), emit: clair_consensus_tbi
+    tuple val(meta), path("${prefix}/0001.vcf.gz"), emit: clair_private_vcf
+    tuple val(meta), path("${prefix}/0001.vcf.gz.tbi"), emit: clair_private_tbi
+    tuple val(meta), path("${prefix}/0000.vcf.gz"), emit: deepvar_private_vcf
+    tuple val(meta), path("${prefix}/0000.vcf.gz.tbi"), emit: deepvar_private_tbi
+
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:

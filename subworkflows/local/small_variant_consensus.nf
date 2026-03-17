@@ -1,9 +1,10 @@
 
-include { BCFTOOLS_NORM            } from '../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_ISEC            } from '../../modules/nf-core/bcftools/isec/main'
-include { BCFTOOLS_MERGE           } from '../../modules/nf-core/bcftools/merge/main'
-include { BCFTOOLS_QUERY           } from '../../modules/nf-core/bcftools/query/main'
-include { BCFTOOLS_ANNOTATE        } from '../../modules/nf-core/bcftools/annotate/main'
+include { BCFTOOLS_NORM                                      } from '../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
+include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
+include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
+include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
+include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 
 
 
@@ -105,23 +106,69 @@ workflow SMALL_VARIANT_CONSENSUS {
              }
              .set{isec_input}
         BCFTOOLS_ISEC(isec_input)
-        BCFTOOLS_ISEC.out.deepvar_style_consensus_vcf
+
+        if (params.trust_caller = 'deepvariant') {
+            BCFTOOLS_ISEC.out.clair_consensus_vcf
             .set{vcf}
-        BCFTOOLS_ISEC.out.deepvar_style_consensus_tbi
+            BCFTOOLS_ISEC.out.clair_consensus_tbi
             .set{tbi}
+        }
+        if (params.trust_caller = 'clair') {
+            BCFTOOLS_ISEC.out.clair_consensus_vcf
+            .set{vcf}
+            BCFTOOLS_ISEC.out.clair_consensus_tbi
+            .set{tbi}
+        }
+        
     }
 
     else if (var_keep_method == 'all'){
+        
         mixed_vcfs
-            .map{ meta, vcfs, tbis ->
-                def bed = []
-                return [ meta, vcfs, tbis, bed ]
-            }
-            .set{ merge_input}
-        BCFTOOLS_MERGE(merge_input, fasta, fai )
-        BCFTOOLS_MERGE.out.vcf
+             .map{ meta, vcfs, tbis ->
+                    def file = []
+                    def target = []
+                    def regions = []
+                return [meta, vcfs, tbis, file, target, regions]
+             }
+             .set{isec_input}
+        
+        BCFTOOLS_ISEC(isec_input)
+
+        if (params.trust_caller = 'deepvariant') {
+            BCFTOOLS_ISEC.out.deepvar_consensus_vcf
+                .join(BCFTOOLS_ISEC.out.deepvar_consensus_tbi)
+                .join(BCFTOOLS_ISEC.out.clair_private_vcf)
+                .join(BCFTOOLS_ISEC.out.clair_private_tbi)
+                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                }
+                .set{concat_input}
+            BCFTOOLS_CONCAT(concat_input)
+            BCFTOOLS_CONCAT.out.vcf
+                .join(BCFTOOLS_CONCAT.out.tbi)
+                .set{concat_out}
+        }
+
+        else if (params.trust_caller = 'clair') {
+            BCFTOOLS_ISEC.out.deepvar_private_vcf
+                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
+                .join(BCFTOOLS_ISEC.out.clair_consensus_vcf)
+                .join(BCFTOOLS_ISEC.out.clair_consensus_tbi)
+                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                }
+                .set{concat_input}
+            BCFTOOLS_CONCAT(concat_input)
+            BCFTOOLS_CONCAT.out.vcf
+                .join(BCFTOOLS_CONCAT.tbi)
+                .set{concat_out}
+        }
+        concat_out.view()
+        BCFTOOLS_SORT(concat_out)
+        BCFTOOLS_SORT.out.vcf
             .set{vcf}
-        BCFTOOLS_MERGE.out.index
+        BCFTOOLS_SORT.out.tbi
             .set{tbi}
     }
 

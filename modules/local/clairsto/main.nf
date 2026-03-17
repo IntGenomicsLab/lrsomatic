@@ -28,6 +28,7 @@ process CLAIRSTO {
 
     script:
     def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${meta.id}"
     def conda_prefix = workflow.containerEngine == 'singularity' ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
     def gnomad_arg = gnomad ?: 'gnomad.r2.1.af-ge-0.001.sites.vcf.gz'
     def dbSNP_arg = dbSNP ?: 'dbsnp.b138.non-somatic.sites.vcf.gz'
@@ -41,6 +42,7 @@ process CLAIRSTO {
         --platform $model \\
         --threads $task.cpus \\
         --output_dir . \\
+        --sample_name ${prefix} \\
         --panel_of_normals "${gnomad_arg},${dbSNP_arg},${onekgenomes_arg},${colors_arg}" \\
         --panel_of_normals_require_allele_matching 'True,True,False,False' \\
         $conda_prefix \\

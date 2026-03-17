@@ -20,6 +20,7 @@ process CLAIRS {
     task.ext.when == null || task.ext.when
 
     script:
+    prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
 
     """
@@ -29,6 +30,7 @@ process CLAIRS {
         --ref_fn $reference \\
         --threads $task.cpus \\
         --platform $model \\
+        --sample_name ${prefix} \\
         --output_dir . \\
         --output_prefix snvs \\
         $args

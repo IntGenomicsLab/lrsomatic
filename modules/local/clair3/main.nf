@@ -25,15 +25,18 @@ process CLAIR3 {
 
     script:
     def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     run_clair3.sh \\
-        --bam_fn=$bam \\
-        --ref_fn=$reference \\
-        --threads=$task.cpus \\
+        --bam_fn=${bam} \\
+        --ref_fn=${reference} \\
+        --threads=${task.cpus} \\
         --output=. \\
-        --platform=$platform \\
-        --model=$model \\
-        $args
+        --platform=${platform} \\
+        --model=${model} \\
+        --sample_name=${prefix} \\
+        ${args}
     """
 
     stub:

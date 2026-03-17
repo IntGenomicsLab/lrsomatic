@@ -64,6 +64,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         --outfile "${prefix}.vcf.gz" \\
         --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
         --gvcf_outfile "${prefix}.g.vcf.gz" \\
+        --sample_name ${prefix} \\
         ${regions} \\
         ${small_model_arg} \\
         --cpus $task.cpus
