@@ -35,13 +35,15 @@ include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblve
 //
 // IMPORT SUBWORKFLOWS
 //
-include { PREPARE_REFERENCE_FILES   } from '../subworkflows/local/prepare_reference_files'
-include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annotation'
-include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
-include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
-include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
-
-
+include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
+include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
+include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
+include { TUMOR_NORMAL_HAPPHASE           } from '../subworkflows/local/tumor_normal_happhase'
+include { TUMOR_ONLY_HAPPHASE             } from '../subworkflows/local/tumor_only_happhase'
+include { TUMORONLY_SMALLVAR              } from '../subworkflows/local/tumor_only/tumoronly_smallvar'
+include { PAIRED_SMALLVAR_SOMATIC         } from '../subworkflows/local/paired/paired_smallvar_somatic'
+include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/paired_smallvar_germline'
+include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 
 
 
@@ -119,8 +121,6 @@ workflow LRSOMATIC {
         .of( tuple(pon_files, pon_flags) )
         .set { pon_channel }
 
-    pon_channel.view()
-
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
 
@@ -159,9 +159,6 @@ workflow LRSOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
-    // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
-
-
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
@@ -400,44 +397,114 @@ workflow LRSOMATIC {
 
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
+        .set {ch_index_minimap}
+
+    ch_index_minimap  
         .branch { meta, _bams, _bais ->
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
+
     // branched_minimap.paired:     [meta, bam, bai]  -- one item per sample (tumor AND normal flow separately)
     // branched_minimap.tumor_only: [meta, bam, bai]
 
-    //
-    // SUBWORKFLOW: TUMOR_NORMAL_HAPPHASE
-    //
-    // Phasing/haplotaging/small germline variant calling for tumor-normal samples
-
-    TUMOR_NORMAL_HAPPHASE (
-        branched_minimap.paired,
-        ch_fasta,
-        ch_fai,
-        downloaded_clair3_models
-    )
-
-    ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
-
-    //
-    // SUBWORKFLOW: TUMOR_ONLY_HAPPHASE
-    //
-    // Phasing/haplotagging for tumor only samples
-
-
-    TUMOR_ONLY_HAPPHASE (
+    TUMORONLY_SMALLVAR(
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
         pon_channel
     )
 
-    germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
-    // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
-    somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
+    branched_minimap.paired
+        .set{paired_ch}
+
+    paired_ch
+        .branch { meta, _bams, _bais ->
+                normal: meta.type == "normal"
+                tumor:  meta.type == "tumor"
+        }
+        .set{branched_paired_ch}
+
+     branched_paired_ch.normal
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
+        }
+        .set{paired_normal_bams}
+
+    branched_paired_ch.tumor
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
+        }
+        .join(paired_normal_bams)
+        .set { somatic_smallvar_input }
+
+    PAIRED_SMALLVAR_SOMATIC (
+        somatic_smallvar_input,
+        ch_fasta,
+        ch_fai
+    )
+    PAIRED_SMALLVAR_GERMLINE (
+        branched_paired_ch.normal,
+        ch_fasta,
+        ch_fai,
+        downloaded_clair3_models
+    )
+    
+    PAIRED_SMALLVAR_GERMLINE.out.germline_vcf
+        .mix(TUMORONLY_SMALLVAR.out.germline_vcf)
+        .set{ch_germline_vcf}
+
+
+    TUMORONLY_SMALLVAR.out.somatic_vcf
+        .mix(PAIRED_SMALLVAR_SOMATIC.out.somatic_vcf)
+        .set{ch_somatic_vcf}
+
+    ch_index_minimap.view()
+    ch_germline_vcf.view()
+
+    PHASING_HAPLOTYPING (
+        ch_index_minimap,
+        ch_germline_vcf,
+        ch_fasta,
+        ch_fai
+    )
+
+    
+    ch_somatic_vcf
+        .map { meta, vcf, _tbi ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { somatic_vep }
+    
+    ch_germline_vcf
+        .map { meta, vcf, _tbi ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { germline_vep }
+    
+    /// figure out severus channel structure then test
+    
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
     if (!params.skip_vep) {
@@ -483,23 +550,34 @@ workflow LRSOMATIC {
         )
     }
 
-    ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
-
-    // Get Severus input channel
-    TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
-        .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
-            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
+    branched_minimap.tumor_only
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
         }
-        .set { severus_reformat }
-    // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi]  -- normal_bam/bai are [] for tumor-only
-
+        .map{meta, tumor_bam, tumor_bai->
+            def normal_bam = []
+            def normal_bai = []
+            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+        }
+        .mix(somatic_smallvar_input)
+        .join(PHASING_HAPLOTYPING.out.phased_germline_vcf)
+        .set{severus_input}
+    
     //
     // MODULE: SEVERUS
     //
 
     SEVERUS (
-        severus_reformat,
+        severus_input,
         [[:], params.bed_file, params.pon_file]
     )
 

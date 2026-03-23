@@ -49,7 +49,15 @@ process LONGPHASE_PHASE {
         $args2 \\
         ${prefix}*.vcf
 
-    tabix -p vcf ${prefix}*.vcf.gz
+    tabix -p vcf ${prefix}.vcf.gz
+
+    if [ -f ${prefix}_SV.vcf.gz ]; then
+        tabix -p vcf ${prefix}_SV.vcf.gz
+    fi
+
+    if [ -f ${prefix}_mod.vcf.gz ]; then
+        tabix -p vcf ${prefix}_mod.vcf.gz
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -84,6 +84,7 @@ workflow SMALL_VARIANT_CONSENSUS {
             return [ new_meta, vcfs, tbi]
         }
         .set{deepvariant_ch}
+
     deepvariant_ch
         .join(clair_ch)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
@@ -102,15 +103,16 @@ workflow SMALL_VARIANT_CONSENSUS {
                 return [meta, vcfs, tbis, file, target, regions]
              }
              .set{isec_input}
+
         BCFTOOLS_ISEC(isec_input)
 
-        if (params.trust_caller = 'deepvariant') {
-            BCFTOOLS_ISEC.out.clair_consensus_vcf
+        if (params.trust_caller == 'deepvariant') {
+            BCFTOOLS_ISEC.out.deepvar_consensus_vcf
             .set{vcf}
-            BCFTOOLS_ISEC.out.clair_consensus_tbi
+            BCFTOOLS_ISEC.out.deepvar_consensus_tbi
             .set{tbi}
         }
-        if (params.trust_caller = 'clair') {
+        if (params.trust_caller == 'clair') {
             BCFTOOLS_ISEC.out.clair_consensus_vcf
             .set{vcf}
             BCFTOOLS_ISEC.out.clair_consensus_tbi
@@ -132,7 +134,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         
         BCFTOOLS_ISEC(isec_input)
 
-        if (params.trust_caller = 'deepvariant') {
+        if (params.trust_caller == 'deepvariant') {
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_consensus_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_private_vcf)
@@ -146,7 +148,7 @@ workflow SMALL_VARIANT_CONSENSUS {
                 .set{concat_out}
         }
 
-        else if (params.trust_caller = 'clair') {
+        else if (params.trust_caller == 'clair') {
             BCFTOOLS_ISEC.out.deepvar_private_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_consensus_vcf)
