@@ -38,8 +38,6 @@ include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblve
 include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
 include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
 include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
-include { TUMOR_NORMAL_HAPPHASE           } from '../subworkflows/local/tumor_normal_happhase'
-include { TUMOR_ONLY_HAPPHASE             } from '../subworkflows/local/tumor_only_happhase'
 include { TUMORONLY_SMALLVAR              } from '../subworkflows/local/tumor_only/tumoronly_smallvar'
 include { PAIRED_SMALLVAR_SOMATIC         } from '../subworkflows/local/paired/paired_smallvar_somatic'
 include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/paired_smallvar_germline'
@@ -478,12 +476,10 @@ workflow LRSOMATIC {
         .mix(PAIRED_SMALLVAR_SOMATIC.out.somatic_vcf)
         .set{ch_somatic_vcf}
 
-    ch_index_minimap.view()
-    ch_germline_vcf.view()
-
     PHASING_HAPLOTYPING (
         ch_index_minimap,
         ch_germline_vcf,
+        ch_somatic_vcf,
         ch_fasta,
         ch_fai
     )
