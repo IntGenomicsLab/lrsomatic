@@ -33,6 +33,7 @@ include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblve
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
+include { MODKIT_PILEUP                     } from '../modules/nf-core/modkit/pileup/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -399,6 +400,12 @@ workflow LRSOMATIC {
         .join(MINIMAP2_ALIGN.out.index)
         .set {ch_index_minimap}
 
+    ch_fasta
+        .join(ch_fai)
+        .set{ch_fasta_fai}
+    if (!params.skip_modkit) {
+        MODKIT_PILEUP(ch_index_minimap, ch_fasta_fai, [[:],[]])
+    }
     ch_index_minimap
         .branch { meta, _bams, _bais ->
                 paired: meta.paired_data
