@@ -24,12 +24,14 @@
                     "bcftools/isec": {
                         "branch": "master",
                         "git_sha": "3b2c3559699a7bca6a7c2b220695a072e030e17d",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/isec/bcftools-isec.diff"
                     },
                     "bcftools/merge": {
                         "branch": "master",
                         "git_sha": "3d9c2f4beaa4f62b3f006928fd9095a496d1e5a8",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/merge/bcftools-merge.diff"
                     },
                     "bcftools/norm": {
                         "branch": "master",
@@ -39,7 +41,8 @@
                     "bcftools/query": {
                         "branch": "master",
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/bcftools/query/bcftools-query.diff"
                     },
                     "bcftools/sort": {
                         "branch": "master",
@@ -50,17 +53,20 @@
                     "deepvariant/callvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant"]
+                        "installed_by": ["deepvariant"],
+                        "patch": "modules/nf-core/deepvariant/callvariants/deepvariant-callvariants.diff"
                     },
                     "deepvariant/makeexamples": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant"]
+                        "installed_by": ["deepvariant"],
+                        "patch": "modules/nf-core/deepvariant/makeexamples/deepvariant-makeexamples.diff"
                     },
                     "deepvariant/postprocessvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["deepvariant"]
+                        "installed_by": ["deepvariant"],
+                        "patch": "modules/nf-core/deepvariant/postprocessvariants/deepvariant-postprocessvariants.diff"
                     },
                     "ensemblvep/download": {
                         "branch": "master",
@@ -108,6 +114,11 @@
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "2c73cc8fa92cf48de3da0b643fdf357a8a290b36",
+                        "installed_by": ["modules"]
+                    },
+                    "nanoplot": {
+                        "branch": "master",
+                        "git_sha": "682f789f93070bd047868300dd018faf3d434e7c",
                         "installed_by": ["modules"]
                     },
                     "pigz/uncompress": {
@@ -179,7 +190,8 @@
                     "deepvariant": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
-                        "installed_by": ["subworkflows"]
+                        "installed_by": ["subworkflows"],
+                        "patch": "subworkflows/nf-core/deepvariant/deepvariant.diff"
                     },
                     "utils_nextflow_pipeline": {
                         "branch": "master",

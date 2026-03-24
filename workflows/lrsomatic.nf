@@ -93,7 +93,7 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
-    
+
     if (params.pons_vcfs != null) {
         pon_files = params.pon_vcfs.collect { file(it) }
         pon_flags = params.pon_flags
@@ -397,7 +397,7 @@ workflow LRSOMATIC {
         .join(MINIMAP2_ALIGN.out.index)
         .set {ch_index_minimap}
 
-    ch_index_minimap  
+    ch_index_minimap
         .branch { meta, _bams, _bais ->
                 paired: meta.paired_data
                 tumor_only: !meta.paired_data
@@ -466,7 +466,7 @@ workflow LRSOMATIC {
         ch_fai,
         downloaded_clair3_models
     )
-    
+
     PAIRED_SMALLVAR_GERMLINE.out.germline_vcf
         .mix(TUMORONLY_SMALLVAR.out.germline_vcf)
         .set{ch_germline_vcf}
@@ -484,23 +484,23 @@ workflow LRSOMATIC {
         ch_fai
     )
 
-    
+
     ch_somatic_vcf
         .map { meta, vcf, _tbi ->
             def extra = []
             return [meta, vcf, extra]
         }
         .set { somatic_vep }
-    
+
     ch_germline_vcf
         .map { meta, vcf, _tbi ->
             def extra = []
             return [meta, vcf, extra]
         }
         .set { germline_vep }
-    
+
     /// figure out severus channel structure then test
-    
+
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
     if (!params.skip_vep) {
@@ -567,7 +567,7 @@ workflow LRSOMATIC {
         .mix(somatic_smallvar_input)
         .join(PHASING_HAPLOTYPING.out.phased_germline_vcf)
         .set{severus_input}
-    
+
     //
     // MODULE: SEVERUS
     //

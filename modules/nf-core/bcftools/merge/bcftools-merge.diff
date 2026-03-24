@@ -1,0 +1,21 @@
+Changes in component 'nf-core/bcftools/merge'
+'modules/nf-core/bcftools/merge/meta.yml' is unchanged
+Changes in 'bcftools/merge/main.nf':
+--- modules/nf-core/bcftools/merge/main.nf
++++ modules/nf-core/bcftools/merge/main.nf
+@@ -9,7 +9,8 @@
+ 
+     input:
+     tuple val(meta), path(vcfs), path(tbis), path(bed)
+-    tuple val(meta2), path(fasta), path(fai)
++    tuple val(meta2), path(fasta)
++    tuple val(meta3), path(fai)
+ 
+     output:
+     tuple val(meta), path("*.{bcf,vcf}{,.gz}"), emit: vcf
+
+'modules/nf-core/bcftools/merge/environment.yml' is unchanged
+'modules/nf-core/bcftools/merge/tests/main.nf.test' is unchanged
+'modules/nf-core/bcftools/merge/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/bcftools/merge/tests/nextflow.config' is unchanged
+************************************************************

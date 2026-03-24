@@ -57,13 +57,13 @@
                     "type": "string",
                     "description": "specifies which germline variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
                     "default": "consensus",
-                    "enum": ["consensus", "all","deepvariant","clair"]
+                    "enum": ["consensus", "all", "deepvariant", "clair"]
                 },
                 "somatic_var_keep": {
                     "type": "string",
                     "description": "specifies which somatic variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
                     "default": "all",
-                    "enum": ["consensus", "all", "deepvariant","clair"]
+                    "enum": ["consensus", "all", "deepvariant", "clair"]
                 }
             }
         },
@@ -409,6 +409,9 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/small_variant_calling_options"
         },
         {
             "$ref": "#/$defs/reference_genome_options"

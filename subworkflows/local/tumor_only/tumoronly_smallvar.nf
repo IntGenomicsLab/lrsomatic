@@ -60,7 +60,7 @@ workflow TUMORONLY_SMALLVAR {
                 return [ new_meta, vcf, tbi]
             }
             .set{clairsto_germline_ch}
-        
+
         VCFSPLIT.out.somatic_vcf
             .join(VCFSPLIT.out.somatic_tbi)
             .map { meta, vcf, tbi ->
@@ -85,7 +85,7 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]],
             [[:],[]]
         )
-    
+
 
         DEEPVARIANT.out.vcf
             .join(DEEPVARIANT.out.vcf_index)
@@ -202,6 +202,6 @@ workflow TUMORONLY_SMALLVAR {
     emit:
     somatic_vcf
     germline_vcf
-    
-    
+
+
 }

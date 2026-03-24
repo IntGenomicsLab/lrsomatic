@@ -18,7 +18,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     ch_versions = channel.empty()
     somatic_vcf = channel.empty()
     somatic_tbi = channel.empty()
-    
+
     // CLAIRS
     if(params.somatic_var_keep != 'deepvariant') {
         tumor_normal_bams
@@ -32,13 +32,13 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             fasta,
             fai
         )
-    
+
         // CONCAT CLAIRS INDEL AND SNV OUTPUT
 
         CLAIRS.out.vcfs
             .join(CLAIRS.out.tbi)
             .set{clairs_out}
-        
+
         BCFTOOLS_CONCAT (
             clairs_out
         )

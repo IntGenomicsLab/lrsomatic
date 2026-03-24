@@ -18,7 +18,7 @@ workflow DEEPSOMATIC {
 
     // Input to postprocessing step needs both the gvcfs from MAKEEXAMPLES and the variant
     // calls from CALLVARIANTS. Joining on meta, which is assumed to be unique.
-   
+
 
     ch_postproc_input = DEEPSOMATIC_CALLVARIANTS.out.call_variants_tfrecords.join(
         DEEPSOMATIC_MAKEEXAMPLES.out.gvcf,

@@ -1,0 +1,30 @@
+Changes in component 'nf-core/bcftools/query'
+'modules/nf-core/bcftools/query/meta.yml' is unchanged
+Changes in 'bcftools/query/main.nf':
+--- modules/nf-core/bcftools/query/main.nf
++++ modules/nf-core/bcftools/query/main.nf
+@@ -14,7 +14,8 @@
+     path samples
+ 
+     output:
+-    tuple val(meta), path("*.${suffix}"), emit: output
++    tuple val(meta), path("*.${suffix}.gz"), emit: output
++    tuple val(meta), path("*.${suffix}.gz.tbi"), emit: index
+     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
+ 
+     when:
+@@ -35,6 +36,8 @@
+         ${args} \\
+         ${vcf} \\
+         > ${prefix}.${suffix}
++    bgzip -c ${prefix}.${suffix} > ${prefix}.${suffix}.gz
++    tabix -s 1 -b 2 -e 2 ${prefix}.${suffix}.gz
+     """
+ 
+     stub:
+
+'modules/nf-core/bcftools/query/environment.yml' is unchanged
+'modules/nf-core/bcftools/query/tests/main.nf.test' is unchanged
+'modules/nf-core/bcftools/query/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/bcftools/query/tests/nextflow.config' is unchanged
+************************************************************

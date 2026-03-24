@@ -1,0 +1,36 @@
+Changes in component 'nf-core/bcftools/isec'
+'modules/nf-core/bcftools/isec/meta.yml' is unchanged
+Changes in 'bcftools/isec/main.nf':
+--- modules/nf-core/bcftools/isec/main.nf
++++ modules/nf-core/bcftools/isec/main.nf
+@@ -12,6 +12,15 @@
+ 
+     output:
+     tuple val(meta), path("${prefix}", type: "dir"), emit: results
++    tuple val(meta), path("${prefix}/0002.vcf.gz"), emit: deepvar_consensus_vcf
++    tuple val(meta), path("${prefix}/0002.vcf.gz.tbi"), emit: deepvar_consensus_tbi
++    tuple val(meta), path("${prefix}/0003.vcf.gz"), emit: clair_consensus_vcf
++    tuple val(meta), path("${prefix}/0003.vcf.gz.tbi"), emit: clair_consensus_tbi
++    tuple val(meta), path("${prefix}/0001.vcf.gz"), emit: clair_private_vcf
++    tuple val(meta), path("${prefix}/0001.vcf.gz.tbi"), emit: clair_private_tbi
++    tuple val(meta), path("${prefix}/0000.vcf.gz"), emit: deepvar_private_vcf
++    tuple val(meta), path("${prefix}/0000.vcf.gz.tbi"), emit: deepvar_private_tbi
++
+     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | sed '1!d; s/^.*bcftools //'"), topic: versions, emit: versions_bcftools
+ 
+     when:
+@@ -30,7 +39,7 @@
+         ${targets_file_args} \\
+         ${regions_file_args} \\
+         -p ${prefix} \\
+-        ${vcf_files} \\
++        ${vcf_files}
+     """
+ 
+     stub:
+
+'modules/nf-core/bcftools/isec/environment.yml' is unchanged
+'modules/nf-core/bcftools/isec/tests/main.nf.test' is unchanged
+'modules/nf-core/bcftools/isec/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/bcftools/isec/tests/nextflow.config' is unchanged
+************************************************************

@@ -1,12 +1,12 @@
 // Import modules
-include { LONGPHASE_PHASE as LONGPHASE_PHASE_GERMLINE                   } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_PHASE as LONGPHASE_PHASE_SOMATIC                    } from '../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_HAPLOTAG                         } from '../../modules/nf-core/longphase/haplotag/main.nf'
-include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_GERMLINE                 } from '../../modules/local/longphase/modcall/main.nf'
-include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_SOMATIC                  } from '../../modules/local/longphase/modcall/main.nf'
-include { SAMTOOLS_INDEX                             } from '../../modules/nf-core/samtools/index/main.nf'
-include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
-include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
+include { LONGPHASE_PHASE as LONGPHASE_PHASE_GERMLINE       } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_PHASE as LONGPHASE_PHASE_SOMATIC        } from '../../modules/nf-core/longphase/phase/main.nf'
+include { LONGPHASE_HAPLOTAG                                } from '../../modules/nf-core/longphase/haplotag/main.nf'
+include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_GERMLINE   } from '../../modules/local/longphase/modcall/main.nf'
+include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_SOMATIC    } from '../../modules/local/longphase/modcall/main.nf'
+include { SAMTOOLS_INDEX                                    } from '../../modules/nf-core/samtools/index/main.nf'
+include { BCFTOOLS_CONCAT                                   } from '../../modules/nf-core/bcftools/concat/main'
+include { BCFTOOLS_SORT                                     } from '../../modules/nf-core/bcftools/sort/main'
 
 
 workflow PHASING_HAPLOTYPING {
@@ -18,15 +18,15 @@ workflow PHASING_HAPLOTYPING {
     fai
 
     main:
-    
+
     // SPLIT INTO PAIRED AND TUMOR ONLY
-    tumor_normal_bams   
+    tumor_normal_bams
         .branch { meta, _bams, _bai ->
             paired:      meta.paired_data
             tumor_only: !meta.paired_data
         }
         .set { branched_bams }
-    
+
     branched_bams.paired
         .set{ paired_ch }
 
@@ -51,7 +51,7 @@ workflow PHASING_HAPLOTYPING {
             tumor:  meta.type == "tumor"
         }
         .set {paired_ch_branched}
-    
+
     paired_ch_branched.normal
         .map { meta, bam, bai ->
                 def new_meta = meta.subMap('id',
@@ -140,7 +140,7 @@ workflow PHASING_HAPLOTYPING {
                 return [ meta, bam, bai, vcf, svs, mods ]
             }
             .set{ longphase_phase_somatic_input_ch }
-    }   
+    }
     else {
         normal_bams_w_tumoronly_ch
             .join(germline_vcf)
@@ -150,7 +150,7 @@ workflow PHASING_HAPLOTYPING {
                 return [ meta, bam, bai, vcf, svs, mods ]
             }
             .set{ longphase_phase_germline_input_ch }
-            
+
         tumor_bams_ch
             .join(germline_somatic_vcfs)
             .join(LONGPHASE_MODCALL_SOMATIC.out.mod_vcf)
@@ -171,7 +171,7 @@ workflow PHASING_HAPLOTYPING {
     LONGPHASE_PHASE_GERMLINE.out.snv_vcf
         .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf_index)
         .set{ phased_germline_vcf }
-    
+
     LONGPHASE_PHASE_SOMATIC (
         longphase_phase_somatic_input_ch,
         fasta,
@@ -185,7 +185,7 @@ workflow PHASING_HAPLOTYPING {
     // HAPLOTAGING
     // remove type for merging
 
-    
+
     if(!params.skip_modcall) {
 
         LONGPHASE_MODCALL_GERMLINE.out.mod_vcf
@@ -209,30 +209,30 @@ workflow PHASING_HAPLOTYPING {
                 .map { meta, bam, bai, vcf, mods ->
                     def new_meta = meta + [type : "tumor"]
                     def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ tumor_only_ch }
-            
+
             paired_tumor_ch
                 .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
                 .join(modcall_vcf_ch)
                 .map { meta, bam, bai, vcf, mods ->
                     def new_meta = meta + [type : "tumor"]
                     def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ paired_tumor_ch }
-            
+
             paired_normal_ch
                 .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
                 .join(modcall_vcf_ch)
                 .map { meta, bam, bai, vcf, mods ->
                     def new_meta = meta + [type : "normal"]
                     def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ paired_normal_ch }
-            
+
     }
     else {
 
@@ -242,27 +242,27 @@ workflow PHASING_HAPLOTYPING {
                     def new_meta = meta + [type : "tumor"]
                     def svs = []
                     def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ tumor_only_ch }
-            
+
             paired_tumor_ch
                 .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
                 .map { meta, bam, bai, vcf ->
                     def new_meta = meta + [type : "tumor"]
                     def svs = []
                     def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ paired_tumor_ch }
-            
+
             paired_normal_ch
                 .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
                 .map { meta, bam, bai, vcf ->
                     def new_meta = meta + [type : "normal"]
                     def svs = []
                     def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods] 
+                    return [new_meta, bam, bai, vcf, svs, mods]
                 }
                 .set{ paired_normal_ch }
 

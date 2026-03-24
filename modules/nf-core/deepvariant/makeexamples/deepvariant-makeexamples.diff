@@ -1,0 +1,18 @@
+Changes in component 'nf-core/deepvariant/makeexamples'
+'modules/nf-core/deepvariant/makeexamples/meta.yml' is unchanged
+Changes in 'deepvariant/makeexamples/main.nf':
+--- modules/nf-core/deepvariant/makeexamples/main.nf
++++ modules/nf-core/deepvariant/makeexamples/main.nf
+@@ -36,6 +36,7 @@
+         --mode calling \\
+         --ref "${fasta}" \\
+         --reads "${input}" \\
++        --sample_name ${prefix} \\
+         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
+         --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
+         ${regions} \\
+
+'modules/nf-core/deepvariant/makeexamples/tests/main.nf.test' is unchanged
+'modules/nf-core/deepvariant/makeexamples/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/deepvariant/makeexamples/tests/nextflow.config' is unchanged
+************************************************************

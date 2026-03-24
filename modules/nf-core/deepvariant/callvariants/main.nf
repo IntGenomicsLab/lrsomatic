@@ -2,7 +2,7 @@
 process DEEPVARIANT_CALLVARIANTS {
     tag "$meta.id"
     label 'process_high'
-    label 'process_gpu'
+    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
 
     //Conda is not supported at the moment
     container "docker.io/google/deepvariant:1.9.0"

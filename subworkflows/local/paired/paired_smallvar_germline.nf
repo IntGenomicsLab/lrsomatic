@@ -104,7 +104,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
         clair3_ch
             .mix(deepvariant_ch)
             .set{combined_germline_ch}
-            
+
         GERMLINE_CONSENSUS(
             combined_germline_ch,
             fasta,

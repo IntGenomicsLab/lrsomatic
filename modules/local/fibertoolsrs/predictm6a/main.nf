@@ -2,7 +2,7 @@ process FIBERTOOLSRS_PREDICTM6A {
     tag "$meta.id"
     label 'process_very_high'
     label 'process_high_memory'
-    label 'process_gpu'
+    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

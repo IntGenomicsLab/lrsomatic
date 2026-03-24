@@ -1,0 +1,18 @@
+Changes in component 'nf-core/deepvariant/postprocessvariants'
+'modules/nf-core/deepvariant/postprocessvariants/meta.yml' is unchanged
+Changes in 'deepvariant/postprocessvariants/main.nf':
+--- modules/nf-core/deepvariant/postprocessvariants/main.nf
++++ modules/nf-core/deepvariant/postprocessvariants/main.nf
+@@ -64,6 +64,7 @@
+         --outfile "${prefix}.vcf.gz" \\
+         --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
+         --gvcf_outfile "${prefix}.g.vcf.gz" \\
++        --sample_name ${prefix} \\
+         ${regions} \\
+         ${small_model_arg} \\
+         --cpus $task.cpus
+
+'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test' is unchanged
+'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/deepvariant/postprocessvariants/tests/nextflow.config' is unchanged
+************************************************************

@@ -19,7 +19,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     //normalize VCFs
     BCFTOOLS_NORM(mixed_vcfs, fasta)
 
-    BCFTOOLS_NORM.out.vcf   
+    BCFTOOLS_NORM.out.vcf
              .join(BCFTOOLS_NORM.out.tbi)
              .set {normalized_vcfs}
 
@@ -52,7 +52,7 @@ workflow SMALL_VARIANT_CONSENSUS {
 
     clair_ch = annotated_vcfs_branched.clair
     deepvariant_ch = annotated_vcfs_branched.deepvariant
-    
+
     clair_ch.
         map {meta, vcfs, tbi ->
             def new_meta = meta.subMap('id',
@@ -118,11 +118,11 @@ workflow SMALL_VARIANT_CONSENSUS {
             BCFTOOLS_ISEC.out.clair_consensus_tbi
             .set{tbi}
         }
-        
+
     }
 
     else if (var_keep_method == 'all'){
-        
+
         mixed_vcfs
              .map{ meta, vcfs, tbis ->
                     def file = []
@@ -131,7 +131,7 @@ workflow SMALL_VARIANT_CONSENSUS {
                 return [meta, vcfs, tbis, file, target, regions]
              }
              .set{isec_input}
-        
+
         BCFTOOLS_ISEC(isec_input)
 
         if (params.trust_caller == 'deepvariant') {
