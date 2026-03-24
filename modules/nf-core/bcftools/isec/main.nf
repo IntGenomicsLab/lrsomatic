@@ -52,5 +52,9 @@ process BCFTOOLS_ISEC {
     touch ${prefix}/0000.vcf.gz.tbi
     echo "" | gzip > ${prefix}/0001.vcf.gz
     touch ${prefix}/0001.vcf.gz.tbi
+    echo "" | gzip > ${prefix}/0002.vcf.gz
+    touch ${prefix}/0002.vcf.gz.tbi
+    echo "" | gzip > ${prefix}/0003.vcf.gz
+    touch ${prefix}/0003.vcf.gz.tbi
     """
 }
