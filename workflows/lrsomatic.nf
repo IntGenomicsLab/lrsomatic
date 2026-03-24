@@ -32,6 +32,8 @@ include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsr
 include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
+include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
+
 //
 // IMPORT SUBWORKFLOWS
 //
@@ -276,7 +278,10 @@ workflow LRSOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
-        if(!params.normal_fiber){
+        if (!params.skip_normalfiber){
+            ubams = ch_cat_ubams
+        }
+        else {
             ch_cat_ubams
             .branch { meta, _bams ->
                 normal: meta.type == "normal"
@@ -286,9 +291,6 @@ workflow LRSOMATIC {
 
             normal_bams = ch_cat_ubams_normal_branching.normal
             ubams = ch_cat_ubams_normal_branching.tumor
-        }
-        else {
-            ubams = ch_cat_ubams
         }
             ubams
             .branch{ meta, _bams ->
@@ -348,15 +350,15 @@ workflow LRSOMATIC {
             FIBERTOOLSRS_NUCLEOSOMES.out.bam
         )
 
-        if(!params.normal_fiber){
+        if (!params.skip_normalfiber){
             fiber_branch.nonFiber
-            .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
 
         }
         else {
             fiber_branch.nonFiber
+            .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
 
@@ -503,7 +505,34 @@ workflow LRSOMATIC {
 
     // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
 
+
+    whatshap_stats_txt = channel.empty()
+
+    if (!params.skip_qc && !params.skip_whatshapstats) {
+
+        // Create channel for whatshap stats
+        germline_vep
+            .map { meta, vcf, _extra ->
+                return [meta, vcf] }
+            .set { ch_whatshap_stats }
+
+        //
+        // Module: WHATSHAP_STATS
+        //
+
+        WHATSHAP_STATS (
+            ch_whatshap_stats,
+            true,
+            true,
+            false
+        )
+
+        whatshap_stats_txt = WHATSHAP_STATS.out.tsv
+
+    }
+
     if (!params.skip_vep) {
+
         //
         // MODULE: GERMLINE_VEP
         //
@@ -625,8 +654,6 @@ workflow LRSOMATIC {
 
 
     }
-
-
 
     //
     // Module: MOSDEPTH
@@ -779,6 +806,8 @@ workflow LRSOMATIC {
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_pre_txt.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_nanoplot_post_txt.collect{it -> it[1]}.ifEmpty([]))
+
+    ch_multiqc_files = ch_multiqc_files.mix(whatshap_stats_txt.collect{it -> it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files
