@@ -508,7 +508,7 @@
                 "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed"
             ]
         ],
-        "timestamp": "2026-03-13T17:15:05.714239372",
+        "timestamp": "2026-03-13T15:33:42.343920246",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "25.10.0"

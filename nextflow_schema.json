@@ -70,23 +70,6 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
-                },
-                "vep_cache": {
-                    "type": "string",
-                    "description": "Path to VEP cache directory.",
-                    "fa_icon": "fas fa-database",
-                    "help_text": "Path to the directory containing the VEP cache. If you are using an iGenomes reference, this will be set automatically. Otherwise, you will need to provide this path yourself."
-                },
-                "vep_cache_version": {
-                    "type": "integer",
-                    "description": "Version of the VEP cache to use.",
-                    "fa_icon": "fas fa-hashtag",
-                    "help_text": "The version of the VEP cache to use. This should match the version of VEP being used."
-                },
-                "vep_args": {
-                    "type": "string",
-                    "description": "Additional command line arguments to pass to VEP.",
-                    "fa_icon": "fas fa-terminal"
                 }
             }
         },
@@ -108,6 +91,66 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to save secondary alignments"
+                }
+            }
+        },
+        "fibertools_options": {
+            "title": "Fibertools options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "autocorrelation": {
+                    "type": "string"
+                }
+            }
+        },
+        "vep_options": {
+            "title": "VEP options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "vep_cache": {
+                    "type": "string",
+                    "description": "Path to VEP cache directory.",
+                    "fa_icon": "fas fa-database",
+                    "help_text": "Path to the directory containing the VEP cache. If you are using an iGenomes reference, this will be set automatically. Otherwise, you will need to provide this path yourself.",
+                    "default": "s3://annotation-cache/vep_cache/"
+                },
+                "vep_args": {
+                    "type": "string",
+                    "description": "Additional command line arguments to pass to VEP.",
+                    "fa_icon": "fas fa-terminal",
+                    "default": "--everything --filter_common --per_gene --total_length --offline --format vcf"
+                },
+                "vep_cache_version": {
+                    "type": "integer",
+                    "description": "Version of the VEP cache to use.",
+                    "fa_icon": "fas fa-hashtag",
+                    "help_text": "The version of the VEP cache to use. This should match the version of VEP being used.",
+                    "default": 113
+                },
+                "download_vep_cache": {
+                    "type": "boolean"
+                },
+                "vep_custom": {
+                    "type": "string"
+                },
+                "vep_custom_tbi": {
+                    "type": "string"
+                }
+            }
+        },
+        "severus_options": {
+            "title": "Severus options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "severus_minsupport": {
+                    "type": "integer",
+                    "default": 3
                 }
             }
         },
@@ -173,6 +216,17 @@
                 }
             }
         },
+        "wakhan_options": {
+            "title": "Wakhan options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "wakhan_chroms": {
+                    "type": "string"
+                }
+            }
+        },
         "skip_options": {
             "title": "Skip options",
             "type": "object",
@@ -210,6 +264,12 @@
                 "skip_m6a": {
                     "type": "boolean",
                     "description": "Skip m6a calling by Fibertools"
+                },
+                "skip_vep": {
+                    "type": "boolean"
+                },
+                "skip_normalfiber": {
+                    "type": "boolean"
                 },
                 "skip_nanoplot": {
                     "type": "boolean",
@@ -364,13 +424,6 @@
                     "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
                     "hidden": true
                 },
-                "normal_fiber": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "do fiber-seq on normal samples",
-                    "fa_icon": "fas fa-fiber",
-                    "hidden": true
-                },
                 "help": {
                     "type": ["boolean", "string"],
                     "description": "Display the help message."
@@ -397,7 +450,19 @@
             "$ref": "#/$defs/minimap2_options"
         },
         {
+            "$ref": "#/$defs/fibertools_options"
+        },
+        {
+            "$ref": "#/$defs/vep_options"
+        },
+        {
+            "$ref": "#/$defs/severus_options"
+        },
+        {
             "$ref": "#/$defs/ascat_parameters"
+        },
+        {
+            "$ref": "#/$defs/wakhan_options"
         },
         {
             "$ref": "#/$defs/skip_options"
