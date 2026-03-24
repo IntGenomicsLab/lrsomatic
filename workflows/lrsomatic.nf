@@ -710,7 +710,7 @@ workflow LRSOMATIC {
     //
 
     if (!params.skip_ascat) {
-        severus_reformat
+        severus_input
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf ->
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
@@ -738,7 +738,7 @@ workflow LRSOMATIC {
     if (!params.skip_wakhan) {
 
         // Prepare input channel for WAKHAN
-        severus_reformat
+        severus_input
             .join(SEVERUS.out.all_vcf)
             .set { wakhan_input }
         // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi, severus_all_vcf]
