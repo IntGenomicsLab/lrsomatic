@@ -36,7 +36,7 @@ workflow PREPARE_REFERENCE_FILES {
             ch_prepared_fasta = UNZIP_FASTA.out.file
             ch_versions = ch_versions.mix(UNZIP_FASTA.out.versions)
         } else {
-            ch_prepared_fasta = [ [:], fasta ]
+            ch_prepared_fasta = channel.value([ [:], fasta ])
         }
         // ch_prepared_fasta: [[:], fasta_path]  -- empty meta; uncompressed if input was .gz
 
