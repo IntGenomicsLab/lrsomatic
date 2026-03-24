@@ -96,7 +96,7 @@ workflow LRSOMATIC {
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
 
-    if (params.pons_vcfs != null) {
+    if (params.pon_vcfs != null) {
         pon_files = params.pon_vcfs.collect { file(it) }
         pon_flags = params.pon_flags
     }
@@ -487,14 +487,14 @@ workflow LRSOMATIC {
     )
 
 
-    ch_somatic_vcf
+    PHASING_HAPLOTYPING.out.phased_somatic_vcf
         .map { meta, vcf, _tbi ->
             def extra = []
             return [meta, vcf, extra]
         }
         .set { somatic_vep }
 
-    ch_germline_vcf
+    PHASING_HAPLOTYPING.out.phased_germline_vcf
         .map { meta, vcf, _tbi ->
             def extra = []
             return [meta, vcf, extra]

@@ -106,18 +106,7 @@ workflow PHASING_HAPLOTYPING {
         )
 
     }
-    // PHASING
-    if (!params.skip_modcall) {
-        normal_bams_w_tumoronly_ch
-            .join(germline_vcf)
-            .join(LONGPHASE_MODCALL_GERMLINE.out.mod_vcf)
-            .map { meta, bam, bai, vcf, _tbi, mods->
-                def svs = []
-                return [ meta, bam, bai, vcf, svs, mods ]
-            }
-            .set{ longphase_phase_germline_input_ch }
-
-        germline_vcf
+    germline_vcf
             .join(somatic_vcf)
             .map { meta, germline_vcf, germline_tbi, somatic_vcf, somatic_tbi ->
                     def vcfs = [somatic_vcf, germline_vcf]
@@ -131,6 +120,17 @@ workflow PHASING_HAPLOTYPING {
         BCFTOOLS_SORT(concat_out)
         BCFTOOLS_SORT.out.vcf
             .set{germline_somatic_vcfs}
+
+    // PHASING
+    if (!params.skip_modcall) {
+        normal_bams_w_tumoronly_ch
+            .join(germline_vcf)
+            .join(LONGPHASE_MODCALL_GERMLINE.out.mod_vcf)
+            .map { meta, bam, bai, vcf, _tbi, mods->
+                def svs = []
+                return [ meta, bam, bai, vcf, svs, mods ]
+            }
+            .set{ longphase_phase_germline_input_ch }
 
         tumor_bams_ch
             .join(germline_somatic_vcfs)
@@ -153,7 +153,6 @@ workflow PHASING_HAPLOTYPING {
 
         tumor_bams_ch
             .join(germline_somatic_vcfs)
-            .join(LONGPHASE_MODCALL_SOMATIC.out.mod_vcf)
             .map { meta, bam, bai, vcf ->
                 def svs = []
                 def mods = []
@@ -180,7 +179,7 @@ workflow PHASING_HAPLOTYPING {
 
     LONGPHASE_PHASE_SOMATIC.out.snv_vcf
         .join(LONGPHASE_PHASE_SOMATIC.out.snv_vcf_index)
-        .set{ phased_germline_vcf }
+        .set{ phased_somatic_vcf }
 
     // HAPLOTAGING
     // remove type for merging
@@ -293,4 +292,5 @@ workflow PHASING_HAPLOTYPING {
     emit:
     tumor_normal_hapbams_ch
     phased_germline_vcf
+    phased_somatic_vcf
 }

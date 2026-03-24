@@ -44,6 +44,8 @@ process BCFTOOLS_QUERY {
     def prefix = task.ext.prefix ?: "${meta.id}"
     suffix = task.ext.suffix ?: "txt"
     """
-    touch ${prefix}.${suffix} \\
+    touch ${prefix}.${suffix}
+    bgzip -c ${prefix}.${suffix} > ${prefix}.${suffix}.gz
+    tabix -s 1 -b 2 -e 2 ${prefix}.${suffix}.gz
     """
 }

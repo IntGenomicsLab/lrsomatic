@@ -97,7 +97,7 @@ workflow TUMORONLY_SMALLVAR {
     }
 
     // COMBINE GERMLINE VARIANTS
-    if (params.germline_var_keep != 'clair' | params.germline_var_keep != 'deepvariant' ) {
+    if (params.germline_var_keep != 'clair' && params.germline_var_keep != 'deepvariant' ) {
         clairsto_germline_ch
             .mix(deepvariant_ch)
             .set{combined_germline_ch}
@@ -146,7 +146,7 @@ workflow TUMORONLY_SMALLVAR {
             .set{deepsomatic_ch}
     }
     // COMBINE SOMATIC VARIATION
-    if (params.somatic_var_keep != 'clair' | params.somatic_var_keep != 'deepvariant' ) {
+    if (params.somatic_var_keep != 'clair' && params.somatic_var_keep != 'deepvariant' ) {
         clairsto_somatic_ch
             .mix(deepsomatic_ch)
             .set{combined_somatic_ch}
