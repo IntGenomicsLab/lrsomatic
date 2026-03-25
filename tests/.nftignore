@@ -25,3 +25,5 @@ pipeline_info/*.{html,json,txt,yml}
 */qc/{tumor,normal}/nanoplot_ubam_*/*.txt
 */qc/{tumor,normal}/nanoplot_aln/*.txt
 */qc/{tumor,normal}/mosdepth/*.txt
+*/variants/deepsomatic/*.{vcf.gz,vcf.gz.tbi}
+*/variants/deepvariant/*.{vcf.gz,vcf.gz.tbi}
