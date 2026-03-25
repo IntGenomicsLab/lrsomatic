@@ -400,11 +400,10 @@ workflow LRSOMATIC {
         .join(MINIMAP2_ALIGN.out.index)
         .set {ch_index_minimap}
 
-    ch_fasta
-        .join(ch_fai)
-        .set{ch_fasta_fai}
+
+
     if (!params.skip_modkit) {
-        MODKIT_PILEUP(ch_index_minimap, ch_fasta_fai, [[:],[]])
+        MODKIT_PILEUP(ch_index_minimap, ch_fasta, ch_fai, [[:],[]])
     }
     ch_index_minimap
         .branch { meta, _bams, _bais ->

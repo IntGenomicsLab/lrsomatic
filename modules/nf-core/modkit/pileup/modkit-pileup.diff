@@ -1,0 +1,23 @@
+Changes in component 'nf-core/modkit/pileup'
+'modules/nf-core/modkit/pileup/meta.yml' is unchanged
+Changes in 'modkit/pileup/main.nf':
+--- modules/nf-core/modkit/pileup/main.nf
++++ modules/nf-core/modkit/pileup/main.nf
+@@ -9,8 +9,9 @@
+ 
+     input:
+     tuple val(meta), path(bam), path(bai)
+-    tuple val(meta2), path(fasta), path(fai)
+-    tuple val(meta3), path(bed)
++    tuple val(meta2), path(fasta)
++    tuple val(meta3), path(fai)
++    tuple val(meta4), path(bed)
+ 
+     output:
+     tuple val(meta), path("*.bed.gz")  , emit: bedgz   , optional: true
+
+'modules/nf-core/modkit/pileup/environment.yml' is unchanged
+'modules/nf-core/modkit/pileup/tests/main.nf.test' is unchanged
+'modules/nf-core/modkit/pileup/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/modkit/pileup/tests/nextflow.config' is unchanged
+************************************************************
