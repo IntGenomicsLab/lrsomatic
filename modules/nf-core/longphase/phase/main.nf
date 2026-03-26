@@ -21,6 +21,7 @@ process LONGPHASE_PHASE {
     tuple val(meta), path("${prefix}_mod.vcf.gz")    , emit: mod_vcf, optional: true
     tuple val(meta), path("${prefix}_mod.vcf.gz.tbi"), emit: mod_vcf_index, optional: true
     path "versions.yml"                              , emit: versions
+
     when:
     task.ext.when == null || task.ext.when
 
@@ -48,9 +49,20 @@ process LONGPHASE_PHASE {
         $args2 \\
         ${prefix}*.vcf
 
+    tabix -p vcf ${prefix}.vcf.gz
+
+    if [ -f ${prefix}_SV.vcf.gz ]; then
+        tabix -p vcf ${prefix}_SV.vcf.gz
+    fi
+
+    if [ -f ${prefix}_mod.vcf.gz ]; then
+        tabix -p vcf ${prefix}_mod.vcf.gz
+    fi
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
+        tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
     END_VERSIONS
     """
 
