@@ -82,7 +82,8 @@
                     "longphase/haplotag": {
                         "branch": "master",
                         "git_sha": "b8d30a43f33aee3148b0e9e9f00587984a4ac195",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/longphase/haplotag/longphase-haplotag.diff"
                     },
                     "longphase/phase": {
                         "branch": "master",
