@@ -4,8 +4,8 @@ process LONGPHASE_MODCALL {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b0/b0184a9a36d8612fbae38bbaad7b52f03b815ad17673740e107cf1f267a1f15d/data':
-        'community.wave.seqera.io/library/htslib_longphase:3071e61356fc25a4' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/83/83fce1d397cf71705cc096fc0e0e52f7013bdd471ef68ee53ae765688e5c439c/data':
+        'community.wave.seqera.io/library/longphase_samtools:8c61296cae7a5fc0' }"
 
     input:
     tuple val(meta), path(bam), path(bai)
