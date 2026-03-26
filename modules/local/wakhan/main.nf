@@ -50,11 +50,13 @@ process WAKHAN {
 
     """
     wakhan \\
+        cna \\
         --target-bam ${tumor_input} \\
         --breakpoints ${breakpoints} \\
         --reference ${reference} \\
         --genome-name ${prefix} \\
         --out-dir-plots . \\
+        --use-sv-haplotypes \\
         ${phased_vcf} \\
         ${centromere} \\
         ${args} \\
