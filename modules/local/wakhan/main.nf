@@ -26,9 +26,8 @@ process WAKHAN {
     tuple val(meta), path("*/vcf_output/*_wakhan_cna_*.vcf")                    , emit: vcf_files
     tuple val(meta), path("*_heatmap_ploidy_purity.html")                       , emit: heatmap_html
     tuple val(meta), path("*_heatmap_ploidy_purity.html.pdf")                   , emit: heatmap_pdf
-    tuple val(meta), path("*_optimized_peak.html")                              , emit: optimized_peak_html
     tuple val(meta), path("coverage_data/*.csv")                                , emit: coverage_csv
-    tuple val(meta), path("coverage_plots/*.html")                              , emit: coverage_plots_html
+    tuple val(meta), path("coverage_plots/*.png")                              , emit: coverage_plots_html
     tuple val(meta), path("coverage_plots/*.pdf")                               , emit: coverage_plots_pdf
     tuple val(meta), path("phasing_output/*.html")                              , emit: phasing_html
     tuple val(meta), path("phasing_output/*.pdf")                               , emit: phasing_pdf
