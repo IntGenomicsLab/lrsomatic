@@ -55,7 +55,7 @@
                 },
                 "germline_var_keep": {
                     "type": "string",
-                    "description": "specifies which germline variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
+                    "description": "specifies which germline variants are used for phasing and annotation. Must be [consensus, all, deepvariant, clair]",
                     "default": "consensus",
                     "enum": ["consensus", "all", "deepvariant", "clair"]
                 },

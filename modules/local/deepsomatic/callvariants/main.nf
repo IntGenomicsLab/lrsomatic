@@ -10,7 +10,7 @@ process DEEPSOMATIC_CALLVARIANTS {
     tuple val(meta), path(make_examples_tfrecords)
 
     output:
-    tuple val(meta), path("${prefix}.call-*-of-*.tfrecord.gz"), emit: call_variants_tfrecords
+    tuple val(meta), path("${prefix}.call-*-of-*.tfrecord.gz")    , emit: call_variants_tfrecords
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
 
     when:

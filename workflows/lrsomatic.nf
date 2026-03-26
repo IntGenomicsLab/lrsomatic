@@ -159,6 +159,7 @@ workflow LRSOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
+    // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
