@@ -18,7 +18,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     germline_vcf = channel.empty()
     germline_tbi = channel.empty()
     // COMBINE NORMAL BAMS WITH DOWNLOADED CLAIR3 MODELS
-    if(params.germline_var_keep != 'deepvariant') {
+    if(params.germline_var_keep.contains('clair')) {
 
         clair3_models
             .map{ meta, file ->
@@ -65,7 +65,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             .set{clair3_ch}
     }
     // DEEPVARIANT
-    if(params.germline_var_keep != 'clair') {
+    if(params.germline_var_keep.contains('deepvariant')) {
 
         normal_bams
             .map {meta, bam, bai  ->
@@ -100,7 +100,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             .set{deepvariant_ch}
     }
     // COMBINE GERMLINE VARIATION
-    if (params.germline_var_keep != 'clair' && params.germline_var_keep != 'deepvariant' ) {
+    if (params.germline_var_keep.size() > 1) {
         clair3_ch
             .mix(deepvariant_ch)
             .set{combined_germline_ch}
@@ -109,17 +109,18 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             combined_germline_ch,
             fasta,
             fai,
-            params.germline_var_keep
+            params.prioritize_caller_germline,
+            params.germline_var_combine
         )
         GERMLINE_CONSENSUS.out.vcf
             .join(GERMLINE_CONSENSUS.out.tbi)
             .set{ germline_vcf }
     }
-    else if (params.germline_var_keep == 'clair') {
+    else if (params.germline_var_keep == ['clair']) {
         clair3_ch
             .set{germline_vcf}
     }
-    else if (params.germline_var_keep == 'deepvariant') {
+    else if (params.germline_var_keep == ['deepvariant']) {
         deepvariant_ch
             .set{germline_vcf}
     }

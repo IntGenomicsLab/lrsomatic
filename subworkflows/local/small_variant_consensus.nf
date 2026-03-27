@@ -13,7 +13,8 @@ workflow SMALL_VARIANT_CONSENSUS {
     mixed_vcfs // [meta: w caller_info,mixed_vcfs, mixed_indicies]
     fasta
     fai
-    var_keep_method
+    prioritize_caller
+    combine_method
 
     main:
     //normalize VCFs
@@ -94,47 +95,34 @@ workflow SMALL_VARIANT_CONSENSUS {
         }
         .set{mixed_vcfs}
 
-    if (var_keep_method == 'consensus') {
-        mixed_vcfs
-             .map{ meta, vcfs, tbis ->
-                    def file = []
-                    def target = []
-                    def regions = []
-                return [meta, vcfs, tbis, file, target, regions]
-             }
-             .set{isec_input}
+    mixed_vcfs
+         .map{ meta, vcfs, tbis ->
+                def file = []
+                def target = []
+                def regions = []
+            return [meta, vcfs, tbis, file, target, regions]
+         }
+         .set{isec_input}
 
-        BCFTOOLS_ISEC(isec_input)
+    BCFTOOLS_ISEC(isec_input)
 
-        if (params.trust_caller == 'deepvariant') {
+    if (combine_method == 'consensus') {
+        if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
-            .set{vcf}
+                .set{vcf}
             BCFTOOLS_ISEC.out.deepvar_consensus_tbi
-            .set{tbi}
+                .set{tbi}
         }
-        if (params.trust_caller == 'clair') {
+        else if (prioritize_caller == 'clair') {
             BCFTOOLS_ISEC.out.clair_consensus_vcf
-            .set{vcf}
+                .set{vcf}
             BCFTOOLS_ISEC.out.clair_consensus_tbi
-            .set{tbi}
+                .set{tbi}
         }
-
     }
 
-    else if (var_keep_method == 'all'){
-
-        mixed_vcfs
-             .map{ meta, vcfs, tbis ->
-                    def file = []
-                    def target = []
-                    def regions = []
-                return [meta, vcfs, tbis, file, target, regions]
-             }
-             .set{isec_input}
-
-        BCFTOOLS_ISEC(isec_input)
-
-        if (params.trust_caller == 'deepvariant') {
+    else if (combine_method == 'all') {
+        if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_consensus_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_private_vcf)
@@ -147,8 +135,7 @@ workflow SMALL_VARIANT_CONSENSUS {
             BCFTOOLS_CONCAT.out.vcf
                 .set{concat_out}
         }
-
-        else if (params.trust_caller == 'clair') {
+        else if (prioritize_caller == 'clair') {
             BCFTOOLS_ISEC.out.deepvar_private_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_consensus_vcf)

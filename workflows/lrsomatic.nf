@@ -100,7 +100,7 @@ workflow LRSOMATIC {
         pon_files = params.pon_vcfs.collect { file(it) }
         pon_flags = params.pon_flags
     }
-    else {
+    else if (params.genome == 'GRCh38') {
         pon_files  = [
             getGenomeAttribute('gnomad'),
             getGenomeAttribute('dbsnp'),
@@ -110,6 +110,22 @@ workflow LRSOMATIC {
         pon_flags = [
             "True",
             "True",
+            "False",
+            "False"
+        ]
+    }
+    else if (params.genome == 'CHM13') {
+        pon_files  = [
+            getGenomeAttribute('gnomad'),
+            getGenomeAttribute('dbsnp'),
+            getGenomeAttribute('onekgenomes'),
+            getGenomeAttribute('colors'),
+            getGenomeAttribute('asap')
+        ]
+        pon_flags = [
+            "True",
+            "True",
+            "False",
             "False",
             "False"
         ]

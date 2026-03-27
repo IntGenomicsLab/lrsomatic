@@ -47,23 +47,49 @@
             "title": "options for small variant calling",
             "type": "object",
             "properties": {
-                "trust_caller": {
+                "germline_var_keep": {
+                    "type": "array",
+                    "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
+                    "default": ["deepvariant", "clair"],
+                    "items": {
+                        "type": "string",
+                        "enum": ["deepvariant", "clair"]
+                    },
+                    "minItems": 1
+                },
+                "somatic_var_keep": {
+                    "type": "array",
+                    "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
+                    "default": ["deepsomatic", "clair"],
+                    "items": {
+                        "type": "string",
+                        "enum": ["deepsomatic", "clair"]
+                    },
+                    "minItems": 1
+                },
+                "germline_var_combine": {
                     "type": "string",
-                    "description": "specifies which variant caller format to use when both clair and deepvariant call the same variant",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "default": "all",
+                    "enum": ["consensus", "all"]
+                },
+                "somatic_var_combine": {
+                    "type": "string",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "default": "all",
+                    "enum": ["consensus", "all"]
+                },
+                "prioritize_caller_germline": {
+                    "type": "string",
+                    "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
                     "default": "deepvariant",
                     "enum": ["deepvariant", "clair"]
                 },
-                "germline_var_keep": {
+                "prioritize_caller_somatic": {
                     "type": "string",
-                    "description": "specifies which germline variants are used for phasing and annotation. Must be [consensus, all, deepvariant, clair]",
-                    "default": "consensus",
-                    "enum": ["consensus", "all", "deepvariant", "clair"]
-                },
-                "somatic_var_keep": {
-                    "type": "string",
-                    "description": "specifies which somatic variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
-                    "default": "all",
-                    "enum": ["consensus", "all", "deepvariant", "clair"]
+                    "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
+                    "default": "deepsomatic",
+                    "enum": ["deepsomatic", "clair"]
                 }
             }
         },

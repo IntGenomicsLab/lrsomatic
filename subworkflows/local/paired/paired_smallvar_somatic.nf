@@ -20,7 +20,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     somatic_tbi = channel.empty()
 
     // CLAIRS
-    if(params.somatic_var_keep != 'deepvariant') {
+    if(params.somatic_var_keep.contains('clair')) {
         tumor_normal_bams
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai ->
                 return[meta , tumor_bam, tumor_bai, normal_bam, normal_bai, meta.clairS_model]
@@ -57,7 +57,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     }
     // DEEPSOMATIC
 
-    if(params.somatic_var_keep != 'clair') {
+    if(params.somatic_var_keep.contains('deepsomatic')) {
 
         tumor_normal_bams
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai ->
@@ -83,7 +83,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
 
     }
     // COMBINE GERMLINE VARIATION
-    if (params.somatic_var_keep != 'clair' && params.somatic_var_keep != 'deepvariant' ) {
+    if (params.somatic_var_keep.size() > 1) {
         clairs_ch
             .mix(deepsomatic_ch)
             .set{combine_somatic_ch}
@@ -92,18 +92,19 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             combine_somatic_ch,
             fasta,
             fai,
-            params.somatic_var_keep
+            params.prioritize_caller_somatic,
+            params.somatic_var_combine
         )
 
         SOMATIC_CONSENSUS.out.vcf
             .join(SOMATIC_CONSENSUS.out.tbi)
             .set{ somatic_vcf }
     }
-    else if (params.somatic_var_keep == 'clair') {
+    else if (params.somatic_var_keep == ['clair']) {
         clairs_ch
             .set{somatic_vcf}
     }
-    else if (params.somatic_var_keep == 'deepvariant') {
+    else if (params.somatic_var_keep == ['deepsomatic']) {
         deepsomatic_ch
             .set{somatic_vcf}
     }

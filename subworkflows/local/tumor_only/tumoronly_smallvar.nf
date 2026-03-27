@@ -29,7 +29,7 @@ workflow TUMORONLY_SMALLVAR {
 
     // CLAIRS-TO (SOMATIC/NONGERMLINE VARIANT CALLING)
 
-    if(params.somatic_var_keep != 'deepvariant') {
+    if(params.somatic_var_keep.contains('clair') || params.germline_var_keep.contains('clair')) {
         tumor_bams
             .map { meta, bam, bai ->
                 return [ meta, bam, bai, meta.clairSTO_model]
@@ -70,7 +70,7 @@ workflow TUMORONLY_SMALLVAR {
             .set{clairsto_somatic_ch}
     }
     // DEEPVARIANT
-    if(params.somatic_var_keep != 'clair') {
+    if(params.germline_var_keep.contains('deepvariant')) {
         tumor_bams
             .map { meta, bam, bai  ->
                 def intervals = []
@@ -97,7 +97,7 @@ workflow TUMORONLY_SMALLVAR {
     }
 
     // COMBINE GERMLINE VARIANTS
-    if (params.germline_var_keep != 'clair' && params.germline_var_keep != 'deepvariant' ) {
+    if (params.germline_var_keep.size() > 1) {
         clairsto_germline_ch
             .mix(deepvariant_ch)
             .set{combined_germline_ch}
@@ -106,22 +106,23 @@ workflow TUMORONLY_SMALLVAR {
             combined_germline_ch,
             fasta,
             fai,
-            params.germline_var_keep
+            params.prioritize_caller_germline,
+            params.germline_var_combine
         )
         GERMLINE_CONSENSUS.out.vcf
             .join(GERMLINE_CONSENSUS.out.tbi)
             .set{germline_vcf}
     }
-    else if (params.germline_var_keep == 'clair') {
+    else if (params.germline_var_keep == ['clair']) {
         clairsto_germline_ch
             .set{germline_vcf}
     }
-    else if (params.germline_var_keep == 'deepvariant') {
+    else if (params.germline_var_keep == ['deepvariant']) {
         deepvariant_ch
             .set{germline_vcf}
     }
     // DEEPSOMATIC
-    if(params.somatic_var_keep != 'clair') {
+    if(params.somatic_var_keep.contains('deepsomatic')) {
         tumor_bams
             .map { meta, tumor_bam, tumor_bai ->
                 def normal_bam = []
@@ -146,7 +147,7 @@ workflow TUMORONLY_SMALLVAR {
             .set{deepsomatic_ch}
     }
     // COMBINE SOMATIC VARIATION
-    if (params.somatic_var_keep != 'clair' && params.somatic_var_keep != 'deepvariant' ) {
+    if (params.somatic_var_keep.size() > 1) {
         clairsto_somatic_ch
             .mix(deepsomatic_ch)
             .set{combined_somatic_ch}
@@ -155,18 +156,19 @@ workflow TUMORONLY_SMALLVAR {
             combined_somatic_ch,
             fasta,
             fai,
-            params.somatic_var_keep
+            params.prioritize_caller_somatic,
+            params.somatic_var_combine
         )
         SOMATIC_CONSENSUS.out.vcf
             .join(SOMATIC_CONSENSUS.out.tbi)
             .set{somatic_vcf}
     }
-    else if (params.somatic_var_keep == 'clair') {
+    else if (params.somatic_var_keep == ['clair']) {
         clairsto_somatic_ch
             .set{somatic_vcf}
     }
-    else if (params.somatic_var_keep == 'deepvariant') {
-        deepvariant_ch
+    else if (params.somatic_var_keep == ['deepsomatic']) {
+        deepsomatic_ch
             .set{somatic_vcf}
     }
 
