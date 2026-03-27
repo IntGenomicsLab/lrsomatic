@@ -14,7 +14,6 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     clair3_models
 
     main:
-    ch_versions = channel.empty()
     germline_vcf = channel.empty()
     germline_tbi = channel.empty()
     // COMBINE NORMAL BAMS WITH DOWNLOADED CLAIR3 MODELS

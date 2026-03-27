@@ -21,7 +21,6 @@ workflow TUMORONLY_SMALLVAR {
 
     // empty channel emission
 
-    ch_versions = channel.empty()
     somatic_vcf = channel.empty()
     germline_vcf = channel.empty()
     somatic_tbi = channel.empty()
