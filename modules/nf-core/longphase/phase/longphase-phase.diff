@@ -3,24 +3,25 @@ Changes in component 'nf-core/longphase/phase'
 Changes in 'longphase/phase/main.nf':
 --- modules/nf-core/longphase/phase/main.nf
 +++ modules/nf-core/longphase/phase/main.nf
-@@ -14,10 +14,13 @@
+@@ -14,11 +14,14 @@
  
  
      output:
 -    tuple val(meta), path("${prefix}.vcf.gz")    , emit: snv_vcf
 -    tuple val(meta), path("${prefix}_SV.vcf.gz") , emit: sv_vcf , optional: true
 -    tuple val(meta), path("${prefix}_mod.vcf.gz"), emit: mod_vcf, optional: true
--    tuple val("${task.process}"), val("longphase"), eval("longphase --version | head -n 1 | sed 's/Version: //'"), emit: versions_longphase, topic: versions
 +    tuple val(meta), path("${prefix}.vcf.gz")        , emit: snv_vcf
 +    tuple val(meta), path("${prefix}.vcf.gz.tbi")    , emit: snv_vcf_index
 +    tuple val(meta), path("${prefix}_SV.vcf.gz")     , emit: sv_vcf , optional: true
 +    tuple val(meta), path("${prefix}_SV.vcf.gz.tbi") , emit: sv_vcf_index , optional: true
 +    tuple val(meta), path("${prefix}_mod.vcf.gz")    , emit: mod_vcf, optional: true
 +    tuple val(meta), path("${prefix}_mod.vcf.gz.tbi"), emit: mod_vcf_index, optional: true
-+    path "versions.yml"                              , emit: versions
- 
+     tuple val("${task.process}"), val("longphase"), eval("longphase --version | head -n 1 | sed 's/Version: //'"), emit: versions_longphase, topic: versions
+-
++    
      when:
      task.ext.when == null || task.ext.when
+ 
 @@ -46,9 +49,20 @@
          $args2 \\
          ${prefix}*.vcf
