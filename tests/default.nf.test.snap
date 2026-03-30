@@ -76,6 +76,12 @@
                 "MOSDEPTH": {
                     "mosdepth": "0.3.11"
                 },
+                "NANOPLOT_POST": {
+                    "nanoplot": "1.46.1"
+                },
+                "NANOPLOT_PRE": {
+                    "nanoplot": "1.46.1"
+                },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
                 },

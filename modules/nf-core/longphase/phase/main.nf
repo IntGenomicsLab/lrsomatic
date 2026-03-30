@@ -58,12 +58,6 @@ process LONGPHASE_PHASE {
     if [ -f ${prefix}_mod.vcf.gz ]; then
         tabix -p vcf ${prefix}_mod.vcf.gz
     fi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-        tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
-    END_VERSIONS
     """
 
     stub:
@@ -81,9 +75,5 @@ process LONGPHASE_PHASE {
     if [ -f ${prefix}_mod.vcf.gz ]; then
         tabix -p vcf ${prefix}_mod.vcf.gz
     fi
-    
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-    END_VERSIONS
     """
 }

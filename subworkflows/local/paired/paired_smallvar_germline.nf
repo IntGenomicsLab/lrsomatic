@@ -14,7 +14,6 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     clair3_models // [meta(id=model_name), model_dir]  -- downloaded Clair3 model directories
 
     main:
-    ch_versions = channel.empty()
     germline_vcf = channel.empty()
     germline_tbi = channel.empty()
 
