@@ -129,7 +129,7 @@ workflow PHASING_HAPLOTYPING {
         //         fasta / fai
         // Output: .mod_vcf -- [meta, vcf]  -- base modification calls for tumor
         //
-        
+
         LONGPHASE_MODCALL_SOMATIC (
             tumor_bams_ch,
             fasta,

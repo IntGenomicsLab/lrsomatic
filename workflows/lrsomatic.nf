@@ -258,7 +258,7 @@ workflow LRSOMATIC {
     //   (replicate field removed; bams still a list — concatenated next)
 
     // Branch on number of input BAMs: samples with a single BAM skip concatenation
-    
+
     ch_split = ch_samplesheet_no_rep
         .branch { _meta, bam ->
             single: bam.size() == 1
