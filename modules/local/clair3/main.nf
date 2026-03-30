@@ -1,7 +1,6 @@
 process CLAIR3 {
     tag "$meta.id"
-    label 'process_very_high'
-    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
+    label "${params.use_gpu ? 'process_gpu_very_high' : 'process_very_high'}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

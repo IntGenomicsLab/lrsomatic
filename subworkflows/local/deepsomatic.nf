@@ -4,29 +4,49 @@ include { DEEPSOMATIC_POSTPROCESSVARIANTS } from '../../modules/local/deepsomati
 
 workflow DEEPSOMATIC {
     take:
-    ch_input   // channel: [ val(meta), path(normal), path(normal_index), path(tumor), path(tumor_index)]
-    ch_intervals
-    ch_fasta   // channel: [ val(meta2), path(fasta) ]
-    ch_fai     // channel: [ val(meta3), path(fai) ]
-    ch_gzi     // channel: [ val(meta4), path(gzi) ]
+    ch_input     // [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
+    //              normal_bam/bai may be [] for tumor-only mode
+    ch_intervals // [[:], []]  -- empty intervals (genome-wide calling)
+    ch_fasta     // [[:], fasta]
+    ch_fai       // [[:], fai]
+    ch_gzi       // [[:], gzi]  -- bgzipped FASTA index (empty if FASTA is not bgzipped)
 
     main:
 
+    //
+    // MODULE: DEEPSOMATIC_MAKEEXAMPLES (label: process_high)
+    // Input:  [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
+    // Output: .examples -- [meta, [tfrecord shards...]]  -- serialised pileup examples
+    //         .gvcf     -- [meta, [gvcf tfrecord shards...]]
+    //
     DEEPSOMATIC_MAKEEXAMPLES(ch_input, ch_fasta, ch_fai, ch_gzi)
 
+    //
+    // MODULE: DEEPSOMATIC_CALLVARIANTS (label: process_gpu / process_high)
+    // Input:  DEEPSOMATIC_MAKEEXAMPLES.out.examples -- [meta, [tfrecord shards...]]
+    // Output: .call_variants_tfrecords -- [meta, tfrecord]  -- DNN variant call records
+    //
     DEEPSOMATIC_CALLVARIANTS(DEEPSOMATIC_MAKEEXAMPLES.out.examples)
 
-    // Input to postprocessing step needs both the gvcfs from MAKEEXAMPLES and the variant
-    // calls from CALLVARIANTS. Joining on meta, which is assumed to be unique.
-
-
+    // Join CALLVARIANTS output with MAKEEXAMPLES gVCF records (both keyed on meta)
+    // The postprocessing step needs both the DNN calls and the gVCF pileup records
     ch_postproc_input = DEEPSOMATIC_CALLVARIANTS.out.call_variants_tfrecords.join(
         DEEPSOMATIC_MAKEEXAMPLES.out.gvcf,
         failOnMismatch: true
     ).map { meta, call_tfrecord, gvcf_tfrecords ->
         [meta, call_tfrecord, gvcf_tfrecords, [], []]
     }
+    // ch_postproc_input: [meta, call_tfrecord, [gvcf_tfrecords...], [], []]
+    //   trailing [] are for optional candidate positions and haplotype outputs (unused)
 
+    //
+    // MODULE: DEEPSOMATIC_POSTPROCESSVARIANTS (label: process_medium)
+    // Input:  [meta, call_tfrecord, [gvcf_tfrecords...], [], []]
+    // Output: .vcf       -- [meta, vcf]   -- somatic variant calls (VCF)
+    //         .vcf_index -- [meta, tbi]
+    //         .gvcf      -- [meta, gvcf]  -- genome VCF (all sites)
+    //         .gvcf_index-- [meta, tbi]
+    //
     DEEPSOMATIC_POSTPROCESSVARIANTS(
         ch_postproc_input,
         ch_fasta,
@@ -35,8 +55,8 @@ workflow DEEPSOMATIC {
     )
 
     emit:
-    vcf        = DEEPSOMATIC_POSTPROCESSVARIANTS.out.vcf
-    vcf_index  = DEEPSOMATIC_POSTPROCESSVARIANTS.out.vcf_index
-    gvcf       = DEEPSOMATIC_POSTPROCESSVARIANTS.out.gvcf
-    gvcf_index = DEEPSOMATIC_POSTPROCESSVARIANTS.out.gvcf_index
+    vcf        = DEEPSOMATIC_POSTPROCESSVARIANTS.out.vcf        // [meta, vcf]
+    vcf_index  = DEEPSOMATIC_POSTPROCESSVARIANTS.out.vcf_index  // [meta, tbi]
+    gvcf       = DEEPSOMATIC_POSTPROCESSVARIANTS.out.gvcf       // [meta, gvcf]
+    gvcf_index = DEEPSOMATIC_POSTPROCESSVARIANTS.out.gvcf_index // [meta, tbi]
 }

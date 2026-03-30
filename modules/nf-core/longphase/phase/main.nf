@@ -20,9 +20,8 @@ process LONGPHASE_PHASE {
     tuple val(meta), path("${prefix}_SV.vcf.gz.tbi") , emit: sv_vcf_index , optional: true
     tuple val(meta), path("${prefix}_mod.vcf.gz")    , emit: mod_vcf, optional: true
     tuple val(meta), path("${prefix}_mod.vcf.gz.tbi"), emit: mod_vcf_index, optional: true
-    tuple val("${task.process}"), val('longphase'), eval("longphase --version | head -n 1 | sed 's/Version: //'"), topic: versions, emit: versions_longphase
-    tuple val("${task.process}"), val('tabix'), eval("tabix -h 2>&1 | grep -oP 'Version:\\s*\\K[^\\s]+'"), topic: versions, emit: versions_tabix
-
+    tuple val("${task.process}"), val("longphase"), eval("longphase --version | head -n 1 | sed 's/Version: //'"), emit: versions_longphase, topic: versions
+    
     when:
     task.ext.when == null || task.ext.when
 

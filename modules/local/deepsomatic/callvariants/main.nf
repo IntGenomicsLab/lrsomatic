@@ -1,7 +1,6 @@
 process DEEPSOMATIC_CALLVARIANTS {
     tag "$meta.id"
-    label 'process_high'
-    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
+    label "${params.use_gpu ? 'process_gpu_high' : 'process_high'}"
 
     //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"
@@ -10,7 +9,7 @@ process DEEPSOMATIC_CALLVARIANTS {
     tuple val(meta), path(make_examples_tfrecords)
 
     output:
-    tuple val(meta), path("${prefix}.call-*-of-*.tfrecord.gz"), emit: call_variants_tfrecords
+    tuple val(meta), path("${prefix}.call-*-of-*.tfrecord.gz")    , emit: call_variants_tfrecords
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
 
     when:

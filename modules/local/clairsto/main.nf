@@ -24,7 +24,7 @@ process CLAIRSTO {
 
     script:
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def conda_prefix = workflow.containerEngine == 'singularity' ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
     def pon_string   = pon_vcfs.join(',')
     def flags_string = pon_flags.join(',')

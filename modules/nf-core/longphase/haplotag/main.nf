@@ -16,7 +16,7 @@ process LONGPHASE_HAPLOTAG {
     output:
     tuple val(meta), path("*.{bam,cram}"), emit: bam
     tuple val(meta), path("*.log")       , emit: log , optional: true
-    tuple val("${task.process}"), val('longphase'), eval("longphase --version | head -n 1 | sed 's/Version: //'"), topic: versions, emit: versions_longphase
+    tuple val("${task.process}"), val("longphase"), eval("longphase --version | head -n 1 | sed 's/Version: //'"), emit: versions_longphase, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
