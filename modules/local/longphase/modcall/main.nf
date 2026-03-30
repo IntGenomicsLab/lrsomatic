@@ -1,6 +1,6 @@
 process LONGPHASE_MODCALL {
     tag "$meta.id"
-    label 'process_very_high'
+    label 'process_high'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -29,7 +29,7 @@ process LONGPHASE_MODCALL {
     longphase \\
         modcall \\
         $args \\
-        --threads $task.cpus \\
+        --threads 1 \\
         -o ${prefix} \\
         --reference ${fasta} \\
         -b ${bam} \\

@@ -43,27 +43,69 @@
                 }
             }
         },
+        "pon_options": {
+            "title": "Panel of Normals (PON) options",
+            "type": "object",
+            "description": "Options for panel of normals filtering",
+            "default": "",
+            "properties": {
+                "pon_vcfs": {
+                    "type": "string",
+                    "description": "Path to panel of normals VCF file(s) for somatic variant filtering"
+                },
+                "pon_flags": {
+                    "type": "string",
+                    "description": "Additional flags to pass to the PON filtering step"
+                }
+            }
+        },
         "small_variant_calling_options": {
             "title": "options for small variant calling",
             "type": "object",
             "properties": {
-                "trust_caller": {
+                "germline_var_keep": {
+                    "type": "array",
+                    "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
+                    "default": ["deepvariant", "clair"],
+                    "items": {
+                        "type": "string",
+                        "enum": ["deepvariant", "clair"]
+                    },
+                    "minItems": 1
+                },
+                "somatic_var_keep": {
+                    "type": "array",
+                    "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
+                    "default": ["deepsomatic", "clair"],
+                    "items": {
+                        "type": "string",
+                        "enum": ["deepsomatic", "clair"]
+                    },
+                    "minItems": 1
+                },
+                "germline_var_combine": {
                     "type": "string",
-                    "description": "specifies which variant caller format to use when both clair and deepvariant call the same variant",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "default": "all",
+                    "enum": ["consensus", "all"]
+                },
+                "somatic_var_combine": {
+                    "type": "string",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "default": "all",
+                    "enum": ["consensus", "all"]
+                },
+                "prioritize_caller_germline": {
+                    "type": "string",
+                    "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
                     "default": "deepvariant",
                     "enum": ["deepvariant", "clair"]
                 },
-                "germline_var_keep": {
+                "prioritize_caller_somatic": {
                     "type": "string",
-                    "description": "specifies which germline variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
-                    "default": "consensus",
-                    "enum": ["consensus", "all", "deepvariant", "clair"]
-                },
-                "somatic_var_keep": {
-                    "type": "string",
-                    "description": "specifies which somatic variants are used for phasing and annotation. Must be [consensus, all,deepvariant,clair]",
-                    "default": "all",
-                    "enum": ["consensus", "all", "deepvariant", "clair"]
+                    "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
+                    "default": "deepsomatic",
+                    "enum": ["deepsomatic", "clair"]
                 }
             }
         },
@@ -82,6 +124,7 @@
                 },
                 "igenomes_ignore": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Do not load the iGenomes reference config.",
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
@@ -156,7 +199,9 @@
                     "default": 113
                 },
                 "download_vep_cache": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Download the VEP cache if not already present"
                 },
                 "vep_custom": {
                     "type": "string"
@@ -236,6 +281,7 @@
                 },
                 "ascat_pdf_plots": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Boolean for ASCAT production of pdf plots (entered as string)"
                 }
             }
@@ -259,49 +305,73 @@
             "properties": {
                 "skip_qc": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skips all QC steps"
                 },
                 "skip_cramino": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skips Cramino"
                 },
                 "skip_mosdepth": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skips Mosdepth"
                 },
                 "skip_bamstats": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skips samtools flagstat, stats, and idxstats"
                 },
                 "skip_wakhan": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skips wakhan"
                 },
                 "skip_fiber": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skip Fibertools steps"
                 },
                 "skip_ascat": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skip ASCAT"
                 },
                 "skip_m6a": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skip m6a calling by Fibertools"
                 },
                 "skip_vep": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip VEP annotation"
                 },
                 "skip_normalfiber": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Fibertools steps for the normal sample"
                 },
                 "skip_nanoplot": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skip Nanoplot"
                 },
                 "skip_whatshapstats": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Skip WhatsHap stats"
+                },
+                "skip_modcall": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip modification calling"
+                },
+                "use_gpu": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic)"
                 }
             }
         },
@@ -362,6 +432,7 @@
             "properties": {
                 "version": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Display version and exit.",
                     "fa_icon": "fas fa-question-circle",
                     "hidden": true
@@ -385,6 +456,7 @@
                 },
                 "plaintext_email": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Send plain-text email instead of HTML.",
                     "fa_icon": "fas fa-remove-format",
                     "hidden": true
@@ -399,6 +471,7 @@
                 },
                 "monochrome_logs": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Do not use coloured log outputs.",
                     "fa_icon": "fas fa-palette",
                     "hidden": true
@@ -450,14 +523,17 @@
                 },
                 "help": {
                     "type": ["boolean", "string"],
+                    "default": false,
                     "description": "Display the help message."
                 },
                 "help_full": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Display the full detailed help message."
                 },
                 "show_hidden": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
             }
@@ -466,6 +542,9 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/pon_options"
         },
         {
             "$ref": "#/$defs/small_variant_calling_options"
