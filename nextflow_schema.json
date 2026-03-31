@@ -66,7 +66,6 @@
                 "germline_var_keep": {
                     "type": "array",
                     "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
-                    "default": ["deepvariant", "clair"],
                     "items": {
                         "type": "string",
                         "enum": ["deepvariant", "clair"]
@@ -76,7 +75,6 @@
                 "somatic_var_keep": {
                     "type": "array",
                     "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
-                    "default": ["deepsomatic", "clair"],
                     "items": {
                         "type": "string",
                         "enum": ["deepsomatic", "clair"]
@@ -371,7 +369,7 @@
                 "use_gpu": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic)"
+                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         },
@@ -522,7 +520,7 @@
                     "hidden": true
                 },
                 "help": {
-                    "type": ["boolean", "string"],
+                    "type": "boolean",
                     "default": false,
                     "description": "Display the help message."
                 },

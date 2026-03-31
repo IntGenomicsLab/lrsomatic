@@ -4,8 +4,8 @@ process CLAIR3 {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/clair3:1.2.0--py310h779eee5_0':
-        'quay.io/biocontainers/clair3:1.2.0--py310h779eee5_0' }"
+        (params.use_gpu ? 'docker://hkubal/clair3-gpu:v1.2.0' : 'https://depot.galaxyproject.org/singularity/clair3:1.2.0--py310h779eee5_0') :
+        (params.use_gpu ? 'docker.io/hkubal/clair3-gpu:v1.2.0' : 'quay.io/biocontainers/clair3:1.2.0--py310h779eee5_0') }"
 
     input:
     tuple val(meta) , path(bam), path(bai), path(model), val(platform)
@@ -25,8 +25,10 @@ process CLAIR3 {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+    def use_gpu = task.ext.use_gpu as boolean
 
     """
+    ${use_gpu ? 'export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}' : ':'}
     run_clair3.sh \\
         --bam_fn=${bam} \\
         --ref_fn=${reference} \\
@@ -35,6 +37,7 @@ process CLAIR3 {
         --platform=${platform} \\
         --model=${model} \\
         --sample_name=${prefix} \\
+        ${use_gpu ? '--use_gpu --device=cuda:0' : ''} \\
         ${args}
     """
 

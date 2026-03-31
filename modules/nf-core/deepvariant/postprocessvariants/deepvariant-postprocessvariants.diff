@@ -3,6 +3,14 @@ Changes in component 'nf-core/deepvariant/postprocessvariants'
 Changes in 'deepvariant/postprocessvariants/main.nf':
 --- modules/nf-core/deepvariant/postprocessvariants/main.nf
 +++ modules/nf-core/deepvariant/postprocessvariants/main.nf
+@@ -1,6 +1,6 @@
+ process DEEPVARIANT_POSTPROCESSVARIANTS {
+     tag "$meta.id"
+-    label 'process_medium'
++    label 'process_high'
+ 
+     //Conda is not supported at the moment
+     container "docker.io/google/deepvariant:1.9.0"
 @@ -64,6 +64,7 @@
          --outfile "${prefix}.vcf.gz" \\
          --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
