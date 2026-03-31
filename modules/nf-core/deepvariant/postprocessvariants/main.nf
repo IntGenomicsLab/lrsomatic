@@ -1,6 +1,6 @@
 process DEEPVARIANT_POSTPROCESSVARIANTS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_high'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepvariant:1.9.0"
@@ -64,6 +64,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         --outfile "${prefix}.vcf.gz" \\
         --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
         --gvcf_outfile "${prefix}.g.vcf.gz" \\
+        --sample_name ${prefix} \\
         ${regions} \\
         ${small_model_arg} \\
         --cpus $task.cpus

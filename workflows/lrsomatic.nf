@@ -37,11 +37,14 @@ include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/
 //
 // IMPORT SUBWORKFLOWS
 //
-include { PREPARE_REFERENCE_FILES   } from '../subworkflows/local/prepare_reference_files'
-include { PREPARE_ANNOTATION        } from '../subworkflows/local/prepare_annotation'
-include { BAM_STATS_SAMTOOLS        } from '../subworkflows/nf-core/bam_stats_samtools/main'
-include { TUMOR_NORMAL_HAPPHASE     } from '../subworkflows/local/tumor_normal_happhase'
-include { TUMOR_ONLY_HAPPHASE       } from '../subworkflows/local/tumor_only_happhase'
+include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
+include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
+include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
+include { TUMORONLY_SMALLVAR              } from '../subworkflows/local/tumor_only/tumoronly_smallvar'
+include { PAIRED_SMALLVAR_SOMATIC         } from '../subworkflows/local/paired/paired_smallvar_somatic'
+include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/paired_smallvar_germline'
+include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
+
 
 
 /*
@@ -92,10 +95,50 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
-    params.dbsnp = getGenomeAttribute('dbsnp')
-    params.colors = getGenomeAttribute('colors')
-    params.onekgenomes = getGenomeAttribute('onekgenomes')
-    params.gnomad = getGenomeAttribute('gnomad')
+
+    if (params.pon_vcfs != null) {
+        pon_files = params.pon_vcfs.collect { file(it) }
+        pon_flags = params.pon_flags
+    }
+    else if (params.genome == 'GRCh38') {
+        pon_files  = [
+            getGenomeAttribute('gnomad'),
+            getGenomeAttribute('dbsnp'),
+            getGenomeAttribute('onekgenomes'),
+            getGenomeAttribute('colors'),
+        ]
+        pon_flags = [
+            "True",
+            "True",
+            "False",
+            "False"
+        ]
+    }
+    else if (params.genome == 'CHM13') {
+        pon_files  = [
+            getGenomeAttribute('gnomad'),
+            getGenomeAttribute('dbsnp'),
+            getGenomeAttribute('onekgenomes'),
+            getGenomeAttribute('colors'),
+            getGenomeAttribute('asap')
+        ]
+        pon_flags = [
+            "True",
+            "True",
+            "False",
+            "False",
+            "False"
+        ]
+    }
+    if (pon_files.size() != pon_flags.size()) {
+        error "PoN VCFs and allele flags must have same length"
+    }
+    Channel
+        .of( tuple(pon_files, pon_flags) )
+        .set { pon_channel }
+    // pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
+    //   -- single tuple of parallel lists; each flag indicates whether the corresponding VCF
+    //      is a population allele database (True) vs. a panel-of-normals artefact file (False)
 
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
@@ -105,11 +148,14 @@ workflow LRSOMATIC {
     //
     // extracts the base calling model from the bam files
 
+    // MODULE: METAEXTRACT (label: process_single)
+    // Input:  [meta, [bam...]]
     METAEXTRACT( ch_samplesheet )
 
     basecall_meta = METAEXTRACT.out.meta_ext
-    // [meta, basecall_model_str, kinetics_str]  -- basecall model and kinetics extracted from BAM header
-    // Adds the base calling model to meta.basecall_model
+    // basecall_meta: [meta, basecall_model_str, kinetics_str]
+    //   basecall_model_str -- e.g. "dna_r10.4.1_e8.2_400bps_sup@v5.0.0" or "hifi_revio"
+    //   kinetics_str       -- "true" if PacBio kinetics tags present, else "false"
 
     ch_samplesheet
         .join(basecall_meta)
@@ -135,12 +181,20 @@ workflow LRSOMATIC {
             [ meta, bam.flatten()]
             }
         .set{ch_samplesheet}
-    // [meta_full, [bam...]]  -- meta now includes: id, paired_data, type, platform, sex, fiber, clair3_model, clairS_model, clairSTO_model, kinetics
-
-
+    // ch_samplesheet (updated): [meta, [bam...]]
+    //   meta fields: id, paired_data, type, platform, sex, fiber, replicate,
+    //                clair3_model, clairS_model, clairSTO_model, kinetics
+    //   bams are grouped per sample (multiple runs merged into a list)
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES
+    // Decompresses the reference FASTA if needed, indexes it, downloads Clair3 models,
+    // and decompresses ASCAT reference files
+    // Input:  params.fasta, ASCAT file paths, basecall_meta, clair3_modelMap
+    // Output: .prepped_fasta           -- [[:], fasta]
+    //         .prepped_fai             -- [[:], fai]
+    //         .downloaded_clair3_models-- [meta(id=model_name), model_dir]
+    //         .allele_files / .loci_files / .gc_file / .rt_file  -- flat file collections
     //
 
     PREPARE_REFERENCE_FILES (
@@ -154,13 +208,16 @@ workflow LRSOMATIC {
     )
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
+    // downloaded_clair3_models: [meta(id=clair3_model_name), model_dir]
 
     ch_nanoplot_pre_txt = channel.empty()
 
     if (!params.skip_qc && !params.skip_cramino) {
 
         //
-        // Module: CRAMINO
+        // MODULE: CRAMINO_PRE (label: process_medium)
+        // Input:  [meta, [bam...]]  -- pre-alignment unaligned BAMs
+        // Output: cramino_pre.out.arrow -- [meta, arrow_file] (feather format stats)
         //
 
         CRAMINO_PRE( ch_samplesheet )
@@ -168,7 +225,9 @@ workflow LRSOMATIC {
         if (!params.skip_nanoplot) {
 
             //
-            // Module: Nanoplot
+            // MODULE: NANOPLOT_PRE (label: process_medium)
+            // Input:  CRAMINO_PRE.out.arrow -- [meta, arrow_file]
+            // Output: nanoplot HTML/txt reports
             //
 
             NANOPLOT_PRE(CRAMINO_PRE.out.arrow)
@@ -177,6 +236,7 @@ workflow LRSOMATIC {
 
     }
 
+    // Drop 'replicate' from meta before concatenation -- replicate info not needed downstream
     ch_samplesheet
         .map{ meta, bam ->
             def new_meta = meta.subMap('id',
@@ -192,42 +252,40 @@ workflow LRSOMATIC {
             return[new_meta, bam]
         }
         .set{ch_samplesheet_no_rep}
+    // ch_samplesheet_no_rep: [meta, [bam...]]
+    //   meta fields: id, paired_data, type, platform, sex, fiber,
+    //                clair3_model, clairS_model, clairSTO_model, kinetics
+    //   (replicate field removed; bams still a list — concatenated next)
 
-
-    // ch_samplesheet -> meta: [id, paired_data, platform, sex, type, fiber, basecall_model]
-    //                   bam:  list of unaligned bams
+    // Branch on number of input BAMs: samples with a single BAM skip concatenation
 
     ch_split = ch_samplesheet_no_rep
         .branch { _meta, bam ->
             single: bam.size() == 1
             multiple: bam.size() > 1
         }
+    // ch_split.single:   [meta, [bam]]   -- pass-through, no concatenation needed
+    // ch_split.multiple: [meta, [bam...]] -- need SAMTOOLS_CAT to merge
 
     //
-    // MODULE: SAMTOOLS_CAT
+    // MODULE: SAMTOOLS_CAT (label: process_single)
+    // Input:  [meta, [bam...]]  -- multiple unaligned BAMs for same sample
+    // Output: .bam -- [meta, bam]  -- single merged unaligned BAM
     //
-    // concatenates bam files from single sample
 
     SAMTOOLS_CAT ( ch_split.multiple )
         .bam
         .mix ( ch_split.single )
         .set { ch_cat_ubams }
-    // [meta, bam]  -- single merged unaligned BAM per sample
+    // ch_cat_ubams: [meta, bam]  -- single (possibly concatenated) unaligned BAM per sample
 
     vep_cache = channel.empty()
 
     if (!params.skip_vep) {
 
-        channel
-            .of([
-                vep_cache:          params.vep_cache,
-                vep_cache_version:  params.vep_cache_version,
-                vep_genome:         params.vep_genome,
-                vep_args:           params.vep_args,
-                vep_species:        params.vep_species,
-                download_vep_cache: params.download_vep_cache
-            ])
-
+        // SUBWORKFLOW: PREPARE_ANNOTATION
+        // Validates or downloads the VEP cache directory
+        // Output: .vep_cache -- path to VEP cache root directory
         PREPARE_ANNOTATION (
             params.vep_cache,
             params.vep_cache_version,
@@ -237,19 +295,21 @@ workflow LRSOMATIC {
             params.download_vep_cache
         )
         ch_versions = ch_versions.mix(PREPARE_ANNOTATION.out.versions)
+        // Wrap VEP cache path in a tuple with empty meta for use in ENSEMBLVEP_VEP
         vep_cache = PREPARE_ANNOTATION.out.vep_cache.map {cache -> [[:], cache] }
+        // vep_cache: [[:], cache_dir_path]  -- empty meta + VEP cache directory
 
     }
 
     ch_versions = ch_versions.mix(PREPARE_REFERENCE_FILES.out.versions)
-    ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta
-    ch_fai = PREPARE_REFERENCE_FILES.out.prepped_fai
+    ch_fasta = PREPARE_REFERENCE_FILES.out.prepped_fasta  // [[:], fasta]
+    ch_fai   = PREPARE_REFERENCE_FILES.out.prepped_fai    // [[:], fai]
 
-    // ASCAT files
-    allele_files = PREPARE_REFERENCE_FILES.out.allele_files
-    loci_files = PREPARE_REFERENCE_FILES.out.loci_files
-    gc_file = PREPARE_REFERENCE_FILES.out.gc_file
-    rt_file = PREPARE_REFERENCE_FILES.out.rt_file
+    // ASCAT reference files -- flat path collections (no meta wrapper), passed directly to ASCAT module
+    allele_files = PREPARE_REFERENCE_FILES.out.allele_files  // [path, ...]  -- per-chromosome allele files
+    loci_files   = PREPARE_REFERENCE_FILES.out.loci_files    // [path, ...]  -- per-chromosome loci files
+    gc_file      = PREPARE_REFERENCE_FILES.out.gc_file       // [path, ...]  -- GC correction ([] if skipped)
+    rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
 
     //
     // MODULE: FIBERTOOLSRS_PREDICTM6A
@@ -257,39 +317,57 @@ workflow LRSOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
+        // Fiber-seq processing: predict m6A methylation, call nucleosomes and FIRE elements
+        // Only applicable to PacBio samples with fiber-seq data (meta.fiber == "y")
         if (!params.skip_normalfiber){
+            // Process all samples (including normals) for fiber-seq
             ubams = ch_cat_ubams
         }
         else {
+            // Skip fiber-seq processing for normal samples; set aside normals to re-join later
             ch_cat_ubams
             .branch { meta, _bams ->
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
             .set { ch_cat_ubams_normal_branching }
+            // ch_cat_ubams_normal_branching.normal: [meta, bam]  -- normal samples (held out)
+            // ch_cat_ubams_normal_branching.tumor:  [meta, bam]  -- tumor samples only
 
             normal_bams = ch_cat_ubams_normal_branching.normal
             ubams = ch_cat_ubams_normal_branching.tumor
         }
+            // Branch by sequencing platform: PacBio needs m6A prediction, ONT does not
             ubams
             .branch{ meta, _bams ->
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
             .set{ch_cat_ubams_pacbio_ont_branching}
+        // ch_cat_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
+        // ch_cat_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
 
         pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
+        // Branch PacBio samples: only those with kinetics tags can have m6A predicted
         pacbio_bams
             .branch{meta, _bams ->
                 kinetics: meta.kinetics == "true"
                 noKinetics: meta.kinetics == "false"
             }
             .set{pacbio_bams}
+        // pacbio_bams.kinetics:   [meta, bam]  -- PacBio with kinetics (mm/ml tags); m6A predictable
+        // pacbio_bams.noKinetics: [meta, bam]  -- PacBio without kinetics; skip PREDICTM6A
 
         if (!params.skip_m6a) {
+            //
+            // MODULE: FIBERTOOLSRS_PREDICTM6A (label: process_high)
+            // Input:  [meta, bam]  -- PacBio BAM with kinetics tags
+            // Output: .bam -- [meta, bam]  -- BAM with m6A (MM/ML) tags added
+            //
             FIBERTOOLSRS_PREDICTM6A (
                 pacbio_bams.kinetics
             )
+            // Merge PacBio with and without kinetics: both now have (or skip) m6A tags
             pacbio_bams.noKinetics
                 .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
                 .set{predicted_bams}
@@ -299,22 +377,28 @@ workflow LRSOMATIC {
                 .mix(pacbio_bams.kinetics)
                 .set{predicted_bams}
         }
+        // predicted_bams: [meta, bam]  -- all PacBio samples (m6A tags present where applicable)
 
-
-
+        // Re-merge ONT and PacBio before fiber-seq branching
         ch_cat_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
             .set{fiber_branch}
+        // fiber_branch (pre-split): [meta, bam]  -- all samples (ONT + PacBio, with m6A if applicable)
 
+        // Branch on fiber-seq flag: only fiber-seq samples get nucleosome/FIRE calling
         fiber_branch
             .branch{ meta, _bams ->
                 fiber: meta.fiber == "y"
                 nonFiber: meta.fiber == "n"
             }
             .set{fiber_branch}
+        // fiber_branch.fiber:    [meta, bam]  -- fiber-seq samples → nucleosome + FIRE calling
+        // fiber_branch.nonFiber: [meta, bam]  -- non-fiber samples → passed through unchanged
 
         //
-        // MODULE: FIBERTOOLSRS_NUCLEOSOMES
+        // MODULE: FIBERTOOLSRS_NUCLEOSOMES (label: process_high)
+        // Input:  [meta, bam]  -- fiber-seq BAM (with m6A tags for PacBio)
+        // Output: .bam -- [meta, bam]  -- BAM with nucleosome footprint tags added
         //
 
         FIBERTOOLSRS_NUCLEOSOMES (
@@ -322,7 +406,9 @@ workflow LRSOMATIC {
         )
 
         //
-        // MODULE: FIBERTOOLSRS_FIRE
+        // MODULE: FIBERTOOLSRS_FIRE (label: process_high)
+        // Input:  FIBERTOOLSRS_NUCLEOSOMES.out.bam -- [meta, bam]  -- BAM with nucleosome tags
+        // Output: .bam -- [meta, bam]  -- BAM with FIRE (Fiber-seq Inferred Regulatory Elements) tags
         //
 
         FIBERTOOLSRS_FIRE (
@@ -330,22 +416,26 @@ workflow LRSOMATIC {
         )
 
         if (!params.skip_normalfiber){
+            // Re-merge fiber and non-fiber samples after FIRE annotation
             fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
-
         }
         else {
+            // Re-merge fiber, non-fiber, and held-out normal samples
             fiber_branch.nonFiber
             .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
             .set{ch_cat_ubams}
-
         }
+        // ch_cat_ubams (updated): [meta, bam]  -- all samples; fiber-seq samples now carry
+        //   nucleosome + FIRE tags in BAM; m6A tags present for PacBio fiber-seq
 
         if(!params.skip_qc) {
             //
-            // MODULE: FIBERTOOLSRS_QC
+            // MODULE: FIBERTOOLSRS_QC (label: process_medium)
+            // Input:  FIBERTOOLSRS_FIRE.out.bam -- [meta, bam]  -- annotated fiber-seq BAM
+            // Output: QC reports for fiber-seq signal (written to outdir)
             //
 
             FIBERTOOLSRS_QC (
@@ -354,10 +444,13 @@ workflow LRSOMATIC {
         }
     }
     //
-    // MODULE: MINIMAP2_ALIGN
+    // MODULE: MINIMAP2_ALIGN (label: process_high)
+    // Input:  [meta, bam]  -- unaligned BAM (may carry m6A/nucleosome/FIRE tags for fiber-seq)
+    //         ch_fasta     -- [[:], fasta]
+    //         sort_bam=true, cigar_paf_format='bai', cigar_bam='', split_prefix=''
+    // Output: .bam   -- [meta, bam]  -- coordinate-sorted aligned BAM
+    //         .index -- [meta, bai]  -- BAM index
     //
-    // Aligns ubams
-    // ch_cat_ubams: [meta, bam]  -- may include m6A/nucleosome/FIRE annotations for fiber-seq samples
 
     MINIMAP2_ALIGN (
         ch_cat_ubams,
@@ -369,76 +462,167 @@ workflow LRSOMATIC {
     )
     MINIMAP2_ALIGN.out.bam
         .set { ch_minimap_bam }
-    // [meta, bam]  -- aligned BAM
+    // ch_minimap_bam: [meta, bam]  -- coordinate-sorted aligned BAM
 
-    // ch_minimap_bams into tumor and paired to phase the paired ones on normal
-    // and add index
-
+    // Join BAM with its index, then branch into paired-sample vs. tumor-only paths
     ch_minimap_bam
         .join(MINIMAP2_ALIGN.out.index)
+        .set {ch_index_minimap}
+    // ch_index_minimap: [meta, bam, bai]  -- aligned BAM + index, all samples
+
+    ch_index_minimap
         .branch { meta, _bams, _bais ->
-                paired: meta.paired_data
-                tumor_only: !meta.paired_data
+                paired: meta.paired_data       // meta.paired_data is the normal sample ID for tumors, or the tumor ID for normals
+                tumor_only: !meta.paired_data  // meta.paired_data is null/false for tumor-only samples
         }
         .set { branched_minimap }
-    // branched_minimap.paired:     [meta, bam, bai]  -- one item per sample (tumor AND normal flow separately)
-    // branched_minimap.tumor_only: [meta, bam, bai]
 
-    //
-    // SUBWORKFLOW: TUMOR_NORMAL_HAPPHASE
-    //
-    // Phasing/haplotaging/small germline variant calling for tumor-normal samples
+    // branched_minimap.paired:     [meta, bam, bai]  -- tumor AND normal samples flow together here;
+    //                                                    each item is a single sample, joined downstream
+    // branched_minimap.tumor_only: [meta, bam, bai]  -- tumor-only samples (no matched normal)
 
-    TUMOR_NORMAL_HAPPHASE (
-        branched_minimap.paired,
+    // SUBWORKFLOW: TUMORONLY_SMALLVAR
+    // Input:  branched_minimap.tumor_only -- [meta, bam, bai]
+    // Output: .somatic_vcf  -- [meta, vcf, tbi]  -- somatic SNVs/indels
+    //         .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (ClairS-TO germline output)
+    TUMORONLY_SMALLVAR(
+        branched_minimap.tumor_only,
+        ch_fasta,
+        ch_fai,
+        pon_channel
+    )
+
+    branched_minimap.paired
+        .set{paired_ch}
+
+    // Split paired samples into tumor and normal streams for joining
+    paired_ch
+        .branch { meta, _bams, _bais ->
+                normal: meta.type == "normal"
+                tumor:  meta.type == "tumor"
+        }
+        .set{branched_paired_ch}
+    // branched_paired_ch.normal: [meta, bam, bai]  -- normal samples (meta.type == "normal")
+    // branched_paired_ch.tumor:  [meta, bam, bai]  -- tumor samples  (meta.type == "tumor")
+
+    // Strip 'type' field from normal meta before joining, so the key is just sample ID
+     branched_paired_ch.normal
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
+        }
+        .set{paired_normal_bams}
+    // paired_normal_bams: [meta (no type), normal_bam, normal_bai]
+
+    // Join tumor and normal BAMs into a single channel for somatic variant calling
+    // Join key is meta (with 'type' stripped), so tumor meta.id must equal normal meta.id
+    branched_paired_ch.tumor
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
+        }
+        .join(paired_normal_bams)
+        .set { somatic_smallvar_input }
+    // somatic_smallvar_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+
+    // SUBWORKFLOW: PAIRED_SMALLVAR_SOMATIC
+    // Input:  somatic_smallvar_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+    // Output: .somatic_vcf -- [meta, vcf, tbi]  -- somatic SNVs/indels (ClairS and/or DeepSomatic consensus)
+    PAIRED_SMALLVAR_SOMATIC (
+        somatic_smallvar_input,
+        ch_fasta,
+        ch_fai
+    )
+
+    // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE
+    // Input:  branched_paired_ch.normal -- [meta, bam, bai]  -- normal sample BAMs only
+    //         downloaded_clair3_models  -- [meta(id=model_name), model_dir]
+    // Output: .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (Clair3 and/or DeepVariant consensus)
+    PAIRED_SMALLVAR_GERMLINE (
+        branched_paired_ch.normal,
         ch_fasta,
         ch_fai,
         downloaded_clair3_models
     )
 
-    ch_versions = ch_versions.mix(TUMOR_NORMAL_HAPPHASE.out.versions)
+    // Merge germline VCFs from paired and tumor-only paths into a single channel
+    PAIRED_SMALLVAR_GERMLINE.out.germline_vcf
+        .mix(TUMORONLY_SMALLVAR.out.germline_vcf)
+        .set{ch_germline_vcf}
+    // ch_germline_vcf: [meta, vcf, tbi]  -- germline variants for all samples (paired + tumor-only)
 
-    //
-    // SUBWORKFLOW: TUMOR_ONLY_HAPPHASE
-    //
-    // Phasing/haplotagging for tumor only samples
+    // Merge somatic VCFs from tumor-only and paired T/N paths into a single channel
+    TUMORONLY_SMALLVAR.out.somatic_vcf
+        .mix(PAIRED_SMALLVAR_SOMATIC.out.somatic_vcf)
+        .set{ch_somatic_vcf}
+    // ch_somatic_vcf: [meta, vcf, tbi]  -- somatic variants for all samples
 
-    dbsnp = file(params.dbsnp)
-    colors = file(params.colors)
-    onekgenomes = file(params.onekgenomes)
-    gnomad = file(params.gnomad)
-
-    TUMOR_ONLY_HAPPHASE (
-        branched_minimap.tumor_only,
+    // SUBWORKFLOW: PHASING_HAPLOTYPING
+    // Input:  ch_index_minimap -- [meta, bam, bai]  -- all aligned BAMs (tumor + normal + tumor-only)
+    //         ch_germline_vcf  -- [meta, vcf, tbi]  -- germline variants (used to phase reads)
+    //         ch_somatic_vcf   -- [meta, vcf, tbi]  -- somatic variants (get phasing transferred)
+    //         ch_fasta / ch_fai
+    // Output: .phased_germline_vcf    -- [meta, vcf, tbi]  -- phased germline VCF
+    //         .phased_somatic_vcf     -- [meta, vcf, tbi]  -- phased somatic VCF
+    //         .tumor_normal_hapbams_ch -- [meta, bam, bai] -- haplotagged BAMs (all samples)
+    PHASING_HAPLOTYPING (
+        ch_index_minimap,
+        ch_germline_vcf,
+        ch_somatic_vcf,
         ch_fasta,
-        ch_fai,
-        dbsnp,
-        colors,
-        onekgenomes,
-        gnomad
+        ch_fai
     )
 
-    // Set channel for phased germline variants
-    germline_vep = TUMOR_NORMAL_HAPPHASE.out.germline_vep.mix(TUMOR_ONLY_HAPPHASE.out.germline_vep)
-    // [meta, vcf, []]  -- germline variants merged from T/N and tumor-only paths
+    // Prepare phased VCFs for VEP: add empty 'extra' list required by ENSEMBLVEP_VEP
+    PHASING_HAPLOTYPING.out.phased_somatic_vcf
+        .map { meta, vcf, _tbi ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { somatic_vep }
+    // somatic_vep: [meta, vcf, []]  -- phased somatic VCF ready for VEP annotation
 
-    // Set channel for somatic variants
-    somatic_vep = TUMOR_NORMAL_HAPPHASE.out.somatic_vep.mix(TUMOR_ONLY_HAPPHASE.out.somatic_vep)
-    // [meta, vcf, []]  -- somatic variants merged from T/N and tumor-only paths
+    PHASING_HAPLOTYPING.out.phased_germline_vcf
+        .map { meta, vcf, _tbi ->
+            def extra = []
+            return [meta, vcf, extra]
+        }
+        .set { germline_vep }
+    // germline_vep: [meta, vcf, []]  -- phased germline VCF ready for VEP annotation
 
 
     whatshap_stats_txt = channel.empty()
 
     if (!params.skip_qc && !params.skip_whatshapstats) {
 
-        // Create channel for whatshap stats
+        // Drop the empty 'extra' element added for VEP input
         germline_vep
             .map { meta, vcf, _extra ->
                 return [meta, vcf] }
             .set { ch_whatshap_stats }
+        // ch_whatshap_stats: [meta, vcf]  -- phased germline VCF for phasing QC
 
         //
-        // Module: WHATSHAP_STATS
+        // MODULE: WHATSHAP_STATS (label: process_single)
+        // Input:  [meta, vcf]   -- phased VCF (germline)
+        //         gtf=true, sample=true, chr_lengths=false
+        // Output: .tsv -- [meta, tsv]  -- per-chromosome phasing statistics
         //
 
         WHATSHAP_STATS (
@@ -455,7 +639,11 @@ workflow LRSOMATIC {
     if (!params.skip_vep) {
 
         //
-        // MODULE: GERMLINE_VEP
+        // MODULE: GERMLINE_VEP (ENSEMBLVEP_VEP alias; label: process_medium)
+        // Input:  germline_vep -- [meta, vcf, []]  -- phased germline VCF
+        //         vep_cache    -- [[:], cache_dir]
+        //         ch_fasta     -- [[:], fasta]
+        // Output: annotated germline VCF with consequence predictions
         //
         if (params.vep_custom != null) {
             vep_custom = file(params.vep_custom)
@@ -480,7 +668,11 @@ workflow LRSOMATIC {
         )
 
         //
-        // MODULE: SOMATIC_VEP
+        // MODULE: SOMATIC_VEP (ENSEMBLVEP_VEP alias; label: process_medium)
+        // Input:  somatic_vep -- [meta, vcf, []]  -- phased somatic VCF
+        //         vep_cache   -- [[:], cache_dir]
+        //         ch_fasta    -- [[:], fasta]
+        // Output: annotated somatic VCF with consequence predictions
         //
 
         SOMATIC_VEP (
@@ -496,23 +688,43 @@ workflow LRSOMATIC {
         )
     }
 
-    ch_versions = ch_versions.mix(TUMOR_ONLY_HAPPHASE.out.versions)
-
-    // Get Severus input channel
-    TUMOR_NORMAL_HAPPHASE.out.tumor_normal_severus
-        .mix(TUMOR_ONLY_HAPPHASE.out.tumor_only_severus)
-        .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi ->
-            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
+    // Build SEVERUS input by combining tumor-only and T/N paired samples with phased germline VCFs
+    // Tumor-only samples get empty lists for normal BAM/BAI (SEVERUS runs in tumor-only mode)
+    branched_minimap.tumor_only
+        .map{ meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+            return[new_meta, bam, bai]
         }
-        .set { severus_reformat }
-    // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi]  -- normal_bam/bai are [] for tumor-only
+        .map{meta, tumor_bam, tumor_bai->
+            def normal_bam = []
+            def normal_bai = []
+            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+        }
+        // Mix with paired T/N input (which already has normal BAM/BAI from somatic_smallvar_input)
+        .mix(somatic_smallvar_input)
+        // Attach phased germline VCF (used by SEVERUS for phased SV calling)
+        .join(PHASING_HAPLOTYPING.out.phased_germline_vcf)
+        .set{severus_input}
+    // severus_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, phased_germline_tbi]
+    //   normal_bam/bai are empty lists [] for tumor-only samples
 
     //
-    // MODULE: SEVERUS
+    // MODULE: SEVERUS (label: process_high)
+    // Input:  severus_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
+    //         [[:], bed_file, pon_file]  -- optional target BED and panel-of-normals for SV filtering
+    // Output: .all_vcf -- [meta, vcf]  -- all somatic SVs (sniffles2 format)
     //
 
     SEVERUS (
-        severus_reformat,
+        severus_input,
         [[:], params.bed_file, params.pon_file]
     )
 
@@ -524,9 +736,14 @@ workflow LRSOMATIC {
             return [meta, vcf, extra]
         }
         .set { sv_vep }
-    // [meta, severus_all_vcf, []]  -- all SVs for VEP annotation
+    // sv_vep: [meta, severus_all_vcf, []]  -- all SVs ready for VEP annotation
 
     if(!params.skip_vep) {
+        //
+        // MODULE: SV_VEP (ENSEMBLVEP_VEP alias; label: process_medium)
+        // Input:  sv_vep -- [meta, vcf, []]  -- SEVERUS SV VCF
+        // Output: annotated SV VCF with consequence predictions
+        //
         SV_VEP (
             sv_vep,
             params.vep_genome,
@@ -547,7 +764,9 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_cramino) {
 
         //
-        // MODULE: CRAMINO
+        // MODULE: CRAMINO_POST (label: process_medium)
+        // Input:  ch_minimap_bam -- [meta, bam]  -- post-alignment coordinate-sorted BAM
+        // Output: .arrow -- [meta, arrow_file]  -- alignment statistics in feather format
         //
 
         CRAMINO_POST ( ch_minimap_bam )
@@ -555,7 +774,9 @@ workflow LRSOMATIC {
         if (!params.skip_nanoplot) {
 
             //
-            // Module: Nanoplot
+            // MODULE: NANOPLOT_POST (label: process_medium)
+            // Input:  CRAMINO_POST.out.arrow -- [meta, arrow_file]
+            // Output: HTML/txt QC reports (post-alignment)
             //
 
             NANOPLOT_POST(CRAMINO_POST.out.arrow)
@@ -574,12 +795,19 @@ workflow LRSOMATIC {
 
     if (!params.skip_qc && !params.skip_mosdepth) {
 
-        // prepare mosdepth input channel: we need to specify compulsory path to bed as well
+        // MOSDEPTH requires a BED file argument; pass [] to compute genome-wide depth
         ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
-        // [meta, bam, bai, []]  -- [] is the required empty BED path for MOSDEPTH
+        // ch_mosdepth_in: [meta, bam, bai, []]  -- [] is the optional BED (empty = genome-wide)
 
+        //
+        // MODULE: MOSDEPTH (label: process_medium)
+        // Input:  [meta, bam, bai, bed]  -- bed is [] for genome-wide coverage
+        //         ch_fasta -- [[:], fasta]  -- used for CRAM decoding (if applicable)
+        // Output: .global_txt  -- [meta, txt]  -- global depth summary
+        //         .summary_txt -- [meta, txt]  -- per-contig depth summary
+        //
         MOSDEPTH (
             ch_mosdepth_in,
             ch_fasta
@@ -590,7 +818,12 @@ workflow LRSOMATIC {
     }
 
     //
-    // SUBWORKFLOW: BAM_STATS_SAMTOOLS
+    // SUBWORKFLOW: BAM_STATS_SAMTOOLS (nf-core subworkflow)
+    // Input:  [meta, bam, bai]  -- aligned BAM with index
+    //         ch_fasta          -- [[:], fasta]
+    // Output: .stats    -- [meta, txt]  -- samtools stats output
+    //         .flagstat -- [meta, txt]  -- samtools flagstat output
+    //         .idxstats -- [meta, txt]  -- samtools idxstats output
     //
     ch_bam_stats = channel.empty()
     ch_bam_flagstat = channel.empty()
@@ -599,7 +832,7 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_bamstats ) {
 
         BAM_STATS_SAMTOOLS (
-            ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // Join bam channel with index channel
+            ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // [meta, bam, bai]
             ch_fasta
         )
 
@@ -609,16 +842,20 @@ workflow LRSOMATIC {
     }
 
     //
-    // MODULE: ASCAT
+    // MODULE: ASCAT (label: process_high)
+    // Input:  [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
+    //         allele_files, loci_files, gc_file, rt_file  -- ASCAT reference files
+    // Output: .png plots, .segments, .purity_ploidy  -- copy number results
     //
 
     if (!params.skip_ascat) {
-        severus_reformat
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf ->
+        // ASCAT expects [normal, tumor] order; rearrange from severus_input [tumor, normal] order
+        severus_input
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf, _tbi ->
                 return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
             }
             .set { ascat_ch }
-        // [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
+        // ascat_ch: [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
 
         ASCAT (
             ascat_ch,
@@ -635,16 +872,25 @@ workflow LRSOMATIC {
     }
 
     //
-    // MODULE: WAKHAN
+    // MODULE: WAKHAN (label: process_medium)
+    // Haplotype-aware genome assembly and variant phasing visualisation
+    // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
+    //         ch_fasta          -- [[:], fasta]
+    //         centromere_bed    -- BED file of centromere coordinates (for assembly anchoring)
+    // Output: WAKHAN assembly reports (written to outdir)
     //
 
     if (!params.skip_wakhan) {
 
-        // Prepare input channel for WAKHAN
-        severus_reformat
+        // Attach SEVERUS SV VCF to the severus_input channel (dropping the phased TBI)
+        severus_input
             .join(SEVERUS.out.all_vcf)
+            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, _phased_tbi, all_vcf ->
+                return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, all_vcf]
+            }
             .set { wakhan_input }
-        // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi, severus_all_vcf]
+        // wakhan_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
+        //   normal_bam/bai are [] for tumor-only samples
 
         WAKHAN (
             wakhan_input,
@@ -654,25 +900,31 @@ workflow LRSOMATIC {
     }
 
     //
-    // Collate and save software versions
+    // Collate software versions from two sources:
+    //   1. ch_versions (classic path): version YAML files emitted by modules
+    //   2. channel.topic("versions") (topic channel path): version tuples [process, tool, version]
+    //      emitted directly by modules that use the topic-channel pattern
     //
     def topic_versions = channel.topic("versions")
-        .distinct()
+        .distinct()  // deduplicate identical version entries across samples
         .branch { entry ->
-            versions_file: entry instanceof Path
-            versions_tuple: true
+            versions_file:  entry instanceof Path   // classic YAML file path
+            versions_tuple: true                    // [process, tool, version] tuple
         }
 
     def topic_versions_string = topic_versions.versions_tuple
         .map { process, tool, version ->
+            // Strip workflow prefix (everything before the last ':') from process name
             [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
         }
-        .groupTuple(by:0)
+        .groupTuple(by:0)  // group tool versions by process name
         .map { process, tool_versions ->
             tool_versions.unique().sort()
             "${process}:\n${tool_versions.join('\n')}"
         }
+    // topic_versions_string: formatted YAML-like string per process, ready to write
 
+    // Merge both version sources and write to versions YAML (consumed by MultiQC)
     softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
         .mix(topic_versions_string)
         .collectFile(
@@ -681,10 +933,14 @@ workflow LRSOMATIC {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
+    // ch_collated_versions: path  -- merged software versions YAML for MultiQC
 
 
     //
-    // MODULE: MultiQC
+    // MODULE: MULTIQC (label: process_single)
+    // Aggregates QC reports from all modules into a single HTML report
+    // Input:  [[id:'multiqc'], [qc_files...], [config_files...], [logo], [], []]
+    // Output: .report -- [meta, html]  -- MultiQC HTML report
     //
     summary_params = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
@@ -706,7 +962,8 @@ workflow LRSOMATIC {
         )
     )
 
-    // Collect MultiQC files
+    // Collect QC outputs from all optional modules
+    // .collect{it -> it[1]} extracts the file from [meta, file] tuples; ifEmpty([]) handles skipped modules
     ch_multiqc_files = ch_multiqc_files.mix(ch_bam_stats.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_bam_flagstat.collect{it -> it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_bam_idxstats.collect{it -> it[1]}.ifEmpty([]))
@@ -719,6 +976,7 @@ workflow LRSOMATIC {
 
     ch_multiqc_files = ch_multiqc_files.mix(whatshap_stats_txt.collect{it -> it[1]}.ifEmpty([]))
 
+    // Build the final MULTIQC input tuple: all QC files + config files + logo
     MULTIQC (
         ch_multiqc_files
             .collect()
@@ -728,6 +986,7 @@ workflow LRSOMATIC {
                     multiqc_config_files += [file(params.multiqc_config, checkIfExists: true)]
                 }
                 def multiqc_logo_file = params.multiqc_logo ? [file(params.multiqc_logo, checkIfExists: true)] : []
+                // MULTIQC input: [meta, [qc_files], [config_files], [logo], [], []]
                 [[id: 'multiqc'], files, multiqc_config_files, multiqc_logo_file, [], []]
             }
     )

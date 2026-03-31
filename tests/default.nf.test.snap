@@ -2,7 +2,19 @@
     "-profile test": {
         "content": [
             {
+                "BCFTOOLS_ANNOTATE": {
+                    "bcftools": 1.22
+                },
                 "BCFTOOLS_CONCAT": {
+                    "bcftools": 1.22
+                },
+                "BCFTOOLS_ISEC": {
+                    "bcftools": 1.22
+                },
+                "BCFTOOLS_NORM": {
+                    "bcftools": 1.22
+                },
+                "BCFTOOLS_QUERY": {
                     "bcftools": 1.22
                 },
                 "BCFTOOLS_SORT": {
@@ -23,17 +35,37 @@
                 "CRAMINO_PRE": {
                     "cramino": "1.3.0"
                 },
+                "DEEPSOMATIC_CALLVARIANTS": {
+                    "deepsomatic": "1.7.0"
+                },
+                "DEEPSOMATIC_MAKEEXAMPLES": {
+                    "deepsomatic": "1.7.0"
+                },
+                "DEEPSOMATIC_POSTPROCESSVARIANTS": {
+                    "deepsomatic": "1.7.0"
+                },
+                "DEEPVARIANT_CALLVARIANTS": {
+                    "deepvariant": "1.9.0"
+                },
+                "DEEPVARIANT_MAKEEXAMPLES": {
+                    "deepvariant": "1.9.0"
+                },
+                "DEEPVARIANT_POSTPROCESSVARIANTS": {
+                    "deepvariant": "1.9.0"
+                },
                 "GERMLINE_VEP": {
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
                 },
                 "LONGPHASE_HAPLOTAG": {
-                    "longphase": 2.0
+                    "longphase": "2.0.1"
                 },
-                "LONGPHASE_PHASE": {
-                    "longphase": 2.0,
-                    "tabix": "1.22.1"
+                "LONGPHASE_PHASE_GERMLINE": {
+                    "longphase": "2.0.1"
+                },
+                "LONGPHASE_PHASE_SOMATIC": {
+                    "longphase": "2.0.1"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.21
@@ -257,17 +289,33 @@
                 "sample1/variants/clairs/indel.vcf.gz.tbi",
                 "sample1/variants/clairs/snvs.vcf.gz",
                 "sample1/variants/clairs/snvs.vcf.gz.tbi",
+                "sample1/variants/deepsomatic",
+                "sample1/variants/deepsomatic/sample1.vcf.gz",
+                "sample1/variants/deepsomatic/sample1.vcf.gz.tbi",
+                "sample1/variants/deepvariant",
+                "sample1/variants/deepvariant/sample1.vcf.gz",
+                "sample1/variants/deepvariant/sample1.vcf.gz.tbi",
                 "sample1/variants/phased",
                 "sample1/variants/phased/germline_smallvariants.vcf.gz",
                 "sample1/variants/phased/germline_smallvariants.vcf.gz.tbi",
+                "sample1/variants/phased/germline_smallvariants_mod.vcf.gz",
+                "sample1/variants/phased/germline_smallvariants_mod.vcf.gz.tbi",
+                "sample1/variants/phased/somatic_smallvariants.vcf.gz",
+                "sample1/variants/phased/somatic_smallvariants.vcf.gz.tbi",
+                "sample1/variants/phased/somatic_smallvariants_mod.vcf.gz",
+                "sample1/variants/phased/somatic_smallvariants_mod.vcf.gz.tbi",
                 "sample1/variants/severus",
                 "sample1/variants/severus/all_SVs",
+                "sample1/variants/severus/all_SVs/breakpoint_clusters.tsv",
+                "sample1/variants/severus/all_SVs/breakpoint_clusters_list.tsv",
                 "sample1/variants/severus/all_SVs/severus_all.vcf.gz",
                 "sample1/variants/severus/breakpoints_double.csv",
                 "sample1/variants/severus/read_ids.csv",
                 "sample1/variants/severus/read_qual.txt",
                 "sample1/variants/severus/severus.log",
                 "sample1/variants/severus/somatic_SVs",
+                "sample1/variants/severus/somatic_SVs/breakpoint_clusters.tsv",
+                "sample1/variants/severus/somatic_SVs/breakpoint_clusters_list.tsv",
                 "sample1/variants/severus/somatic_SVs/severus_somatic.vcf.gz",
                 "sample1/vep",
                 "sample1/vep/SVs",
@@ -364,17 +412,33 @@
                 "sample2/variants/clairs/indel.vcf.gz.tbi",
                 "sample2/variants/clairs/snvs.vcf.gz",
                 "sample2/variants/clairs/snvs.vcf.gz.tbi",
+                "sample2/variants/deepsomatic",
+                "sample2/variants/deepsomatic/sample2.vcf.gz",
+                "sample2/variants/deepsomatic/sample2.vcf.gz.tbi",
+                "sample2/variants/deepvariant",
+                "sample2/variants/deepvariant/sample2.vcf.gz",
+                "sample2/variants/deepvariant/sample2.vcf.gz.tbi",
                 "sample2/variants/phased",
                 "sample2/variants/phased/germline_smallvariants.vcf.gz",
                 "sample2/variants/phased/germline_smallvariants.vcf.gz.tbi",
+                "sample2/variants/phased/germline_smallvariants_mod.vcf.gz",
+                "sample2/variants/phased/germline_smallvariants_mod.vcf.gz.tbi",
+                "sample2/variants/phased/somatic_smallvariants.vcf.gz",
+                "sample2/variants/phased/somatic_smallvariants.vcf.gz.tbi",
+                "sample2/variants/phased/somatic_smallvariants_mod.vcf.gz",
+                "sample2/variants/phased/somatic_smallvariants_mod.vcf.gz.tbi",
                 "sample2/variants/severus",
                 "sample2/variants/severus/all_SVs",
+                "sample2/variants/severus/all_SVs/breakpoint_clusters.tsv",
+                "sample2/variants/severus/all_SVs/breakpoint_clusters_list.tsv",
                 "sample2/variants/severus/all_SVs/severus_all.vcf.gz",
                 "sample2/variants/severus/breakpoints_double.csv",
                 "sample2/variants/severus/read_ids.csv",
                 "sample2/variants/severus/read_qual.txt",
                 "sample2/variants/severus/severus.log",
                 "sample2/variants/severus/somatic_SVs",
+                "sample2/variants/severus/somatic_SVs/breakpoint_clusters.tsv",
+                "sample2/variants/severus/somatic_SVs/breakpoint_clusters_list.tsv",
                 "sample2/variants/severus/somatic_SVs/severus_somatic.vcf.gz",
                 "sample2/vep",
                 "sample2/vep/SVs",
@@ -439,17 +503,33 @@
                 "sample3/variants/clairsto/snv.vcf.gz.tbi",
                 "sample3/variants/clairsto/somatic.vcf.gz",
                 "sample3/variants/clairsto/somatic.vcf.gz.tbi",
+                "sample3/variants/deepsomatic",
+                "sample3/variants/deepsomatic/sample3.vcf.gz",
+                "sample3/variants/deepsomatic/sample3.vcf.gz.tbi",
+                "sample3/variants/deepvariant",
+                "sample3/variants/deepvariant/sample3.vcf.gz",
+                "sample3/variants/deepvariant/sample3.vcf.gz.tbi",
                 "sample3/variants/phased",
                 "sample3/variants/phased/germline_smallvariants.vcf.gz",
                 "sample3/variants/phased/germline_smallvariants.vcf.gz.tbi",
+                "sample3/variants/phased/germline_smallvariants_mod.vcf.gz",
+                "sample3/variants/phased/germline_smallvariants_mod.vcf.gz.tbi",
+                "sample3/variants/phased/somatic_smallvariants.vcf.gz",
+                "sample3/variants/phased/somatic_smallvariants.vcf.gz.tbi",
+                "sample3/variants/phased/somatic_smallvariants_mod.vcf.gz",
+                "sample3/variants/phased/somatic_smallvariants_mod.vcf.gz.tbi",
                 "sample3/variants/severus",
                 "sample3/variants/severus/all_SVs",
+                "sample3/variants/severus/all_SVs/breakpoint_clusters.tsv",
+                "sample3/variants/severus/all_SVs/breakpoint_clusters_list.tsv",
                 "sample3/variants/severus/all_SVs/severus_all.vcf.gz",
                 "sample3/variants/severus/breakpoints_double.csv",
                 "sample3/variants/severus/read_ids.csv",
                 "sample3/variants/severus/read_qual.txt",
                 "sample3/variants/severus/severus.log",
                 "sample3/variants/severus/somatic_SVs",
+                "sample3/variants/severus/somatic_SVs/breakpoint_clusters.tsv",
+                "sample3/variants/severus/somatic_SVs/breakpoint_clusters_list.tsv",
                 "sample3/variants/severus/somatic_SVs/severus_somatic.vcf.gz",
                 "sample3/vep",
                 "sample3/vep/SVs",
@@ -466,52 +546,64 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
-                "sample1_normal.bam:md5,c4eda86b77d9280bbcb922ab944ce68b",
-                "sample1_normal.bam.bai:md5,0d0e6451f37ddd209bc8804c50e29e85",
-                "sample1_tumor.bam:md5,57ad020a25e02fe94e9d6199c396aaf1",
-                "sample1_tumor.bam.bai:md5,28ffee78ed0ed13e0749e8d08bbb52c6",
+                "sample1_normal.bam:md5,3ce847c38eb619781e32a10c28e0c35c",
+                "sample1_normal.bam.bai:md5,8dd8c7fa037badc7097067d5a88672cd",
+                "sample1_tumor.bam:md5,ed5eb35b63d5e92fa8e461b9a1732b21",
+                "sample1_tumor.bam.bai:md5,21018d3f1f85be74fd7dc66873219b05",
                 "sample1.flagstat:md5,1c41ea9923945501eb7e41f83a90502d",
                 "sample1.idxstats:md5,902e503387799123ea59255e3fca172c",
-                "sample1.stats:md5,5a76f92088d36f8e93d72351e521b59b",
+                "sample1.stats:md5,70fabbdc07dec0479b3fc7dcec344054",
                 "sample1.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
-                "sample1.stats:md5,8cec99bd9c1ba4ee22619b66d4fec02a",
-                "sample1_whatshap_stats.gtf:md5,eff050a68e36e778b06e0ec19435c569",
-                "sample1_whatshap_stats.log:md5,76b73731f74fe32ef2d11f6bb0a0f71a",
-                "sample1_whatshap_stats.tsv:md5,f566ae25b3c5a8f7e94b3d6c1b0417f8",
-                "breakpoints_double.csv:md5,fd92fe40bc0ab3b836dedc395b80d6e2",
-                "read_qual.txt:md5,78247dfa2ea336eac0e128eba5e9eef4",
-                "sample2_normal.bam:md5,32cb1237503f716d788c8d49106d57cc",
-                "sample2_normal.bam.bai:md5,bda7beaa98b119d07bb61da781af2033",
-                "sample2_tumor.bam:md5,b9ec59ff00a6c561a614eeb7553c352c",
-                "sample2_tumor.bam.bai:md5,8342f0fbbc8ce4f4c79aa42c7804df9d",
+                "sample1.stats:md5,5012c82d3d3ca60ffdd2fb970f772566",
+                "sample1_whatshap_stats.gtf:md5,428ca0e0f48dc2e3e1b978fa7cf720f3",
+                "sample1_whatshap_stats.log:md5,5c1f0f79a60a6879b75271fa94b620e8",
+                "sample1_whatshap_stats.tsv:md5,98582c7e0ff74a2a1978bf70ac9926ee",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
+                "breakpoints_double.csv:md5,27b409c73dd0d8bde316545f86ac7f15",
+                "read_qual.txt:md5,fbe6cd0b65cbfc1ca699e252e531ab72",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
+                "sample2_normal.bam:md5,2ecddb6279310240f2dc29b0cf7f8c84",
+                "sample2_normal.bam.bai:md5,9caebccee8882bcf95e65631c0ac6730",
+                "sample2_tumor.bam:md5,c8db7cc4b189dec3fadd2cce07d9fcae",
+                "sample2_tumor.bam.bai:md5,28827d78aa318e26f71b68581ed5c607",
                 "sample2.flagstat:md5,714d0cc0c213e2640e54a16f3d0e6e7e",
                 "sample2.idxstats:md5,72eb83bb11748dc863fef1a0a5497e4b",
-                "sample2.stats:md5,9afe66549bed997cce97dfa11c0f0cca",
+                "sample2.stats:md5,87cb6e9adf8a133244e8b331be43bb14",
                 "sample2.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
-                "sample2.stats:md5,7cbbff1faaf2e030470a8c1e69434b48",
-                "sample2_whatshap_stats.gtf:md5,4d8f4393e3aebe4e945c0b8236cf3b3e",
-                "sample2_whatshap_stats.log:md5,10bba7bae6dd99b989ece5e5dac7a8f9",
-                "sample2_whatshap_stats.tsv:md5,bb46226e486af9026ab76e014624e903",
-                "breakpoints_double.csv:md5,d3f0957887406fb79f9dcc3707324d8c",
-                "read_qual.txt:md5,8b92ff7dc4536188be159b95525511cd",
-                "sample3_tumor.bam:md5,72e067ec99d694f5e1549edca7196054",
-                "sample3_tumor.bam.bai:md5,4c7386eb59528e81bd48e6a77952f1c3",
+                "sample2.stats:md5,1e044857eeefb284fda88ee58ff7a04a",
+                "sample2_whatshap_stats.gtf:md5,a13f0ac1edd7abde4ad013bf2619fe0f",
+                "sample2_whatshap_stats.log:md5,1d5ed1faca328d3014e9b14a44d18a23",
+                "sample2_whatshap_stats.tsv:md5,a275209ef9e7885ee5ea3a4aa1c970fd",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
+                "breakpoints_double.csv:md5,7d2fe02046bd2ff7138b46d8f67fc755",
+                "read_qual.txt:md5,fe3f87458d7c0c6591c37e1fd70cecf2",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
+                "sample3_tumor.bam:md5,f5dfadf92345cd529de4c1919f82b632",
+                "sample3_tumor.bam.bai:md5,f8ca34c0584329c62cb70ce8fb942cb6",
                 "sample3.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample3.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
-                "sample3.stats:md5,6825d4e497aef80ed7160afbef5076d9",
-                "sample3_whatshap_stats.gtf:md5,46a97067376b06b476d180709bc9e3d8",
-                "sample3_whatshap_stats.log:md5,376254ec9c98f9ba204895e7085516ed",
-                "sample3_whatshap_stats.tsv:md5,f7cc79156f23e884ead18e50b8434dbf",
-                "breakpoints_double.csv:md5,41bb00e81dd6c319c13e754fa853ca68",
-                "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed"
+                "sample3.stats:md5,d7a8552a8a41a217954a0c825d468a60",
+                "sample3_whatshap_stats.gtf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                "sample3_whatshap_stats.log:md5,ca067293878d1760638626a8c5a31432",
+                "sample3_whatshap_stats.tsv:md5,62beceb9731cafc620ce5c6eb07a9cc9",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
+                "breakpoints_double.csv:md5,a9a0e0a75975904952788c2a0bd3fa85",
+                "read_qual.txt:md5,25efaa43bb81a4592bfb8f5f08f84b34",
+                "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
+                "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-03-13T15:33:42.343920246",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "25.10.0"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-03-27T17:04:12.049740619"
     }
 }

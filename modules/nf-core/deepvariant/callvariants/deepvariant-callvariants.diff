@@ -1,0 +1,18 @@
+Changes in component 'nf-core/deepvariant/callvariants'
+'modules/nf-core/deepvariant/callvariants/meta.yml' is unchanged
+Changes in 'deepvariant/callvariants/main.nf':
+--- modules/nf-core/deepvariant/callvariants/main.nf
++++ modules/nf-core/deepvariant/callvariants/main.nf
+@@ -2,6 +2,7 @@
+ process DEEPVARIANT_CALLVARIANTS {
+     tag "$meta.id"
+     label 'process_high'
++    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
+ 
+     //Conda is not supported at the moment
+     container "docker.io/google/deepvariant:1.9.0"
+
+'modules/nf-core/deepvariant/callvariants/tests/main.nf.test' is unchanged
+'modules/nf-core/deepvariant/callvariants/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/deepvariant/callvariants/tests/nextflow.config' is unchanged
+************************************************************

@@ -4,8 +4,8 @@ process LONGPHASE_PHASE {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b0/b0184a9a36d8612fbae38bbaad7b52f03b815ad17673740e107cf1f267a1f15d/data':
-        'community.wave.seqera.io/library/htslib_longphase:3071e61356fc25a4' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/83/83fce1d397cf71705cc096fc0e0e52f7013bdd471ef68ee53ae765688e5c439c/data':
+        'community.wave.seqera.io/library/longphase_samtools:8c61296cae7a5fc0' }"
 
     input:
     tuple val(meta), path(bam), path(bai), path(snvs), path(svs), path(mods)
@@ -20,8 +20,8 @@ process LONGPHASE_PHASE {
     tuple val(meta), path("${prefix}_SV.vcf.gz.tbi") , emit: sv_vcf_index , optional: true
     tuple val(meta), path("${prefix}_mod.vcf.gz")    , emit: mod_vcf, optional: true
     tuple val(meta), path("${prefix}_mod.vcf.gz.tbi"), emit: mod_vcf_index, optional: true
-    path "versions.yml"                              , emit: versions
-
+    tuple val("${task.process}"), val("longphase"), eval("longphase --version | head -n 1 | sed 's/Version: //'"), emit: versions_longphase, topic: versions
+    
     when:
     task.ext.when == null || task.ext.when
 
@@ -49,7 +49,15 @@ process LONGPHASE_PHASE {
         $args2 \\
         ${prefix}*.vcf
 
-    tabix -p vcf ${prefix}*.vcf.gz
+    tabix -p vcf ${prefix}.vcf.gz
+
+    if [ -f ${prefix}_SV.vcf.gz ]; then
+        tabix -p vcf ${prefix}_SV.vcf.gz
+    fi
+
+    if [ -f ${prefix}_mod.vcf.gz ]; then
+        tabix -p vcf ${prefix}_mod.vcf.gz
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

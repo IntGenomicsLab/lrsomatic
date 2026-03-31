@@ -31,8 +31,8 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_filtered.vcf.gz
-    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $indel_vcf | bgzip -c > indels_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $snv_vcf | bgzip -c > snv_filtered.vcf.gz
     tabix -p vcf indels_filtered.vcf.gz
     tabix -p vcf snv_filtered.vcf.gz
     bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_filtered.vcf.gz snv_filtered.vcf.gz

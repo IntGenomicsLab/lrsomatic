@@ -8,13 +8,9 @@ process CLAIRSTO {
         'docker.io/hkubal/clairs-to:v0.4.2' }"
 
     input:
-    tuple val(meta), path(tumor_bam), path(tumor_bai), val(model)
+    tuple val(meta), path(tumor_bam), path(tumor_bai), val(model), path(pon_vcfs), val(pon_flags)
     tuple val(meta2), path(reference)
     tuple val(meta3), path(index)
-    path(dbSNP)
-    path(colors)
-    path(onekgenomes)
-    path(gnomad)
 
     output:
     tuple val(meta), path("indel.vcf.gz"),      emit: indel_vcf
@@ -28,11 +24,10 @@ process CLAIRSTO {
 
     script:
     def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def conda_prefix = workflow.containerEngine == 'singularity' ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
-    def gnomad_arg = gnomad ?: 'gnomad.r2.1.af-ge-0.001.sites.vcf.gz'
-    def dbSNP_arg = dbSNP ?: 'dbsnp.b138.non-somatic.sites.vcf.gz'
-    def onekgenomes_arg = onekgenomes ?: '1000g-pon.sites.vcf.gz'
-    def colors_arg = colors ?: 'colors-pon.sites.vcf.gz'
+    def pon_string   = pon_vcfs.join(',')
+    def flags_string = pon_flags.join(',')
 
     """
     /opt/bin/run_clairs_to \
@@ -41,8 +36,9 @@ process CLAIRSTO {
         --platform $model \\
         --threads $task.cpus \\
         --output_dir . \\
-        --panel_of_normals "${gnomad_arg},${dbSNP_arg},${onekgenomes_arg},${colors_arg}" \\
-        --panel_of_normals_require_allele_matching 'True,True,False,False' \\
+        --sample_name ${prefix} \\
+        --panel_of_normals ${pon_string} \\
+        --panel_of_normals_require_allele_matching ${flags_string} \\
         $conda_prefix \\
         $args \\
     """

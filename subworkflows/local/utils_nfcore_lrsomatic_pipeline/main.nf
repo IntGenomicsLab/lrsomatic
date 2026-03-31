@@ -84,17 +84,23 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
+    // Parse the input samplesheet CSV and build a per-sample BAM channel
+    // Each samplesheet row describes one tumor (+ optional normal) sample
+    // Columns: sample_id, bam_tumor, bam_normal, method, sex, fiber,
+    //          clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate
     channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        // Step 1: build a combined meta map from the samplesheet columns
+        // paired_data = true if a normal BAM is present; false for tumor-only
         .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate ->
             def real_clair3_model = (clair3_model == null ) ? null : clair3_model
             def real_clairS_model = (clairS_model == null ) ? null : clairS_model
             def real_clairSTO_model = (clairSTO_model == null ) ? null : clairSTO_model
             def paired_data = bam_normal ? true : false
             def meta_info = meta + [ paired_data: paired_data,
-                                     platform: method,
-                                     sex: sex,
-                                     fiber: fiber,
+                                     platform: method,         // 'ont' or 'pb'
+                                     sex: sex,                 // 'XX', 'XY', or null (for ASCAT)
+                                     fiber: fiber,             // 'y' or 'n' (fiber-seq data flag)
                                      clair3_model: real_clair3_model,
                                      clairS_model: real_clairS_model,
                                      clairSTO_model: real_clairSTO_model,
@@ -102,9 +108,13 @@ workflow PIPELINE_INITIALISATION {
                                      normal_replicate: normal_replicate]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
+        // Flatten BAM lists (handles multi-run entries where bam_tumor/bam_normal are lists)
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
+        // Step 2: split each row into separate tumor and normal items
+        // flatMap emits 1 item (tumor-only) or 2 items (tumor + normal) per samplesheet row
+        // Each item gets type='tumor' or type='normal' and the appropriate replicate ID
         .flatMap { meta, tumor_bam, normal_bam ->
             def meta_tumor = meta.clone()
             meta_tumor.type = 'tumor'
@@ -120,6 +130,7 @@ workflow PIPELINE_INITIALISATION {
                                            'clairSTO_model',
                                            'replicate')
             def result = [[meta_tumor, tumor_bam]]
+            // result so far: [[meta_tumor, [tumor_bam_path...]]]
 
             if (normal_bam) {
                 def meta_normal = meta.clone()
@@ -136,17 +147,24 @@ workflow PIPELINE_INITIALISATION {
                                                  'clairSTO_model',
                                                  'replicate')
                 result << [meta_normal, normal_bam]
+                // result now: [[meta_tumor, [tumor_bams]], [meta_normal, [normal_bams]]]
             }
 
             return result
         }
         .set { ch_samplesheet }
-
-        // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
-        //                   bam:  unaligned bams
+    // ch_samplesheet: [meta, [bam...]]
+    //   meta fields: id, paired_data, type ('tumor'|'normal'), platform ('ont'|'pb'),
+    //                sex, fiber ('y'|'n'), clair3_model, clairS_model, clairSTO_model, replicate
+    //   paired_data: true for both items in a T/N pair (same value for tumor AND normal rows)
+    //   bam: list of paths (multiple runs for same sample remain as a list until SAMTOOLS_CAT)
+    //
+    // NOTE: tumor-only rows emit ONE item (type='tumor', paired_data=false)
+    //       paired rows emit TWO items — tumor (paired_data=true) + normal (paired_data=true)
+    //       Both share the same 'id' to allow downstream joins
 
     emit:
-    samplesheet = ch_samplesheet
+    samplesheet = ch_samplesheet  // [meta, [bam...]]  -- see channel structure above
     versions    = ch_versions
 }
 

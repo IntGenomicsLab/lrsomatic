@@ -1,7 +1,7 @@
 process FIBERTOOLSRS_NUCLEOSOMES {
     tag "$meta.id"
     label 'process_very_high'
-    label 'process_high_memory'
+    label "${params.use_gpu ? 'process_gpu_very_high_memory' : 'process_high_memory'}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

@@ -1,6 +1,6 @@
 process DEEPVARIANT_MAKEEXAMPLES {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepvariant:1.9.0"
@@ -36,6 +36,7 @@ process DEEPVARIANT_MAKEEXAMPLES {
         --mode calling \\
         --ref "${fasta}" \\
         --reads "${input}" \\
+        --sample_name ${prefix} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
         --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
         ${regions} \\
