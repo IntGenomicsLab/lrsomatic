@@ -4,7 +4,7 @@ process DEEPVARIANT_CALLVARIANTS {
     label "${params.use_gpu ? 'process_gpu_very_high' : 'process_very_high'}"
 
     //Conda is not supported at the moment
-    container "docker.io/google/deepvariant:1.9.0"
+    container params.use_gpu ? "docker.io/google/deepvariant:1.9.0-gpu" : "docker.io/google/deepvariant:1.9.0"
 
     input:
     tuple val(meta), path(make_examples_tfrecords)
