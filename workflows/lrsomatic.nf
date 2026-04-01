@@ -471,11 +471,14 @@ workflow LRSOMATIC {
         .set {ch_index_minimap}
     // ch_index_minimap: [meta, bam, bai]  -- aligned BAM + index, all samples
 
-
+    //
+    // MODULE: MODKIT_PILEUP
+    //
 
     if (!params.skip_modkit) {
         MODKIT_PILEUP(ch_index_minimap, ch_fasta, ch_fai, [[:],[]])
     }
+    
     ch_index_minimap
         .branch { meta, _bams, _bais ->
                 paired: meta.paired_data       // meta.paired_data is the normal sample ID for tumors, or the tumor ID for normals
