@@ -13,7 +13,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     mixed_vcfs       // [meta(+caller field), vcf, tbi]  -- one item per caller per sample
     //                    meta.caller is one of: 'clair3', 'clairs-to', 'clairs', 'deepvariant', 'deepsomatic'
     fasta            // [[:], fasta]
-    fai              // [[:], fai]
+    _fai             // [[:], fai]
     prioritize_caller // str: which caller's calls take priority ('deepvariant'/'deepsomatic' or 'clair')
     combine_method   // str: 'consensus' (intersection only) or 'all' (intersection + private calls from priority caller)
 
@@ -82,8 +82,8 @@ workflow SMALL_VARIANT_CONSENSUS {
     deepvariant_ch = annotated_vcfs_branched.deepvariant
 
     // Strip 'caller' field from meta before joining so both channels share the same key
-    clair_ch.
-        map {meta, vcfs, tbi ->
+    clair_ch
+        .map {meta, vcfs, tbi ->
             def new_meta = meta.subMap('id',
                             'paired_data',
                             'type',

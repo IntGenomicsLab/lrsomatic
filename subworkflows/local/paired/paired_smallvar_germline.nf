@@ -15,7 +15,6 @@ workflow PAIRED_SMALLVAR_GERMLINE {
 
     main:
     germline_vcf = channel.empty()
-    germline_tbi = channel.empty()
 
     // COMBINE NORMAL BAMS WITH DOWNLOADED CLAIR3 MODELS
     // Clair3 requires the model directory path; models are keyed by model name (meta.id)

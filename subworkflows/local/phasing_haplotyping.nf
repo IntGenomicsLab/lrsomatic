@@ -141,13 +141,13 @@ workflow PHASING_HAPLOTYPING {
     // Merge germline and somatic VCFs into a single file for somatic phasing
     // Longphase requires all variant sites in one VCF to produce a consistent phase block
     germline_vcf
-            .join(somatic_vcf)
-            .map { meta, germline_vcf, germline_tbi, somatic_vcf, somatic_tbi ->
-                    def vcfs = [somatic_vcf, germline_vcf]  // somatic first (higher priority in phasing)
-                    def tbis = [somatic_tbi, germline_tbi]
-                    return [ meta, vcfs, tbis]
-            }
-            .set{germline_somatic_vcfs}
+        .join(somatic_vcf)
+        .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
+                def vcfs = [som_vcf, germ_vcf]  // somatic first (higher priority in phasing)
+                def tbis = [som_tbi, germ_tbi]
+                return [ meta, vcfs, tbis]
+        }
+        .set{germline_somatic_vcfs}
     // germline_somatic_vcfs (pre-concat): [meta, [somatic_vcf, germline_vcf], [somatic_tbi, germline_tbi]]
 
     //
@@ -157,7 +157,7 @@ workflow PHASING_HAPLOTYPING {
     //
         BCFTOOLS_CONCAT(germline_somatic_vcfs)
         BCFTOOLS_CONCAT.out.vcf
-                .set{concat_out}
+            .set{concat_out}
     // concat_out: [meta, vcf]  -- concatenated (unsorted) somatic+germline VCF
 
     //

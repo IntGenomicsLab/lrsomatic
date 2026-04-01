@@ -61,10 +61,7 @@ process LONGPHASE_PHASE {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    def sv_command = svs ? "echo '' | bgzip -c > ${prefix}_SV.vcf.gz" : ""
-    def mod_command = mods ? "echo '' | bgzip -c > ${prefix}_mod.vcf.gz" : ""
     """
       tabix -p vcf ${prefix}.vcf.gz
 

@@ -20,11 +20,8 @@ workflow TUMORONLY_SMALLVAR {
 
     main:
 
-    ch_versions = channel.empty()
     somatic_vcf = channel.empty()
     germline_vcf = channel.empty()
-    somatic_tbi = channel.empty()
-    germline_tbi = channel.empty()
 
     // CLAIRS-TO: somatic AND germline variant calling from tumor-only BAM
     // ClairS-TO uses a panel-of-normals / population allele database to separate somatic from germline
