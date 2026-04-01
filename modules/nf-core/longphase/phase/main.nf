@@ -58,29 +58,19 @@ process LONGPHASE_PHASE {
     if [ -f ${prefix}_mod.vcf.gz ]; then
         tabix -p vcf ${prefix}_mod.vcf.gz
     fi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-        tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
-    END_VERSIONS
     """
 
     stub:
-    def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    def sv_command = svs ? "echo '' | bgzip -c > ${prefix}_SV.vcf.gz" : ""
-    def mod_command = mods ? "echo '' | bgzip -c > ${prefix}_mod.vcf.gz" : ""
     """
-    echo $args
-    echo "" | bgzip -c > ${prefix}.vcf.gz
+      tabix -p vcf ${prefix}.vcf.gz
 
-    $sv_command
-    $mod_command
+    if [ -f ${prefix}_SV.vcf.gz ]; then
+        tabix -p vcf ${prefix}_SV.vcf.gz
+    fi
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-    END_VERSIONS
+    if [ -f ${prefix}_mod.vcf.gz ]; then
+        tabix -p vcf ${prefix}_mod.vcf.gz
+    fi
     """
 }

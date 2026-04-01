@@ -33,6 +33,7 @@ include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblve
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
+include { MODKIT_PILEUP                     } from '../modules/nf-core/modkit/pileup/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -97,7 +98,7 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
 
     if (params.pon_vcfs != null) {
-        pon_files = params.pon_vcfs.collect { file(it) }
+        pon_files = params.pon_vcfs.collect { it ->file(it) }
         pon_flags = params.pon_flags
     }
     else if (params.genome == 'GRCh38') {
@@ -133,7 +134,7 @@ workflow LRSOMATIC {
     if (pon_files.size() != pon_flags.size()) {
         error "PoN VCFs and allele flags must have same length"
     }
-    Channel
+    channel
         .of( tuple(pon_files, pon_flags) )
         .set { pon_channel }
     // pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
@@ -469,6 +470,14 @@ workflow LRSOMATIC {
         .join(MINIMAP2_ALIGN.out.index)
         .set {ch_index_minimap}
     // ch_index_minimap: [meta, bam, bai]  -- aligned BAM + index, all samples
+
+    //
+    // MODULE: MODKIT_PILEUP
+    //
+
+    if (!params.skip_modkit) {
+        MODKIT_PILEUP(ch_index_minimap, ch_fasta, ch_fai, [[:],[]])
+    }
 
     ch_index_minimap
         .branch { meta, _bams, _bais ->

@@ -6,7 +6,7 @@ workflow DEEPSOMATIC {
     take:
     ch_input     // [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
     //              normal_bam/bai may be [] for tumor-only mode
-    ch_intervals // [[:], []]  -- empty intervals (genome-wide calling)
+    _ch_intervals // [[:], []]  -- empty intervals (genome-wide calling)
     ch_fasta     // [[:], fasta]
     ch_fai       // [[:], fai]
     ch_gzi       // [[:], gzi]  -- bgzipped FASTA index (empty if FASTA is not bgzipped)

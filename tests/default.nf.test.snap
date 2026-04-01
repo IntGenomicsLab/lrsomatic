@@ -61,6 +61,12 @@
                 "LONGPHASE_HAPLOTAG": {
                     "longphase": "2.0.1"
                 },
+                "LONGPHASE_MODCALL_GERMLINE": {
+                    "longphase": "2.0.1"
+                },
+                "LONGPHASE_MODCALL_SOMATIC": {
+                    "longphase": "2.0.1"
+                },
                 "LONGPHASE_PHASE_GERMLINE": {
                     "longphase": "2.0.1"
                 },
@@ -75,6 +81,12 @@
                 },
                 "MOSDEPTH": {
                     "mosdepth": "0.3.11"
+                },
+                "NANOPLOT_POST": {
+                    "nanoplot": "1.46.1"
+                },
+                "NANOPLOT_PRE": {
+                    "nanoplot": "1.46.1"
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
@@ -604,6 +616,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-03-27T17:04:12.049740619"
+        "timestamp": "2026-04-01T14:22:53.450440867"
     }
 }

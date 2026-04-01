@@ -14,7 +14,7 @@ process NANOPLOT {
     tuple val(meta), path("*.html")                , emit: html
     tuple val(meta), path("*.png") , optional: true, emit: png
     tuple val(meta), path("*.txt")                 , emit: txt
-    path  "versions.yml"                           , emit: versions
+    tuple val("${task.process}"), val('nanoplot'), eval("NanoPlot --version 2>&1 | sed 's/^.*NanoPlot //; s/ .*\$//'"), topic: versions, emit: versions_nanoplot
 
     when:
     task.ext.when == null || task.ext.when
@@ -37,11 +37,6 @@ process NANOPLOT {
             mv \$nanoplot_file ${prefix}_\$nanoplot_file
         fi
     done
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        nanoplot: \$(echo \$(NanoPlot --version 2>&1) | sed 's/^.*NanoPlot //; s/ .*\$//')
-    END_VERSIONS
     """
 
     stub:
@@ -56,11 +51,5 @@ process NANOPLOT {
     touch ${prefix}_WeightedHistogramReadlength.html
     touch ${prefix}_WeightedLogTransformed_HistogramReadlength.html
     touch ${prefix}_Yield_By_Length.html
-
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        nanoplot: \$(echo \$(NanoPlot --version 2>&1) | sed 's/^.*NanoPlot //; s/ .*\$//')
-    END_VERSIONS
     """
 }

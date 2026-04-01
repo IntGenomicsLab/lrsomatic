@@ -16,7 +16,7 @@ process LONGPHASE_MODCALL {
     output:
     tuple val(meta), path("*.vcf")       , emit: mod_vcf
     tuple val(meta), path("*.log")       , emit: log , optional: true
-    path "versions.yml"                  , emit: versions
+    tuple val("${task.process}"), val('longphase'), eval("longphase --version | head -n 1 | sed 's/Version: //'"), topic: versions, emit: versions_longphase
 
     when:
     task.ext.when == null || task.ext.when
@@ -38,11 +38,6 @@ process LONGPHASE_MODCALL {
     if [ -f "${prefix}.out" ]; then
         mv ${prefix}.out ${prefix}.log
     fi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-    END_VERSIONS
     """
 
     stub:
@@ -52,10 +47,5 @@ process LONGPHASE_MODCALL {
     """
     touch ${prefix}.vcf
     ${log}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        longphase: \$(longphase --version | head -n 1 | sed 's/Version: //')
-    END_VERSIONS
     """
 }

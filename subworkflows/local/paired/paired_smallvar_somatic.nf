@@ -15,9 +15,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     fai               // [[:], fai]
 
     main:
-    ch_versions = channel.empty()
     somatic_vcf = channel.empty()
-    somatic_tbi = channel.empty()
 
     // CLAIRS: somatic SNV/indel calling from T/N paired BAMs
     if(params.somatic_var_keep.contains('clair')) {
