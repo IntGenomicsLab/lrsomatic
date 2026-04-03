@@ -4,8 +4,8 @@ process WAKHAN {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/wakhan:0.4.2--pyhdfd78af_0':
-        'biocontainers/wakhan:0.4.2--pyhdfd78af_0' }"
+        'docker://robertaforsyth/wakhan:0.4.2':
+        'robertaforsyth/wakhan:0.4.2' }"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
