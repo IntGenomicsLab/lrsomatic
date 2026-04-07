@@ -1,6 +1,7 @@
 process DEEPSOMATIC_MAKEEXAMPLES {
     tag "$meta.id"
     label 'process_high'
+    label 'process_long'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"
