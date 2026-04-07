@@ -67,9 +67,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --gvcf_outfile "${prefix}.g.vcf.gz" \\
         ${regions} \\
         ${small_model_arg} \\
-        --cpus 1 \\
-        --num_partitions=1 \\
-
+        --cpus 1 
     """
 
     stub:
