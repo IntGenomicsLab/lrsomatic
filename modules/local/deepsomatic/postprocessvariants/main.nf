@@ -14,8 +14,8 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     output:
     tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
     tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
-    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf
-    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index
+    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf         , optional: true
+    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index   , optional: true
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
 
     when:
@@ -64,7 +64,6 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --outfile "${prefix}.vcf.gz" \\
         --process_somatic=true \\
         --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
-        --gvcf_outfile "${prefix}.g.vcf.gz" \\
         ${regions} \\
         ${small_model_arg} \\
         --cpus 1 
