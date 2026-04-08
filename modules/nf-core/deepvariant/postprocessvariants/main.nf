@@ -62,7 +62,6 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         --ref "${fasta}" \\
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
-        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
         --sample_name ${prefix} \\
         ${regions} \\
         ${small_model_arg} \\

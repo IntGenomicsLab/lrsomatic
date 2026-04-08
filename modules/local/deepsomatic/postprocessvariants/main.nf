@@ -63,7 +63,6 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
         --process_somatic=true \\
-        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
         ${regions} \\
         ${small_model_arg} \\
         --cpus 1 
