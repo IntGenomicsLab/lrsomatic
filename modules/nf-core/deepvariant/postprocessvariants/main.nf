@@ -14,8 +14,8 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
     output:
     tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
     tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
-    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf
-    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index
+    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf,       optional: true
+    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index, optional: true
     tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
 
     when:
@@ -63,7 +63,6 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
         --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
-        --gvcf_outfile "${prefix}.g.vcf.gz" \\
         --sample_name ${prefix} \\
         ${regions} \\
         ${small_model_arg} \\
