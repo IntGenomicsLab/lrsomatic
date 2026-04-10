@@ -65,7 +65,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --process_somatic=true \\
         ${regions} \\
         ${small_model_arg} \\
-        --cpus 1 
+        --cpus ${task.cpus}
     """
 
     stub:
