@@ -14,7 +14,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
 
     output:
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")         , emit: examples
-    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf
+    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf, optional:true
     tuple val(meta), path("${prefix}_call_variant_outputs.tfrecord-*-of-*.gz", arity: "0..*")   , emit: small_model_calls
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
 
@@ -40,7 +40,6 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         --sample_name_tumor "${prefix}" \\
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
-        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
         ${args} \\
         --task {}
     """
