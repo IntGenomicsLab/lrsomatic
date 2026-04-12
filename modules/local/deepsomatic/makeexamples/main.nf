@@ -40,6 +40,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         --sample_name_tumor "${prefix}" \\
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
+        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
         ${args} \\
         --task {}
     """
