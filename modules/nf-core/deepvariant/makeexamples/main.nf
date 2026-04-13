@@ -14,7 +14,7 @@ process DEEPVARIANT_MAKEEXAMPLES {
 
     output:
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}"),    emit: examples
-    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz"),        emit: gvcf
+    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz"), optional: true, emit: gvcf
     tuple val(meta), path("${prefix}_call_variant_outputs.examples.tfrecord-*-of-*.gz",  arity: "0..*"),        emit: small_model_calls
     tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
 
@@ -30,6 +30,7 @@ process DEEPVARIANT_MAKEEXAMPLES {
     prefix = task.ext.prefix ?: "${meta.id}"
     def regions = intervals ? "--regions ${intervals}" : ""
     def par_regions = par_bed ? "--par_regions_bed=${par_bed}" : ""
+    def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
 
     """
     seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples \\
@@ -38,7 +39,7 @@ process DEEPVARIANT_MAKEEXAMPLES {
         --reads "${input}" \\
         --sample_name ${prefix} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
-        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
+        ${gvcf_arg} \\
         ${regions} \\
         ${par_regions} \\
         ${args} \\

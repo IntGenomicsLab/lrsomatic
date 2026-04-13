@@ -30,6 +30,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     prefix = task.ext.prefix ?: "${meta.id}"
     def normalReadsArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--reads_normal \"${normal_input}\"" : ""
     def normalSampleArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--sample_name_normal \"${prefix}_normal\"" : ""
+    def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
 
     """
     seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples_somatic \\
@@ -40,7 +41,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         --sample_name_tumor "${prefix}" \\
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
-        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
+        ${gvcf_arg} \\
         ${args} \\
         --task {}
     """
