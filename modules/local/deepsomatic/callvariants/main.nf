@@ -1,6 +1,6 @@
 process DEEPSOMATIC_CALLVARIANTS {
     tag "$meta.id"
-    label "${params.use_gpu ? 'process_gpu_high' : 'process_high'}"
+    label "${params.use_gpu ? 'process_gpu_high' : 'process_very_high'}"
 
     //Conda is not supported at the moment
     container params.use_gpu ? "docker.io/google/deepsomatic:1.7.0-gpu" : "docker.io/google/deepsomatic:1.7.0"

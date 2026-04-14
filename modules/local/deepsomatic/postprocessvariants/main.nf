@@ -1,6 +1,6 @@
 process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_high'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"

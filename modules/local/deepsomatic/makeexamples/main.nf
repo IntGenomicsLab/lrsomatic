@@ -1,6 +1,6 @@
 process DEEPSOMATIC_MAKEEXAMPLES {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
     label 'process_long'
 
     //Conda is not supported at the moment
