@@ -14,8 +14,8 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
     output:
     tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
     tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
-    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf
-    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index
+    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf,       optional: true
+    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index, optional: true
     tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
 
     when:
@@ -32,14 +32,15 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
     def regions = intervals ? "--regions ${intervals}" : ""
     def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
 
-    def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
-    if (!gvcf_matcher.matches()) {
-        throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
+    if (gvcf_tfrecords) {
+        def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
+        if (!gvcf_matcher.matches()) {
+            throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
+        }
+        def gvcf_tfrecord_name = gvcf_matcher[0][1]
+        def gvcf_shardCount = gvcf_matcher[0][2]
+        def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
     }
-    def gvcf_tfrecord_name = gvcf_matcher[0][1]
-    def gvcf_shardCount = gvcf_matcher[0][2]
-    // Reconstruct the logical name - ${tfrecord_name}.examples.tfrecord@${task.cpus}.gz
-    def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
 
     // The following block determines whether the small model was used, and if so, adds the variant calls from it
     // to the argument --small_model_cvo_records.
@@ -62,8 +63,6 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         --ref "${fasta}" \\
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
-        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
-        --gvcf_outfile "${prefix}.g.vcf.gz" \\
         --sample_name ${prefix} \\
         ${regions} \\
         ${small_model_arg} \\

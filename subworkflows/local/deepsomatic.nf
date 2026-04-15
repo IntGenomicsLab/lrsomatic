@@ -28,16 +28,18 @@ workflow DEEPSOMATIC {
     //
     DEEPSOMATIC_CALLVARIANTS(DEEPSOMATIC_MAKEEXAMPLES.out.examples)
 
-    // Join CALLVARIANTS output with MAKEEXAMPLES gVCF records (both keyed on meta)
-    // The postprocessing step needs both the DNN calls and the gVCF pileup records
-    ch_postproc_input = DEEPSOMATIC_CALLVARIANTS.out.call_variants_tfrecords.join(
-        DEEPSOMATIC_MAKEEXAMPLES.out.gvcf,
-        failOnMismatch: true
-    ).map { meta, call_tfrecord, gvcf_tfrecords ->
-        [meta, call_tfrecord, gvcf_tfrecords, [], []]
-    }
+    // Join CALLVARIANTS output with MAKEEXAMPLES gVCF records only when generate_gvcf is true.
     // ch_postproc_input: [meta, call_tfrecord, [gvcf_tfrecords...], [], []]
     //   trailing [] are for optional candidate positions and haplotype outputs (unused)
+    ch_postproc_input = params.generate_gvcf
+        ? DEEPSOMATIC_CALLVARIANTS.out.call_variants_tfrecords.join(
+              DEEPSOMATIC_MAKEEXAMPLES.out.gvcf, failOnMismatch: true
+          ).map { meta, call_tfrecord, gvcf_tfrecords ->
+              [meta, call_tfrecord, gvcf_tfrecords, [], []]
+          }
+        : DEEPSOMATIC_CALLVARIANTS.out.call_variants_tfrecords.map { meta, call_tfrecord ->
+              [meta, call_tfrecord, [], [], []]
+          }
 
     //
     // MODULE: DEEPSOMATIC_POSTPROCESSVARIANTS (label: process_medium)

@@ -1,4 +1,5 @@
 include { DEEPVARIANT_MAKEEXAMPLES        } from '../../../modules/nf-core/deepvariant/makeexamples/main'
+include { DEEPVARIANT_MAKEEXAMPLES        } from '../../../modules/nf-core/deepvariant/makeexamples/main'
 include { DEEPVARIANT_CALLVARIANTS        } from '../../../modules/nf-core/deepvariant/callvariants/main'
 include { DEEPVARIANT_POSTPROCESSVARIANTS } from '../../../modules/nf-core/deepvariant/postprocessvariants/main'
 
@@ -16,14 +17,19 @@ workflow DEEPVARIANT {
 
     DEEPVARIANT_CALLVARIANTS(DEEPVARIANT_MAKEEXAMPLES.out.examples)
 
-    // Input to postprocessing step needs both the gvcfs from MAKEEXAMPLES and the variant
-    // calls from CALLVARIANTS. Joining on meta, which is assumed to be unique.
+    // Input to postprocessing step needs the variant calls from CALLVARIANTS,
+    // and optionally the gvcfs from MAKEEXAMPLES (only when params.generate_gvcf is true).
     ch_intervals = ch_input.map { meta, _input, _index, intervals -> [ meta, intervals ] }
 
-    ch_postproc_input = DEEPVARIANT_CALLVARIANTS.out.call_variants_tfrecords.join(
-        DEEPVARIANT_MAKEEXAMPLES.out.gvcf,
-        failOnMismatch: true
-    ).join(
+    ch_call_and_gvcf = params.generate_gvcf
+        ? DEEPVARIANT_CALLVARIANTS.out.call_variants_tfrecords.join(
+              DEEPVARIANT_MAKEEXAMPLES.out.gvcf, failOnMismatch: true
+          )
+        : DEEPVARIANT_CALLVARIANTS.out.call_variants_tfrecords.map { meta, tfrecord ->
+              [meta, tfrecord, []]
+          }
+
+    ch_postproc_input = ch_call_and_gvcf.join(
         DEEPVARIANT_MAKEEXAMPLES.out.small_model_calls,
         failOnMismatch: true
     ).join(

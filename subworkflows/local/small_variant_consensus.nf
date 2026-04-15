@@ -1,8 +1,8 @@
-
 include { BCFTOOLS_NORM                                      } from '../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
 include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
+include { BCFTOOLS_ANNOTATE as STANDARDIZE_AF                } from '../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 
@@ -31,6 +31,35 @@ workflow SMALL_VARIANT_CONSENSUS {
              .join(BCFTOOLS_NORM.out.tbi)
              .set {normalized_vcfs}
     // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised per-caller VCF
+
+    //
+    // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low)
+    // Renames the allele frequency FORMAT field to match the priority caller's convention:
+    //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
+    //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
+    // This is a no-op for VCFs that already use the target field name.
+    //
+    if (combine_method == 'all') {
+        normalized_vcfs
+            .map { meta, vcf, tbi ->
+                def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
+                def new_meta = meta + [rename_to: rename_to]
+                return [new_meta, vcf, tbi, [], [], [], [], []]
+            }
+            .set { standardize_input }
+
+        STANDARDIZE_AF(standardize_input)
+
+        STANDARDIZE_AF.out.vcf
+            .join(STANDARDIZE_AF.out.tbi)
+            .map { meta, vcf, tbi ->
+                def clean_meta = meta.findAll { k, v -> k != 'rename_to' }
+                return [clean_meta, vcf, tbi]
+            }
+            .set { normalized_vcfs }
+        // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised, AF-standardized per-caller VCF
+    }
+    // In 'consensus' mode, normalized_vcfs passes through unchanged from BCFTOOLS_NORM
 
     //
     // MODULE: BCFTOOLS_QUERY (label: process_single)

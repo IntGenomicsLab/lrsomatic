@@ -8,53 +8,82 @@ The directories listed below will be created in the results directory after the 
 
 ### Output Example
 
+The pipeline produces per-sample output directories. Two modes exist depending on whether a matched normal sample is provided.
+
+**Tumor-only sample** (no matched normal, `-TO` variant callers):
+
 ```
-├── Sample 1
+├── Sample-TO
 │    ├── ascat
 │    ├── bamfiles
+│    ├── methylation
+│    │    └── tumor
+│    │        └── modkit_pileup
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
-│    │    │   ├── cramino_ubam
+│    │    │   ├── cramino_ubam_1
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
-│    │    │   ├── samtools
+│    │    │   ├── nanoplot_aln
+│    │    │   ├── nanoplot_ubam_1
+│    │    │   └── samtools
+│    │    └── whatshap_stats
 │    ├── variants
-│    │   ├──clairS-TO
-│    │   ├──severus
+│    │   ├── clairsto
+│    │   ├── deepsomatic
+│    │   ├── deepvariant
+│    │   ├── phased
+│    │   └── severus
 │    ├── vep
-│    │   ├── germline
 │    │   ├── somatic
-│    │   ├── SVs
-│
-├── Sample 2
+│    │   └── SVs
+│    └── wakhan
+```
+
+**Paired tumor + normal sample**:
+
+```
+├── Sample
 │    ├── ascat
 │    ├── bamfiles
+│    ├── methylation
+│    │    ├── tumor
+│    │    │   └── modkit_pileup
+│    │    └── normal
+│    │        └── modkit_pileup
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
-│    │    │   ├── cramino_ubam
+│    │    │   ├── cramino_ubam_1
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
-│    │    │   ├── samtools
+│    │    │   ├── nanoplot_aln
+│    │    │   ├── nanoplot_ubam_1
+│    │    │   └── samtools
 │    │    ├── normal
 │    │    │   ├── cramino_aln
-│    │    │   ├── cramino_ubam
+│    │    │   ├── cramino_ubam_1
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
-│    │    │   ├── samtools
+│    │    │   ├── nanoplot_aln
+│    │    │   ├── nanoplot_ubam_1
+│    │    │   └── samtools
+│    │    └── whatshap_stats
 │    ├── variants
 │    │   ├── clair3
-│    │   ├── clairS
-│    │   ├── severus
+│    │   ├── clairs
+│    │   ├── deepsomatic
+│    │   ├── deepvariant
+│    │   ├── phased
+│    │   └── severus
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic
-│    │   ├── SVs
-│    ├── wakhan
+│    │   └── SVs
+│    └── wakhan
 ├── pipeline_info
-├── multiqc
-
+└── multiqc
 ```
 
 ### `ascat`
@@ -135,34 +164,74 @@ The directories listed below will be created in the results directory after the 
 <details markdown="1">
 <summary>Output files</summary>
 
+QC outputs are placed under `tumor/` for all samples, and additionally under `normal/` for paired tumor + normal samples. `whatshap_stats/` appears at the top level of `qc/`.
+
 ```
 ├── qc
 │   ├── tumor
 │   │   ├── cramino_aln
 │   │   │   ├── sample.cramino.txt
-│   │   ├── cramino_ubam
+│   │   ├── cramino_ubam_1
 │   │   │   ├── sample.cramino.txt
 │   │   ├── fibertoolsrs
 │   │   │   ├── sample_qc.txt
 │   │   ├── mosdepth
 │   │   │   ├── sample.mosdepth.global.dist.txt
 │   │   │   ├── sample.mosdepth.summary.txt
+│   │   ├── nanoplot_aln
+│   │   │   ├── sample_NanoStats.txt
+│   │   │   ├── sample_NanoPlot-report.html
+│   │   ├── nanoplot_ubam_1
+│   │   │   ├── sample_NanoStats.txt
+│   │   │   ├── sample_NanoPlot-report.html
 │   │   ├── samtools
 │   │   │   ├── sample.flagstat
 │   │   │   ├── sample.idxstats
 │   │   │   ├── sample.stats
+│   ├── normal                          # paired samples only
+│   │   └── [same subdirectories as tumor]
+│   ├── whatshap_stats
+│   │   ├── sample.stats.tsv
+│   │   ├── sample.blocklist.tsv
 ```
 
 | File                                       | Description                                                                                                              |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `cramino_aln/sample.cramino.txt`           | cramino QC summary statistics for the aligned bam file                                                                   |
-| `cramino_ubam/sample.cramino.txt`          | cramino QC summary statistics for the unaligned bam files                                                                |
+| `cramino_ubam_1/sample.cramino.txt`        | cramino QC summary statistics for the unaligned bam files                                                                |
 | `fibertoolsrs/sample_qc.txt`               | fibertools QC summary for the bam file                                                                                   |
 | `mosdepth/sample.mosdepth.global.dist.txt` | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
 | `mosdepth/sample.mosdepth.summary.txt`     | overall summary file from mosdepth tool                                                                                  |
+| `nanoplot_aln/sample_NanoStats.txt`        | NanoPlot summary statistics for the aligned BAM file                                                                     |
+| `nanoplot_aln/sample_NanoPlot-report.html` | NanoPlot interactive HTML report for the aligned BAM file                                                                |
+| `nanoplot_ubam_1/sample_NanoStats.txt`     | NanoPlot summary statistics for the unaligned BAM file                                                                   |
+| `nanoplot_ubam_1/sample_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                           |
 | `samtools/sample.flagstat`                 | a summary of the counts of different samtools flags                                                                      |
 | `samtools/sample.idxstats`                 | a summary of the number of mapped and unmapped reads                                                                     |
 | `samtools/sample.stats`                    | summary statistics from the bamfile                                                                                      |
+| `whatshap_stats/sample.stats.tsv`          | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
+| `whatshap_stats/sample.blocklist.tsv`      | list of all phase blocks with their genomic coordinates                                                                  |
+
+</details>
+
+### `methylation`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── methylation
+│   ├── tumor
+│   │   └── modkit_pileup
+│   │       └── sample.bed.gz
+│   ├── normal                          # paired samples only
+│   │   └── modkit_pileup
+│   │       └── sample.bed.gz
+```
+
+| File                          | Description                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `{tumor,normal}/modkit_pileup/sample.bed.gz` | Modkit pileup BED file containing per-CpG methylation frequency and coverage values |
 
 </details>
 
@@ -184,10 +253,12 @@ The directories listed below will be created in the results directory after the 
 | `merge_output.vcf.gz` | Merged germline indel and snv calls in vcf format |
 | `merge_output.vcf.gz` | index for germline small variant calls            |
 
-#### `clairS`
+#### `clairs`
+
+Present in **paired** (tumor + normal) samples.
 
 ```
-├── clairS
+├── clairs
 │   ├── indel.vcf.gz
 │   ├── indel.vcf.gz.tbi
 │   ├── snv.vcf.gz
@@ -201,10 +272,12 @@ The directories listed below will be created in the results directory after the 
 | `snv.vcf.gz`       | Somatic SNV calls in vcf format   |
 | `snv.vcf.gz.tbi`   | Index for somatic SNV calls       |
 
-#### `clairS-TO`
+#### `clairsto`
+
+Present in **tumor-only** samples (no matched normal).
 
 ```
-├── clairS
+├── clairsto
 │   ├── germline.vcf.gz
 │   ├── germline.vcf.gz.tbi
 │   ├── indel.vcf.gz
@@ -224,7 +297,7 @@ The directories listed below will be created in the results directory after the 
 | `snv.vcf.gz`          | Raw SNV calls in vcf format                                           |
 | `snv.vcf.gz.tbi`      | Index for SNV calls                                                   |
 | `somatic.vcf.gz`      | SNV and indel calls marked as PASS and without a germline tag         |
-| `somatic.vcf.gz`      | Index for osmatic small variatn calls                                 |
+| `somatic.vcf.gz.tbi`  | Index for somatic small variant calls                                 |
 
 #### `severus`
 
@@ -265,6 +338,59 @@ The directories listed below will be created in the results directory after the 
 | `read_ids.csv`                            | a csv file containing read ids associated with each identified SV                 |
 | `read_qual.txt`                           | file containing quality statistics about identified segements                     |
 | `severus.log`                             | log file                                                                          |
+
+#### `deepvariant`
+
+DeepVariant germline small variant calls. Present in all samples.
+
+```
+├── deepvariant
+│   ├── sample.vcf.gz
+│   ├── sample.vcf.gz.tbi
+│   ├── sample.g.vcf.gz        # only when --generate_gvcf is true
+│   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
+```
+
+| File                  | Description                                                                    |
+| --------------------- | ------------------------------------------------------------------------------ |
+| `sample.vcf.gz`       | DeepVariant germline SNV and indel calls in VCF format                         |
+| `sample.vcf.gz.tbi`   | Index for DeepVariant germline calls                                           |
+| `sample.g.vcf.gz`     | DeepVariant gVCF file with calls at all positions (only with `--generate_gvcf`) |
+| `sample.g.vcf.gz.tbi` | Index for DeepVariant gVCF (only with `--generate_gvcf`)                       |
+
+#### `deepsomatic`
+
+DeepSomatic somatic small variant calls. Present in all samples.
+
+```
+├── deepsomatic
+│   ├── sample.vcf.gz
+│   ├── sample.vcf.gz.tbi
+│   ├── sample.g.vcf.gz        # only when --generate_gvcf is true
+│   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
+```
+
+| File                  | Description                                                                      |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `sample.vcf.gz`       | DeepSomatic somatic SNV and indel calls in VCF format                            |
+| `sample.vcf.gz.tbi`   | Index for DeepSomatic somatic calls                                              |
+| `sample.g.vcf.gz`     | DeepSomatic gVCF file with calls at all positions (only with `--generate_gvcf`)  |
+| `sample.g.vcf.gz.tbi` | Index for DeepSomatic gVCF (only with `--generate_gvcf`)                         |
+
+#### `phased`
+
+Phased variant calls produced by WhatsHap. Present in all samples.
+
+```
+├── phased
+│   ├── sample.phased.vcf.gz
+│   ├── sample.phased.vcf.gz.tbi
+```
+
+| File                       | Description                                                          |
+| -------------------------- | -------------------------------------------------------------------- |
+| `sample.phased.vcf.gz`     | WhatsHap phase-tagged VCF file assigning variants to haplotypes      |
+| `sample.phased.vcf.gz.tbi` | Index for the phased VCF                                             |
 
 </details>
 
@@ -335,13 +461,15 @@ The directories listed below will be created in the results directory after the 
 │   │   ├── chr{1-22,X,Y}_cov.html
 │   │   ├── chr{1-22,X,Y}.pdf
 │   │   ├── COVERAGE_INDEX.html
-│   ├── phasing output
+│   ├── phasing_output
 │   │   ├── chr{1-22,X,Y}_phase_correction_0.html
 │   │   ├── chr{1-22,X,Y}_phase_correction_1.html
 │   │   ├── chr{1-22,X,Y}_without_phase_correction.html
 │   │   ├── chr{1-22,X,Y}.pdf
 │   │   ├── sample.rephased.vcf.gz
 │   │   ├── sample.rephased.vcf.gz.tbi
+│   ├── snps_loh_plots
+│   │   ├── chr{1-22,X,Y}_snps_loh.html
 │   ├── sample_heatmap_ploidy_purity.html
 │   ├── sample_heatmap_ploidy_purity.html.pdf
 │   ├── sample_optimized_peak.html
@@ -374,11 +502,11 @@ The directories listed below will be created in the results directory after the 
 | `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                    |
 | `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                      |
 | `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                   |
-| `phasing_output/PHASE_CORRECTION_INDEX`                                                                | unclear html plot                                                                    |
 | `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                         |
 | `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                   |
+| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                          | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
 | `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                               |
-| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap html plot of purity ploidy fit                                               |
+| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                |
 | `sample_optimized_peak.html`                                                                           | optimization peak plot                                                               |
 | `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                            |
 
@@ -469,20 +597,23 @@ The directories listed below will be created in the results directory after the 
 
 ```
 ├── pipeline_info
-│   ├── execution_report_{DATE}.html
 │   ├── execution_timeline_{DATE}.html
 │   ├── execution_trace_{DATE}.txt
-│   ├── lrsomatic_softwar_mqc_versions.yml
+│   ├── final_sample_disk_usage.tsv
+│   ├── lrsomatic_software_mqc_versions.yml
 │   ├── params_{DATE}.json
-│   ├── pipeline_dag_{DATE}/html
+│   ├── pipeline_dag_{DATE}.html
+│   ├── raw_task_disk_usage.tsv
 ```
 
-| File                                 | Description                                                                                 |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `execution_report_{DATE}.hmtl`       | summary of pipeline resource and timing usage in a html report                              |
-| `execution_timeline_{DATE}.hmtl`     | a graphical summary of the timing of each module's task over the course of the pipeline run |
-| `lrsomatic_softwar_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                   |
-| `params_{DATE}.json`                 | summary of the paramaters used in the pipeline                                              |
-| `pipeline_dag_{DATE}.html`           | flow chart summarizing the pipeline run                                                     |
+| File                                  | Description                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run |
+| `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                               |
+| `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                     |
+| `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                   |
+| `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                          |
+| `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                               |
+| `raw_task_disk_usage.tsv`             | per-task disk usage across all pipeline tasks                                               |
 
 </details>

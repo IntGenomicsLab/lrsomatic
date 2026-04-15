@@ -2,6 +2,7 @@
 process DEEPVARIANT_CALLVARIANTS {
     tag "$meta.id"
     label "${params.use_gpu ? 'process_gpu_very_high' : 'process_very_high'}"
+    label "${params.use_gpu ? '' : 'process_long'}"
 
     //Conda is not supported at the moment
     container params.use_gpu ? "docker.io/google/deepvariant:1.9.0-gpu" : "docker.io/google/deepvariant:1.9.0"

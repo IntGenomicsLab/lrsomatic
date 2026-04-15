@@ -1,6 +1,7 @@
 process DEEPSOMATIC_MAKEEXAMPLES {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_very_high'
+    label 'process_long'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"
@@ -13,7 +14,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
 
     output:
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")         , emit: examples
-    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf
+    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf, optional:true
     tuple val(meta), path("${prefix}_call_variant_outputs.tfrecord-*-of-*.gz", arity: "0..*")   , emit: small_model_calls
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
 
@@ -29,6 +30,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     prefix = task.ext.prefix ?: "${meta.id}"
     def normalReadsArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--reads_normal \"${normal_input}\"" : ""
     def normalSampleArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--sample_name_normal \"${prefix}_normal\"" : ""
+    def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
 
     """
     seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples_somatic \\
@@ -39,7 +41,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         --sample_name_tumor "${prefix}" \\
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
-        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
+        ${gvcf_arg} \\
         ${args} \\
         --task {}
     """

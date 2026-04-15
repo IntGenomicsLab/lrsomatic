@@ -145,7 +145,12 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                                                                                                      |
 | `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                                                                                                        |
 | `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                                                                                           |
-| `--skip_m6a`      | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false` |
+| `--skip_m6a`           | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false` |
+| `--skip_nanoplot`      | A boolean to skip NanoPlot QC on aligned and unaligned BAM files. Default = `false`                                                                                                  |
+| `--skip_normalfiber`   | A boolean to skip fibertools processing for the normal sample. Default = `false`                                                                                                      |
+| `--skip_modcall`       | A boolean to skip modkit methylation calling. Default = `false`                                                                                                                       |
+| `--skip_modkit`        | A boolean to skip the modkit pileup step. Default = `false`                                                                                                                           |
+| `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                      |
 
 #### VEP options:
 
@@ -156,6 +161,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | `--vep_args`          | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`                |
 | `--vep_custom`        | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
 | `--vep_custom_tbi`    | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
+| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                       |
 
 #### Minimap2 Options
 
@@ -163,7 +169,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
 | `--minimap2_ont_model`        | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
 | `--minimap2_pb_model`         | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
-| `--save_secondary_alignments` | A boolean to specify if secondary alignmetns are kept in aligned bam file. Defualt = `true` |
+| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true` |
 
 #### ASCAT Options
 
@@ -183,6 +189,65 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | `--ascat_gc_file`             | A full path to a GC correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`                 |
 | `--ascat_rt_file`             | A full path to a replication timing correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null` |
 | `--ascat_pdf_plots`           | string to enable output pltos in pdf format. Default = `false`                                                                                                                                                              |
+
+#### Fibertools Options
+
+| Parameter          | Description                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `--autocorrelation` | A boolean to enable autocorrelation computation in fibertools. Default = `false`        |
+
+#### SEVERUS Options
+
+| Parameter              | Description                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `5` |
+
+#### WAKHAN Options
+
+| Parameter          | Description                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `--wakhan_chroms`  | A string specifying a subset of chromosomes for WAKHAN to process, e.g. `"chr1,chr2"`. Default = `null` |
+
+#### Variant Filtering and Combining Options
+
+These options control how variants from multiple callers are filtered and merged.
+
+| Parameter                       | Description                                                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`           | Expression or threshold for retaining germline variants after calling. Default = `null`                        |
+| `--somatic_var_keep`            | Expression or threshold for retaining somatic variants after calling. Default = `null`                         |
+| `--germline_var_combine`        | Strategy for combining germline variant caller outputs (e.g. union, intersection). Default = `null`            |
+| `--somatic_var_combine`         | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`             |
+| `--prioritize_caller_germline`  | Comma-separated caller priority order used when combining germline calls. Default = `null`                     |
+| `--prioritize_caller_somatic`   | Comma-separated caller priority order used when combining somatic calls. Default = `null`                      |
+
+#### PON Options
+
+| Parameter      | Description                                                                         |
+| -------------- | ----------------------------------------------------------------------------------- |
+| `--pon_vcfs`   | Full path to one or more Panel of Normals VCF files for small variant filtering. Default = `null` |
+| `--pon_flags`  | Additional flags to pass to the PON merging step. Default = `null`                  |
+
+#### Advanced Options
+
+| Parameter          | Description                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `--use_gpu`        | A boolean to enable GPU acceleration for DeepVariant and DeepSomatic. Requires a GPU-enabled compute environment. Default = `false` |
+| `--generate_gvcf`  | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false` |
+
+#### Genome-Derived Parameters
+
+The following parameters are automatically populated from the `--genome` iGenomes configuration and do not normally need to be set manually. They can be overridden when using a custom genome or reference build not present in the iGenomes configuration.
+
+| Parameter         | Description                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--fasta`         | Full path to the reference FASTA file. Auto-populated from `--genome`. Override for custom genomes.                   |
+| `--bed_file`      | BED file of callable/target regions passed to SEVERUS for SV calling. Auto-populated from `--genome`.                |
+| `--pon_file`      | Panel of Normals VCF file used by SEVERUS for somatic SV filtering. Auto-populated from `--genome`.                  |
+| `--centromere_bed`| BED file of centromere coordinates passed to WAKHAN. Auto-populated from `--genome`.                                  |
+| `--genome_name`   | Assembly name string passed to ASCAT for genome-specific reference file selection. Auto-populated from `--genome`.    |
+| `--vep_genome`    | VEP genome identifier (e.g. `GRCh38`, `T2T-CHM13v2.0`). Auto-populated from `--genome`. Override for CHM13 or custom assemblies. |
+| `--vep_species`   | VEP species identifier. Auto-populated from `--genome`. Override for non-standard assemblies (e.g. `homo_sapiens_gca009914755v4` for CHM13). |
 
 ### Updating the pipeline
 

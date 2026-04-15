@@ -6,16 +6,16 @@ process DEEPVARIANT_MAKEEXAMPLES {
     container "docker.io/google/deepvariant:1.9.0"
 
     input:
-    tuple val(meta), path(input), path(index), path(intervals)
+    tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), path(small_model_calls), path(intervals)
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(gzi)
-    tuple val(meta5), path(par_bed)
 
     output:
-    tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}"),    emit: examples
-    tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz"),        emit: gvcf
-    tuple val(meta), path("${prefix}_call_variant_outputs.examples.tfrecord-*-of-*.gz",  arity: "0..*"),        emit: small_model_calls
+    tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
+    tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
+    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf,       optional: true
+    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index, optional: true
     tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
 
     when:
@@ -28,32 +28,59 @@ process DEEPVARIANT_MAKEEXAMPLES {
     }
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+
     def regions = intervals ? "--regions ${intervals}" : ""
-    def par_regions = par_bed ? "--par_regions_bed=${par_bed}" : ""
+    def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
+
+    if (gvcf_tfrecords) {
+        def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
+        if (!gvcf_matcher.matches()) {
+            throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
+        }
+        def gvcf_tfrecord_name = gvcf_matcher[0][1]
+        def gvcf_shardCount = gvcf_matcher[0][2]
+        def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
+    }
+
+    // The following block determines whether the small model was used, and if so, adds the variant calls from it
+    // to the argument --small_model_cvo_records.
+    def small_model_arg = ""
+    if (small_model_calls) {
+        small_model_matcher = (small_model_calls[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/)
+        if (!small_model_matcher.matches()) {
+            throw new IllegalArgumentException("tfrecord baseName '" + small_model_calls[0].baseName + "' doesn't match the expected pattern")
+        }
+        small_model_tfrecord_name = small_model_matcher[0][1]
+        small_model_shardCount = small_model_matcher[0][2]
+        // Reconstruct the logical name. Example: test_call_variant_outputs.examples.tfrecord@12.gz
+        small_model_tfrecords_logical_name = "${small_model_tfrecord_name}@${small_model_shardCount}.gz"
+        small_model_arg = "--small_model_cvo_records ${small_model_tfrecords_logical_name}"
+    }
 
     """
-    seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples \\
-        --mode calling \\
-        --ref "${fasta}" \\
-        --reads "${input}" \\
-        --sample_name ${prefix} \\
-        --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
-        --gvcf "./${prefix}.gvcf.tfrecord@${task.cpus}.gz" \\
-        ${regions} \\
-        ${par_regions} \\
+    /opt/deepvariant/bin/postprocess_variants \\
         ${args} \\
-        --task {}
+        --ref "${fasta}" \\
+        --infile "${variant_calls_tfrecord_name}" \\
+        --outfile "${prefix}.vcf.gz" \\
+        --sample_name ${prefix} \\
+        ${regions} \\
+        ${small_model_arg} \\
+        --cpus $task.cpus
+
     """
 
     stub:
+    // Exit if running this module with -profile conda / -profile mamba
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
+    }
     prefix = task.ext.prefix ?: "${meta.id}"
     """
-    printf -v SHARD_COUNT "%04d" ${task.cpus}
-    for i in \$( seq -f "%04g" 0 ${task.cpus-1} )
-    do
-        echo "" | gzip > ${prefix}.examples.tfrecord-\$i-of-\$SHARD_COUNT.tfrecord.gz
-        touch ${prefix}.examples.tfrecord-\$i-of-\$SHARD_COUNT.tfrecord.gz.example_info.json
-        echo "" | gzip > ${prefix}.gvcf.tfrecord-\$i-of-\$SHARD_COUNT.tfrecord.gz
-    done
+    echo "" | gzip > ${prefix}.vcf.gz
+    touch ${prefix}.vcf.gz.tbi
+    echo "" | gzip > ${prefix}.g.vcf.gz
+    touch ${prefix}.g.vcf.gz.tbi
+
     """
 }
