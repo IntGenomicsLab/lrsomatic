@@ -34,6 +34,7 @@ include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblve
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
 include { MODKIT_PILEUP                     } from '../modules/nf-core/modkit/pileup/main'
+include { MERGE_PON_VCFS                    } from '../subworkflows/local/merge_pon_vcfs'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -97,9 +98,9 @@ workflow LRSOMATIC {
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
 
-    if (params.pon_vcfs != null) {
-        pon_files = params.pon_vcfs.collect { it ->file(it) }
-        pon_flags = params.pon_flags
+    if (params.clairsto_pon_vcfs != null) {
+        pon_files = params.clairsto_pon_vcfs.collect { it ->file(it) }
+        pon_flags = params.clairsto_pon_flags
     }
     else if (params.genome == 'GRCh38') {
         pon_files  = [
@@ -136,10 +137,41 @@ workflow LRSOMATIC {
     }
     channel
         .of( tuple(pon_files, pon_flags) )
-        .set { pon_channel }
-    // pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
+        .set { clairsto_pon_channel }
+    // clairsto_pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
     //   -- single tuple of parallel lists; each flag indicates whether the corresponding VCF
     //      is a population allele database (True) vs. a panel-of-normals artefact file (False)
+
+    // DeepSomatic PON channel: user-supplied VCF paths, or empty list (process falls back to container defaults)
+    ds_pon_files = params.deepsomatic_pon_vcfs != null
+        ? params.deepsomatic_pon_vcfs.collect { it -> file(it) }
+        : params.genome == 'CHM13'
+            ? [
+                getGenomeAttribute('gnomad'),
+                getGenomeAttribute('dbsnp'),
+                getGenomeAttribute('onekgenomes'),
+                getGenomeAttribute('colors'),
+                getGenomeAttribute('asap')
+              ]
+            : []
+    // Merge all PON VCFs into one deduplicated, sorted, indexed file.
+    // DeepSomatic requires no chromosome overlap across population VCFs;
+    // merging resolves this for multi-database sets (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap).
+    // GRCh38/other with no user PON: empty list skips merging (container defaults apply in tumor-only mode).
+    if (ds_pon_files) {
+        Channel.value([[id: 'merged_pon'], ds_pon_files])
+            | MERGE_PON_VCFS
+
+        MERGE_PON_VCFS.out.vcf_tbi
+            .map { meta, vcf, tbi -> [[:], [vcf, tbi]] }
+            .set { ds_pon_channel }
+    } else {
+        Channel.value( [[:], []] ).set { ds_pon_channel }
+    }
+    // ds_pon_channel: [[:], [merged_pon_sorted.vcf.gz, merged_pon_sorted.vcf.gz.tbi]] or [[:], []]
+    //   -- passed as a separate tuple input (like fasta/fai/gzi) to DEEPSOMATIC_MAKEEXAMPLES
+    //   -- makeexamples filters out .tbi files when building --population_vcfs, so the pair is safe to pass
+    //   -- GRCh38/other + no user PON: empty list => process uses container-bundled GRCh38 defaults (tumor-only)
 
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
@@ -498,7 +530,8 @@ workflow LRSOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        pon_channel
+        clairsto_pon_channel,
+        ds_pon_channel
     )
 
     branched_minimap.paired
@@ -556,7 +589,8 @@ workflow LRSOMATIC {
     PAIRED_SMALLVAR_SOMATIC (
         somatic_smallvar_input,
         ch_fasta,
-        ch_fai
+        ch_fai,
+        ds_pon_channel
     )
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE

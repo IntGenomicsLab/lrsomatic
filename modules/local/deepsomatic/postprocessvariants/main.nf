@@ -2,15 +2,18 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tag "$meta.id"
     label 'process_high'
 
+    container "docker.io/google/deepsomatic:1.7.0"
+
     input:
     tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), val(small_model_calls), val(intervals)
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(gzi)
+    tuple val(meta5), path(pon_vcf)
 
     output:
-    tuple val(meta), path("${prefix}.vcf.gz"),                                        emit: vcf,
-    tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}"),                              emit: vcf_index,
+    tuple val(meta), path("${prefix}.vcf.gz"),                                        emit: vcf
+    tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}"),                              emit: vcf_index
     tuple val(meta), path("${prefix}.g.vcf.gz"),                                      emit: gvcf,                  optional: true
     tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}"),                            emit: gvcf_index,            optional: true
     tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions,  emit: versions_deepsomatic
@@ -54,6 +57,14 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         small_model_arg = "--small_model_cvo_records ${small_model_tfrecords_logical_name}"
     }
 
+    def ponFilterArg = ""
+    if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
+        def vcfPath = (pon_vcf instanceof List)
+            ? pon_vcf.find { !it.toString().endsWith('.tbi') }
+            : pon_vcf
+        ponFilterArg = "--pon_filtering \"${vcfPath}\""
+    }
+
     """
     /opt/deepvariant/bin/postprocess_variants \\
         ${args} \\
@@ -63,6 +74,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --process_somatic=true \\
         ${regions} \\
         ${small_model_arg} \\
+        ${ponFilterArg} \\
         --cpus ${task.cpus}
     """
 

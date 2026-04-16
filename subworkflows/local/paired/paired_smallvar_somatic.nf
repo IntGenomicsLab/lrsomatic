@@ -13,6 +13,8 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     tumor_normal_bams // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
     fasta             // [[:], fasta]
     fai               // [[:], fai]
+    ds_pon_channel    // [ [pon_vcf_path, ...] ] or [ [] ]
+    //                    user-supplied DeepSomatic PON VCFs; empty list => no --population_vcfs (paired mode)
 
     main:
     somatic_vcf = channel.empty()
@@ -100,7 +102,8 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             [[:],[]],  // intervals (empty = genome-wide)
             fasta,
             fai,
-            [[:],[]]   // GZI (empty if FASTA is uncompressed)
+            [[:],[]],  // GZI (empty if FASTA is uncompressed)
+            ds_pon_channel
         )
 
         DEEPSOMATIC.out.vcf

@@ -4,13 +4,14 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     label 'process_long'
 
     //Conda is not supported at the moment
-    container "docker.io/google/deepsomatic:1.7.0"
+    container params.use_gpu ? "docker.io/google/deepsomatic:1.7.0-gpu" : "docker.io/google/deepsomatic:1.7.0"
 
     input:
     tuple val(meta), path(normal_input), path(normal_index), path(tumor_input), path(tumor_index)
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(gzi)
+    tuple val(meta5), path(ds_pon)
 
     output:
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")         , emit: examples
@@ -31,6 +32,19 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def normalReadsArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--reads_normal \"${normal_input}\"" : ""
     def normalSampleArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--sample_name_normal \"${prefix}_normal\"" : ""
     def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
+    def isTumorOnly = !(normal_input?.toString() && normal_input.toString() != '[]')
+    def ponArg = ""
+    if (ds_pon?.toString() && ds_pon.toString() != '[]') {
+        // User-supplied PON: staged into work dir; works in both tumor-only and paired modes
+        def ponPaths = ds_pon instanceof List
+            ? ds_pon.findAll { !it.toString().endsWith('.tbi') }.collect { "\"${it}\"" }.join(',')
+            : "\"${ds_pon}\""
+        ponArg = "--population_vcfs ${ponPaths}"
+    } else if (isTumorOnly) {
+        // No user PON in tumor-only mode: fall back to container-bundled defaults
+        ponArg = '--population_vcfs "/opt/models/deepsomatic/pons/AF_pacbio_PON_CoLoRSdb.GRCh38.AF0.05.vcf.gz","AF_ilmn_PON_DeepVariant.GRCh38.AF0.05.vcf.gz","PON_dbsnp138_gnomad_ILMN1000g_pon.vcf.gz","PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
+    }
+    // In paired mode with no user PON, ponArg stays "" (no --population_vcfs, matching prior behaviour)
 
     """
     seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples_somatic \\
@@ -42,6 +56,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
         ${normalSampleArg} \\
         --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
         ${gvcf_arg} \\
+        ${ponArg} \\
         ${args} \\
         --task {}
     """

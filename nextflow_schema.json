@@ -49,13 +49,17 @@
             "description": "Options for panel of normals filtering",
             "default": "",
             "properties": {
-                "pon_vcfs": {
+                "clairsto_pon_vcfs": {
                     "type": "string",
-                    "description": "Path to panel of normals VCF file(s) for somatic variant filtering"
+                    "description": "Path to panel of normals VCF file(s) for ClairS-TO somatic variant filtering"
                 },
-                "pon_flags": {
+                "clairsto_pon_flags": {
                     "type": "string",
-                    "description": "Additional flags to pass to the PON filtering step"
+                    "description": "Population allele matching flags for ClairS-TO PON VCFs (one per VCF, comma-separated)"
+                },
+                "deepsomatic_pon_vcfs": {
+                    "type": "string",
+                    "description": "Path to panel of normals VCF file(s) for DeepSomatic --population_vcfs. If not set, uses container-bundled defaults in tumor-only mode, or no PON in paired mode"
                 }
             }
         },
