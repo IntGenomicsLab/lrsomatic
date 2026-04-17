@@ -99,8 +99,16 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
 
     if (params.clairsto_pon_vcfs != null) {
-        pon_files = params.clairsto_pon_vcfs.collect { it ->file(it) }
-        pon_flags = params.clairsto_pon_flags
+        pon_files = params.clairsto_pon_vcfs.split(',').collect { file(it.trim()) }
+        if (params.clairsto_pon_flags != null) {
+            pon_flags = params.clairsto_pon_flags.split(',').collect { it.trim() }
+        } else if (params.genome == 'GRCh38') {
+            pon_flags = ["True", "True", "False", "False"]
+        } else if (params.genome == 'CHM13') {
+            pon_flags = ["True", "True", "False", "False", "False"]
+        } else {
+            pon_flags = pon_files.collect { "False" }
+        }
     }
     else if (params.genome == 'GRCh38') {
         pon_files  = [
@@ -144,7 +152,7 @@ workflow LRSOMATIC {
 
     // DeepSomatic PON channel: user-supplied VCF paths, or empty list (process falls back to container defaults)
     ds_pon_files = params.deepsomatic_pon_vcfs != null
-        ? params.deepsomatic_pon_vcfs.collect { it -> file(it) }
+        ? params.deepsomatic_pon_vcfs.split(',').collect { file(it.trim()) }
         : params.genome == 'CHM13'
             ? [
                 getGenomeAttribute('gnomad'),
@@ -164,6 +172,7 @@ workflow LRSOMATIC {
 
         MERGE_PON_VCFS.out.vcf_tbi
             .map { meta, vcf, tbi -> [[:], [vcf, tbi]] }
+            .first()
             .set { ds_pon_channel }
     } else {
         Channel.value( [[:], []] ).set { ds_pon_channel }

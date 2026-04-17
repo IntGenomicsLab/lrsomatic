@@ -32,6 +32,9 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     def regions = intervals ? "--regions ${intervals}" : ""
     def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
 
+    def isTumorOnly = !(meta.paired_data)
+
+
     if (gvcf_tfrecords) {
         def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
         if (!gvcf_matcher.matches()) {
@@ -58,12 +61,18 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     }
 
     def ponFilterArg = ""
-    if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
-        def vcfPath = (pon_vcf instanceof List)
-            ? pon_vcf.find { !it.toString().endsWith('.tbi') }
-            : pon_vcf
-        ponFilterArg = "--pon_filtering \"${vcfPath}\""
+    if (isTumorOnly) {
+        if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
+            def vcfPath = (pon_vcf instanceof List)
+                ? pon_vcf.find { !it.toString().endsWith('.tbi') }
+                : pon_vcf
+            ponFilterArg = "--pon_filtering \"${vcfPath}\""
+        } else {
+            // No user PON: fall back to container-bundled defaults
+            ponFilterArg = '--pon_filtering "/opt/models/deepsomatic/pons/PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
+        }
     }
+    // Paired samples: ponFilterArg stays "" (no PON filtering)
 
     """
     /opt/deepvariant/bin/postprocess_variants \\

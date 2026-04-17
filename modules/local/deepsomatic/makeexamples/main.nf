@@ -32,17 +32,17 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def normalReadsArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--reads_normal \"${normal_input}\"" : ""
     def normalSampleArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--sample_name_normal \"${prefix}_normal\"" : ""
     def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
-    def isTumorOnly = !(normal_input?.toString() && normal_input.toString() != '[]')
+    def isTumorOnly = !(meta.paired_data)
     def ponArg = ""
-    if (ds_pon?.toString() && ds_pon.toString() != '[]') {
+    if (ds_pon?.toString() && ds_pon.toString() != '[]' && isTumorOnly) {
         // User-supplied PON: staged into work dir; works in both tumor-only and paired modes
         def ponPaths = ds_pon instanceof List
             ? ds_pon.findAll { !it.toString().endsWith('.tbi') }.collect { "\"${it}\"" }.join(',')
             : "\"${ds_pon}\""
         ponArg = "--population_vcfs ${ponPaths}"
-    } else if (isTumorOnly) {
+    } else {
         // No user PON in tumor-only mode: fall back to container-bundled defaults
-        ponArg = '--population_vcfs "/opt/models/deepsomatic/pons/AF_pacbio_PON_CoLoRSdb.GRCh38.AF0.05.vcf.gz","AF_ilmn_PON_DeepVariant.GRCh38.AF0.05.vcf.gz","PON_dbsnp138_gnomad_ILMN1000g_pon.vcf.gz","PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
+        ponArg = '--population_vcfs "/opt/models/deepsomatic/pons/AF_pacbio_PON_CoLoRSdb.GRCh38.AF0.05.vcf.gz "'
     }
     // In paired mode with no user PON, ponArg stays "" (no --population_vcfs, matching prior behaviour)
 
