@@ -33,20 +33,48 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def normalSampleArg = (normal_input?.toString() && normal_input.toString() != '[]') ? "--sample_name_normal \"${prefix}_normal\"" : ""
     def gvcf_arg = params.generate_gvcf ? "--gvcf \"./${prefix}.gvcf.tfrecord@${task.cpus}.gz\"" : ""
     def isTumorOnly = !(meta.paired_data)
-    def ponArg = ""
-    if (ds_pon?.toString() && ds_pon.toString() != '[]' && isTumorOnly) {
-        // User-supplied PON: staged into work dir; works in both tumor-only and paired modes
-        def ponPaths = ds_pon instanceof List
-            ? ds_pon.findAll { !it.toString().endsWith('.tbi') }.collect { "\"${it}\"" }.join(',')
-            : "\"${ds_pon}\""
-        ponArg = "--population_vcfs ${ponPaths}"
-    } else {
-        // No user PON in tumor-only mode: fall back to container-bundled defaults
-        ponArg = '--population_vcfs "/opt/models/deepsomatic/pons/AF_pacbio_PON_CoLoRSdb.GRCh38.AF0.05.vcf.gz "'
+
+    // Build list of PON VCF file paths (excluding .tbi index files)
+    def ponFiles = []
+    if (ds_pon?.toString() && ds_pon.toString() != '[]') {
+        ponFiles = (ds_pon instanceof List)
+            ? ds_pon.findAll { !it.toString().endsWith('.tbi') }
+            : [ds_pon]
     }
-    // In paired mode with no user PON, ponArg stays "" (no --population_vcfs, matching prior behaviour)
+    def nPonFiles = ponFiles.size()
+    def ponArrayLiteral = ponFiles.collect { "${it}" }.join(' ')
+
+    // Shell block to prepare the PON VCF (merge if multiple, copy if single, skip if none)
+    // Runs before make_examples_somatic so the result is available as merged_pon.vcf.gz
+    def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
+# Prepare PON VCF for --population_vcfs: merge multiple databases into one sorted+indexed file,
+# or copy a single VCF. DeepSomatic requires no chromosome overlap across population VCFs.
+_PON_VCFS=( ${ponArrayLiteral} )
+if [ \${#_PON_VCFS[@]} -gt 1 ]; then
+    gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
+    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -u >> _pon_hdr.txt
+    gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
+    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
+        | sort -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
+    cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
+    rm _pon_hdr.txt _pon_data.txt
+else
+    cp "\${_PON_VCFS[0]}" merged_pon.vcf.gz
+fi
+tabix -p vcf merged_pon.vcf.gz
+""" : ""
+
+    // --population_vcfs argument for make_examples_somatic
+    def ponArg = ""
+    if (isTumorOnly) {
+        ponArg = nPonFiles > 0
+            ? '--population_vcfs "merged_pon.vcf.gz"'
+            : '--population_vcfs "/opt/models/deepsomatic/pons/AF_pacbio_PON_CoLoRSdb.GRCh38.AF0.05.vcf.gz "'
+    }
+    // In paired mode ponArg stays "" (no --population_vcfs, matching prior behaviour)
 
     """
+    ${ponPrepareBlock}
     seq 0 ${task.cpus - 1} | parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples_somatic \\
         --mode calling \\
         --ref "${fasta}" \\

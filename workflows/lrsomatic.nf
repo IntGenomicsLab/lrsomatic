@@ -34,7 +34,6 @@ include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblve
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { WHATSHAP_STATS                    } from '../modules/nf-core/whatshap/stats/main'
 include { MODKIT_PILEUP                     } from '../modules/nf-core/modkit/pileup/main'
-include { MERGE_PON_VCFS                    } from '../subworkflows/local/merge_pon_vcfs'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -162,24 +161,13 @@ workflow LRSOMATIC {
                 getGenomeAttribute('asap')
               ]
             : []
-    // Merge all PON VCFs into one deduplicated, sorted, indexed file.
-    // DeepSomatic requires no chromosome overlap across population VCFs;
-    // merging resolves this for multi-database sets (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap).
-    // GRCh38/other with no user PON: empty list skips merging (container defaults apply in tumor-only mode).
-    if (ds_pon_files) {
-        Channel.value([[id: 'merged_pon'], ds_pon_files])
-            | MERGE_PON_VCFS
-
-        MERGE_PON_VCFS.out.vcf_tbi
-            .map { meta, vcf, tbi -> [[:], [vcf, tbi]] }
-            .first()
-            .set { ds_pon_channel }
-    } else {
-        Channel.value( [[:], []] ).set { ds_pon_channel }
-    }
-    // ds_pon_channel: [[:], [merged_pon_sorted.vcf.gz, merged_pon_sorted.vcf.gz.tbi]] or [[:], []]
-    //   -- passed as a separate tuple input (like fasta/fai/gzi) to DEEPSOMATIC_MAKEEXAMPLES
-    //   -- makeexamples filters out .tbi files when building --population_vcfs, so the pair is safe to pass
+    // DeepSomatic requires no chromosome overlap across population VCFs.
+    // When multiple databases are provided (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap),
+    // the merge is done inline inside DEEPSOMATIC_MAKEEXAMPLES and DEEPSOMATIC_POSTPROCESSVARIANTS
+    // so that both callers can start in parallel as soon as BAMs are ready.
+    Channel.value( [[:], ds_pon_files] ).set { ds_pon_channel }
+    // ds_pon_channel: [[:], [vcf_path, ...]] or [[:], []]
+    //   -- raw unmerged PON VCF paths (no .tbi required); merging happens inline in each DeepSomatic process
     //   -- GRCh38/other + no user PON: empty list => process uses container-bundled GRCh38 defaults (tumor-only)
 
     ch_versions = channel.empty()

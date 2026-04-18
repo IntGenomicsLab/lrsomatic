@@ -60,21 +60,46 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         small_model_arg = "--small_model_cvo_records ${small_model_tfrecords_logical_name}"
     }
 
+    // Build list of PON VCF file paths (excluding .tbi index files)
+    def ponFiles = []
+    if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
+        ponFiles = (pon_vcf instanceof List)
+            ? pon_vcf.findAll { !it.toString().endsWith('.tbi') }
+            : [pon_vcf]
+    }
+    def nPonFiles = ponFiles.size()
+    def ponArrayLiteral = ponFiles.collect { "${it}" }.join(' ')
+
+    // Shell block to prepare the PON VCF for --pon_filtering (merge if multiple, copy if single)
+    def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
+# Prepare PON VCF for --pon_filtering: merge multiple databases into one sorted+indexed file,
+# or copy a single VCF. DeepSomatic requires a single VCF for --pon_filtering.
+_PON_VCFS=( ${ponArrayLiteral} )
+if [ \${#_PON_VCFS[@]} -gt 1 ]; then
+    gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
+    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -u >> _pon_hdr.txt
+    gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
+    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
+        | sort -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
+    cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
+    rm _pon_hdr.txt _pon_data.txt
+else
+    cp "\${_PON_VCFS[0]}" merged_pon.vcf.gz
+fi
+tabix -p vcf merged_pon.vcf.gz
+""" : ""
+
+    // --pon_filtering argument for postprocess_variants (tumor-only only)
     def ponFilterArg = ""
     if (isTumorOnly) {
-        if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
-            def vcfPath = (pon_vcf instanceof List)
-                ? pon_vcf.find { !it.toString().endsWith('.tbi') }
-                : pon_vcf
-            ponFilterArg = "--pon_filtering \"${vcfPath}\""
-        } else {
-            // No user PON: fall back to container-bundled defaults
-            ponFilterArg = '--pon_filtering "/opt/models/deepsomatic/pons/PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
-        }
+        ponFilterArg = nPonFiles > 0
+            ? '--pon_filtering "merged_pon.vcf.gz"'
+            : '--pon_filtering "/opt/models/deepsomatic/pons/PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
     }
     // Paired samples: ponFilterArg stays "" (no PON filtering)
 
     """
+    ${ponPrepareBlock}
     /opt/deepvariant/bin/postprocess_variants \\
         ${args} \\
         --ref "${fasta}" \\
