@@ -77,10 +77,10 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
 _PON_VCFS=( ${ponArrayLiteral} )
 if [ \${#_PON_VCFS[@]} -gt 1 ]; then
     gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
-    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -u >> _pon_hdr.txt
+    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -T . -u >> _pon_hdr.txt
     gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
     for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
-        | sort -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
+        | sort -T . -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
     cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
     rm _pon_hdr.txt _pon_data.txt
 else
