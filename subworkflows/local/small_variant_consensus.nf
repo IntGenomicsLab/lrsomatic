@@ -5,6 +5,7 @@ include { BCFTOOLS_ANNOTATE                                  } from '../../modul
 include { BCFTOOLS_ANNOTATE as STANDARDIZE_AF                } from '../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_SORT as SORT_PRE_NORM                     } from '../../modules/nf-core/bcftools/sort/main'
 
 
 
@@ -20,12 +21,28 @@ workflow SMALL_VARIANT_CONSENSUS {
     main:
 
     //
+    // MODULE: SORT_PRE_NORM (BCFTOOLS_SORT alias, label: process_medium)
+    // Sort each per-caller VCF before normalisation. Some callers (e.g. DeepSomatic)
+    // can produce VCFs with out-of-order records; BCFTOOLS_NORM with -W=tbi requires
+    // coordinate-sorted input to write the tabix index inline.
+    // Input:  [meta, vcf]
+    // Output: .vcf -- [meta, vcf.gz]
+    //         .tbi -- [meta, tbi]
+    //
+    SORT_PRE_NORM(mixed_vcfs.map { meta, vcf, _tbi -> [meta, vcf] })
+
+    SORT_PRE_NORM.out.vcf
+        .join(SORT_PRE_NORM.out.tbi)
+        .set { sorted_vcfs }
+    // sorted_vcfs: [meta(+caller), vcf.gz, tbi]  -- coordinate-sorted per-caller VCF
+
+    //
     // MODULE: BCFTOOLS_NORM (label: process_medium)
-    // Input:  [meta, vcf, tbi]  -- per-caller VCF
+    // Input:  [meta, vcf, tbi]  -- per-caller VCF (now guaranteed sorted)
     // Output: .vcf -- [meta, vcf]  -- left-aligned, normalised VCF
     //         .tbi -- [meta, tbi]
     //
-    BCFTOOLS_NORM(mixed_vcfs, fasta)
+    BCFTOOLS_NORM(sorted_vcfs, fasta)
 
     BCFTOOLS_NORM.out.vcf
              .join(BCFTOOLS_NORM.out.tbi)
