@@ -72,22 +72,22 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
 
     // Shell block to prepare the PON VCF for --pon_filtering (merge if multiple, copy if single)
     def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
-# Prepare PON VCF for --pon_filtering: merge multiple databases into one sorted+indexed file,
-# or copy a single VCF. DeepSomatic requires a single VCF for --pon_filtering.
-_PON_VCFS=( ${ponArrayLiteral} )
-if [ \${#_PON_VCFS[@]} -gt 1 ]; then
-    gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
-    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -T . -u >> _pon_hdr.txt
-    gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
-    for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
-        | sort -T . -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
-    cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
-    rm _pon_hdr.txt _pon_data.txt
-else
-    cp "\${_PON_VCFS[0]}" merged_pon.vcf.gz
-fi
-tabix -p vcf merged_pon.vcf.gz
-""" : ""
+    # Prepare PON VCF for --pon_filtering: merge multiple databases into one sorted+indexed file,
+    # or copy a single VCF. DeepSomatic requires a single VCF for --pon_filtering.
+    _PON_VCFS=( ${ponArrayLiteral} )
+    if [ \${#_PON_VCFS[@]} -gt 1 ]; then
+        gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
+        for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -T . -u >> _pon_hdr.txt
+        gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
+        for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
+            | sort -T . -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
+        cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
+        rm _pon_hdr.txt _pon_data.txt
+    else
+        cp "\${_PON_VCFS[0]}" merged_pon.vcf.gz
+    fi
+    tabix -p vcf merged_pon.vcf.gz
+    """ : ""
 
     // --pon_filtering argument for postprocess_variants (tumor-only only)
     def ponFilterArg = ""

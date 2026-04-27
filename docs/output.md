@@ -253,7 +253,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | `merge_output.vcf.gz` | Merged germline indel and snv calls in vcf format |
 | `merge_output.vcf.gz` | index for germline small variant calls            |
 
-#### `clairs`
+#### `clairS`
 
 Present in **paired** (tumor + normal) samples.
 
@@ -272,7 +272,7 @@ Present in **paired** (tumor + normal) samples.
 | `snv.vcf.gz`       | Somatic SNV calls in vcf format   |
 | `snv.vcf.gz.tbi`   | Index for somatic SNV calls       |
 
-#### `clairsto`
+#### `clairS-TO`
 
 Present in **tumor-only** samples (no matched normal).
 
