@@ -206,10 +206,6 @@ workflow LRSOMATIC {
                             kinetics: kinetics_meta]
             return[ meta_new, bam ]
         }
-        .groupTuple()
-        .map { meta, bam ->
-            [ meta, bam.flatten()]
-            }
         .set{ch_samplesheet}
     // ch_samplesheet (updated): [meta, [bam...]]
     //   meta fields: id, paired_data, type, platform, sex, fiber, replicate,
@@ -267,6 +263,8 @@ workflow LRSOMATIC {
     }
 
     // Drop 'replicate' from meta before concatenation -- replicate info not needed downstream
+    // groupTuple merges per-replicate entries that share the same sample ID into one item
+    // (e.g. two B2194541 rows with replicate=1 and replicate=2 become one entry with [bam1, bam2])
     ch_samplesheet
         .map{ meta, bam ->
             def new_meta = meta.subMap('id',
@@ -281,11 +279,15 @@ workflow LRSOMATIC {
                             'kinetics')
             return[new_meta, bam]
         }
+        .groupTuple()
+        .map { meta, bam ->
+            [ meta, bam.flatten() ]
+        }
         .set{ch_samplesheet_no_rep}
     // ch_samplesheet_no_rep: [meta, [bam...]]
     //   meta fields: id, paired_data, type, platform, sex, fiber,
     //                clair3_model, clairS_model, clairSTO_model, kinetics
-    //   (replicate field removed; bams still a list — concatenated next)
+    //   (replicate field removed; replicates for same sample merged into single BAM list)
 
     // Branch on number of input BAMs: samples with a single BAM skip concatenation
 
