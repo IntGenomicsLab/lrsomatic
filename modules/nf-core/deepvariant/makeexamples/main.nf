@@ -4,7 +4,6 @@ process DEEPVARIANT_MAKEEXAMPLES {
     
     container params.use_gpu ? "docker.io/google/deepvariant:1.9.0-gpu" : "docker.io/google/deepvariant:1.9.0"
 
-
    input:
     tuple val(meta), path(input), path(index), path(intervals)
     tuple val(meta2), path(fasta)

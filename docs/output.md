@@ -195,22 +195,22 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   │   ├── sample.blocklist.tsv
 ```
 
-| File                                       | Description                                                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `cramino_aln/sample.cramino.txt`           | cramino QC summary statistics for the aligned bam file                                                                   |
-| `cramino_ubam_1/sample.cramino.txt`        | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`               | fibertools QC summary for the bam file                                                                                   |
-| `mosdepth/sample.mosdepth.global.dist.txt` | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
-| `mosdepth/sample.mosdepth.summary.txt`     | overall summary file from mosdepth tool                                                                                  |
-| `nanoplot_aln/sample_NanoStats.txt`        | NanoPlot summary statistics for the aligned BAM file                                                                     |
-| `nanoplot_aln/sample_NanoPlot-report.html` | NanoPlot interactive HTML report for the aligned BAM file                                                                |
-| `nanoplot_ubam_1/sample_NanoStats.txt`     | NanoPlot summary statistics for the unaligned BAM file                                                                   |
-| `nanoplot_ubam_1/sample_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                           |
-| `samtools/sample.flagstat`                 | a summary of the counts of different samtools flags                                                                      |
-| `samtools/sample.idxstats`                 | a summary of the number of mapped and unmapped reads                                                                     |
-| `samtools/sample.stats`                    | summary statistics from the bamfile                                                                                      |
-| `whatshap_stats/sample.stats.tsv`          | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
-| `whatshap_stats/sample.blocklist.tsv`      | list of all phase blocks with their genomic coordinates                                                                  |
+| File                                          | Description                                                                                                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `cramino_aln/sample.cramino.txt`              | cramino QC summary statistics for the aligned bam file                                                                   |
+| `cramino_ubam_1/sample.cramino.txt`           | cramino QC summary statistics for the unaligned bam files                                                                |
+| `fibertoolsrs/sample_qc.txt`                  | fibertools QC summary for the bam file                                                                                   |
+| `mosdepth/sample.mosdepth.global.dist.txt`    | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
+| `mosdepth/sample.mosdepth.summary.txt`        | overall summary file from mosdepth tool                                                                                  |
+| `nanoplot_aln/sample_NanoStats.txt`           | NanoPlot summary statistics for the aligned BAM file                                                                     |
+| `nanoplot_aln/sample_NanoPlot-report.html`    | NanoPlot interactive HTML report for the aligned BAM file                                                                |
+| `nanoplot_ubam_1/sample_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                   |
+| `nanoplot_ubam_1/sample_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                              |
+| `samtools/sample.flagstat`                    | a summary of the counts of different samtools flags                                                                      |
+| `samtools/sample.idxstats`                    | a summary of the number of mapped and unmapped reads                                                                     |
+| `samtools/sample.stats`                       | summary statistics from the bamfile                                                                                      |
+| `whatshap_stats/sample.stats.tsv`             | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
+| `whatshap_stats/sample.blocklist.tsv`         | list of all phase blocks with their genomic coordinates                                                                  |
 
 </details>
 
@@ -229,8 +229,8 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   │       └── sample.bed.gz
 ```
 
-| File                          | Description                                                                                  |
-| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| File                                         | Description                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `{tumor,normal}/modkit_pileup/sample.bed.gz` | Modkit pileup BED file containing per-CpG methylation frequency and coverage values |
 
 </details>
@@ -253,7 +253,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | `merge_output.vcf.gz` | Merged germline indel and snv calls in vcf format |
 | `merge_output.vcf.gz` | index for germline small variant calls            |
 
-#### `clairs`
+#### `clairS`
 
 Present in **paired** (tumor + normal) samples.
 
@@ -272,7 +272,7 @@ Present in **paired** (tumor + normal) samples.
 | `snv.vcf.gz`       | Somatic SNV calls in vcf format   |
 | `snv.vcf.gz.tbi`   | Index for somatic SNV calls       |
 
-#### `clairsto`
+#### `clairS-TO`
 
 Present in **tumor-only** samples (no matched normal).
 
@@ -351,12 +351,12 @@ DeepVariant germline small variant calls. Present in all samples.
 │   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
 ```
 
-| File                  | Description                                                                    |
-| --------------------- | ------------------------------------------------------------------------------ |
-| `sample.vcf.gz`       | DeepVariant germline SNV and indel calls in VCF format                         |
-| `sample.vcf.gz.tbi`   | Index for DeepVariant germline calls                                           |
+| File                  | Description                                                                     |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `sample.vcf.gz`       | DeepVariant germline SNV and indel calls in VCF format                          |
+| `sample.vcf.gz.tbi`   | Index for DeepVariant germline calls                                            |
 | `sample.g.vcf.gz`     | DeepVariant gVCF file with calls at all positions (only with `--generate_gvcf`) |
-| `sample.g.vcf.gz.tbi` | Index for DeepVariant gVCF (only with `--generate_gvcf`)                       |
+| `sample.g.vcf.gz.tbi` | Index for DeepVariant gVCF (only with `--generate_gvcf`)                        |
 
 #### `deepsomatic`
 
@@ -370,12 +370,12 @@ DeepSomatic somatic small variant calls. Present in all samples.
 │   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
 ```
 
-| File                  | Description                                                                      |
-| --------------------- | -------------------------------------------------------------------------------- |
-| `sample.vcf.gz`       | DeepSomatic somatic SNV and indel calls in VCF format                            |
-| `sample.vcf.gz.tbi`   | Index for DeepSomatic somatic calls                                              |
-| `sample.g.vcf.gz`     | DeepSomatic gVCF file with calls at all positions (only with `--generate_gvcf`)  |
-| `sample.g.vcf.gz.tbi` | Index for DeepSomatic gVCF (only with `--generate_gvcf`)                         |
+| File                  | Description                                                                     |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `sample.vcf.gz`       | DeepSomatic somatic SNV and indel calls in VCF format                           |
+| `sample.vcf.gz.tbi`   | Index for DeepSomatic somatic calls                                             |
+| `sample.g.vcf.gz`     | DeepSomatic gVCF file with calls at all positions (only with `--generate_gvcf`) |
+| `sample.g.vcf.gz.tbi` | Index for DeepSomatic gVCF (only with `--generate_gvcf`)                        |
 
 #### `phased`
 
@@ -387,10 +387,10 @@ Phased variant calls produced by WhatsHap. Present in all samples.
 │   ├── sample.phased.vcf.gz.tbi
 ```
 
-| File                       | Description                                                          |
-| -------------------------- | -------------------------------------------------------------------- |
-| `sample.phased.vcf.gz`     | WhatsHap phase-tagged VCF file assigning variants to haplotypes      |
-| `sample.phased.vcf.gz.tbi` | Index for the phased VCF                                             |
+| File                       | Description                                                     |
+| -------------------------- | --------------------------------------------------------------- |
+| `sample.phased.vcf.gz`     | WhatsHap phase-tagged VCF file assigning variants to haplotypes |
+| `sample.phased.vcf.gz.tbi` | Index for the phased VCF                                        |
 
 </details>
 
@@ -477,38 +477,38 @@ Phased variant calls produced by WhatsHap. Present in all samples.
 
 ```
 
-| File                                                                                                   | Description                                                                          |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `{ploidy}_{purity}_{confidence}/bed_output/genes_copynumber_states.bed`                                | bed file containing allele specific copy number values with coverage information     |
-| `{ploidy}_{purity}_{confidence}/bed_output/loh_regions.bed`                                            | bed file containing positions of loss of heterozygosity regions                      |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_1.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 1 |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_2.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 2 |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.html`                                 | html based plotly plot of copy number and coverage for individual chromosomes        |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.pdf`                                  | pdf based plotly plot of copy number and coverage for individual chromosomes         |
-| `{ploidy}_{purity}_{confidence}/variation_plots/CN_VARIATION_INDEX.html`                               | unclear html plot                                                                    |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.html`               | html plots of copy number variations in highlighted genes                            |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf`                | pdf plots of copy number variations in highlighted genes                             |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html` | genome-wide html copy number plots with coverage information on same axis            |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf`  | genome-wide pdf copy number plots with coverage information on same axis             |
-| `coverage_data/{0-23}_SNP.csv`                                                                         | CSV of coverage data per chromosome                                                  |
-| `coverage_data/coverage_ps.csv`                                                                        | CSV of overall haplotype specific coverage data                                      |
-| `coverage_data/coverage.csv`                                                                           | CSV of overall coverage data                                                         |
-| `coverage_data/phase_corrected_coverage.csv`                                                           | CSV of overall phase-corrected coverage data                                         |
-| `coverage_data/pileup_SNPs.csv`                                                                        | CSV of SNP pileup data                                                               |
-| `coverage_plots/chr{1-22,X,Y}_cov.html`                                                                | chromosome specific html coverage plots                                              |
-| `coverage_plots/chr{1-22,X,Y}_cov.pdf`                                                                 | chromosome specific pdf coverage plots                                               |
-| `coverage_plots/COVERAGE_INDEX.html`                                                                   | unclear html plot                                                                    |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_0.html`                                                 | Phase-switch error correction plot per chromosome                                    |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                    |
-| `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                      |
-| `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                   |
-| `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                         |
-| `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                   |
-| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                          | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
-| `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                               |
-| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                |
-| `sample_optimized_peak.html`                                                                           | optimization peak plot                                                               |
-| `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                            |
+| File                                                                                                   | Description                                                                                        |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `{ploidy}_{purity}_{confidence}/bed_output/genes_copynumber_states.bed`                                | bed file containing allele specific copy number values with coverage information                   |
+| `{ploidy}_{purity}_{confidence}/bed_output/loh_regions.bed`                                            | bed file containing positions of loss of heterozygosity regions                                    |
+| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_1.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 1               |
+| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_2.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 2               |
+| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.html`                                 | html based plotly plot of copy number and coverage for individual chromosomes                      |
+| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.pdf`                                  | pdf based plotly plot of copy number and coverage for individual chromosomes                       |
+| `{ploidy}_{purity}_{confidence}/variation_plots/CN_VARIATION_INDEX.html`                               | unclear html plot                                                                                  |
+| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.html`               | html plots of copy number variations in highlighted genes                                          |
+| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf`                | pdf plots of copy number variations in highlighted genes                                           |
+| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html` | genome-wide html copy number plots with coverage information on same axis                          |
+| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf`  | genome-wide pdf copy number plots with coverage information on same axis                           |
+| `coverage_data/{0-23}_SNP.csv`                                                                         | CSV of coverage data per chromosome                                                                |
+| `coverage_data/coverage_ps.csv`                                                                        | CSV of overall haplotype specific coverage data                                                    |
+| `coverage_data/coverage.csv`                                                                           | CSV of overall coverage data                                                                       |
+| `coverage_data/phase_corrected_coverage.csv`                                                           | CSV of overall phase-corrected coverage data                                                       |
+| `coverage_data/pileup_SNPs.csv`                                                                        | CSV of SNP pileup data                                                                             |
+| `coverage_plots/chr{1-22,X,Y}_cov.html`                                                                | chromosome specific html coverage plots                                                            |
+| `coverage_plots/chr{1-22,X,Y}_cov.pdf`                                                                 | chromosome specific pdf coverage plots                                                             |
+| `coverage_plots/COVERAGE_INDEX.html`                                                                   | unclear html plot                                                                                  |
+| `phasing_output/chr{1-23,X,Y}_phase_correction_0.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
+| `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
+| `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                                    |
+| `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                                 |
+| `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                                       |
+| `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                                 |
+| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                           | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
+| `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                                             |
+| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                              |
+| `sample_optimized_peak.html`                                                                           | optimization peak plot                                                                             |
+| `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                                          |
 
 </details>
 
