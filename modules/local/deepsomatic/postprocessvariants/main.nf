@@ -40,9 +40,6 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         if (!gvcf_matcher.matches()) {
             throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
         }
-        def gvcf_tfrecord_name = gvcf_matcher[0][1]
-        def gvcf_shardCount = gvcf_matcher[0][2]
-        def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
     }
 
     // The following block determines whether the small model was used, and if so, adds the variant calls from it
@@ -64,11 +61,11 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     def ponFiles = []
     if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
         ponFiles = (pon_vcf instanceof List)
-            ? pon_vcf.findAll { !it.toString().endsWith('.tbi') }
+            ? pon_vcf.findAll { f -> !f.toString().endsWith('.tbi') }
             : [pon_vcf]
     }
     def nPonFiles = ponFiles.size()
-    def ponArrayLiteral = ponFiles.collect { "${it}" }.join(' ')
+    def ponArrayLiteral = ponFiles.collect { f -> "${f}" }.join(' ')
 
     // Shell block to prepare the PON VCF for --pon_filtering (merge if multiple, copy if single)
     def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """

@@ -66,7 +66,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         STANDARDIZE_AF.out.vcf
             .join(STANDARDIZE_AF.out.tbi)
             .map { meta, vcf, tbi ->
-                def clean_meta = meta.findAll { k, v -> k != 'rename_to' }
+                def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
                 return [clean_meta, vcf, tbi]
             }
             .set { normalized_vcfs }

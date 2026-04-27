@@ -111,6 +111,12 @@
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
                 },
+                "SORT_POST_NORM": {
+                    "bcftools": 1.22
+                },
+                "STANDARDIZE_AF": {
+                    "bcftools": 1.22
+                },
                 "SV_VEP": {
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
@@ -616,6 +622,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-04-01T14:22:53.450440867"
+        "timestamp": "2026-04-24T12:12:40.246157522"
     }
 }

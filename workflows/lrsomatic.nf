@@ -98,9 +98,9 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
 
     if (params.clairsto_pon_vcfs != null) {
-        pon_files = params.clairsto_pon_vcfs.split(',').collect { file(it.trim()) }
+        pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {
-            pon_flags = params.clairsto_pon_flags.split(',').collect { it.trim() }
+            pon_flags = params.clairsto_pon_flags.split(',').collect { f -> f.trim() }
         } else if (params.genome == 'GRCh38') {
             pon_flags = ["True", "True", "False", "False"]
         } else if (params.genome == 'CHM13') {
@@ -151,7 +151,7 @@ workflow LRSOMATIC {
 
     // DeepSomatic PON channel: user-supplied VCF paths, or empty list (process falls back to container defaults)
     ds_pon_files = params.deepsomatic_pon_vcfs != null
-        ? params.deepsomatic_pon_vcfs.split(',').collect { file(it.trim()) }
+        ? params.deepsomatic_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         : params.genome == 'CHM13'
             ? [
                 getGenomeAttribute('gnomad'),
@@ -165,7 +165,7 @@ workflow LRSOMATIC {
     // When multiple databases are provided (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap),
     // the merge is done inline inside DEEPSOMATIC_MAKEEXAMPLES and DEEPSOMATIC_POSTPROCESSVARIANTS
     // so that both callers can start in parallel as soon as BAMs are ready.
-    Channel.value( [[:], ds_pon_files] ).set { ds_pon_channel }
+    channel.value( [[:], ds_pon_files] ).set { ds_pon_channel }
     // ds_pon_channel: [[:], [vcf_path, ...]] or [[:], []]
     //   -- raw unmerged PON VCF paths (no .tbi required); merging happens inline in each DeepSomatic process
     //   -- GRCh38/other + no user PON: empty list => process uses container-bundled GRCh38 defaults (tumor-only)

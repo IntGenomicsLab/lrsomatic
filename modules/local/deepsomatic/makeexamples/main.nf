@@ -38,11 +38,11 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def ponFiles = []
     if (ds_pon?.toString() && ds_pon.toString() != '[]') {
         ponFiles = (ds_pon instanceof List)
-            ? ds_pon.findAll { !it.toString().endsWith('.tbi') }
+            ? ds_pon.findAll { f -> !f.toString().endsWith('.tbi') }
             : [ds_pon]
     }
     def nPonFiles = ponFiles.size()
-    def ponArrayLiteral = ponFiles.collect { "${it}" }.join(' ')
+    def ponArrayLiteral = ponFiles.collect { f -> "${f}" }.join(' ')
 
     // Shell block to prepare the PON VCF (merge if multiple, copy if single, skip if none)
     // Runs before make_examples_somatic so the result is available as merged_pon.vcf.gz
