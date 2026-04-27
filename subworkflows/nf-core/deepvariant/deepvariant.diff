@@ -4,12 +4,7 @@ Changes in component 'nf-core/deepvariant'
 Changes in 'deepvariant/main.nf':
 --- subworkflows/nf-core/deepvariant/main.nf
 +++ subworkflows/nf-core/deepvariant/main.nf
-@@ -1,3 +1,4 @@
-+include { DEEPVARIANT_MAKEEXAMPLES        } from '../../../modules/nf-core/deepvariant/makeexamples/main'
- include { DEEPVARIANT_MAKEEXAMPLES        } from '../../../modules/nf-core/deepvariant/makeexamples/main'
- include { DEEPVARIANT_CALLVARIANTS        } from '../../../modules/nf-core/deepvariant/callvariants/main'
- include { DEEPVARIANT_POSTPROCESSVARIANTS } from '../../../modules/nf-core/deepvariant/postprocessvariants/main'
-@@ -6,7 +7,7 @@
+@@ -6,7 +6,7 @@
      take:
      ch_input   // channel: [ val(meta), path(input), path(index), path(intervals)]
      ch_fasta   // channel: [ val(meta2), path(fasta) ]
@@ -18,7 +13,7 @@ Changes in 'deepvariant/main.nf':
      ch_gzi     // channel: [ val(meta4), path(gzi) ]
      ch_par_bed // channel: [ val(meta5), path(par_bed) ]
  
-@@ -16,14 +17,19 @@
+@@ -16,14 +16,19 @@
  
      DEEPVARIANT_CALLVARIANTS(DEEPVARIANT_MAKEEXAMPLES.out.examples)
  
