@@ -1,4 +1,6 @@
-Changes in module 'nf-core/ascat'
+Changes in component 'nf-core/ascat'
+'modules/nf-core/ascat/meta.yml' is unchanged
+Changes in 'ascat/main.nf':
 --- modules/nf-core/ascat/main.nf
 +++ modules/nf-core/ascat/main.nf
 @@ -1,211 +1,189 @@
@@ -416,7 +418,6 @@ Changes in module 'nf-core/ascat'
 -        alleleCounter: \$(alleleCounter --version)
 -    END_VERSIONS
 -    """
--}
 +    echo stub > ${prefix}.after_correction.gc_rt.test.tumour.germline.png
 +    echo stub > ${prefix}.after_correction.gc_rt.test.tumour.tumour.png
 +    echo stub > ${prefix}.before_correction.test.tumour.germline.png
@@ -443,7 +444,10 @@ Changes in module 'nf-core/ascat'
 +
 +    """
 +
-+}
+ }
+
+'modules/nf-core/ascat/environment.yml' is unchanged
+Changes in 'ascat/tests/main.nf.test':
 --- modules/nf-core/ascat/tests/main.nf.test
 +++ modules/nf-core/ascat/tests/main.nf.test
 @@ -55,6 +55,7 @@
@@ -487,4 +491,6 @@ Changes in module 'nf-core/ascat'
                      path(process.out.versions[0]).yaml
                  ).match() }
 
+'modules/nf-core/ascat/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/ascat/tests/nextflow.config' is unchanged
 ************************************************************

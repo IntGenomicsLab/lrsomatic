@@ -1,6 +1,7 @@
 process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tag "$meta.id"
     label 'process_high'
+    label 'process_short'
 
     container "docker.io/google/deepsomatic:1.7.0"
 
@@ -35,11 +36,16 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     def isTumorOnly = !(meta.paired_data)
 
 
+    def gvcf_arg = ""
     if (gvcf_tfrecords) {
         def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
         if (!gvcf_matcher.matches()) {
             throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
         }
+        def gvcf_tfrecord_name = gvcf_matcher[0][1]
+        def gvcf_shardCount = gvcf_matcher[0][2]
+        def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
+        gvcf_arg = "--nonvariant_site_tfrecord_path \"${gvcf_tfrecords_logical_name}\" --gvcf_outfile \"${prefix}.g.vcf.gz\""
     }
 
     // The following block determines whether the small model was used, and if so, adds the variant calls from it
@@ -105,6 +111,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         --process_somatic=true \\
         ${regions} \\
         ${small_model_arg} \\
+        ${gvcf_arg} \\
         ${ponFilterArg} \\
         --cpus ${task.cpus}
     """

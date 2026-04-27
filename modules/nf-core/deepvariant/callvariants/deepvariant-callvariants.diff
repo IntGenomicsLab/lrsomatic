@@ -3,14 +3,21 @@ Changes in component 'nf-core/deepvariant/callvariants'
 Changes in 'deepvariant/callvariants/main.nf':
 --- modules/nf-core/deepvariant/callvariants/main.nf
 +++ modules/nf-core/deepvariant/callvariants/main.nf
-@@ -2,6 +2,7 @@
+@@ -1,10 +1,11 @@
+ 
  process DEEPVARIANT_CALLVARIANTS {
      tag "$meta.id"
-     label 'process_high'
-+    label "${params.use_gpu ? 'process_gpu' : 'process_noaccel'}"
- 
+-    label 'process_high'
+-
++    label "${params.use_gpu ? 'process_gpu_very_high' : 'process_very_high'}"
++    label "${params.use_gpu ? '' : 'process_long'}"
++    
      //Conda is not supported at the moment
-     container "docker.io/google/deepvariant:1.9.0"
+-    container "docker.io/google/deepvariant:1.9.0"
++    container params.use_gpu ? "docker.io/google/deepvariant:1.9.0-gpu" : "docker.io/google/deepvariant:1.9.0"
+ 
+     input:
+     tuple val(meta), path(make_examples_tfrecords)
 
 'modules/nf-core/deepvariant/callvariants/tests/main.nf.test' is unchanged
 'modules/nf-core/deepvariant/callvariants/tests/main.nf.test.snap' is unchanged
