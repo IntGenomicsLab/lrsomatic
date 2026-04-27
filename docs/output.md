@@ -195,22 +195,22 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   │   ├── sample.blocklist.tsv
 ```
 
-| File                                          | Description                                                                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `cramino_aln/sample_{type}_cramino.txt`              | cramino QC summary statistics for the aligned bam file                                                                   |
-| `cramino_ubam_rep1/sample_{type}_cramino.txt`        | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                         | fibertools QC summary for the bam file                                                                                   |
-| `mosdepth/sample.mosdepth.global.dist.txt`           | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
-| `mosdepth/sample.mosdepth.summary.txt`               | overall summary file from mosdepth tool                                                                                  |
-| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`       | NanoPlot summary statistics for the aligned BAM file                                                                     |
-| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html` | NanoPlot interactive HTML report for the aligned BAM file                                                               |
-| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoStats.txt` | NanoPlot summary statistics for the unaligned BAM file                                                                  |
-| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                      |
-| `samtools/sample.flagstat`                    | a summary of the counts of different samtools flags                                                                      |
-| `samtools/sample.idxstats`                    | a summary of the number of mapped and unmapped reads                                                                     |
-| `samtools/sample.stats`                       | summary statistics from the bamfile                                                                                      |
-| `whatshap_stats/sample.stats.tsv`             | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
-| `whatshap_stats/sample.blocklist.tsv`         | list of all phase blocks with their genomic coordinates                                                                  |
+| File                                                         | Description                                                                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `cramino_aln/sample_{type}_cramino.txt`                      | cramino QC summary statistics for the aligned bam file                                                                   |
+| `cramino_ubam_rep1/sample_{type}_cramino.txt`                | cramino QC summary statistics for the unaligned bam files                                                                |
+| `fibertoolsrs/sample_qc.txt`                                 | fibertools QC summary for the bam file                                                                                   |
+| `mosdepth/sample.mosdepth.global.dist.txt`                   | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
+| `mosdepth/sample.mosdepth.summary.txt`                       | overall summary file from mosdepth tool                                                                                  |
+| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`               | NanoPlot summary statistics for the aligned BAM file                                                                     |
+| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html`        | NanoPlot interactive HTML report for the aligned BAM file                                                                |
+| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                   |
+| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                              |
+| `samtools/sample.flagstat`                                   | a summary of the counts of different samtools flags                                                                      |
+| `samtools/sample.idxstats`                                   | a summary of the number of mapped and unmapped reads                                                                     |
+| `samtools/sample.stats`                                      | summary statistics from the bamfile                                                                                      |
+| `whatshap_stats/sample.stats.tsv`                            | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
+| `whatshap_stats/sample.blocklist.tsv`                        | list of all phase blocks with their genomic coordinates                                                                  |
 
 </details>
 
@@ -389,12 +389,12 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── somatic_smallvariants.vcf.gz.tbi
 ```
 
-| File                                | Description                                                                               |
-| ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                         |
-| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                         |
-| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags                          |
-| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                          |
+| File                                | Description                                                      |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags |
+| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                |
+| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags  |
+| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                 |
 
 </details>
 
