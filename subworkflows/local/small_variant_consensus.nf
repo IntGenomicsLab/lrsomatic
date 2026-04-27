@@ -72,7 +72,7 @@ workflow SMALL_VARIANT_CONSENSUS {
             .set { normalized_vcfs }
         // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised, AF-standardized per-caller VCF
     }
-    // In 'consensus' mode, normalized_vcfs passes through unchanged from BCFTOOLS_NORM
+    // In 'consensus' mode, normalized_vcfs comes from SORT_POST_NORM (post-BCFTOOLS_NORM re-sorting)
 
     //
     // MODULE: BCFTOOLS_QUERY (label: process_single)
