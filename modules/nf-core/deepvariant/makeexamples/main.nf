@@ -1,7 +1,6 @@
 process DEEPVARIANT_MAKEEXAMPLES {
     tag "$meta.id"
     label 'process_very_high'
-    label 'process_short'
     
     container params.use_gpu ? "docker.io/google/deepvariant:1.9.0-gpu" : "docker.io/google/deepvariant:1.9.0"
 

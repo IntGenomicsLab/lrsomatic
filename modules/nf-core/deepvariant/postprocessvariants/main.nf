@@ -1,6 +1,7 @@
 process DEEPVARIANT_POSTPROCESSVARIANTS {
     tag "$meta.id"
     label 'process_high'
+    label 'process_short'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepvariant:1.9.0"
