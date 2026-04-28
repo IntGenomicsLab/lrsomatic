@@ -65,8 +65,8 @@ Changes in 'longphase/phase/main.nf':
 +        tabix -p vcf ${prefix}_mod.vcf.gz
 +    fi
      """
--}
-+}
+ }
+
 'modules/nf-core/longphase/phase/environment.yml' is unchanged
 'modules/nf-core/longphase/phase/tests/main.nf.test' is unchanged
 'modules/nf-core/longphase/phase/tests/main.nf.test.snap' is unchanged

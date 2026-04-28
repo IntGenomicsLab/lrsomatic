@@ -97,9 +97,17 @@ workflow LRSOMATIC {
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
 
-    if (params.pon_vcfs != null) {
-        pon_files = params.pon_vcfs.collect { it ->file(it) }
-        pon_flags = params.pon_flags
+    if (params.clairsto_pon_vcfs != null) {
+        pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
+        if (params.clairsto_pon_flags != null) {
+            pon_flags = params.clairsto_pon_flags.split(',').collect { f -> f.trim() }
+        } else if (params.genome == 'GRCh38') {
+            pon_flags = ["True", "True", "False", "False"]
+        } else if (params.genome == 'CHM13') {
+            pon_flags = ["True", "True", "False", "False", "False"]
+        } else {
+            pon_flags = pon_files.collect { "False" }
+        }
     }
     else if (params.genome == 'GRCh38') {
         pon_files  = [
@@ -136,10 +144,31 @@ workflow LRSOMATIC {
     }
     channel
         .of( tuple(pon_files, pon_flags) )
-        .set { pon_channel }
-    // pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
+        .set { clairsto_pon_channel }
+    // clairsto_pon_channel: [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
     //   -- single tuple of parallel lists; each flag indicates whether the corresponding VCF
     //      is a population allele database (True) vs. a panel-of-normals artefact file (False)
+
+    // DeepSomatic PON channel: user-supplied VCF paths, or empty list (process falls back to container defaults)
+    ds_pon_files = params.deepsomatic_pon_vcfs != null
+        ? params.deepsomatic_pon_vcfs.split(',').collect { f -> file(f.trim()) }
+        : params.genome == 'CHM13'
+            ? [
+                getGenomeAttribute('gnomad'),
+                getGenomeAttribute('dbsnp'),
+                getGenomeAttribute('onekgenomes'),
+                getGenomeAttribute('colors'),
+                getGenomeAttribute('asap')
+              ]
+            : []
+    // DeepSomatic requires no chromosome overlap across population VCFs.
+    // When multiple databases are provided (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap),
+    // the merge is done inline inside DEEPSOMATIC_MAKEEXAMPLES and DEEPSOMATIC_POSTPROCESSVARIANTS
+    // so that both callers can start in parallel as soon as BAMs are ready.
+    channel.value( [[:], ds_pon_files] ).set { ds_pon_channel }
+    // ds_pon_channel: [[:], [vcf_path, ...]] or [[:], []]
+    //   -- raw unmerged PON VCF paths (no .tbi required); merging happens inline in each DeepSomatic process
+    //   -- GRCh38/other + no user PON: empty list => process uses container-bundled GRCh38 defaults (tumor-only)
 
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
@@ -177,10 +206,6 @@ workflow LRSOMATIC {
                             kinetics: kinetics_meta]
             return[ meta_new, bam ]
         }
-        .groupTuple()
-        .map { meta, bam ->
-            [ meta, bam.flatten()]
-            }
         .set{ch_samplesheet}
     // ch_samplesheet (updated): [meta, [bam...]]
     //   meta fields: id, paired_data, type, platform, sex, fiber, replicate,
@@ -238,6 +263,8 @@ workflow LRSOMATIC {
     }
 
     // Drop 'replicate' from meta before concatenation -- replicate info not needed downstream
+    // groupTuple merges per-replicate entries that share the same sample ID into one item
+    // (e.g. two B2194541 rows with replicate=1 and replicate=2 become one entry with [bam1, bam2])
     ch_samplesheet
         .map{ meta, bam ->
             def new_meta = meta.subMap('id',
@@ -252,11 +279,15 @@ workflow LRSOMATIC {
                             'kinetics')
             return[new_meta, bam]
         }
+        .groupTuple()
+        .map { meta, bam ->
+            [ meta, bam.flatten() ]
+        }
         .set{ch_samplesheet_no_rep}
     // ch_samplesheet_no_rep: [meta, [bam...]]
     //   meta fields: id, paired_data, type, platform, sex, fiber,
     //                clair3_model, clairS_model, clairSTO_model, kinetics
-    //   (replicate field removed; bams still a list — concatenated next)
+    //   (replicate field removed; replicates for same sample merged into single BAM list)
 
     // Branch on number of input BAMs: samples with a single BAM skip concatenation
 
@@ -498,7 +529,8 @@ workflow LRSOMATIC {
         branched_minimap.tumor_only,
         ch_fasta,
         ch_fai,
-        pon_channel
+        clairsto_pon_channel,
+        ds_pon_channel
     )
 
     branched_minimap.paired
@@ -556,7 +588,8 @@ workflow LRSOMATIC {
     PAIRED_SMALLVAR_SOMATIC (
         somatic_smallvar_input,
         ch_fasta,
-        ch_fai
+        ch_fai,
+        ds_pon_channel
     )
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE
