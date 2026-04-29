@@ -1,0 +1,9 @@
+SEVERUS:
+  severus: 1.6
+UNZIP_FASTA:
+  pigz: 2.8
+WGET:
+  wget: 1.21.4
+Workflow:
+    IntGenomicsLab/lrsomatic: v1.1.0
+    Nextflow: 25.10.0

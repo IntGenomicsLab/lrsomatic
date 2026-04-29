@@ -1,0 +1,24 @@
+Phasing statistics for sample sample2 from file germline_smallvariants.vcf.gz
+---------------- Chromosome chr19 ----------------
+      Variants in VCF:     9224
+         Heterozygous:     5276    (    4416    SNVs)
+               Phased:     3688    (    3131    SNVs)
+  Heterozygous phased:       69.9% (      70.9% SNVs)
+             Unphased:     1587    (not considered below)
+           Singletons:        1    (not considered below)
+               Blocks:      222
+
+Block sizes (no. of variants)
+         Sum of sizes:     3688    variants
+    Median block size:        8.00 variants
+   Average block size:       16.61 variants
+        Largest block:      467    variants
+       Smallest block:        2    variants
+
+Block lengths (basepairs)
+       Sum of lengths:  1582782    bp
+  Median block length:     5244.50 bp
+ Average block length:     7129.65 bp
+        Longest block:    32361    bp
+       Shortest block:        1    bp
+           Block NG50:        0    bp

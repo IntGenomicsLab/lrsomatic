@@ -1,0 +1,18 @@
+File name	sample2_tumor_mapped.bam
+Number of alignments	2809
+% from total alignments	86.93
+Number of reads	2454
+Yield [Gb]	0.04
+Mean coverage	0.71
+Yield [Gb] (>25kb)	0.01
+N50	17837
+N75	13625
+Median length	14941.00
+Mean length	14891.81
+
+Median identity	99.67
+Mean identity	98.04
+Modal identity	99.8
+
+Path	sample2_tumor_mapped.bam
+Creation time	29/04/2026 07:31:57

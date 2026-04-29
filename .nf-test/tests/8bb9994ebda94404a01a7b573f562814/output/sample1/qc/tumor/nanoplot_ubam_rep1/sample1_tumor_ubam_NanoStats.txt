@@ -1,0 +1,7 @@
+General summary:         
+Mean read length:              27,930.6
+Median read length:            17,775.5
+Number of reads:                1,736.0
+Read length N50:               54,909.0
+STDEV read length:             31,861.1
+Total bases:               48,487,491.0

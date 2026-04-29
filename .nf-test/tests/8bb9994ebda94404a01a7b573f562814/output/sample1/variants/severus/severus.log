@@ -1,0 +1,41 @@
+[2026-04-29 07:41:47] root: INFO: Starting Severus 1.6
+[2026-04-29 07:41:47] root: DEBUG: Cmd: /usr/local/bin/severus --min-support 3 --output-read-ids --threads 4 --target-bam sample1_tumor_mapped.bam --vntr-bed chm13.bed --control-bam sample1_normal_mapped.bam --phasing-vcf germline_smallvariants.vcf.gz --out-dir .
+[2026-04-29 07:41:47] root: DEBUG: Python version: 3.13.5 | packaged by conda-forge | (main, Jun 16 2025, 08:27:50) [GCC 13.3.0]
+[2026-04-29 07:41:47] root: INFO: Parsing reads from sample1_tumor_mapped.bam
+[2026-04-29 07:41:48] root: INFO: 	Total read length: 55692516
+[2026-04-29 07:41:48] root: INFO: 	Total aligned length: 49075049 (0.88)
+[2026-04-29 07:41:48] root: INFO: 	Read N50 / N90: 60982 / 19508
+[2026-04-29 07:41:48] root: INFO: 	Alignments N50 / N90: 62819 / 19595
+[2026-04-29 07:41:48] root: INFO: 	Read error rate (Q25 / Q50 / Q75): 0.0050 / 0.0100 / 0.0350
+[2026-04-29 07:41:48] root: INFO: 	Read mismatch rate (Q25 / Q50 / Q75): 0.0010 / 0.0020 / 0.0070
+[2026-04-29 07:41:48] root: INFO: Parsing reads from sample1_normal_mapped.bam
+[2026-04-29 07:41:49] root: INFO: 	Total read length: 55756974
+[2026-04-29 07:41:49] root: INFO: 	Total aligned length: 49295324 (0.88)
+[2026-04-29 07:41:49] root: INFO: 	Read N50 / N90: 65577 / 21398
+[2026-04-29 07:41:49] root: INFO: 	Alignments N50 / N90: 68498 / 21584
+[2026-04-29 07:41:49] root: INFO: 	Read error rate (Q25 / Q50 / Q75): 0.0050 / 0.0090 / 0.0320
+[2026-04-29 07:41:49] root: INFO: 	Read mismatch rate (Q25 / Q50 / Q75): 0.0010 / 0.0020 / 0.0060
+[2026-04-29 07:41:49] root: INFO: Computing read quality
+[2026-04-29 07:41:49] root: INFO: Annotating reads
+[2026-04-29 07:41:49] root: INFO: Computing coverage histogram
+[2026-04-29 07:41:49] root: INFO: 	Median coverage by PASS reads for sample1_tumor_mapped.bam (H1 / H2 / H0): 0.0 / 0.0 / 0.0
+[2026-04-29 07:41:49] root: INFO: 	Median coverage by PASS reads for sample1_normal_mapped.bam (H1 / H2 / H0): 0.0 / 0.0 / 0.0
+[2026-04-29 07:41:49] root: INFO: Extracting split alignments
+[2026-04-29 07:41:49] root: INFO: Extracting clipped reads
+[2026-04-29 07:41:49] root: INFO: Starting breakpoint detection
+[2026-04-29 07:41:49] root: INFO: Clustering unmapped insertions
+[2026-04-29 07:41:49] root: INFO: Starting compute_bp_coverage
+[2026-04-29 07:41:50] root: INFO: Filtering breakpoints
+[2026-04-29 07:41:50] root: INFO: Writing breakpoints
+[2026-04-29 07:41:50] root: INFO: Preparing outputs for all_SVs
+[2026-04-29 07:41:50] root: INFO: 	Computing segment coverage
+[2026-04-29 07:41:50] root: INFO: 	Total phased length: 15131883
+[2026-04-29 07:41:50] root: INFO: 	Phase blocks N50: 143308
+[2026-04-29 07:41:50] root: INFO: 	Preparing graph
+[2026-04-29 07:41:50] root: INFO: 	Writing vcf
+[2026-04-29 07:41:50] root: INFO: Preparing outputs for somatic_SVs
+[2026-04-29 07:41:50] root: INFO: 	Computing segment coverage
+[2026-04-29 07:41:51] root: INFO: 	Total phased length: 15131883
+[2026-04-29 07:41:51] root: INFO: 	Phase blocks N50: 143308
+[2026-04-29 07:41:51] root: INFO: 	Preparing graph
+[2026-04-29 07:41:51] root: INFO: 	Writing vcf

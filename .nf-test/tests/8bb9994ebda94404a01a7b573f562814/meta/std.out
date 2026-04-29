@@ -1,0 +1,29 @@
+ERROR ~ Error executing process > 'INTGENOMICSLAB_LRSOMATIC:LRSOMATIC:PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_NORM (sample2)'
+
+Caused by:
+  Failed to submit process to grid scheduler for execution
+
+
+Command executed:
+
+  sbatch .command.run
+
+Command exit status:
+  1
+
+Command output:
+  sbatch: lua: /etc/slurm/cli_filter.lua:164: Credit account "lp_lig" has insufficient available credits
+  sbatch: error: cli_filter plugin terminated with error
+
+Work dir:
+  /lustre1/project/stg_00096/home/lharbers/pipelines/lrsomatic/.nf-test/tests/8bb9994ebda94404a01a7b573f562814/work/19/9e842a78fbf3c3007b031837af4277
+
+Container:
+  /scratch/leuven/364/vsc36452/.singularity/community-cr-prod.seqera.io-docker-registry-v2-blobs-sha256-47-474a5ea8dc03366b04df884d89aeacc4f8e6d1ad92266888e7a8e7958d07cde8-data.img
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '/lustre1/project/stg_00096/home/lharbers/pipelines/lrsomatic/.nf-test/tests/8bb9994ebda94404a01a7b573f562814/meta/nextflow.log' file for details
+ERROR ~ Pipeline failed. Please refer to troubleshooting docs: https://nf-co.re/docs/usage/troubleshooting
+
+ -- Check '/lustre1/project/stg_00096/home/lharbers/pipelines/lrsomatic/.nf-test/tests/8bb9994ebda94404a01a7b573f562814/meta/nextflow.log' file for details

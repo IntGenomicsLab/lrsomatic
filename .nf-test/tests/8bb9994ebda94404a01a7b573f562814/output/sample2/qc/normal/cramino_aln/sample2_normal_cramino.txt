@@ -1,0 +1,18 @@
+File name	sample2_normal_mapped.bam
+Number of alignments	2560
+% from total alignments	90.59
+Number of reads	2330
+Yield [Gb]	0.03
+Mean coverage	0.43
+Yield [Gb] (>25kb)	0.00
+N50	11840
+N75	7969
+Median length	8588.00
+Mean length	9923.73
+
+Median identity	99.81
+Mean identity	98.44
+Modal identity	99.9
+
+Path	sample2_normal_mapped.bam
+Creation time	29/04/2026 07:31:43
