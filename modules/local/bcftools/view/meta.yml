@@ -1,0 +1,56 @@
+name: bcftools_view
+description: Filter VCF to positions defined by a targets file using bcftools view -T
+keywords:
+  - filtering
+  - VCF
+  - variant calling
+tools:
+  - view:
+      description: VCF/BCF conversion, view, subset and filter VCF/BCF files.
+      homepage: http://samtools.github.io/bcftools/bcftools.html
+      documentation: http://www.htslib.org/doc/bcftools.html
+      tool_dev_url: https://github.com/samtools/bcftools
+      doi: "10.1093/bioinformatics/btp352"
+      licence: ["MIT"]
+      identifier: biotools:bcftools
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information e.g. [ id:'test' ]
+    - vcf:
+        type: file
+        description: Input VCF/BCF file to filter
+        pattern: "*.{vcf.gz,vcf,bcf}"
+    - tbi:
+        type: file
+        description: Tabix index of the input VCF
+        pattern: "*.tbi"
+    - targets:
+        type: file
+        description: VCF file used as position filter (-T)
+        pattern: "*.{vcf.gz,vcf,bcf}"
+    - targets_tbi:
+        type: file
+        description: Tabix index of the targets VCF
+        pattern: "*.tbi"
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.vcf.gz":
+          type: file
+          description: Filtered VCF file
+          pattern: "*.vcf.gz"
+  tbi:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.tbi":
+          type: file
+          description: Tabix index of filtered VCF
+          pattern: "*.tbi"
+authors:
+  - "@rforsyth"
+maintainers:
+  - "@rforsyth"
