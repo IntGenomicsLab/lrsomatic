@@ -1,8 +1,8 @@
 process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_high'
+    label 'process_short'
 
-    //Conda is not supported at the moment
     container "docker.io/google/deepsomatic:1.7.0"
 
     input:
@@ -10,13 +10,14 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(gzi)
+    tuple val(meta5), path(pon_vcf)
 
     output:
-    tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
-    tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
-    tuple val(meta), path("${prefix}.g.vcf.gz")           , emit: gvcf
-    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}") , emit: gvcf_index
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
+    tuple val(meta), path("${prefix}.vcf.gz"),                                        emit: vcf
+    tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}"),                              emit: vcf_index
+    tuple val(meta), path("${prefix}.g.vcf.gz"),                                      emit: gvcf,                  optional: true
+    tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}"),                            emit: gvcf_index,            optional: true
+    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions,  emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when
@@ -32,14 +33,20 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     def regions = intervals ? "--regions ${intervals}" : ""
     def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
 
-    def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
-    if (!gvcf_matcher.matches()) {
-        throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
+    def isTumorOnly = !(meta.paired_data)
+
+
+    def gvcf_arg = ""
+    if (gvcf_tfrecords) {
+        def gvcf_matcher = gvcf_tfrecords[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/
+        if (!gvcf_matcher.matches()) {
+            throw new IllegalArgumentException("tfrecord baseName '" + gvcf_tfrecords[0].baseName + "' doesn't match the expected pattern")
+        }
+        def gvcf_tfrecord_name = gvcf_matcher[0][1]
+        def gvcf_shardCount = gvcf_matcher[0][2]
+        def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
+        gvcf_arg = "--nonvariant_site_tfrecord_path \"${gvcf_tfrecords_logical_name}\" --gvcf_outfile \"${prefix}.g.vcf.gz\""
     }
-    def gvcf_tfrecord_name = gvcf_matcher[0][1]
-    def gvcf_shardCount = gvcf_matcher[0][2]
-    // Reconstruct the logical name - ${tfrecord_name}.examples.tfrecord@${task.cpus}.gz
-    def gvcf_tfrecords_logical_name = "${gvcf_tfrecord_name}@${gvcf_shardCount}.gz"
 
     // The following block determines whether the small model was used, and if so, adds the variant calls from it
     // to the argument --small_model_cvo_records.
@@ -56,19 +63,57 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         small_model_arg = "--small_model_cvo_records ${small_model_tfrecords_logical_name}"
     }
 
+    // Build list of PON VCF file paths (excluding .tbi index files)
+    def ponFiles = []
+    if (pon_vcf?.toString() && pon_vcf.toString() != '[]') {
+        ponFiles = (pon_vcf instanceof List)
+            ? pon_vcf.findAll { f -> !f.toString().endsWith('.tbi') }
+            : [pon_vcf]
+    }
+    def nPonFiles = ponFiles.size()
+    def ponArrayLiteral = ponFiles.collect { f -> "${f}" }.join(' ')
+
+    // Shell block to prepare the PON VCF for --pon_filtering (merge if multiple, copy if single)
+    def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
+    # Prepare PON VCF for --pon_filtering: merge multiple databases into one sorted+indexed file,
+    # or copy a single VCF. DeepSomatic requires a single VCF for --pon_filtering.
+    _PON_VCFS=( ${ponArrayLiteral} )
+    if [ \${#_PON_VCFS[@]} -gt 1 ]; then
+        gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
+        for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep '^##' | grep -v '^##fileformat'; done | sort -T . -u >> _pon_hdr.txt
+        gzip -dc "\${_PON_VCFS[0]}" | grep '^#CHROM' >> _pon_hdr.txt
+        for vcf in "\${_PON_VCFS[@]}"; do gzip -dc "\$vcf" | grep -v '^#'; done \\
+            | sort -T . -t\$'\\t' -k1,1V -k2,2n | uniq > _pon_data.txt
+        cat _pon_hdr.txt _pon_data.txt | bgzip -c > merged_pon.vcf.gz
+        rm _pon_hdr.txt _pon_data.txt
+    else
+        cp "\${_PON_VCFS[0]}" merged_pon.vcf.gz
+    fi
+    tabix -p vcf merged_pon.vcf.gz
+    """ : ""
+
+    // --pon_filtering argument for postprocess_variants (tumor-only only)
+    def ponFilterArg = ""
+    if (isTumorOnly) {
+        ponFilterArg = nPonFiles > 0
+            ? '--pon_filtering "merged_pon.vcf.gz"'
+            : '--pon_filtering "/opt/models/deepsomatic/pons/PON_dbsnp138_gnomad_PB1000g_pon.vcf.gz"'
+    }
+    // Paired samples: ponFilterArg stays "" (no PON filtering)
+
     """
+    ${ponPrepareBlock}
     /opt/deepvariant/bin/postprocess_variants \\
         ${args} \\
         --ref "${fasta}" \\
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
         --process_somatic=true \\
-        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
-        --gvcf_outfile "${prefix}.g.vcf.gz" \\
         ${regions} \\
         ${small_model_arg} \\
-        --cpus $task.cpus
-
+        ${gvcf_arg} \\
+        ${ponFilterArg} \\
+        --cpus ${task.cpus}
     """
 
     stub:

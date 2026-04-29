@@ -12,11 +12,13 @@ include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subwork
 workflow TUMORONLY_SMALLVAR {
 
     take:
-    tumor_bams  // [meta, tumor_bam, tumor_bai]  -- tumor-only aligned BAMs (no matched normal)
-    fasta       // [[:], fasta]
-    fai         // [[:], fai]
-    pon_channel // [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
-    //              used by ClairS-TO to filter germline variants with population allele databases
+    tumor_bams           // [meta, tumor_bam, tumor_bai]  -- tumor-only aligned BAMs (no matched normal)
+    fasta                // [[:], fasta]
+    fai                  // [[:], fai]
+    clairsto_pon_channel // [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
+    //                       used by ClairS-TO to filter germline variants with population allele databases
+    ds_pon_channel       // [ [pon_vcf_path, ...] ] or [ [] ]
+    //                       user-supplied DeepSomatic PON VCFs; empty list => container defaults
 
     main:
 
@@ -33,7 +35,7 @@ workflow TUMORONLY_SMALLVAR {
             .map { meta, bam, bai ->
                 return [ meta, bam, bai, meta.clairSTO_model]
             }
-            .combine(pon_channel)
+            .combine(clairsto_pon_channel)
             .set{ clairsto_input_ch}
         // clairsto_input_ch: [meta, bam, bai, clairSTO_model_str, [pon_vcf_paths], [pon_flags]]
 
@@ -181,7 +183,8 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]],  // intervals (empty = genome-wide)
             fasta,
             fai,
-            [[:],[]]   // GZI (empty if FASTA is uncompressed)
+            [[:],[]],  // GZI (empty if FASTA is uncompressed)
+            ds_pon_channel
         )
         DEEPSOMATIC.out.vcf
             .join(DEEPSOMATIC.out.vcf_index)

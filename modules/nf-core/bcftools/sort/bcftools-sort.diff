@@ -1,15 +1,18 @@
 Changes in component 'nf-core/bcftools/sort'
 'modules/nf-core/bcftools/sort/meta.yml' is unchanged
-Changes in 'bcftools/sort/main.nf':
---- modules/nf-core/bcftools/sort/main.nf
-+++ modules/nf-core/bcftools/sort/main.nf
-@@ -67,4 +67,4 @@
-         bcftools: \$(bcftools --version 2>&1 | head -n1 | sed 's/^.*bcftools //; s/ .*\$//')
-     END_VERSIONS
-     """
--}
-+}
-'modules/nf-core/bcftools/sort/environment.yml' is unchanged
+'modules/nf-core/bcftools/sort/main.nf' is unchanged
+Changes in 'bcftools/sort/environment.yml':
+--- modules/nf-core/bcftools/sort/environment.yml
++++ modules/nf-core/bcftools/sort/environment.yml
+@@ -5,6 +5,5 @@
+   - bioconda
+ dependencies:
+   # renovate: datasource=conda depName=bioconda/htslib
++  - bioconda::bcftools=1.22
+   - bioconda::htslib=1.22.1
+-  # renovate: datasource=conda depName=bioconda/bcftools
+-  - bioconda::bcftools=1.22
+
 'modules/nf-core/bcftools/sort/tests/vcf_gz_index.config' is unchanged
 'modules/nf-core/bcftools/sort/tests/main.nf.test' is unchanged
 'modules/nf-core/bcftools/sort/tests/vcf_gz_index_csi.config' is unchanged
