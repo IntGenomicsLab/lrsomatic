@@ -75,8 +75,7 @@
                         "enum": ["deepvariant", "clair"]
                     },
                     "minItems": 1,
-                    "default": "['deepvariant', 'clair']",
-                    "enum": ["['deepvariant', 'clair']"]
+                    "default": ["deepvariant", "clair"]
                 },
                 "somatic_var_keep": {
                     "type": "array",
@@ -86,7 +85,7 @@
                         "enum": ["deepsomatic", "clair"]
                     },
                     "minItems": 1,
-                    "default": "['deepsomatic', 'clair']"
+                    "default": ["deepsomatic", "clair"]
                 },
                 "germline_var_combine": {
                     "type": "string",
