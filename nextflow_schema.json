@@ -68,7 +68,7 @@
             "type": "object",
             "properties": {
                 "germline_var_keep": {
-                    "type": "string",
+                    "type": "array",
                     "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
                     "items": {
                         "type": "string",
@@ -78,7 +78,7 @@
                     "default": "['deepvariant', 'clair']"
                 },
                 "somatic_var_keep": {
-                    "type": "string",
+                    "type": "array",
                     "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
                     "items": {
                         "type": "string",
