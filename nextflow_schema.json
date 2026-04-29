@@ -580,9 +580,6 @@
         "generate_gvcf": {
             "type": "boolean"
         },
-        "longphase_tag_supplementary": {
-            "type": "boolean"
-        },
         "skip_modkit": {
             "type": "boolean"
         }
