@@ -65,7 +65,7 @@
         },
         "small_variant_calling_options": {
             "title": "options for small variant calling",
-            "type": "string",
+            "type": "object",
             "properties": {
                 "germline_var_keep": {
                     "type": "string",
