@@ -543,6 +543,9 @@
             "$ref": "#/$defs/small_variant_calling_options"
         },
         {
+            "$ref": "#/$defs/longphase_options"
+        },
+        {
             "$ref": "#/$defs/reference_genome_options"
         },
         {
