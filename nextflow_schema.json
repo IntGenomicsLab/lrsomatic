@@ -71,7 +71,7 @@
                     "type": "array",
                     "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
                     "items": {
-                        "type": "string",
+                        "type": "array",
                         "enum": ["deepvariant", "clair"]
                     },
                     "minItems": 1,
@@ -81,7 +81,7 @@
                     "type": "array",
                     "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
                     "items": {
-                        "type": "string",
+                        "type": "array",
                         "enum": ["deepsomatic", "clair"]
                     },
                     "minItems": 1,
