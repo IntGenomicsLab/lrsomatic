@@ -1,2 +1,0 @@
-#sample	chromosome	file_name	variants	phased	unphased	singletons	blocks	variant_per_block_median	variant_per_block_avg	variant_per_block_min	variant_per_block_max	variant_per_block_sum	bp_per_block_median	bp_per_block_avg	bp_per_block_min	bp_per_block_max	bp_per_block_sum	heterozygous_variants	heterozygous_snvs	phased_snvs	phased_fraction	phased_snvs_fraction	block_n50
-sample1	chr19	germline_smallvariants.vcf.gz	24550	13336	7952	0	203	37	65.69458128078817	2	708	13336	40802	74541.29556650246	86	2358548	15131883	21288	16504	11077	0.626456219466366	0.6711706253029569	0

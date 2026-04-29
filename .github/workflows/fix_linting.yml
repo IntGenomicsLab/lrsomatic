@@ -9,7 +9,7 @@ jobs:
     if: >
       contains(github.event.comment.html_url, '/pull/') &&
       contains(github.event.comment.body, '@nf-core-bot fix linting') &&
-      github.repository == 'IntGenomicsLab/lrsomatic'
+      github.repository == 'IntGenomicsLab/lr_somatic'
     runs-on: ubuntu-latest
     steps:
       # Use the @nf-core-bot token to check out so we can push later
@@ -37,7 +37,7 @@ jobs:
       # Install and run prek
       - name: Run prek
         id: prek
-        uses: j178/prek-action@cbc2f23eb5539cf20d82d1aabd0d0ecbcc56f4e3 # v2
+        uses: j178/prek-action@6ad80277337ad479fe43bd70701c3f7f8aa74db3 # v2
         continue-on-error: true
 
       # indication that the linting has finished
@@ -82,4 +82,4 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             @${{ github.actor }} I tried to fix the linting errors, but it didn't work. Please fix them manually.
-            See [CI log](https://github.com/IntGenomicsLab/lrsomatic/actions/runs/${{ github.run_id }}) for more details.
+            See [CI log](https://github.com/IntGenomicsLab/lr_somatic/actions/runs/${{ github.run_id }}) for more details.

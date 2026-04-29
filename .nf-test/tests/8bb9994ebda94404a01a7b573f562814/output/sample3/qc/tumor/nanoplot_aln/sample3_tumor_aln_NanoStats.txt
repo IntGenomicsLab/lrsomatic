@@ -1,9 +1,0 @@
-General summary:         
-Average percent identity:          95.4
-Mean read length:              20,629.8
-Median percent identity:           98.7
-Median read length:             7,903.0
-Number of reads:                2,379.0
-Read length N50:               51,322.0
-STDEV read length:             28,637.0
-Total bases:               49,078,284.0
