@@ -6,6 +6,7 @@ include { BCFTOOLS_ANNOTATE as STANDARDIZE_AF                } from '../../modul
 include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_SORT as BCFTOOLS_SORT_CONSENSUS           } from '../../modules/nf-core/bcftools/sort/main'
 
 
 
@@ -198,17 +199,20 @@ workflow SMALL_VARIANT_CONSENSUS {
         // Use the record from the prioritized caller
         if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
-                .set{vcf}
-            BCFTOOLS_ISEC.out.deepvar_consensus_tbi
-                .set{tbi}
+                .set{isec_consensus_vcf}
         }
         else if (prioritize_caller == 'clair') {
             BCFTOOLS_ISEC.out.clair_consensus_vcf
-                .set{vcf}
-            BCFTOOLS_ISEC.out.clair_consensus_tbi
-                .set{tbi}
+                .set{isec_consensus_vcf}
         }
-        // vcf/tbi: [meta, vcf/tbi]  -- consensus-only calls from the priority caller
+        // BCFTOOLS_ISEC outputs hardcoded names (0002.vcf.gz) inside a prefix directory.
+        // Nextflow stages files using basename only, so both germline and somatic consensus
+        // VCFs would collide as "0002.vcf.gz" in downstream PHASING_HAPLOTYPING:BCFTOOLS_CONCAT.
+        // BCFTOOLS_SORT_CONSENSUS renames the file to a unique sample-specific name via modules.config.
+        BCFTOOLS_SORT_CONSENSUS(isec_consensus_vcf)
+        BCFTOOLS_SORT_CONSENSUS.out.vcf.set{vcf}
+        BCFTOOLS_SORT_CONSENSUS.out.tbi.set{tbi}
+        // vcf/tbi: [meta, vcf/tbi]  -- consensus-only calls from the priority caller, renamed
     }
 
     else if (combine_method == 'all') {
