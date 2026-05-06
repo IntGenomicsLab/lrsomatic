@@ -1,0 +1,64 @@
+nextflow_pipeline {
+
+    name "Test pipeline - deep callers only"
+    script "../main.nf"
+    tag "pipeline"
+
+    test("-profile test, germline_var_keep=['deepvariant'], somatic_var_keep=['deepsomatic']") {
+
+        when {
+            params {
+                outdir              = "$outputDir"
+                germline_var_keep   = ['deepvariant']
+                somatic_var_keep    = ['deepsomatic']
+            }
+        }
+
+        then {
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+
+                // ── Deep caller outputs MUST exist ───────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz.tbi").exists()
+                    }
+                },
+
+                // ── Clair caller outputs must NOT exist ──────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert !file("$launchDir/output/${s}/variants/clair3/merge_output.vcf.gz").exists()
+                        assert !file("$launchDir/output/${s}/variants/clairs/indel.vcf.gz").exists()
+                    }
+                    assert !file("$launchDir/output/sample3/variants/clairsto/indel.vcf.gz").exists()
+                    assert !file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
+                },
+
+                // ── Phased VCFs exist and have data ──────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert germline.exists()
+                        assert somatic.exists()
+                        assert germline.size() > 0
+                        assert somatic.size() > 0
+                    }
+                },
+
+                // ── Snapshot ─────────────────────────────────────────────────
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml"),
+                    stable_name,
+                    stable_path
+                ).match() }
+            )
+        }
+    }
+}
