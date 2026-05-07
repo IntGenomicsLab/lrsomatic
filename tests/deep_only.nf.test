@@ -3,6 +3,7 @@ nextflow_pipeline {
     name "Test pipeline - deep callers only"
     script "../main.nf"
     tag "pipeline"
+    tag "extended"
 
     test("-profile test, germline_var_keep=['deepvariant'], somatic_var_keep=['deepsomatic']") {
 
@@ -49,6 +50,49 @@ nextflow_pipeline {
                         assert somatic.exists()
                         assert germline.size() > 0
                         assert somatic.size() > 0
+                    }
+                },
+
+                // ── BAM files ────────────────────────────────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                    }
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam.bai").exists()
+                },
+
+                // ── Severus SV outputs for paired samples ────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    }
+                },
+
+                // ── QC outputs ───────────────────────────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def types = (s in ['sample1', 'sample2']) ? ['tumor', 'normal'] : ['tumor']
+                        types.each { t ->
+                            assert file("$launchDir/output/${s}/qc/${t}/cramino_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/nanoplot_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/mosdepth").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/samtools").isDirectory()
+                        }
+                    }
+                },
+
+                // ── VEP annotation outputs ───────────────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/germline").isDirectory()
+                        assert file("$launchDir/output/${s}/vep/somatic").isDirectory()
+                    }
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/SVs").isDirectory()
                     }
                 },
 

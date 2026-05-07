@@ -3,6 +3,7 @@ nextflow_pipeline {
     name "Test pipeline - clair callers only (extended samplesheet)"
     script "../main.nf"
     tag "pipeline"
+    tag "extended"
 
     test("-profile test, clair only, extended samplesheet") {
 
