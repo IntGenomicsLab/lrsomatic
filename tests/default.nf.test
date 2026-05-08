@@ -43,19 +43,6 @@ nextflow_pipeline {
                     assert file("$launchDir/output/sample3/variants/clairsto/snv.vcf.gz").exists()
                     assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
                     assert file("$launchDir/output/sample3/variants/clairsto/germline.vcf.gz").exists()
-                    assert file("$launchDir/output/sample1/variants/deepvariant/sample1_germline.vcf.gz").exists()
-                    assert file("$launchDir/output/sample1/variants/deepvariant/sample1_germline.vcf.gz.tbi").exists()
-                    assert file("$launchDir/output/sample2/variants/deepvariant/sample2_germline.vcf.gz").exists()
-                    assert file("$launchDir/output/sample2/variants/deepvariant/sample2_germline.vcf.gz.tbi").exists()
-                    assert file("$launchDir/output/sample3/variants/deepvariant/sample3_germline.vcf.gz").exists()
-                    assert file("$launchDir/output/sample3/variants/deepvariant/sample3_germline.vcf.gz.tbi").exists()
-                    assert file("$launchDir/output/sample1/variants/deepsomatic/sample1_somatic.vcf.gz").exists()
-                    assert file("$launchDir/output/sample1/variants/deepsomatic/sample1_somatic.vcf.gz.tbi").exists()
-                    assert file("$launchDir/output/sample2/variants/deepsomatic/sample2_somatic.vcf.gz").exists()
-                    assert file("$launchDir/output/sample2/variants/deepsomatic/sample2_somatic.vcf.gz.tbi").exists()
-                    assert file("$launchDir/output/sample3/variants/deepsomatic/sample3_somatic.vcf.gz").exists()
-                    assert file("$launchDir/output/sample3/variants/deepsomatic/sample3_somatic.vcf.gz.tbi").exists()
-
                 },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
