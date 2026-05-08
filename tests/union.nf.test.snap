@@ -1,5 +1,5 @@
 {
-    "-profile test": {
+    "-profile test, union combine mode": {
         "content": [
             {
                 "BCFTOOLS_ANNOTATE": {
@@ -619,6 +619,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-05-08T10:26:48.643441628"
+        "timestamp": "2026-05-08T11:08:05.242051704"
     }
 }

@@ -24,10 +24,10 @@ nextflow_pipeline {
                 // ── Deep caller outputs MUST exist ───────────────────────────
                 {
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz").exists()
-                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz.tbi").exists()
-                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz").exists()
-                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz.tbi").exists()
                     }
                 },
 

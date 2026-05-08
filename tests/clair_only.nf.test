@@ -122,7 +122,7 @@ nextflow_pipeline {
                     def snvVcf = file("$launchDir/output/sample5/variants/clairsto/snv.vcf.gz")
                     assert snvVcf.exists()
                     // Read VCF header and check for the expected model string
-                    def header = "zgrep '##' ${snvVcf}".execute().text
+                    def header = ["zgrep", "##", snvVcf.toString()].execute().text
                     assert header.contains('ont_r10_dorado_sup_4khz') : \
                         "Expected ClairSTO to use samplesheet model 'ont_r10_dorado_sup_4khz' but VCF header was:\n${header}"
                 },

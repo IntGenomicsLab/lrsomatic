@@ -24,12 +24,18 @@ workflow TUMORONLY_SMALLVAR {
 
     somatic_vcf = channel.empty()
     germline_vcf = channel.empty()
+    def germline_var_keep = params.germline_var_keep instanceof List ? params.germline_var_keep : [params.germline_var_keep]
+    def somatic_var_keep = params.somatic_var_keep instanceof List ? params.somatic_var_keep : [params.somatic_var_keep]
+    clairsto_germline_ch = channel.empty()
+    clairsto_somatic_ch = channel.empty()
+    deepvariant_ch = channel.empty()
+    deepsomatic_ch = channel.empty()
 
     // CLAIRS-TO: somatic AND germline variant calling from tumor-only BAM
     // ClairS-TO uses a panel-of-normals / population allele database to separate somatic from germline
     // Runs if either somatic or germline clair calling is requested (produces both jointly)
 
-    if(params.somatic_var_keep.contains('clair') || params.germline_var_keep.contains('clair')) {
+    if(somatic_var_keep.contains('clair') || germline_var_keep.contains('clair')) {
         // Append model name and PoN info to build the full CLAIRSTO input
         tumor_bams
             .map { meta, bam, bai ->
@@ -93,7 +99,7 @@ workflow TUMORONLY_SMALLVAR {
     }
 
     // DEEPVARIANT: germline-only variant calling (no somatic mode for tumor-only)
-    if(params.germline_var_keep.contains('deepvariant')) {
+    if(germline_var_keep.contains('deepvariant')) {
 
         //
         // SUBWORKFLOW: DEEPVARIANT (nf-core)
@@ -130,7 +136,7 @@ workflow TUMORONLY_SMALLVAR {
 
     // COMBINE GERMLINE VARIANTS
     // If both callers requested: run consensus; otherwise pass through single-caller output
-    if (params.germline_var_keep.size() > 1) {
+    if (germline_var_keep.size() > 1) {
         clairsto_germline_ch
             .mix(deepvariant_ch)
             .set{combined_germline_ch}
@@ -149,18 +155,18 @@ workflow TUMORONLY_SMALLVAR {
             .set{germline_vcf}
         // germline_vcf: [meta(+caller from consensus), vcf, tbi]
     }
-    else if (params.germline_var_keep == ['clair']) {
+    else if (germline_var_keep == ['clair']) {
         clairsto_germline_ch
             .set{germline_vcf}
     }
-    else if (params.germline_var_keep == ['deepvariant']) {
+    else if (germline_var_keep == ['deepvariant']) {
         deepvariant_ch
             .set{germline_vcf}
     }
 
     // DEEPSOMATIC: somatic variant calling in tumor-only mode (no matched normal)
     // Normal BAM/BAI are passed as empty lists; DeepSomatic uses the model's internal normal baseline
-    if(params.somatic_var_keep.contains('deepsomatic')) {
+    if(somatic_var_keep.contains('deepsomatic')) {
         tumor_bams
             .map { meta, tumor_bam, tumor_bai ->
                 def normal_bam = []
@@ -197,7 +203,7 @@ workflow TUMORONLY_SMALLVAR {
     }
 
     // COMBINE SOMATIC VARIATION
-    if (params.somatic_var_keep.size() > 1) {
+    if (somatic_var_keep.size() > 1) {
         clairsto_somatic_ch
             .mix(deepsomatic_ch)
             .set{combined_somatic_ch}
@@ -216,11 +222,11 @@ workflow TUMORONLY_SMALLVAR {
             .set{somatic_vcf}
         // somatic_vcf: [meta(+caller from consensus), vcf, tbi]
     }
-    else if (params.somatic_var_keep == ['clair']) {
+    else if (somatic_var_keep == ['clair']) {
         clairsto_somatic_ch
             .set{somatic_vcf}
     }
-    else if (params.somatic_var_keep == ['deepsomatic']) {
+    else if (somatic_var_keep == ['deepsomatic']) {
         deepsomatic_ch
             .set{somatic_vcf}
     }

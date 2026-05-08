@@ -24,14 +24,14 @@ nextflow_pipeline {
                 // ── Both caller raw outputs MUST exist ───────────────────────
                 { // DeepVariant germline outputs
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz").exists()
-                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz.tbi").exists()
                     }
                 },
                 { // DeepSomatic somatic outputs
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz").exists()
-                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz.tbi").exists()
                     }
                 },
                 { // Clair germline outputs (paired: clair3, tumor-only: clairsto)
