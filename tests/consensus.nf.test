@@ -12,6 +12,8 @@ nextflow_pipeline {
                 outdir                = "$outputDir"
                 germline_var_combine  = 'consensus'
                 somatic_var_combine   = 'consensus'
+                germline_var_keep     = ['clair', 'deepvariant']
+                somatic_var_keep      = ['clair', 'deepsomatic']
             }
         }
 
