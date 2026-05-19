@@ -105,7 +105,7 @@
                     "whatshap": 2.8
                 },
                 "Workflow": {
-                    "IntGenomicsLab/lrsomatic": "v1.1.0dev"
+                    "IntGenomicsLab/lrsomatic": "v1.1.0"
                 }
             },
             [
@@ -565,6 +565,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-05-18T11:01:47.309764846"
+        "timestamp": "2026-05-19T10:52:20.034493806"
     }
 }

@@ -111,7 +111,7 @@
                     "whatshap": 2.8
                 },
                 "Workflow": {
-                    "IntGenomicsLab/lrsomatic": "v1.1.0dev"
+                    "IntGenomicsLab/lrsomatic": "v1.1.0"
                 }
             },
             [
@@ -741,7 +741,7 @@
                 "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample4_tumor.bam:md5,b0ec4ed09a1f62db92c92fac33c4e847",
+                "sample4_tumor.bam:md5,8a60c085f0f34d0171817f5f5d07ef9a",
                 "sample4_tumor.bam.bai:md5,d7b86a32c58b6d6fbc55d76e619712da",
                 "sample4.flagstat:md5,5710382ba31b23172ca19f9407f689b4",
                 "sample4.idxstats:md5,3bf4793a1667f41f0b31d578f99e3955",
@@ -775,6 +775,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-05-18T16:53:30.331070356"
+        "timestamp": "2026-05-19T11:37:13.481547987"
     }
 }
