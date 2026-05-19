@@ -98,6 +98,14 @@ workflow LRSOMATIC {
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
 
+    // Convert comma-separated caller strings to lists for internal use
+    params.germline_var_keep = params.germline_var_keep instanceof List
+        ? params.germline_var_keep
+        : params.germline_var_keep.tokenize(',').collect { it.trim() }
+    params.somatic_var_keep = params.somatic_var_keep instanceof List
+        ? params.somatic_var_keep
+        : params.somatic_var_keep.tokenize(',').collect { it.trim() }
+
     if (params.clairsto_pon_vcfs != null) {
         pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {

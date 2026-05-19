@@ -68,20 +68,14 @@
             "type": "object",
             "properties": {
                 "germline_var_keep": {
-                    "type": ["string"],
-                    "description": "List of germline variant callers to use. Must include at least one of [deepvariant, clair].",
-                    "items": {
-                        "type": "string",
-                        "default": "clair"
-                    }
+                    "type": "string",
+                    "description": "Comma-separated list of germline variant callers to use. Valid values: deepvariant, clair. Example: 'deepvariant,clair'",
+                    "default": "clair"
                 },
                 "somatic_var_keep": {
-                    "type": ["string"],
-                    "description": "List of somatic variant callers to use. Must include at least one of [deepsomatic, clair].",
-                    "items": {
-                        "type": "string",
-                        "default": "clair"
-                    }
+                    "type": "string",
+                    "description": "Comma-separated list of somatic variant callers to use. Valid values: deepsomatic, clair. Example: 'deepsomatic,clair'",
+                    "default": "clair"
                 },
                 "germline_var_combine": {
                     "type": "string",
@@ -106,6 +100,9 @@
                     "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
+                },
+                "generate_gvcf": {
+                    "type": "boolean"
                 }
             }
         },
@@ -364,9 +361,8 @@
                     "type": "boolean",
                     "description": "Skip modification calling"
                 },
-                "use_gpu": {
-                    "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
+                "skip_modkit": {
+                    "type": "boolean"
                 }
             }
         },
@@ -468,13 +464,6 @@
                     "fa_icon": "fas fa-palette",
                     "hidden": true
                 },
-                "hook_url": {
-                    "type": "string",
-                    "description": "Incoming hook URL for messaging service",
-                    "fa_icon": "fas fa-people-group",
-                    "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
-                    "hidden": true
-                },
                 "multiqc_config": {
                     "type": "string",
                     "format": "file-path",
@@ -514,7 +503,7 @@
                     "hidden": true
                 },
                 "help": {
-                    "type": "boolean",
+                    "type": ["boolean", "string"],
                     "description": "Display the help message."
                 },
                 "help_full": {
@@ -524,6 +513,10 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
+                },
+                "use_gpu": {
+                    "type": "boolean",
+                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         }
