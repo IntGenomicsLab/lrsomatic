@@ -15,7 +15,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
 
     main:
     germline_vcf = channel.empty()
-    def germline_var_keep = params.germline_var_keep instanceof List ? params.germline_var_keep : [params.germline_var_keep]
+    def germline_var_keep = params.germline_var_keep instanceof List ? params.germline_var_keep : params.germline_var_keep.toString().tokenize(',').collect { it.trim() }
     clair3_ch = channel.empty()
     deepvariant_ch = channel.empty()
 

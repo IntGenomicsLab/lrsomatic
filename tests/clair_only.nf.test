@@ -11,8 +11,8 @@ nextflow_pipeline {
             params {
                 outdir              = "$outputDir"
                 input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
-                germline_var_keep   = ['clair']
-                somatic_var_keep    = ['clair']
+                germline_var_keep   = 'clair'
+                somatic_var_keep    = 'clair'
             }
         }
 

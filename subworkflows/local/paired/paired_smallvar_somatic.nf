@@ -18,7 +18,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
 
     main:
     somatic_vcf = channel.empty()
-    def somatic_var_keep = params.somatic_var_keep instanceof List ? params.somatic_var_keep : [params.somatic_var_keep]
+    def somatic_var_keep = params.somatic_var_keep instanceof List ? params.somatic_var_keep : params.somatic_var_keep.toString().tokenize(',').collect { it.trim() }
     clairs_ch = channel.empty()
     deepsomatic_ch = channel.empty()
 

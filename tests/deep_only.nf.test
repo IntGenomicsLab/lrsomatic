@@ -10,8 +10,8 @@ nextflow_pipeline {
         when {
             params {
                 outdir              = "$outputDir"
-                germline_var_keep   = ['deepvariant']
-                somatic_var_keep    = ['deepsomatic']
+                germline_var_keep   = 'deepvariant'
+                somatic_var_keep    = 'deepsomatic'
             }
         }
 
