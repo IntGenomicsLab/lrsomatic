@@ -209,6 +209,7 @@ workflow LRSOMATIC {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             replicate: meta.replicate,
+                            n_replicates: meta.n_replicates,
                             clair3_model: chosen_clair3_model,
                             clairS_model: chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
@@ -475,8 +476,12 @@ workflow LRSOMATIC {
                             'clair3_model',
                             'clairS_model',
                             'clairSTO_model',
-                            'kinetics')
-            return [new_meta, bam, bai]
+                            'kinetics',
+                            'n_replicates')
+            // groupKey tells groupTuple() how many items to expect for this group,
+            // allowing it to release each sample as soon as all its replicates arrive
+            // rather than waiting for all samples globally.
+            return [groupKey(new_meta, new_meta.n_replicates), bam, bai]
         }
         .groupTuple()
         .map { meta, bams, bais ->

@@ -152,10 +152,29 @@ workflow PIPELINE_INITIALISATION {
             return result
         }
         .set { ch_samplesheet }
+
+    // Count replicates per sample+type and embed the count in meta as n_replicates.
+    // This allows downstream groupTuple() to use groupKey() for eager per-sample release
+    // instead of waiting for ALL samples to finish (global synchronization barrier).
+    // This groupTuple is safe: the source is a fully-materialized list from
+    // samplesheetToList(), so the channel closes immediately without blocking any process.
+    ch_samplesheet
+        .map { meta, bams -> [[meta.id, meta.type], meta, bams] }
+        .groupTuple(by: 0)
+        .flatMap { key, metas, bams_list ->
+            def n = metas.size()
+            [metas, bams_list].transpose().collect { m, b ->
+                [m + [n_replicates: n], b]
+            }
+        }
+        .set { ch_samplesheet }
+
     // ch_samplesheet: [meta, [bam...]]
     //   meta fields: id, paired_data, type ('tumor'|'normal'), platform ('ont'|'pb'),
-    //                sex, fiber ('y'|'n'), clair3_model, clairS_model, clairSTO_model, replicate
+    //                sex, fiber ('y'|'n'), clair3_model, clairS_model, clairSTO_model,
+    //                replicate, n_replicates
     //   paired_data: true for both items in a T/N pair (same value for tumor AND normal rows)
+    //   n_replicates: total number of replicates for this sample+type combination
     //   bam: list of paths (multiple runs for same sample remain as a list until SAMTOOLS_CAT)
     //
     // NOTE: tumor-only rows emit ONE item (type='tumor', paired_data=false)
