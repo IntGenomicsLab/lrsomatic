@@ -564,13 +564,5 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "generate_gvcf": {
-            "type": "boolean"
-        },
-        "skip_modkit": {
-            "type": "boolean"
-        }
-    }
+    ]
 }
