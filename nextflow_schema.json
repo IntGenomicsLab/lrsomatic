@@ -514,10 +514,6 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
-                },
-                "use_gpu": {
-                    "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         }
@@ -567,9 +563,6 @@
         }
     ],
     "properties": {
-        "generate_gvcf": {
-            "type": "boolean"
-        },
         "skip_modkit": {
             "type": "boolean"
         }
