@@ -116,6 +116,18 @@
                 }
             }
         },
+        "longphase_options": {
+            "title": "Longphase options",
+            "type": "object",
+            "description": "Options for Longphase phasing of small variants",
+            "properties": {
+                "longphase_tag_supplementary": {
+                    "type": "boolean",
+                    "description": "Whether to include supplementary alignments in Longphase haplotype tagging.",
+                    "default": false
+                }
+            }
+        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -359,8 +371,9 @@
                     "type": "boolean",
                     "description": "Skip modification calling"
                 },
-                "skip_modkit": {
-                    "type": "boolean"
+                "use_gpu": {
+                    "type": "boolean",
+                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         },
@@ -501,7 +514,7 @@
                     "hidden": true
                 },
                 "help": {
-                    "type": ["boolean", "string"],
+                    "type": "boolean",
                     "description": "Display the help message."
                 },
                 "help_full": {
@@ -528,6 +541,9 @@
         },
         {
             "$ref": "#/$defs/small_variant_calling_options"
+        },
+        {
+            "$ref": "#/$defs/longphase_options"
         },
         {
             "$ref": "#/$defs/reference_genome_options"
@@ -559,5 +575,13 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "generate_gvcf": {
+            "type": "boolean"
+        },
+        "skip_modkit": {
+            "type": "boolean"
+        }
+    }
 }

@@ -4,8 +4,8 @@ process WAKHAN {
 
     conda "${moduleDir}/environment.yml"
      container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://robertaforsyth/wakhan:0.4.2_iss58':
-        'robertaforsyth/wakhan:0.4.2_iss58' }"
+        'robertaforsyth/wakhan:0.4.2_iss58':
+        'docker://robertaforsyth/wakhan:0.4.2_iss58' }"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
