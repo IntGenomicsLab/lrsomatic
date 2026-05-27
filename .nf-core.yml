@@ -29,7 +29,7 @@ lint:
 nf_core_version: 4.0.1
 repository_type: pipeline
 template:
-  author: Jonas Demeulemeester
+  author: Robert Forsyth & Luuk Harbers
   description: Workflow for somatic variant calling of long read data
   force: false
   is_nfcore: false
@@ -38,4 +38,4 @@ template:
   outdir: .
   skip_features:
     - fastqc
-  version: 1.1.0dev
+  version: 1.1.0

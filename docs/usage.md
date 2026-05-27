@@ -152,6 +152,12 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | `--skip_modkit`        | A boolean to skip the modkit pileup step. Default = `false`                                                                                                                          |
 | `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                     |
 
+#### LONGPHASE options:
+
+| Parameter                       | Description                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| `--longphase_tag_supplementary` | Include supplementary alignments in Longphase haplotype tagging. Default = `false` |
+
 #### VEP options:
 
 | Parameter              | Description                                                                                                                                      |
@@ -200,7 +206,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 
 | Parameter              | Description                                                                          |
 | ---------------------- | ------------------------------------------------------------------------------------ |
-| `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `5` |
+| `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3` |
 
 #### WAKHAN Options
 
