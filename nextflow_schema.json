@@ -70,12 +70,12 @@
                 "germline_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of germline variant callers to use. Valid values: deepvariant, clair. Example: 'deepvariant,clair'",
-                    "default": "clair"
+                    "default": "deepvariant,clair"
                 },
                 "somatic_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of somatic variant callers to use. Valid values: deepsomatic, clair. Example: 'deepsomatic,clair'",
-                    "default": "clair"
+                    "default": "deepsomatic,clair"
                 },
                 "germline_var_combine": {
                     "type": "string",
@@ -92,13 +92,13 @@
                 "prioritize_caller_germline": {
                     "type": "string",
                     "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
-                    "default": "clair",
+                    "default": "deepvariant",
                     "enum": ["deepvariant", "clair"]
                 },
                 "prioritize_caller_somatic": {
                     "type": "string",
                     "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
-                    "default": "clair",
+                    "default": "deepsomatic",
                     "enum": ["deepsomatic", "clair"]
                 },
                 "generate_gvcf": {
