@@ -15,10 +15,13 @@ workflow PAIRED_SMALLVAR_GERMLINE {
 
     main:
     germline_vcf = channel.empty()
+    def germline_var_keep = params.germline_var_keep instanceof List ? params.germline_var_keep : params.germline_var_keep.toString().tokenize(',').collect { it.trim() }
+    clair3_ch = channel.empty()
+    deepvariant_ch = channel.empty()
 
     // COMBINE NORMAL BAMS WITH DOWNLOADED CLAIR3 MODELS
     // Clair3 requires the model directory path; models are keyed by model name (meta.id)
-    if(params.germline_var_keep.contains('clair')) {
+    if(germline_var_keep.contains('clair')) {
 
         // Extract model name from meta.id for combine-by key
         clair3_models
@@ -81,7 +84,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     }
 
     // DEEPVARIANT
-    if(params.germline_var_keep.contains('deepvariant')) {
+    if(germline_var_keep.contains('deepvariant')) {
 
         //
         // SUBWORKFLOW: DEEPVARIANT (nf-core)
@@ -128,7 +131,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
 
     // COMBINE GERMLINE VARIATION
     // If both callers requested: run consensus subworkflow; otherwise pass through single-caller output
-    if (params.germline_var_keep.size() > 1) {
+    if (germline_var_keep.size() > 1) {
         // Mix both caller VCFs into a single channel for GERMLINE_CONSENSUS
         clair3_ch
             .mix(deepvariant_ch)
@@ -149,11 +152,11 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             .set{ germline_vcf }
         // germline_vcf: [meta(+caller from consensus), vcf, tbi]
     }
-    else if (params.germline_var_keep == ['clair']) {
+    else if (germline_var_keep == ['clair']) {
         clair3_ch
             .set{germline_vcf}
     }
-    else if (params.germline_var_keep == ['deepvariant']) {
+    else if (germline_var_keep == ['deepvariant']) {
         deepvariant_ch
             .set{germline_vcf}
     }

@@ -152,6 +152,11 @@
                         "git_sha": "1d2fbdcbca677bbe8da0f9d0d2bb7c02f2cab1c9",
                         "installed_by": ["modules"]
                     },
+                    "samtools/merge": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"]
+                    },
                     "samtools/stats": {
                         "branch": "master",
                         "git_sha": "fe93fde0845f907fc91ad7cc7d797930408824df",

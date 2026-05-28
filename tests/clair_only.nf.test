@@ -1,0 +1,151 @@
+nextflow_pipeline {
+
+    name "Test pipeline - clair callers only (extended samplesheet)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "extended"
+
+    test("-profile test, clair only, extended samplesheet") {
+
+        when {
+            params {
+                outdir              = "$outputDir"
+                input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+                germline_var_keep   = 'clair'
+                somatic_var_keep    = 'clair'
+            }
+        }
+
+        then {
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+
+                // ── Clair caller outputs MUST exist ──────────────────────────
+                { // Paired samples: Clair3 (germline) + ClairS (somatic)
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/clair3/merge_output.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clair3/merge_output.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/clairs/indel.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairs/indel.vcf.gz.tbi").exists()
+                        assert file("$launchDir/output/${s}/variants/clairs/snvs.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairs/snvs.vcf.gz.tbi").exists()
+                    }
+                },
+                { // Tumor-only samples: ClairSTO outputs
+                    ['sample3', 'sample4', 'sample5'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/clairsto/indel.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairsto/snv.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairsto/somatic.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairsto/germline.vcf.gz").exists()
+                    }
+                },
+
+                // ── Deep caller outputs must NOT exist ───────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3', 'sample4', 'sample5'].each { s ->
+                        assert !file("$launchDir/output/${s}/variants/deepvariant").exists()
+                        assert !file("$launchDir/output/${s}/variants/deepsomatic").exists()
+                    }
+                },
+
+                // ── Phased VCFs exist and have data ──────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3', 'sample4', 'sample5'].each { s ->
+                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert germline.exists()
+                        assert somatic.exists()
+                        assert germline.size() > 0
+                        assert somatic.size() > 0
+                    }
+                },
+
+                // ── BAM files exist ──────────────────────────────────────────
+                {
+                    // Paired samples have both tumor + normal BAMs
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                    }
+                    // Tumor-only samples have only tumor BAM
+                    ['sample3', 'sample4', 'sample5'].each { s ->
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                    }
+                },
+
+                // ── Severus SV outputs for paired samples ────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    }
+                },
+
+                // ── QC outputs exist for all samples ─────────────────────────
+                {
+                    // Post-alignment QC (runs after replicate merge)
+                    ['sample1', 'sample2', 'sample3', 'sample4', 'sample5'].each { s ->
+                        def types = (s in ['sample1', 'sample2']) ? ['tumor', 'normal'] : ['tumor']
+                        types.each { t ->
+                            assert file("$launchDir/output/${s}/qc/${t}/cramino_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/nanoplot_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/mosdepth").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/samtools").isDirectory()
+                        }
+                    }
+                },
+
+                // ── sample4: replicate-specific pre-alignment QC ─────────────
+                {
+                    // Pre-merge QC should have separate rep1 and rep2 directories
+                    assert file("$launchDir/output/sample4/qc/tumor/cramino_ubam_rep1").isDirectory()
+                    assert file("$launchDir/output/sample4/qc/tumor/cramino_ubam_rep2").isDirectory()
+                    assert file("$launchDir/output/sample4/qc/tumor/nanoplot_ubam_rep1").isDirectory()
+                    assert file("$launchDir/output/sample4/qc/tumor/nanoplot_ubam_rep2").isDirectory()
+                    // Post-merge QC should be a single directory (no rep suffix)
+                    assert file("$launchDir/output/sample4/qc/tumor/cramino_aln").isDirectory()
+                    assert file("$launchDir/output/sample4/qc/tumor/nanoplot_aln").isDirectory()
+                    // Variant outputs should be single (merged), not duplicated
+                    assert file("$launchDir/output/sample4/variants/clairsto/somatic.vcf.gz").exists()
+                    assert file("$launchDir/output/sample4/variants/clairsto/germline.vcf.gz").exists()
+                },
+
+                // ── sample5: custom model override verification ──────────────
+                {
+                    // ClairSTO for sample5 should use the samplesheet-specified model
+                    // 'ont_r10_dorado_sup_4khz' instead of the auto-detected model from BAM header.
+                    // The ClairSTO VCF header contains a ##cmdline line with --platform <model>.
+                    def snvVcf = file("$launchDir/output/sample5/variants/clairsto/snv.vcf.gz")
+                    assert snvVcf.exists()
+                    // Read VCF header and check for the expected model string
+                    def header = ["zgrep", "##", snvVcf.toString()].execute().text
+                    assert header.contains('ont_r10_dorado_sup_4khz') : \
+                        "Expected ClairSTO to use samplesheet model 'ont_r10_dorado_sup_4khz' but VCF header was:\n${header}"
+                },
+
+                // ── VEP annotation outputs ───────────────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3', 'sample4', 'sample5'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/germline").isDirectory()
+                        assert file("$launchDir/output/${s}/vep/somatic").isDirectory()
+                    }
+                    // SV VEP only for paired samples (severus only runs on paired)
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/SVs").isDirectory()
+                    }
+                },
+
+                // ── Snapshot ─────────────────────────────────────────────────
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml"),
+                    stable_name,
+                    stable_path
+                ).match() }
+            )
+        }
+    }
+}

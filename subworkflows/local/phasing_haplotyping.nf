@@ -7,6 +7,7 @@ include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_SOMATIC    } from '../../module
 include { SAMTOOLS_INDEX                                    } from '../../modules/nf-core/samtools/index/main.nf'
 include { BCFTOOLS_CONCAT                                   } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                     } from '../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_VIEW                                     } from '../../modules/local/bcftools/view/main.nf'
 
 
 workflow PHASING_HAPLOTYPING {
@@ -252,8 +253,33 @@ workflow PHASING_HAPLOTYPING {
 
     LONGPHASE_PHASE_SOMATIC.out.snv_vcf
         .join(LONGPHASE_PHASE_SOMATIC.out.snv_vcf_index)
+        .set{ phased_somatic_germline_vcf }
+    // phased_somatic_germline_vcf: [meta, vcf, tbi]  -- Longphase-phased somatic+germline VCF (unfiltered)
+
+    //
+    // MODULE: BCFTOOLS_VIEW (label: process_medium)
+    // Filter the phased somatic+germline VCF to somatic-only positions.
+    // Uses the original somatic VCF as a targets (-T) file so only positions
+    // called as somatic are retained.  Phase tags (PS/HP) on somatic variants
+    // are preserved; germline records are dropped.
+    // Input:  [meta, phased_combined_vcf, phased_combined_tbi, somatic_vcf, somatic_tbi]
+    // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
+    //         .tbi -- [meta, tbi]
+    //
+    phased_somatic_germline_vcf
+        .join(somatic_vcf)
+        .map { meta, phased_vcf, phased_tbi, som_vcf, som_tbi ->
+            return [ meta, phased_vcf, phased_tbi, som_vcf, som_tbi ]
+        }
+        .set { bcftools_view_input_ch }
+    // bcftools_view_input_ch: [meta, phased_combined_vcf, tbi, somatic_vcf, somatic_tbi]
+
+    BCFTOOLS_VIEW ( bcftools_view_input_ch )
+
+    BCFTOOLS_VIEW.out.vcf
+        .join(BCFTOOLS_VIEW.out.tbi)
         .set{ phased_somatic_vcf }
-    // phased_somatic_vcf: [meta, vcf, tbi]  -- Longphase-phased somatic (+ germline) VCF
+    // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- phased somatic-only VCF (germline removed)
 
     // HAPLOTAGGING: tag each read in the BAM with its haplotype (HP tag) using the phased germline VCF
     // All sample types (tumor, normal, tumor-only) are haplotagged using the germline phase blocks

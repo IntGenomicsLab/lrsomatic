@@ -13,7 +13,8 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 //
 // IMPORT MODULES
 //
-include { SAMTOOLS_CAT                      } from '../modules/nf-core/samtools/cat/main'
+include { SAMTOOLS_MERGE                    } from '../modules/nf-core/samtools/merge/main'
+include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_MERGE } from '../modules/nf-core/samtools/index/main'
 include { MINIMAP2_INDEX                    } from '../modules/nf-core/minimap2/index/main'
 include { MINIMAP2_ALIGN                    } from '../modules/nf-core/minimap2/align/main'
 include { CRAMINO as CRAMINO_PRE            } from '../modules/local/cramino/main'
@@ -208,6 +209,7 @@ workflow LRSOMATIC {
                             sex: meta.sex,
                             fiber: meta.fiber,
                             replicate: meta.replicate,
+                            n_replicates: meta.n_replicates,
                             clair3_model: chosen_clair3_model,
                             clairS_model: chosen_clairS_model,
                             clairSTO_model: chosen_clairSTO_model,
@@ -270,54 +272,11 @@ workflow LRSOMATIC {
 
     }
 
-    // Drop 'replicate' from meta before concatenation -- replicate info not needed downstream
-    // groupTuple merges per-replicate entries that share the same sample ID into one item
-    // (e.g. two B2194541 rows with replicate=1 and replicate=2 become one entry with [bam1, bam2])
-    ch_samplesheet
-        .map{ meta, bam ->
-            def new_meta = meta.subMap('id',
-                            'paired_data',
-                            'type',
-                            'platform',
-                            'sex',
-                            'fiber',
-                            'clair3_model',
-                            'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
-            return[new_meta, bam]
-        }
-        .groupTuple()
-        .map { meta, bam ->
-            [ meta, bam.flatten() ]
-        }
-        .set{ch_samplesheet_no_rep}
-    // ch_samplesheet_no_rep: [meta, [bam...]]
-    //   meta fields: id, paired_data, type, platform, sex, fiber,
-    //                clair3_model, clairS_model, clairSTO_model, kinetics
-    //   (replicate field removed; replicates for same sample merged into single BAM list)
-
-    // Branch on number of input BAMs: samples with a single BAM skip concatenation
-
-    ch_split = ch_samplesheet_no_rep
-        .branch { _meta, bam ->
-            single: bam.size() == 1
-            multiple: bam.size() > 1
-        }
-    // ch_split.single:   [meta, [bam]]   -- pass-through, no concatenation needed
-    // ch_split.multiple: [meta, [bam...]] -- need SAMTOOLS_CAT to merge
-
-    //
-    // MODULE: SAMTOOLS_CAT (label: process_single)
-    // Input:  [meta, [bam...]]  -- multiple unaligned BAMs for same sample
-    // Output: .bam -- [meta, bam]  -- single merged unaligned BAM
-    //
-
-    SAMTOOLS_CAT ( ch_split.multiple )
-        .bam
-        .mix ( ch_split.single )
-        .set { ch_cat_ubams }
-    // ch_cat_ubams: [meta, bam]  -- single (possibly concatenated) unaligned BAM per sample
+    // Each replicate is aligned separately so that minimap2 can tag its reads with a
+    // unique @RG (sample + type + replicate).  Replicates are merged after alignment.
+    // ch_samplesheet is [meta_with_replicate, [bam]] -- one item per replicate per sample.
+    // ch_ubams defaults to ch_samplesheet; the fiber-seq block below may override it.
+    ch_ubams = ch_samplesheet
 
     vep_cache = channel.empty()
 
@@ -357,25 +316,25 @@ workflow LRSOMATIC {
     // predict m6a in unaligned bam
 
     if (!params.skip_fiber) {
-        // Fiber-seq processing: predict m6A methylation, call nucleosomes and FIRE elements
-        // Only applicable to PacBio samples with fiber-seq data (meta.fiber == "y")
+        // Fiber-seq processing runs per-replicate on the unaligned BAMs.
+        // Each replicate is processed independently; replicates are merged after alignment.
         if (!params.skip_normalfiber){
             // Process all samples (including normals) for fiber-seq
-            ubams = ch_cat_ubams
+            ubams = ch_samplesheet
         }
         else {
             // Skip fiber-seq processing for normal samples; set aside normals to re-join later
-            ch_cat_ubams
+            ch_samplesheet
             .branch { meta, _bams ->
                 normal: meta.type == "normal"
                 tumor: meta.type == "tumor"
                 }
-            .set { ch_cat_ubams_normal_branching }
-            // ch_cat_ubams_normal_branching.normal: [meta, bam]  -- normal samples (held out)
-            // ch_cat_ubams_normal_branching.tumor:  [meta, bam]  -- tumor samples only
+            .set { ch_ubams_normal_branching }
+            // ch_ubams_normal_branching.normal: [meta, bam]  -- normal samples (held out)
+            // ch_ubams_normal_branching.tumor:  [meta, bam]  -- tumor samples only
 
-            normal_bams = ch_cat_ubams_normal_branching.normal
-            ubams = ch_cat_ubams_normal_branching.tumor
+            normal_bams = ch_ubams_normal_branching.normal
+            ubams = ch_ubams_normal_branching.tumor
         }
             // Branch by sequencing platform: PacBio needs m6A prediction, ONT does not
             ubams
@@ -383,11 +342,11 @@ workflow LRSOMATIC {
                 pacBio: meta.platform == "pb"
                 ont: meta.platform == "ont"
             }
-            .set{ch_cat_ubams_pacbio_ont_branching}
-        // ch_cat_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
-        // ch_cat_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
+            .set{ch_ubams_pacbio_ont_branching}
+        // ch_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
+        // ch_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
 
-        pacbio_bams = ch_cat_ubams_pacbio_ont_branching.pacBio
+        pacbio_bams = ch_ubams_pacbio_ont_branching.pacBio
         // Branch PacBio samples: only those with kinetics tags can have m6A predicted
         pacbio_bams
             .branch{meta, _bams ->
@@ -420,7 +379,7 @@ workflow LRSOMATIC {
         // predicted_bams: [meta, bam]  -- all PacBio samples (m6A tags present where applicable)
 
         // Re-merge ONT and PacBio before fiber-seq branching
-        ch_cat_ubams_pacbio_ont_branching.ont
+        ch_ubams_pacbio_ont_branching.ont
             .mix(predicted_bams)
             .set{fiber_branch}
         // fiber_branch (pre-split): [meta, bam]  -- all samples (ONT + PacBio, with m6A if applicable)
@@ -459,17 +418,17 @@ workflow LRSOMATIC {
             // Re-merge fiber and non-fiber samples after FIRE annotation
             fiber_branch.nonFiber
             .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_cat_ubams}
+            .set{ch_ubams}
         }
         else {
             // Re-merge fiber, non-fiber, and held-out normal samples
             fiber_branch.nonFiber
             .mix(normal_bams)
             .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_cat_ubams}
+            .set{ch_ubams}
         }
-        // ch_cat_ubams (updated): [meta, bam]  -- all samples; fiber-seq samples now carry
-        //   nucleosome + FIRE tags in BAM; m6A tags present for PacBio fiber-seq
+        // ch_ubams (updated): [meta_with_replicate, bam]  -- all samples per-replicate;
+        //   fiber-seq samples now carry nucleosome + FIRE tags; m6A tags for PacBio fiber-seq
 
         if(!params.skip_qc) {
             //
@@ -485,30 +444,91 @@ workflow LRSOMATIC {
     }
     //
     // MODULE: MINIMAP2_ALIGN (label: process_high)
-    // Input:  [meta, bam]  -- unaligned BAM (may carry m6A/nucleosome/FIRE tags for fiber-seq)
+    // Runs once per replicate.  The @RG header line encodes sample, type, and replicate so
+    // that reads remain distinguishable after the per-replicate BAMs are merged below.
+    // Input:  [meta_with_replicate, bam]  -- unaligned BAM per replicate
     //         ch_fasta     -- [[:], fasta]
     //         sort_bam=true, cigar_paf_format='bai', cigar_bam='', split_prefix=''
-    // Output: .bam   -- [meta, bam]  -- coordinate-sorted aligned BAM
-    //         .index -- [meta, bai]  -- BAM index
+    // Output: .bam   -- [meta_with_replicate, bam]  -- coordinate-sorted aligned BAM
+    //         .index -- [meta_with_replicate, bai]  -- BAM index
     //
 
     MINIMAP2_ALIGN (
-        ch_cat_ubams,
+        ch_ubams,
         ch_fasta,
         true,
         'bai',
         "",
         ""
     )
-    MINIMAP2_ALIGN.out.bam
-        .set { ch_minimap_bam }
-    // ch_minimap_bam: [meta, bam]  -- coordinate-sorted aligned BAM
 
-    // Join BAM with its index, then branch into paired-sample vs. tumor-only paths
-    ch_minimap_bam
+    // Join per-replicate BAM with its index, drop the replicate field, then group replicates
+    // belonging to the same sample.  Single-replicate samples skip SAMTOOLS_MERGE.
+    MINIMAP2_ALIGN.out.bam
         .join(MINIMAP2_ALIGN.out.index)
-        .set {ch_index_minimap}
-    // ch_index_minimap: [meta, bam, bai]  -- aligned BAM + index, all samples
+        .map { meta, bam, bai ->
+            def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'type',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics',
+                            'n_replicates')
+            // groupKey tells groupTuple() how many items to expect for this group,
+            // allowing it to release each sample as soon as all its replicates arrive
+            // rather than waiting for all samples globally.
+            return [groupKey(new_meta, new_meta.n_replicates), bam, bai]
+        }
+        .groupTuple()
+        .map { meta, bams, bais ->
+            [meta, bams.flatten(), bais.flatten()]
+        }
+        .branch { _meta, bams, _bais ->
+            single:   bams.size() == 1
+            multiple: bams.size() > 1
+        }
+        .set { ch_aligned_split }
+    // ch_aligned_split.single:   [meta, [bam], [bai]]  -- one replicate; pass through
+    // ch_aligned_split.multiple: [meta, [bam...], [bai...]]  -- merge needed
+
+    // Single-replicate: unwrap lists to scalar paths
+    ch_aligned_split.single
+        .map { meta, bams, bais -> [meta, bams[0], bais[0]] }
+        .set { ch_single_indexed }
+
+    //
+    // MODULE: SAMTOOLS_MERGE (label: process_low)
+    // Merges per-replicate coordinate-sorted BAMs.  Because each was aligned with a unique
+    // @RG line (ID = {sample}_{type}_rep{N}), the merged BAM retains full replicate identity.
+    // Input:  [meta, [bam...], [bai...]]  -- grouped replicate BAMs + indices
+    // Output: .bam -- [meta, bam]  -- merged BAM
+    //
+    SAMTOOLS_MERGE(
+        ch_aligned_split.multiple,
+        [[],[],[],[]]
+    )
+
+    // Index the merged BAM to produce a BAI (SAMTOOLS_MERGE does not create BAI inline)
+    SAMTOOLS_INDEX_MERGE(SAMTOOLS_MERGE.out.bam)
+
+    // Combine single-replicate and merged paths into a unified [meta, bam, bai] channel
+    ch_single_indexed
+        .mix(
+            SAMTOOLS_MERGE.out.bam
+                .join(SAMTOOLS_INDEX_MERGE.out.bai)
+        )
+        .set { ch_index_minimap }
+    // ch_index_minimap: [meta, bam, bai]  -- one aligned BAM + index per sample (all replicates merged)
+
+    // Convenience channel used by CRAMINO_POST and other modules that only need the BAM
+    ch_index_minimap
+        .map { meta, bam, _bai -> [meta, bam] }
+        .set { ch_minimap_bam }
+    // ch_minimap_bam: [meta, bam]  -- post-alignment BAM (replicates merged)
 
     //
     // MODULE: MODKIT_PILEUP
@@ -846,7 +866,7 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_mosdepth) {
 
         // MOSDEPTH requires a BED file argument; pass [] to compute genome-wide depth
-        ch_minimap_bam.join(MINIMAP2_ALIGN.out.index)
+        ch_index_minimap
             .map { meta, bam, bai -> [meta, bam, bai, []] }
             .set { ch_mosdepth_in }
         // ch_mosdepth_in: [meta, bam, bai, []]  -- [] is the optional BED (empty = genome-wide)
@@ -882,7 +902,7 @@ workflow LRSOMATIC {
     if (!params.skip_qc && !params.skip_bamstats ) {
 
         BAM_STATS_SAMTOOLS (
-            ch_minimap_bam.join(MINIMAP2_ALIGN.out.index), // [meta, bam, bai]
+            ch_index_minimap, // [meta, bam, bai]
             ch_fasta
         )
 

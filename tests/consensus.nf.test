@@ -1,0 +1,118 @@
+nextflow_pipeline {
+
+    name "Test pipeline - both callers, consensus combine mode"
+    script "../main.nf"
+    tag "pipeline"
+    tag "extended"
+
+    test("-profile test, consensus combine mode") {
+
+        when {
+            params {
+                outdir                = "$outputDir"
+                germline_var_combine  = 'consensus'
+                somatic_var_combine   = 'consensus'
+                germline_var_keep     = 'clair, deepvariant'
+                somatic_var_keep      = 'clair, deepsomatic'
+            }
+        }
+
+        then {
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+
+                // ── Both caller raw outputs MUST exist ───────────────────────
+                { // DeepVariant germline outputs
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepvariant/${s}_germline.vcf.gz.tbi").exists()
+                    }
+                },
+                { // DeepSomatic somatic outputs
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/deepsomatic/${s}_somatic.vcf.gz.tbi").exists()
+                    }
+                },
+                { // Clair germline outputs (paired: clair3, tumor-only: clairsto)
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/clair3/merge_output.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clair3/merge_output.vcf.gz.tbi").exists()
+                    }
+                    assert file("$launchDir/output/sample3/variants/clairsto/germline.vcf.gz").exists()
+                },
+                { // Clair somatic outputs (paired: clairs, tumor-only: clairsto)
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/clairs/indel.vcf.gz").exists()
+                        assert file("$launchDir/output/${s}/variants/clairs/snvs.vcf.gz").exists()
+                    }
+                    assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
+                },
+
+                // ── Phased consensus VCFs exist and have data ────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert germline.exists()
+                        assert somatic.exists()
+                        assert germline.size() > 0
+                        assert somatic.size() > 0
+                    }
+                },
+
+                // ── BAM files ────────────────────────────────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                    }
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam.bai").exists()
+                },
+
+                // ── Severus ──────────────────────────────────────────────────
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    }
+                },
+
+                // ── QC outputs ───────────────────────────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def types = (s in ['sample1', 'sample2']) ? ['tumor', 'normal'] : ['tumor']
+                        types.each { t ->
+                            assert file("$launchDir/output/${s}/qc/${t}/cramino_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/nanoplot_aln").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/mosdepth").isDirectory()
+                            assert file("$launchDir/output/${s}/qc/${t}/samtools").isDirectory()
+                        }
+                    }
+                },
+
+                // ── VEP annotation outputs ───────────────────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/germline").isDirectory()
+                        assert file("$launchDir/output/${s}/vep/somatic").isDirectory()
+                    }
+                    ['sample1', 'sample2'].each { s ->
+                        assert file("$launchDir/output/${s}/vep/SVs").isDirectory()
+                    }
+                },
+
+                // ── Snapshot ─────────────────────────────────────────────────
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml"),
+                    stable_name,
+                    stable_path
+                ).match() }
+            )
+        }
+    }
+}

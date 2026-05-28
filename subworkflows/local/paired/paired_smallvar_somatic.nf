@@ -18,9 +18,12 @@ workflow PAIRED_SMALLVAR_SOMATIC {
 
     main:
     somatic_vcf = channel.empty()
+    def somatic_var_keep = params.somatic_var_keep instanceof List ? params.somatic_var_keep : params.somatic_var_keep.toString().tokenize(',').collect { it.trim() }
+    clairs_ch = channel.empty()
+    deepsomatic_ch = channel.empty()
 
     // CLAIRS: somatic SNV/indel calling from T/N paired BAMs
-    if(params.somatic_var_keep.contains('clair')) {
+    if(somatic_var_keep.contains('clair')) {
         // Append ClairS model name (from meta) as the last element for CLAIRS module
         tumor_normal_bams
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai ->
@@ -79,7 +82,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
     }
 
     // DEEPSOMATIC: somatic variant calling using deep learning T/N model
-    if(params.somatic_var_keep.contains('deepsomatic')) {
+    if(somatic_var_keep.contains('deepsomatic')) {
 
         // DeepSomatic expects [normal, tumor] order (opposite of input tuple)
         tumor_normal_bams
@@ -118,7 +121,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
 
     // COMBINE SOMATIC VARIATION
     // If both callers requested: run consensus subworkflow; otherwise pass through single-caller output
-    if (params.somatic_var_keep.size() > 1) {
+    if (somatic_var_keep.size() > 1) {
         clairs_ch
             .mix(deepsomatic_ch)
             .set{combine_somatic_ch}
@@ -138,11 +141,11 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             .set{ somatic_vcf }
         // somatic_vcf: [meta(+caller from consensus), vcf, tbi]
     }
-    else if (params.somatic_var_keep == ['clair']) {
+    else if (somatic_var_keep == ['clair']) {
         clairs_ch
             .set{somatic_vcf}
     }
-    else if (params.somatic_var_keep == ['deepsomatic']) {
+    else if (somatic_var_keep == ['deepsomatic']) {
         deepsomatic_ch
             .set{somatic_vcf}
     }
