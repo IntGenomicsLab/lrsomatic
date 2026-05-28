@@ -361,8 +361,9 @@
                     "type": "boolean",
                     "description": "Skip modification calling"
                 },
-                "skip_modkit": {
-                    "type": "boolean"
+                "use_gpu": {
+                    "type": "boolean",
+                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         },
@@ -503,7 +504,7 @@
                     "hidden": true
                 },
                 "help": {
-                    "type": ["boolean", "string"],
+                    "type": "boolean",
                     "description": "Display the help message."
                 },
                 "help_full": {
@@ -513,10 +514,6 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
-                },
-                "use_gpu": {
-                    "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
                 }
             }
         }
@@ -564,5 +561,10 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "skip_modkit": {
+            "type": "boolean"
+        }
+    }
 }

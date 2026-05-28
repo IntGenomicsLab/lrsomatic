@@ -129,7 +129,7 @@
                 }
             ],
             "dateCreated": "",
-            "dateModified": "2026-04-29T13:16:38Z",
+            "dateModified": "2026-04-28T15:06:34Z",
             "dct:conformsTo": "https://bioschemas.org/profiles/ComputationalWorkflow/1.0-RELEASE/",
             "keywords": [
                 "nf-core",
