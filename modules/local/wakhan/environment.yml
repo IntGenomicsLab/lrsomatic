@@ -4,4 +4,4 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - "bioconda::wakhan=0.4.2"
+  - "bioconda::wakhan=0.4.3"
