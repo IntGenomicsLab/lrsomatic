@@ -78,7 +78,7 @@ work                # Directory containing the nextflow working files
 ```
 
 > [!WARNING]
-> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
+> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/running/run-pipelines#configuring-pipelines), other infrastructural tweaks (such as output directories), or module arguments (args).
 
 The above pipeline run specified with a params file in yaml format:
 
@@ -97,6 +97,34 @@ genome: 'GRCh37'
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
+## CHM13 Support
+
+Our pipeline fully supports CHM13 and most reference and annotation files are automatically downloaded when specifying `--genome CHM13`.
+
+However, VEP will need a bit of additional setup. The VEP cache for CHM13 needs to be manually downloaded. This can be done using the following code. Feel free to change any of the paths, ensuring that the correct path is pointed to in the pipeline parameters.
+
+Download CHM13 Cache:
+
+```bash
+cd $HOME/.vep
+curl -O https://ftp.ensembl.org/pub/rapid-release/species/Homo_sapiens/GCA_009914755.4/ensembl/variation/2022_10/indexed_vep_cache/Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
+tar xzf Homo_sapiens-GCA_009914755.4-2022_10.tar.gz
+```
+
+Then you can run the pipeline as follows:
+
+```bash
+nextflow run IntGenomicsLab/lrsomatic \
+  --input samplesheet.csv \
+  --outdir ./results \
+  --genome CHM13 \
+  --vep_cache $HOME/.vep \
+  --vep_cache_version 107 \
+  -profile docker
+```
+
+If you want to run with a CHM13 reference without using `--genome CHM13` (for example, via a custom FASTA or configuration), you must also specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -107,48 +135,126 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 #### Skipping options:
 
-| Parameter         | Description                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `--skip_qc`       | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false` |
-| `--skip_fiber`    | A boolean to skip all `fibertools` related modules. Default = `false`                                       |
-| `--skip_cramino`  | A boolean to skip `cramino`. Default = `false`                                                              |
-| `--skip_mosdepth` | A boolean to skip `mosdepth`. Default = `false`                                                             |
-| `--skip_ascat`    | A boolean to skip `ascat`. Default = `false`                                                                |
-| `--skip_bamstats` | A boolean to skip `bamstats`. Default = `false`                                                             |
-| `--skip_wakhan`   | A boolean to skip `wakhan`. Default = `false`                                                               |
-| `--skip_vep`      | A boolean to skip `vep`. Default = `false`                                                                  |
+| Parameter              | Description                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--skip_qc`            | A boolean to skip all QC steps, including `mosdepth`, `samtools`,`fibertools`, `cramino`. Default = `false`                                                                          |
+| `--skip_fiber`         | A boolean to skip all `fibertools` related modules. Default = `false`                                                                                                                |
+| `--skip_cramino`       | A boolean to skip `cramino`. Default = `false`                                                                                                                                       |
+| `--skip_mosdepth`      | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                      |
+| `--skip_ascat`         | A boolean to skip `ascat`. Default = `false`                                                                                                                                         |
+| `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                      |
+| `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                        |
+| `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                           |
+| `--skip_m6a`           | A boolean to skip `fibertools_m6a`, used if you have m6a calls but would still like nucleosome positions for PacBio data (ONT data is required to have m6a calls). Default = `false` |
+| `--skip_nanoplot`      | A boolean to skip NanoPlot QC on aligned and unaligned BAM files. Default = `false`                                                                                                  |
+| `--skip_normalfiber`   | A boolean to skip fibertools processing for the normal sample. Default = `false`                                                                                                     |
+| `--skip_modcall`       | A boolean to skip modkit methylation calling. Default = `false`                                                                                                                      |
+| `--skip_modkit`        | A boolean to skip the modkit pileup step. Default = `false`                                                                                                                          |
+| `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                     |
+
+#### LONGPHASE options:
+
+| Parameter                       | Description                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| `--longphase_tag_supplementary` | Include supplementary alignments in Longphase haplotype tagging. Default = `false` |
 
 #### VEP options:
 
-| Parameter             | Description                                                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--vep_cache`         | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
-| `--vep_cache_version` | Integer specifying version of vep cache. Default = `113`                                                                                         |
-| `--vep_args`          | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`                |
-| `--vep_custom`        | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
-| `--vep_custom_tbi`    | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
+| Parameter              | Description                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
+| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                         |
+| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`                |
+| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
+| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
+| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                        |
 
 #### Minimap2 Options
 
-| Parameter                     | Description                                                                                 |
-| ----------------------------- | ------------------------------------------------------------------------------------------- |
-| `--minimap2_ont_model`        | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
-| `--minimap2_pb_model`         | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
-| `--save_secondary_alignments` | A boolean to specify if secondary alignmetns are kept in aligned bam file. Defualt = `true` |
+| Parameter                    | Description                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
+| `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
+| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true` |
 
 #### ASCAT Options
 
-| Parameter                     | Description                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------- |
-| `--ascat_ploidy`              | integer to enforce a given ploidy value. Default = `null`                                         |
-| `--ascat_purity`              | integer to enforce a given purity value. Default = `null`                                         |
-| `--ascat_min_base_qual`       | integer to specify a minimum base quality for ascat's allele counter. Default = `20`              |
-| `--ascat_min_counts`          | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`          |
-| `--ascat_min_map_qual`        | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`           |
-| `--ascat_penalty`             | integer to specify a penalty value for ascat. Default = `150`                                     |
-| `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                             |
-| `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                       |
-| `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null` |
+| Parameter                     | Description                                                                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--ascat_ploidy`              | integer to enforce a given ploidy value. Default = `null`                                                                                                                                                                   |
+| `--ascat_purity`              | integer to enforce a given purity value. Default = `null`                                                                                                                                                                   |
+| `--ascat_min_base_qual`       | integer to specify a minimum base quality for ascat's allele counter. Default = `20`                                                                                                                                        |
+| `--ascat_min_counts`          | integer to specify a minimum number of counts for ascat's allele counter. Default = `10`                                                                                                                                    |
+| `--ascat_min_map_qual`        | integer to specify a minimum mapping quality for ascat's allele counter. Default = `10`                                                                                                                                     |
+| `--ascat_penalty`             | integer to specify a penalty value for ascat. Default = `150`                                                                                                                                                               |
+| `--ascat_longread_bins`       | integer to specify the binsize for ascat long reads. Default = `2000`                                                                                                                                                       |
+| `--ascat_allelecounter_flags` | flags to pass to ascat's allele counter. Default = `"-f 0"`                                                                                                                                                                 |
+| `--ascat_chroms`              | string to enforce a subset of chromosomes on the sample, ie `"(c(1:21,'X','Y')). Default = `null`                                                                                                                           |
+| `--ascat_allele_files`        | A full path to a zipped folder containing allele files for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`                             |
+| `--ascat_loci_files`          | A full path to a zipped folder containing loci files for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Must be zipped and have `.zip` format. Default = `null`                               |
+| `--ascat_gc_file`             | A full path to a GC correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null`                 |
+| `--ascat_rt_file`             | A full path to a replication timing correction file for [ASCAT](https://github.com/VanLoo-lab/ascat/tree/master/ReferenceFiles/WGS). Optionally can be zipped and have either `.txt` or `.txt.zip` format. Default = `null` |
+| `--ascat_pdf_plots`           | string to enable output pltos in pdf format. Default = `false`                                                                                                                                                              |
+
+#### Fibertools Options
+
+| Parameter           | Description                                                                      |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `--autocorrelation` | A boolean to enable autocorrelation computation in fibertools. Default = `false` |
+
+#### SEVERUS Options
+
+| Parameter              | Description                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3` |
+
+#### WAKHAN Options
+
+| Parameter         | Description                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------- |
+| `--wakhan_chroms` | A string specifying a subset of chromosomes for WAKHAN to process, e.g. `"chr1,chr2"`. Default = `null` |
+
+#### Variant Filtering and Combining Options
+
+These options control how variants from multiple callers are filtered and merged.
+
+| Parameter                      | Description                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`             |
+| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`              |
+| `--germline_var_combine`       | Strategy for combining germline variant caller outputs (e.g. union, intersection). Default = `null` |
+| `--somatic_var_combine`        | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`  |
+| `--prioritize_caller_germline` | Comma-separated caller priority order used when combining germline calls. Default = `null`          |
+| `--prioritize_caller_somatic`  | Comma-separated caller priority order used when combining somatic calls. Default = `null`           |
+
+#### PON Options
+
+| Parameter                | Description                                                                                                                                                                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--clairsto_pon_vcfs`    | Full path to one or more Panel of Normals VCF files for ClairS-TO small variant filtering. Default = `null`                                                                                                                                  |
+| `--clairsto_pon_flags`   | Population allele matching flags for ClairS-TO PON VCFs (one per VCF, comma-separated). Default = `null`                                                                                                                                     |
+| `--deepsomatic_pon_vcfs` | Full path to one or more bgzipped, tabix-indexed PON VCF files (for example, `.vcf.gz`) passed to DeepSomatic `--population_vcfs`. If not set, uses container-bundled defaults in tumor-only mode or no PON in paired mode. Default = `null` |
+
+#### Advanced Options
+
+| Parameter         | Description                                                                                                                                                                 |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--use_gpu`       | A boolean to enable GPU acceleration for DeepVariant and DeepSomatic. Requires a GPU-enabled compute environment. Default = `false`                                         |
+| `--generate_gvcf` | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false` |
+
+#### Genome-Derived Parameters
+
+The following parameters are automatically populated from the `--genome` iGenomes configuration and do not normally need to be set manually. They can be overridden when using a custom genome or reference build not present in the iGenomes configuration.
+
+| Parameter          | Description                                                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--fasta`          | Full path to the reference FASTA file. Auto-populated from `--genome`. Override for custom genomes.                                          |
+| `--bed_file`       | BED file of callable/target regions passed to SEVERUS for SV calling. Auto-populated from `--genome`.                                        |
+| `--pon_file`       | Panel of Normals VCF file used by SEVERUS for somatic SV filtering. Auto-populated from `--genome`.                                          |
+| `--centromere_bed` | BED file of centromere coordinates passed to WAKHAN. Auto-populated from `--genome`.                                                         |
+| `--genome_name`    | Assembly name string passed to ASCAT for genome-specific reference file selection. Auto-populated from `--genome`.                           |
+| `--vep_genome`     | VEP genome identifier (e.g. `GRCh38`, `T2T-CHM13v2.0`). Auto-populated from `--genome`. Override for CHM13 or custom assemblies.             |
+| `--vep_species`    | VEP species identifier. Auto-populated from `--genome`. Override for non-standard assemblies (e.g. `homo_sapiens_gca009914755v4` for CHM13). |
 
 ### Updating the pipeline
 
@@ -204,7 +310,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 - `shifter`
   - A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
 - `charliecloud`
-  - A generic configuration profile to be used with [Charliecloud](https://hpc.github.io/charliecloud/)
+  - A generic configuration profile to be used with [Charliecloud](https://charliecloud.io/)
 - `apptainer`
   - A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
 - `wave`
@@ -228,19 +334,19 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 
 Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the pipeline steps, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher resources request (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
 
-To change the resource requests, please see the [max resources](https://nf-co.re/docs/usage/configuration#max-resources) and [tuning workflow resources](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources) section of the nf-core website.
+To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
 
 ### Custom Containers
 
 In some cases, you may wish to change the container or conda environment used by a pipeline steps for a particular tool. By default, nf-core pipelines use containers and software from the [biocontainers](https://biocontainers.pro/) or [bioconda](https://bioconda.github.io/) projects. However, in some cases the pipeline specified version maybe out of date.
 
-To use a different container from the default container or conda environment specified in a pipeline, please see the [updating tool versions](https://nf-co.re/docs/usage/configuration#updating-tool-versions) section of the nf-core website.
+To use a different container from the default container or conda environment specified in a pipeline, please see the [updating tool versions](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#update-tool-versions) section of the nf-core website.
 
 ### Custom Tool Arguments
 
 A pipeline might not always support every possible argument or option of a particular tool used in pipeline. Fortunately, nf-core pipelines provide some freedom to users to insert additional parameters that the pipeline does not include by default.
 
-To learn how to provide additional arguments to a particular tool of the pipeline, please see the [customising tool arguments](https://nf-co.re/docs/usage/configuration#customising-tool-arguments) section of the nf-core website.
+To learn how to provide additional arguments to a particular tool of the pipeline, please see the [customising tool arguments](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#modifying-tool-arguments) section of the nf-core website.
 
 ### nf-core/configs
 

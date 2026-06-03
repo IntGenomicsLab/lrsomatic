@@ -16,14 +16,12 @@ process VCFSPLIT {
     tuple val(meta), path("*germline.vcf.gz")       , emit: germline_vcf
     tuple val(meta), path("*germline.vcf.gz.tbi")   , emit: germline_tbi
 
-    path "versions.yml"                             , emit: versions
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version |& sed '1!d ; s/bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
 
     bcftools view -i 'FILTER="PASS"' $indel_vcf | bgzip -c > indels_pass.vcf.gz
@@ -33,8 +31,8 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    bcftools view -i 'FILTER="NonSomatic"' $indel_vcf | bgzip -c > indels_filtered.vcf.gz
-    bcftools view -i 'FILTER="NonSomatic"' $snv_vcf | bgzip -c > snv_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $indel_vcf | bgzip -c > indels_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $snv_vcf | bgzip -c > snv_filtered.vcf.gz
     tabix -p vcf indels_filtered.vcf.gz
     tabix -p vcf snv_filtered.vcf.gz
     bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_filtered.vcf.gz snv_filtered.vcf.gz
@@ -47,24 +45,13 @@ process VCFSPLIT {
     # Cleanup intermediate files
     rm indels_pass.vcf.gz snv_pass.vcf.gz
     rm indels_pass.vcf.gz.tbi snv_pass.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
-    END_VERSIONS
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > somatic.vcf.gz
     echo "" | gzip > germline.vcf.gz
     echo "" | gzip > somatic.vcf.gz.tbi
     echo "" | gzip > germline.vcf.gz.tbi
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        vcfsplit: \$(bcftools --version |& sed '1!d ; s/bcftools //')
-    END_VERSIONS
     """
 }

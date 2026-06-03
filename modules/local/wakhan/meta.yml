@@ -1,66 +1,315 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "wakhan"
-## TODO nf-core: Add a description of the module and list keywords
-description: write your description here
+description: A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads
 keywords:
-  - sort
-  - example
-  - genomics
+  - copy-number
+  - aneuploidy
+  - somatic
+  - haplotype-specific
+  - long-read
+  - structural-variation
 tools:
   - "wakhan":
-      ## TODO nf-core: Add a description and other details for the software below
-      description: "A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads"
-      homepage: "None"
-      documentation: "None"
-      tool_dev_url: "None"
-      doi: ""
+      description: "A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio)"
+      homepage: "https://github.com/KolmogorovLab/Wakhan"
+      documentation: "https://github.com/KolmogorovLab/Wakhan"
+      tool_dev_url: "https://github.com/KolmogorovLab/Wakhan"
+      doi: "10.64898/2025.12.11.25342098v1"
       licence: ["MIT"]
-      identifier:
 
-## TODO nf-core: Add a description of all of the variables used as input
 input:
-  # Only when we have meta
   - - meta:
         type: map
         description: |
           Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-
-    ## TODO nf-core: Delete / customise this example input
-    - bam:
+          e.g. `[ id:'sample1' ]`
+    - tumor_input:
         type: file
-        description: Sorted BAM/CRAM/SAM file
-        pattern: "*.{bam,cram,sam}"
-        ontologies:
-          - edam: "http://edamontology.org/format_25722"
-          - edam: "http://edamontology.org/format_2573"
-          - edam: "http://edamontology.org/format_3462"
+        description: Tumor BAM file
+        pattern: "*.bam"
+    - tumor_index:
+        type: file
+        description: Tumor BAM index file
+        pattern: "*.bai"
+    - normal_input:
+        type: file
+        description: Normal BAM file (optional)
+        pattern: "*.bam"
+    - normal_index:
+        type: file
+        description: Normal BAM index file (optional)
+        pattern: "*.bai"
+    - vcf:
+        type: file
+        description: Phased VCF file
+        pattern: "*.vcf.gz"
+    - breakpoints:
+        type: file
+        description: Breakpoints file from structural variant caller
+        pattern: "*.{bed,vcf}"
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing reference information
+    - reference:
+        type: file
+        description: Reference genome fasta file
+        pattern: "*.{fasta,fa,fna}"
 
-## TODO nf-core: Add a description of all of the variables used as output
 output:
-  - bam:
-      #Only when we have meta
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-            e.g. `[ id:'sample1', single_end:false ]`
-      ## TODO nf-core: Delete / customise this example output
-      - "*.bam":
-          type: file
-          description: Sorted BAM/CRAM/SAM file
-          pattern: "*.{bam,cram,sam}"
-          ontologies:
-            - edam: "http://edamontology.org/format_25722"
-            - edam: "http://edamontology.org/format_2573"
-            - edam: "http://edamontology.org/format_3462"
+  genes_genome_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genes_genome.html":
+        type: file
+        description: Genes genome HTML plot
+        pattern: "*/*_genes_genome.html"
+  genes_genome_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genes_genome.pdf":
+        type: file
+        description: Genes genome PDF plot
+        pattern: "*/*_genes_genome.pdf"
+  breakpoints_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_breakpoints.html":
+        type: file
+        description: Genome copy numbers with breakpoints HTML plot
+        pattern: "*/*_genome_copynumbers_breakpoints.html"
+  breakpoints_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_breakpoints.pdf":
+        type: file
+        description: Genome copy numbers with breakpoints PDF plot
+        pattern: "*/*_genome_copynumbers_breakpoints.pdf"
+  breakpoints_subclonal_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_breakpoints_subclonal.html":
+        type: file
+        description: Genome copy numbers with subclonal breakpoints HTML plot
+        pattern: "*/*_genome_copynumbers_breakpoints_subclonal.html"
+  breakpoints_subclonal_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_breakpoints_subclonal.pdf":
+        type: file
+        description: Genome copy numbers with subclonal breakpoints PDF plot
+        pattern: "*/*_genome_copynumbers_breakpoints_subclonal.pdf"
+  copynumbers_details_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_details.html":
+        type: file
+        description: Genome copy numbers details HTML plot
+        pattern: "*/*_genome_copynumbers_details.html"
+  copynumbers_details_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/*_genome_copynumbers_details.pdf":
+        type: file
+        description: Genome copy numbers details PDF plot
+        pattern: "*/*_genome_copynumbers_details.pdf"
+  bed_files:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/bed_output/*.bed":
+        type: file
+        description: BED output files
+        pattern: "*/bed_output/*.bed"
+  variation_plots:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/variation_plots/*.html":
+        type: file
+        description: Variation plots HTML files
+        pattern: "*/variation_plots/*.html"
+  vcf_files:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*/vcf_output/*_wakhan_cna_*.vcf":
+        type: file
+        description: Wakhan CNA VCF files
+        pattern: "*/vcf_output/*_wakhan_cna_*.vcf"
+  heatmap_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*_heatmap_ploidy_purity.html":
+        type: file
+        description: Heatmap ploidy purity HTML plot
+        pattern: "*_heatmap_ploidy_purity.html"
+  heatmap_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*_heatmap_ploidy_purity.html.pdf":
+        type: file
+        description: Heatmap ploidy purity PDF plot
+        pattern: "*_heatmap_ploidy_purity.html.pdf"
+  optimized_peak_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*_optimized_peak.html":
+        type: file
+        description: Optimized peak HTML plot
+        pattern: "*_optimized_peak.html"
+  coverage_csv:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "coverage_data/*.csv":
+        type: file
+        description: Coverage data CSV files
+        pattern: "coverage_data/*.csv"
+  coverage_plots_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "coverage_plots/*.html":
+        type: file
+        description: Coverage plots HTML files
+        pattern: "coverage_plots/*.html"
+  coverage_plots_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "coverage_plots/*.pdf":
+        type: file
+        description: Coverage plots PDF files
+        pattern: "coverage_plots/*.pdf"
+  phasing_html:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "phasing_output/*.html":
+        type: file
+        description: Phasing output HTML plots
+        pattern: "phasing_output/*.html"
+  phasing_pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "phasing_output/*.pdf":
+        type: file
+        description: Phasing output PDF plots
+        pattern: "phasing_output/*.pdf"
+  rephased_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "phasing_output/*.rephased.vcf.gz":
+        type: file
+        description: Rephased VCF file
+        pattern: "phasing_output/*.rephased.vcf.gz"
+  rephased_vcf_index:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "phasing_output/*.rephased.vcf.gz.csi":
+        type: file
+        description: Rephased VCF index file
+        pattern: "phasing_output/*.rephased.vcf.gz.csi"
+  snps_loh_plot:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "snps_loh_plots/*_genome_snps_ratio_loh.html":
+        type: file
+        description: SNPs LOH plot HTML file
+        pattern: "snps_loh_plots/*_genome_snps_ratio_loh.html"
+  solutions_ranks:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "solutions_ranks.tsv":
+        type: file
+        description: Solutions ranks TSV file
+        pattern: "solutions_ranks.tsv"
+  versions_wakhan:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - wakhan:
+          type: string
+          description: The tool name
+      - "0.2.0":
+          type: string
+          description: The version of wakhan
 
-  - versions:
-      - "versions.yml":
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - wakhan:
+          type: string
+          description: The tool name
+      - "0.2.0":
+          type: string
+          description: The version of wakhan
 
 authors:
   - "@ljwharbers"

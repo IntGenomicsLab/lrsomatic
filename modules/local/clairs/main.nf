@@ -3,8 +3,8 @@ process CLAIRS {
     label 'process_very_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/hkubal/clairs:v0.4.1':
-        'docker.io/hkubal/clairs:v0.4.1' }"
+        'docker.io/hkubal/clairs:v0.4.4':
+        'docker.io/hkubal/clairs:v0.4.4' }"
 
     input:
     tuple val(meta), path(tumor_bam), path(tumor_bai), path(normal_bam), path(normal_bai), val(model)
@@ -14,14 +14,14 @@ process CLAIRS {
     output:
     tuple val(meta), path("*.vcf.gz"),               emit: vcfs
     tuple val(meta), path("*.vcf.gz.tbi"),           emit: tbi
-    path "versions.yml",                             emit: versions
+    tuple val("${task.process}"), val('clairs'), eval("/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //'"), topic: versions, emit: versions_clairs
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def args = task.ext.args ?: ''
 
     """
     /opt/bin/run_clairs \
@@ -30,6 +30,7 @@ process CLAIRS {
         --ref_fn $reference \\
         --threads $task.cpus \\
         --platform $model \\
+        --sample_name ${prefix} \\
         --output_dir . \\
         --output_prefix snvs \\
         $args
@@ -38,27 +39,14 @@ process CLAIRS {
         rm snv.vcf.gz
         rm snv.vcf.gz.tbi
     fi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
-    END_VERSIONS
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     echo "" | gzip > snvs.vcf.gz
     touch snvs.vcf.gz.tbi
 
     echo "" | gzip > indel.vcf.gz
     touch indel.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        clairs: \$(/opt/bin/run_clairs  --version |& sed '1!d ; s/run_clairs //')
-    END_VERSIONS
     """
 }

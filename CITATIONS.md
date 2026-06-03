@@ -8,6 +8,10 @@
 
 > Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C. Nextflow enables reproducible computational workflows. Nat Biotechnol. 2017 Apr 11;35(4):316-319. doi: 10.1038/nbt.3820. PubMed PMID: 28398311.
 
+## [LRSomatic](https://doi.org/10.64898/2026.02.26.707772)
+
+> LRSomatic: a highly scalable and robust pipeline for somatic variant calling in long-read sequencing data Robert A. Forsyth*, Luuk Harbers*, Amber Verhasselt, Ana-Lucía Rocha Iraizós, Sidi Yang, Joris Vande Velde, Christopher Davies, Nischalan Pillay, Laurens Lambrechts, Jonas Demeulemeester bioRxiv 2026.02.26.707772; doi: https://doi.org/10.64898/2026.02.26.707772
+
 ## Pipeline tools
 
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
@@ -95,3 +99,9 @@
 - [Singularity](https://pubmed.ncbi.nlm.nih.gov/28494014/)
 
   > Kurtzer GM, Sochat V, Bauer MW. Singularity: Scientific containers for mobility of compute. PLoS One. 2017 May 11;12(5):e0177459. doi: 10.1371/journal.pone.0177459. eCollection 2017. PubMed PMID: 28494014; PubMed Central PMCID: PMC5426675.
+
+## Resources
+
+- [ASAP Panel of Normals](https://www.biorxiv.org/content/10.64898/2026.03.15.711881v1)
+
+  > Olga M. Sigalova, Alexandra Pančíková, Julie De Man, Koen Theunis, Gert J. Hulselmans, Vasileios Konstantakos, Bram Stuyven, Anton De Brabandere, Jarne Geurts, Antonina Mikorska, Shinjini Mukherjee, Sara Abouelasrar Salama, Katy Vandereyken, Kristofer Davie, Lukas Mahieu, Charles H. Adler, Thomas G. Beach, Geidy E. Serrano, Thierry Voet, Jonas Demeulemeester, Stein Aerts. Modeling cis-regulatory variation in human brain enhancers across a large Parkinson’s Disease cohort bioRxiv 2026.03.15.711881; doi: https://doi.org/10.64898/2026.03.15.711881

@@ -1,18 +1,19 @@
 process CRAMINO {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/cramino:1.0.0--h3dc2dae_0':
-        'biocontainers/cramino:1.0.0--h3dc2dae_0' }"
+        'https://depot.galaxyproject.org/singularity/cramino:1.3.0--h3dc2dae_0':
+        'biocontainers/cramino:1.3.0--h3dc2dae_0' }"
 
     input:
     tuple val(meta), path(bam)
 
     output:
     tuple val(meta), path("*.txt"), emit: txt
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.arrow"), emit: arrow
+    tuple val("${task.process}"), val('cramino'), eval("cramino --version |& sed '1!d ; s/cramino //'"), topic: versions, emit: versions_cramino
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,33 +22,13 @@ process CRAMINO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-
-
-
-
     """
-    cramino $args $bam > ${prefix}_cramino.txt
-
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cramino: \$(cramino --version |& sed '1!d ; s/cramino //')
-    END_VERSIONS
+    cramino $args $bam --arrow ${prefix}.arrow > ${prefix}_cramino.txt
     """
-
-
-
-
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_cramino.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        cramino: \$(cramino --version |& sed '1!d ; s/cramino //')
-    END_VERSIONS
     """
 }

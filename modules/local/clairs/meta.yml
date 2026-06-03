@@ -1,20 +1,21 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "clairs"
-description: write your description here
+description: ClairS is a deep-learning method for long-read somatic small variant calling
 keywords:
+  - somatic
   - small
   - variant
   - SNV
   - indel
+  - long-read
 tools:
   - "clairs":
-      description: ""
+      description: "ClairS is a deep-learning method for long-read somatic small variant calling"
       homepage: "https://github.com/HKU-BAL/ClairS"
       documentation: "https://github.com/HKU-BAL/ClairS"
       tool_dev_url: "https://github.com/HKU-BAL/ClairS"
-      doi: "10.1101/2023.08.17.553778 "
+      doi: "10.1101/2023.08.17.553778"
       licence: ["BSD-3-clause"]
-      identifier: biotools:clairs
 
 input:
   - - meta:
@@ -25,7 +26,7 @@ input:
         type: file
         description: |
           BAM file for tumor sample
-        pattern: "*.vcf.gz"
+        pattern: "*.bam"
     - tumor_bai:
         type: file
         description: |
@@ -64,29 +65,47 @@ input:
           index file for the reference fasta file
         pattern: "*.fai"
 output:
-  - vcf:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-      - "*.vcf.gz":
-          type: file
-          description: VCF file containing small somatic variants
-          pattern: "*.vcf.gz"
-  - tbi:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-      - "*.vcf.gz.tbi":
-          type: file
-          description: VCF index file for small somatic variants
-          pattern: "*.vcf.gz.tbi"
-  - versions:
-      - versions.yml:
-          type: file
-          description: File containing software versions
-          pattern: "versions.yml"
+  vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+    - "*.vcf.gz":
+        type: file
+        description: VCF file containing small somatic variants
+        pattern: "*.vcf.gz"
+  tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+    - "*.vcf.gz.tbi":
+        type: file
+        description: VCF index file for small somatic variants
+        pattern: "*.vcf.gz.tbi"
+  versions_clairs:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - clairs:
+          type: string
+          description: The tool name
+      - "run_clairs  --version |& sed '1!d ; s/run_clairs //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - samtools:
+          type: string
+          description: The tool name
+      - "run_clairs  --version |& sed '1!d ; s/run_clairs //'":
+          type: string
+          description: The command used to generate the version of the tool
+
 authors:
   - "@robert-a-forsyth"
 maintainers:

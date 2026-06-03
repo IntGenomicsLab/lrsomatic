@@ -1,21 +1,22 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "clairsto"
-description: write your description here
+description: ClairS-TO is a deep-learning method for long-read tumor-only somatic small variant calling
 keywords:
+  - somatic
   - small
   - variant
   - SNV
   - indel
   - tumor-only
+  - long-read
 tools:
-  - "clairs":
-      description: ""
+  - "clairsto":
+      description: "ClairS-TO is a deep-learning method for long-read tumor-only somatic small variant calling"
       homepage: "https://github.com/HKU-BAL/ClairS-TO"
       documentation: "https://github.com/HKU-BAL/ClairS-TO"
       tool_dev_url: "https://github.com/HKU-BAL/ClairS-TO"
-      doi: "10.1101/2023.08.17.553778 "
+      doi: "10.1038/s41467-025-64547-z"
       licence: ["BSD-3-clause"]
-      identifier: biotools:clairsto
 
 input:
   - - meta:
@@ -26,7 +27,7 @@ input:
         type: file
         description: |
           BAM file for tumor sample
-        pattern: "*.vcf.gz"
+        pattern: "*.bam"
     - tumor_bai:
         type: file
         description: |
@@ -35,70 +36,110 @@ input:
     - model:
         type: string
         description: |
-          Name for ClairS model
+          Name for ClairS-TO model (platform: ont or hifi)
   - - meta2:
         type: map
         description: |
-          Groovy Map containing sample information
+          Groovy Map containing reference information
     - reference:
         type: file
         description: |
-          A reference fasta file
-        pattern: "*.fasta"
+          Reference genome fasta file
+        pattern: "*.{fasta,fa,fna}"
   - - meta3:
         type: map
         description: |
-          Groovy Map containing sample information
+          Groovy Map containing reference index information
     - index:
         type: file
         description: |
-          index file for the reference fasta file
+          Reference genome fasta index file
         pattern: "*.fai"
+  - - dbSNP:
+        type: file
+        description: |
+          dbSNP VCF file for panel of normals
+        pattern: "*.vcf.gz"
+  - - colors:
+        type: file
+        description: |
+          COLORS panel of normals VCF file
+        pattern: "*.vcf.gz"
+  - - onekgenomes:
+        type: file
+        description: |
+          1000 Genomes panel of normals VCF file
+        pattern: "*.vcf.gz"
+  - - gnomad:
+        type: file
+        description: |
+          gnomAD panel of normals VCF file
+        pattern: "*.vcf.gz"
+
 output:
-  - indel_vcf:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz"
-      - "*/indel.vcf.gz":
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz"
-  - indel_tbi:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz.tbi"
-      - "*/indel.vcf.gz.tbi":
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz.tbi"
-  - snv_vcf:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz"
-      - "*/snv.vcf.gz":
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz"
-  - snv_tbi:
-      - meta:
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz.tbi"
-      - "*/snv.vcf.gz.tbi":
-          type: map
-          description: |
-            Groovy Map containing sample information
-          pattern: "*.vcf.gz.tbi"
+  indel_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "indel.vcf.gz":
+        type: file
+        description: Indel somatic variants VCF file
+        pattern: "indel.vcf.gz"
+  indel_tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "indel.vcf.gz.tbi":
+        type: file
+        description: Indel VCF index file
+        pattern: "indel.vcf.gz.tbi"
+  snv_vcf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "snv.vcf.gz":
+        type: file
+        description: SNV somatic variants VCF file
+        pattern: "snv.vcf.gz"
+  snv_tbi:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "snv.vcf.gz.tbi":
+        type: file
+        description: SNV VCF index file
+        pattern: "*.vcf.gz.tbi"
+  versions_clairsto:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - clairsto:
+          type: string
+          description: The tool name
+      - "/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - clairsto:
+          type: string
+          description: The tool name
+      - "/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'":
+          type: string
+          description: The command used to generate the version of the tool
+
 authors:
   - "@robert-a-forsyth"
 maintainers:

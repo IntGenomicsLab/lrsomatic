@@ -4,8 +4,8 @@ process ASCAT {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0':
-        'biocontainers/mulled-v2-c278c7398beb73294d78639a864352abef2931ce:03f4a075e359bb32a613b098d13dba7b4c8c967f-0' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4c/4cf02c7911ee5e974ce7db978810770efbd8d872ff5ab3462d2a11bcf022fab5/data':
+        'community.wave.seqera.io/library/ascat_cancerit-allelecount:c3e8749fa4af0e99' }"
 
     input:
     tuple val(meta), path(input_normal), path(index_normal), path(input_tumor), path(index_tumor)
@@ -42,7 +42,7 @@ process ASCAT {
     def penalty        = args.penalty         ?  "$args.penalty" :       "NULL"
     def gc_input       = gc_file              ?  "$gc_file" :            "NULL"
     def rt_input       = rt_file              ?  "$rt_file" :            "NULL"
-
+    def pdf_plots      = (args.pdf_plots ?: false) ? "TRUE" : "FALSE"
     def minCounts_arg                    = args.minCounts                     ?  ",minCounts = $args.minCounts" : ""
     def bed_file_arg                     = bed_file                           ?  ",BED_file = '$bed_file'": ""
     def chrom_names_arg                  = args.chrom_names                   ?  ",chrom_names = $args.chrom_names" : ""
@@ -56,7 +56,7 @@ process ASCAT {
     def normal_bam                       = input_normal                       ? ",normalseqfile = '$input_normal'" : ""
     def normal_name                      = input_normal                       ? ",normalname = '${prefix}.normal'" : ""
     def longread_bins                    = args.longread_bins                 ? ",loci_binsize = $args.longread_bins" : ""
-    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : "" 
+    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : ""
     """
     #!/usr/bin/env Rscript
     library(RColorBrewer)
@@ -153,13 +153,13 @@ process ASCAT {
     #Run ASCAT to fit every tumor to a model, inferring ploidy, normal cell contamination, and discrete copy numbers
     #If psi and rho are manually set:
     if (!is.null($purity) && !is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else if(!is.null($purity) && is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, pdfPlot = $pdf_plots)
     } else if(!is.null($ploidy) && is.null($purity)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy, pdfPlot = $pdf_plots)
     } else {
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1)
+        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, pdfPlot = $pdf_plots)
     }
 
     #Extract metrics from ASCAT profiles
@@ -172,7 +172,7 @@ process ASCAT {
     tryCatch({ # In case segments_raw is not selected
       write.table(
         ascat.output[["segments_raw"]],
-        file = paste0(prefix, ".segments_raw.txt"),
+        file = paste0("$prefix", ".segments_raw.txt"),
         sep = "\t", quote = FALSE, row.names = FALSE
       )
     }, error = function(e) {
@@ -220,6 +220,7 @@ process ASCAT {
     echo stub > ${prefix}.normal_alleleFrequencies_chr22.txt
     echo stub > ${prefix}.purityploidy.txt
     echo stub > ${prefix}.segments.txt
+    echo stub > ${prefix}.segments_raw.txt
     echo stub > ${prefix}.tumour.ASPCF.png
     echo stub > ${prefix}.tumour.sunrise.png
     echo stub > ${prefix}.tumour_alleleFrequencies_chr21.txt
@@ -231,9 +232,8 @@ process ASCAT {
 
     echo "${task.process}:" > versions.yml
     echo ' alleleCounter: 4.3.0' >> versions.yml
-    echo ' ascat: 3.0.0' >> versions.yml
+    echo ' ascat: 3.2.0' >> versions.yml
 
     """
-
 
 }

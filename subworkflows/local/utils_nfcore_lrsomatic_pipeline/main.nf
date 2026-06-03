@@ -14,7 +14,6 @@ include { samplesheetToList         } from 'plugin/nf-schema'
 include { paramsHelp                } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
-include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
 
@@ -29,10 +28,10 @@ workflow PIPELINE_INITIALISATION {
     take:
     version           // boolean: Display version and exit
     validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
+    _monochrome_logs  // boolean: Do not use coloured log outputs
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
+    _input            //  string: Path to input samplesheet
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -84,39 +83,106 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
+    // Parse the input samplesheet CSV and build a per-sample BAM channel
+    // Each samplesheet row describes one tumor (+ optional normal) sample
+    // Columns: sample_id, bam_tumor, bam_normal, method, sex, fiber,
+    //          clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate
     channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model ->
+        // Step 1: build a combined meta map from the samplesheet columns
+        // paired_data = true if a normal BAM is present; false for tumor-only
+        .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate ->
             def real_clair3_model = (clair3_model == null ) ? null : clair3_model
             def real_clairS_model = (clairS_model == null ) ? null : clairS_model
             def real_clairSTO_model = (clairSTO_model == null ) ? null : clairSTO_model
             def paired_data = bam_normal ? true : false
-            def meta_info = meta + [ paired_data: paired_data, platform: method, sex: sex, fiber: fiber, clair3_model: real_clair3_model, clairS_model : real_clairS_model, clairSTO_model: real_clairSTO_model]
+            def meta_info = meta + [ paired_data: paired_data,
+                                     platform: method,         // 'ont' or 'pb'
+                                     sex: sex,                 // 'XX', 'XY', or null (for ASCAT)
+                                     fiber: fiber,             // 'y' or 'n' (fiber-seq data flag)
+                                     clair3_model: real_clair3_model,
+                                     clairS_model: real_clairS_model,
+                                     clairSTO_model: real_clairSTO_model,
+                                     tumor_replicate: tumor_replicate,
+                                     normal_replicate: normal_replicate]
             return [ meta_info, [ bam_tumor ], [ bam_normal ?: [] ] ]
         }
+        // Flatten BAM lists (handles multi-run entries where bam_tumor/bam_normal are lists)
         .map { meta, bam_tumor, bam_normal ->
            [ meta, bam_tumor.flatten(), bam_normal.flatten() ]
         }
+        // Step 2: split each row into separate tumor and normal items
+        // flatMap emits 1 item (tumor-only) or 2 items (tumor + normal) per samplesheet row
+        // Each item gets type='tumor' or type='normal' and the appropriate replicate ID
         .flatMap { meta, tumor_bam, normal_bam ->
             def meta_tumor = meta.clone()
             meta_tumor.type = 'tumor'
+            meta_tumor.replicate = meta_tumor.tumor_replicate
+            meta_tumor = meta_tumor.subMap('id',
+                                           'paired_data',
+                                           'type',
+                                           'platform',
+                                           'sex',
+                                           'fiber',
+                                           'clair3_model',
+                                           'clairS_model',
+                                           'clairSTO_model',
+                                           'replicate')
             def result = [[meta_tumor, tumor_bam]]
+            // result so far: [[meta_tumor, [tumor_bam_path...]]]
 
             if (normal_bam) {
                 def meta_normal = meta.clone()
                 meta_normal.type = 'normal'
+                meta_normal.replicate = meta_normal.normal_replicate
+                meta_normal = meta_normal.subMap('id',
+                                                 'paired_data',
+                                                 'type',
+                                                 'platform',
+                                                 'sex',
+                                                 'fiber',
+                                                 'clair3_model',
+                                                 'clairS_model',
+                                                 'clairSTO_model',
+                                                 'replicate')
                 result << [meta_normal, normal_bam]
+                // result now: [[meta_tumor, [tumor_bams]], [meta_normal, [normal_bams]]]
             }
 
             return result
         }
         .set { ch_samplesheet }
 
-        // ch_samplesheet -> meta: [id, paired_data, platform, sex, type]
-        //                   bam:  unaligned bams
+    // Count replicates per sample+type and embed the count in meta as n_replicates.
+    // This allows downstream groupTuple() to use groupKey() for eager per-sample release
+    // instead of waiting for ALL samples to finish (global synchronization barrier).
+    // This groupTuple is safe: the source is a fully-materialized list from
+    // samplesheetToList(), so the channel closes immediately without blocking any process.
+    ch_samplesheet
+        .map { meta, bams -> [[meta.id, meta.type], meta, bams] }
+        .groupTuple(by: 0)
+        .flatMap { key, metas, bams_list ->
+            def n = metas.size()
+            [metas, bams_list].transpose().collect { m, b ->
+                [m + [n_replicates: n], b]
+            }
+        }
+        .set { ch_samplesheet }
+
+    // ch_samplesheet: [meta, [bam...]]
+    //   meta fields: id, paired_data, type ('tumor'|'normal'), platform ('ont'|'pb'),
+    //                sex, fiber ('y'|'n'), clair3_model, clairS_model, clairSTO_model,
+    //                replicate, n_replicates
+    //   paired_data: true for both items in a T/N pair (same value for tumor AND normal rows)
+    //   n_replicates: total number of replicates for this sample+type combination
+    //   bam: list of paths (multiple runs for same sample remain as a list until SAMTOOLS_CAT)
+    //
+    // NOTE: tumor-only rows emit ONE item (type='tumor', paired_data=false)
+    //       paired rows emit TWO items — tumor (paired_data=true) + normal (paired_data=true)
+    //       Both share the same 'id' to allow downstream joins
 
     emit:
-    samplesheet = ch_samplesheet
+    samplesheet = ch_samplesheet  // [meta, [bam...]]  -- see channel structure above
     versions    = ch_versions
 }
 
@@ -134,7 +200,6 @@ workflow PIPELINE_COMPLETION {
     plaintext_email // boolean: Send plain-text email instead of HTML
     outdir          //    path: Path to output directory where results will be published
     monochrome_logs // boolean: Disable ANSI colour codes in log output
-    hook_url        //  string: hook URL for notifications
     multiqc_report  //  string: Path to MultiQC report
 
     main:
@@ -158,9 +223,6 @@ workflow PIPELINE_COMPLETION {
         }
 
         completionSummary(monochrome_logs)
-        if (hook_url) {
-            imNotification(summary_params, hook_url)
-        }
     }
 
     workflow.onError {

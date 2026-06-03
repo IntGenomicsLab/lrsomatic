@@ -17,4 +17,13 @@ pipeline_info/*.{html,json,txt,yml}
 */variants/severus/read_ids.csv
 */variants/severus/severus.log
 */variants/severus/{all_SVs,somatic_SVs}/*.{vcf.gz,vcf.gz.tbi}
-*/qc/{tumor,normal}/{cramino_ubam,cramino_aln}/*_cramino.txt
+*/variants/phased/*.{vcf.gz,vcf.gz.tbi}
+*/qc/{tumor,normal}/cramino_ubam_*/*_cramino.txt
+*/qc/{tumor,normal}/cramino_aln/*_cramino.txt
+*/qc/{tumor,normal}/nanoplot_ubam_*/*.html
+*/qc/{tumor,normal}/nanoplot_aln/*.html
+*/qc/{tumor,normal}/nanoplot_ubam_*/*.txt
+*/qc/{tumor,normal}/nanoplot_aln/*.txt
+*/qc/{tumor,normal}/mosdepth/*.txt
+*/variants/deepsomatic/*.{vcf.gz,vcf.gz.tbi}
+*/variants/deepvariant/*.{vcf.gz,vcf.gz.tbi}
