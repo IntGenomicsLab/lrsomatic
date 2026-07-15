@@ -38,7 +38,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    ├── vep
 │    │   ├── somatic
 │    │   └── SVs
-│    └── wakhan
+│    ├── wakhan
+│    └── report
 ```
 
 **Paired tumor + normal sample**:
@@ -81,7 +82,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── germline
 │    │   ├── somatic
 │    │   └── SVs
-│    └── wakhan
+│    ├── wakhan
+│    └── report
 ├── pipeline_info
 └── multiqc
 ```
@@ -515,6 +517,24 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                                          |
 
 </details>
+
+### `report`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── report
+│   ├── {sample}_report.html
+```
+
+| File                   | Description                                                                                                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report)): circos plot, small/structural variant tables, ASCAT copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+
+</details>
+
+This is the final step of the pipeline, run after SNV/SV calling, ASCAT, and QC. Disable it with `--skip_report`.
 
 ### `multiqc`
 

@@ -1,0 +1,67 @@
+nextflow_process {
+
+    name "Test Process LRSOMATICREPORT"
+    script "../main.nf"
+    process "LRSOMATICREPORT"
+
+    tag "modules"
+    tag "modules_local"
+    tag "lrsomaticreport"
+
+    test("no optional inputs - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    [], // vep_somatic
+                    [], // severus_vcf
+                    [], // somatic_vcf
+                    [], // ascat_files
+                    [], // qc_tumor_files
+                    []  // qc_normal_files
+                ]
+                input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert snapshot(process.out).match() }
+            )
+        }
+
+    }
+
+    test("no optional inputs - real render") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    [], // vep_somatic
+                    [], // severus_vcf
+                    [], // somatic_vcf
+                    [], // ascat_files
+                    [], // qc_tumor_files
+                    []  // qc_normal_files
+                ]
+                input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.report.get(0).get(1).endsWith("_report.html")
+        }
+
+    }
+
+}

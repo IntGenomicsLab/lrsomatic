@@ -1,0 +1,3 @@
+[submodule "assets/lrsomatic_report"]
+	path = assets/lrsomatic_report
+	url = https://github.com/ljwharbers/lrsomatic_report.git

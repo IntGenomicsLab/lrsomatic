@@ -1,0 +1,112 @@
+process LRSOMATICREPORT {
+    tag "$meta.id"
+    label 'process_medium'
+
+    conda "${moduleDir}/environment.yml"
+    // Built via the Wave containers API from this module's environment.yml (frozen build).
+    container "community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:f1d36670d940c971"
+
+    input:
+    // All per-sample report inputs are optional (path may be `[]` if the corresponding
+    // upstream tool was skipped or produced no output for this sample); the report tool
+    // renders a "not available" notice for any missing section.
+    tuple val(meta), path(vep_somatic), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files), path(qc_normal_files)
+    path(report_src) // staged lrsomatic_report repo (bin/, R/, templates/, assets/)
+
+    output:
+    tuple val(meta), path("*_report.html"), emit: report
+    // No CLI version flag is provided by the tool; footer literal is "LRSomatic report v1.0" (templates/per_sample.qmd)
+    tuple val("${task.process}"), val('lrsomatic_report'), val("1.0"), topic: versions, emit: versions_lrsomaticreport
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def sex = meta.sex ?: 'male'
+    // matched (T/N) samples publish under variants/clairs/; tumor-only samples under variants/clairsto/
+    // -- this only controls the report tool's run-mode detection/labelling, see locate_outputs.R
+    def somatic_dir = meta.paired_data ? 'variants/clairs' : 'variants/clairsto'
+
+    def link_vep = vep_somatic ? """
+    mkdir -p sample_dir/vep/somatic
+    ln -s "\$PWD/${vep_somatic}" "sample_dir/vep/somatic/${prefix}_SOMATIC_VEP.vcf.gz"
+    """ : ''
+
+    def link_severus = severus_vcf ? """
+    mkdir -p sample_dir/variants/severus/somatic_SVs
+    ln -s "\$PWD/${severus_vcf}" "sample_dir/variants/severus/somatic_SVs/severus_somatic.vcf.gz"
+    """ : ''
+
+    def link_somatic = somatic_vcf ? """
+    mkdir -p sample_dir/${somatic_dir}
+    ln -s "\$PWD/${somatic_vcf}" "sample_dir/${somatic_dir}/somatic.vcf.gz"
+    """ : ''
+
+    def ascat_file_list = ascat_files ? ascat_files.join(' ') : ''
+    def link_ascat = ascat_files ? """
+    mkdir -p sample_dir/ascat
+    for f in ${ascat_file_list}; do ln -s "\$PWD/\$f" "sample_dir/ascat/\$f"; done
+    """ : ''
+
+    def qc_tumor_file_list = qc_tumor_files ? qc_tumor_files.join(' ') : ''
+    def link_qc_tumor = qc_tumor_files ? """
+    mkdir -p sample_dir/qc/tumor/mosdepth sample_dir/qc/tumor/cramino_aln sample_dir/qc/tumor/samtools
+    for f in ${qc_tumor_file_list}; do
+        case "\$f" in
+            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/tumor/mosdepth/\$f" ;;
+            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/tumor/cramino_aln/\$f" ;;
+            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/tumor/samtools/\$f" ;;
+        esac
+    done
+    """ : ''
+
+    def qc_normal_file_list = qc_normal_files ? qc_normal_files.join(' ') : ''
+    def link_qc_normal = qc_normal_files ? """
+    mkdir -p sample_dir/qc/normal/mosdepth sample_dir/qc/normal/cramino_aln sample_dir/qc/normal/samtools
+    for f in ${qc_normal_file_list}; do
+        case "\$f" in
+            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/normal/mosdepth/\$f" ;;
+            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/normal/cramino_aln/\$f" ;;
+            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/normal/samtools/\$f" ;;
+        esac
+    done
+    """ : ''
+
+    """
+    # Quarto/Deno write a cache dir under \$HOME; point it at the task work dir
+    # (always writable) rather than relying on the container's \$HOME being bound.
+    export HOME=\$PWD
+
+    # The Wave/conda-built container doesn't auto-source conda's activation hooks
+    # (e.g. quarto needs QUARTO_SHARE_PATH); source them if present. Some hooks
+    # (e.g. gcc_linux-64) reference \$CONDA_PREFIX under `set -u`, so export it first.
+    export CONDA_PREFIX=/opt/conda
+    for f in /opt/conda/etc/conda/activate.d/*.sh; do
+        [ -f "\$f" ] && source "\$f"
+    done
+
+    mkdir -p sample_dir
+    ${link_vep}
+    ${link_severus}
+    ${link_somatic}
+    ${link_ascat}
+    ${link_qc_tumor}
+    ${link_qc_normal}
+
+    Rscript ${report_src}/bin/render_report.R \\
+        --sample-dir sample_dir \\
+        --sample-id ${prefix} \\
+        --sex ${sex} \\
+        --reference auto \\
+        --output ${prefix}_report.html \\
+        ${args}
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}_report.html
+    """
+}

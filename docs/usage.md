@@ -151,6 +151,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | `--skip_modcall`       | A boolean to skip modkit methylation calling. Default = `false`                                                                                                                      |
 | `--skip_modkit`        | A boolean to skip the modkit pileup step. Default = `false`                                                                                                                          |
 | `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                     |
+| `--skip_report`        | A boolean to skip the final per-sample HTML report. Default = `false`                                                                                                                |
 
 #### LONGPHASE options:
 
@@ -207,6 +208,13 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | Parameter              | Description                                                                          |
 | ---------------------- | ------------------------------------------------------------------------------------ |
 | `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3` |
+
+#### Report Options
+
+| Parameter             | Description                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--report_src`        | Path to the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) repository (bin/, R/, templates/, assets/). Default = `${projectDir}/assets/lrsomatic_report` |
+| `--report_gene_panel` | Gene panel for the report: a builtin panel name (e.g. `lymphoid`) or a path to a TSV file with a `gene` column. Default = `null`                                             |
 
 #### WAKHAN Options
 

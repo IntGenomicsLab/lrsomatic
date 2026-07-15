@@ -303,6 +303,22 @@
                 }
             }
         },
+        "report_options": {
+            "title": "Report options",
+            "type": "object",
+            "description": "Options for the final per-sample HTML report",
+            "default": "",
+            "properties": {
+                "report_src": {
+                    "type": "string",
+                    "description": "Path to the lrsomatic_report repository (bin/, R/, templates/, assets/)"
+                },
+                "report_gene_panel": {
+                    "type": "string",
+                    "description": "Gene panel for the report: a builtin panel name (e.g. 'lymphoid') or path to a TSV with a 'gene' column"
+                }
+            }
+        },
         "skip_options": {
             "title": "Skip options",
             "type": "object",
@@ -364,6 +380,10 @@
                 "use_gpu": {
                     "type": "boolean",
                     "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
+                },
+                "skip_report": {
+                    "type": "boolean",
+                    "description": "Skip the final per-sample HTML report"
                 }
             }
         },
@@ -551,6 +571,9 @@
         },
         {
             "$ref": "#/$defs/wakhan_options"
+        },
+        {
+            "$ref": "#/$defs/report_options"
         },
         {
             "$ref": "#/$defs/skip_options"

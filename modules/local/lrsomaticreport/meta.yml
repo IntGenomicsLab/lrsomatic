@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "lrsomaticreport"
+description: Render a self-contained per-sample HTML report (circos plot, small/structural variant tables, ASCAT copy-number, QC) from the pipeline's key final outputs, using the lrsomatic_report R/Quarto tool.
+keywords:
+  - report
+  - quarto
+  - somatic
+  - long-read
+tools:
+  - "lrsomatic_report":
+      description: "Standalone R/Quarto reporting tool for the LRSomatic pipeline"
+      homepage: "https://github.com/ljwharbers/lrsomatic_report"
+      documentation: "https://github.com/ljwharbers/lrsomatic_report/blob/main/README.md"
+      tool_dev_url: "https://github.com/ljwharbers/lrsomatic_report"
+      doi: ""
+      licence: null
+      identifier: null
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - vep_somatic:
+        type: file
+        description: VEP-annotated somatic small-variant VCF (SOMATIC_VEP output), or `[]` if VEP was skipped
+        pattern: "*.vcf.gz"
+    - severus_vcf:
+        type: file
+        description: Severus somatic structural-variant VCF, or `[]` if not available
+        pattern: "*.vcf.gz"
+    - somatic_vcf:
+        type: file
+        description: Final somatic small-variant VCF (ClairS/ClairS-TO/DeepSomatic or consensus), or `[]` if not available
+        pattern: "*.vcf.gz"
+    - ascat_files:
+        type: file
+        description: Collected ASCAT copy-number output files (segments_raw, purityploidy, diagnostic PNGs), or `[]` if ASCAT was skipped
+    - qc_tumor_files:
+        type: file
+        description: Collected tumor QC files (mosdepth summary/dist, cramino, samtools stats/flagstat), or `[]` if QC was skipped
+    - qc_normal_files:
+        type: file
+        description: Collected normal-sample QC files (matched mode only), or `[]` for tumor-only samples or if QC was skipped
+  - - report_src:
+        type: directory
+        description: Staged lrsomatic_report repository (bin/, R/, templates/, assets/), shared across all samples
+
+output:
+  report:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+      - "*_report.html":
+          type: file
+          description: Self-contained per-sample HTML report
+          pattern: "*_report.html"
+  versions_lrsomaticreport:
+    - - "${task.process}":
+          type: string
+          description: The name of the process
+      - "lrsomatic_report":
+          type: string
+          description: The name of the tool
+      - "1.0":
+          type: string
+          description: |
+            Manually pinned version (the tool has no CLI version flag; the report
+            footer literal is "LRSomatic report v1.0", templates/per_sample.qmd)
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - lrsomatic_report:
+          type: string
+          description: The name of the tool
+      - "1.0":
+          type: string
+          description: Manually pinned version (tool has no CLI version flag)
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"
