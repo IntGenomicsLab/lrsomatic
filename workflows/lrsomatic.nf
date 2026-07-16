@@ -541,8 +541,8 @@ workflow LRSOMATIC {
 
     ch_index_minimap
         .branch { meta, _bams, _bais ->
-                paired: meta.paired_data       // meta.paired_data is the normal sample ID for tumors, or the tumor ID for normals
-                tumor_only: !meta.paired_data  // meta.paired_data is null/false for tumor-only samples
+                paired: meta.paired_data       // meta.paired_data is true for both tumor and normal rows of a matched pair
+                tumor_only: !meta.paired_data  // meta.paired_data is false for tumor-only samples
         }
         .set { branched_minimap }
 
@@ -1039,12 +1039,13 @@ workflow LRSOMATIC {
             .groupTuple()
             .set { report_qc_tumor_ch }
 
-        // Normal-side QC (matched mode only): re-key from the normal's own id to the
-        // tumor's id via meta.paired_data ("the tumor ID for normals", see branching comment above)
+        // Normal-side QC (matched mode only): tumor and normal rows of a matched pair
+        // share the same meta.id (see branching comment above), so this is already
+        // keyed by the report id -- no re-keying needed.
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
-            .map { meta, f -> [meta.paired_data, f] }
+            .map { meta, f -> [meta.id, f] }
             .groupTuple()
             .set { report_qc_normal_ch }
 

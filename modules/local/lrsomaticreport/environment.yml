@@ -17,3 +17,4 @@ dependencies:
   - "conda-forge::r-svglite"
   - "conda-forge::r-circlize"
   - "conda-forge::r-knitr"
+  - "conda-forge::r-r.utils"

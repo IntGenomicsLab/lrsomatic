@@ -1,16 +1,28 @@
 process LRSOMATICREPORT {
     tag "$meta.id"
     label 'process_medium'
+    // Quarto renders in-place next to the .qmd it's given (render_report.R's own
+    // post-render step relies on this). report_src is a single fixed path shared
+    // by every sample's task, so the default symlink staging would have all
+    // concurrent per-sample renders reading/writing the same physical
+    // templates/ directory at once; force a private copy per task instead.
+    stageInMode 'copy'
 
     conda "${moduleDir}/environment.yml"
     // Built via the Wave containers API from this module's environment.yml (frozen build).
-    container "community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:f1d36670d940c971"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/e0/e0d4fabb2f79dcc0d3446f1bda84507eb52ac21ebea75fd29ee5b1b26c61ee34/data'
+        : 'community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:4506737a6b63b769'}"
 
     input:
     // All per-sample report inputs are optional (path may be `[]` if the corresponding
     // upstream tool was skipped or produced no output for this sample); the report tool
     // renders a "not available" notice for any missing section.
-    tuple val(meta), path(vep_somatic), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files), path(qc_normal_files)
+    // qc_tumor_files/qc_normal_files are staged into distinct subdirectories:
+    // mosdepth/samtools default to a `${meta.id}`-only prefix (see conf/modules.config),
+    // so for a matched T/N pair (same meta.id) the tumor and normal QC files are
+    // identically named -- staging both lists flat would collide.
+    tuple val(meta), path(vep_somatic), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*')
     path(report_src) // staged lrsomatic_report repo (bin/, R/, templates/, assets/)
 
     output:
@@ -50,14 +62,17 @@ process LRSOMATICREPORT {
     for f in ${ascat_file_list}; do ln -s "\$PWD/\$f" "sample_dir/ascat/\$f"; done
     """ : ''
 
+    // $f includes the 'qc_tumor/' staging subdirectory (see stageAs above); the
+    // destination link name uses just the basename.
     def qc_tumor_file_list = qc_tumor_files ? qc_tumor_files.join(' ') : ''
     def link_qc_tumor = qc_tumor_files ? """
     mkdir -p sample_dir/qc/tumor/mosdepth sample_dir/qc/tumor/cramino_aln sample_dir/qc/tumor/samtools
     for f in ${qc_tumor_file_list}; do
-        case "\$f" in
-            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/tumor/mosdepth/\$f" ;;
-            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/tumor/cramino_aln/\$f" ;;
-            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/tumor/samtools/\$f" ;;
+        fname=\$(basename "\$f")
+        case "\$fname" in
+            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/tumor/mosdepth/\$fname" ;;
+            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/tumor/cramino_aln/\$fname" ;;
+            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/tumor/samtools/\$fname" ;;
         esac
     done
     """ : ''
@@ -66,10 +81,11 @@ process LRSOMATICREPORT {
     def link_qc_normal = qc_normal_files ? """
     mkdir -p sample_dir/qc/normal/mosdepth sample_dir/qc/normal/cramino_aln sample_dir/qc/normal/samtools
     for f in ${qc_normal_file_list}; do
-        case "\$f" in
-            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/normal/mosdepth/\$f" ;;
-            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/normal/cramino_aln/\$f" ;;
-            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/normal/samtools/\$f" ;;
+        fname=\$(basename "\$f")
+        case "\$fname" in
+            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/normal/mosdepth/\$fname" ;;
+            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/normal/cramino_aln/\$fname" ;;
+            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/normal/samtools/\$fname" ;;
         esac
     done
     """ : ''
