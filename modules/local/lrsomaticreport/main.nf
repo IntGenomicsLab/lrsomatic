@@ -9,10 +9,13 @@ process LRSOMATICREPORT {
     stageInMode 'copy'
 
     conda "${moduleDir}/environment.yml"
-    // Built via the Wave containers API from this module's environment.yml (frozen build).
+    // Built via the Wave containers API from this module's environment.yml (frozen
+    // build). Two separate Wave builds were needed: a singularity.enabled=true
+    // session only produces a Singularity-native SIF artifact (blob URL below),
+    // while a docker.enabled=true session produces a genuine OCI image (plain tag).
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/e0/e0d4fabb2f79dcc0d3446f1bda84507eb52ac21ebea75fd29ee5b1b26c61ee34/data'
-        : 'community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:4506737a6b63b769'}"
+        : 'community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:9d12b9297c3c4d38'}"
 
     input:
     // All per-sample report inputs are optional (path may be `[]` if the corresponding
