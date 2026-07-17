@@ -1,12 +1,6 @@
 process LRSOMATICREPORT {
     tag "$meta.id"
     label 'process_medium'
-    // Quarto renders in-place next to the .qmd it's given (render_report.R's own
-    // post-render step relies on this). report_src is a single fixed path shared
-    // by every sample's task, so the default symlink staging would have all
-    // concurrent per-sample renders reading/writing the same physical
-    // templates/ directory at once; force a private copy per task instead.
-    stageInMode 'copy'
 
     conda "${moduleDir}/environment.yml"
     // Built via the Wave containers API from this module's environment.yml (frozen
@@ -114,7 +108,13 @@ process LRSOMATICREPORT {
     ${link_qc_tumor}
     ${link_qc_normal}
 
-    Rscript ${report_src}/bin/render_report.R \\
+    # Quarto renders in-place next to the .qmd it's given (render_report.R's own
+    # post-render step relies on this). report_src is a single fixed path shared
+    # by every sample's task, so dereferencing it into a private, task-local copy
+    # avoids concurrent per-sample renders colliding on the same physical directory.
+    cp -rL "${report_src}" report_src_local
+
+    Rscript report_src_local/bin/render_report.R \\
         --sample-dir sample_dir \\
         --sample-id ${prefix} \\
         --sex ${sex} \\
