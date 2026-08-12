@@ -1,0 +1,74 @@
+gene	panel	notes
+MYC	lymphoid	Proto-oncogene, BCL translocations
+BCL2	lymphoid	Anti-apoptotic; t(14;18) in FL/DLBCL
+BCL6	lymphoid	Transcription factor; t(3;14) in DLBCL
+TP53	lymphoid	Tumour suppressor
+CDKN2A	lymphoid	Cell cycle regulator (p16/p14ARF)
+MYD88	lymphoid	TLR signaling adaptor; L265P hotspot
+CD79B	lymphoid	BCR co-receptor signaling
+EZH2	lymphoid	Histone methyltransferase; Y641/A677/A687 hotspots
+KMT2D	lymphoid	Histone methyltransferase (MLL4)
+CREBBP	lymphoid	Acetyltransferase; loss-of-function in FL/DLBCL
+EP300	lymphoid	Acetyltransferase
+CARD11	lymphoid	NF-kB signaling scaffold
+TNFAIP3	lymphoid	A20; NF-kB negative regulator
+B2M	lymphoid	HLA class I; immune evasion
+CD58	lymphoid	Immune evasion
+HLA-A	lymphoid	Immune evasion
+HLA-B	lymphoid	Immune evasion
+HLA-C	lymphoid	Immune evasion
+FOXO1	lymphoid	Transcription factor; BCL6 target
+GNA13	lymphoid	G-protein; germinal center exit
+RB1	lymphoid	Tumour suppressor; cell cycle
+CCND1	lymphoid	Cyclin D1; t(11;14) in MCL
+CCND3	lymphoid	Cyclin D3; DLBCL hotspot
+SOX11	lymphoid	MCL marker
+ATM	lymphoid	DNA damage response; CLL/MCL
+SF3B1	lymphoid	Splicing factor; CLL
+NOTCH1	lymphoid	Notch pathway; CLL
+BIRC3	lymphoid	IAP; NF-kB; CLL
+BTK	lymphoid	BCR kinase; ibrutinib target
+DTX1	lymphoid	Notch pathway effector
+SGK1	lymphoid	Kinase; germinal center
+PIM1	lymphoid	Kinase; BCR/TLR signaling
+PCLO	lymphoid	Pepe-scaffold; recurrently mutated
+FAT1	lymphoid	Tumour suppressor; Hippo pathway
+FAT3	lymphoid	Tumour suppressor
+SPEN	lymphoid	Transcriptional repressor
+MEF2B	lymphoid	Transcription factor; FL/DLBCL
+KLHL6	lymphoid	BCR signaling ubiquitin adaptor
+SMARCA4	lymphoid	Chromatin remodeling
+IRF4	lymphoid	Transcription factor; MYC target
+ARID1A	lymphoid	SWI/SNF chromatin remodeling
+HIST1H1E	lymphoid	Linker histone H1; DLBCL
+DUSP2	lymphoid	MAP kinase phosphatase
+BTG1	lymphoid	Anti-proliferative; DLBCL
+CIITA	lymphoid	MHC class II transactivator
+CXCR4	lymphoid	Chemokine receptor; CLL/WM
+RHOA	lymphoid	Rho GTPase; AITL G17V hotspot
+SYK	lymphoid	BCR/FcR signaling kinase
+PRKCB	lymphoid	Protein kinase C beta
+KRAS	lymphoid	RAS signaling
+NRAS	lymphoid	RAS signaling
+BRAF	lymphoid	MAPK kinase; HCL V600E
+MAP2K1	lymphoid	ERK signaling
+PIK3CA	lymphoid	PI3K catalytic subunit alpha
+PIK3CD	lymphoid	PI3K catalytic subunit delta
+PTEN	lymphoid	PI3K pathway tumour suppressor
+ID3	lymphoid	BL; inhibits E-proteins/TCF3
+TCF3	lymphoid	BL; E-box transcription factor
+BCL11A	lymphoid	Transcription factor; lymphoma
+SAMHD1	lymphoid	dNTP hydrolase; CLL
+RPS15	lymphoid	Ribosomal; CLL
+FBXW7	lymphoid	Ubiquitin E3 ligase
+TBL1XR1	lymphoid	Transcription corepressor
+DDX3X	lymphoid	RNA helicase; Burkitt/DLBCL
+SETD2	lymphoid	H3K36 methyltransferase
+GEF1	lymphoid	Guanine nucleotide exchange
+LYN	lymphoid	Src family kinase; BCR signaling
+CD19	lymphoid	BCR coreceptor; therapy target
+CD20	lymphoid	Rituximab target (MS4A1)
+MS4A1	lymphoid	CD20; B-cell surface marker
+TNFRSF14	lymphoid	Immune checkpoint; FL
+BCL10	lymphoid	CBM complex; NF-kB
+MALT1	lymphoid	Paracaspase; NF-kB; MALT lymphoma

@@ -13,8 +13,8 @@ tools:
       documentation: "https://github.com/ljwharbers/lrsomatic_report/blob/main/README.md"
       tool_dev_url: "https://github.com/ljwharbers/lrsomatic_report"
       doi: ""
-      licence: null
-      identifier: null
+      licence: ["MIT"]
+      identifier: ""
 
 input:
   - - meta:
@@ -24,14 +24,18 @@ input:
     - vep_somatic:
         type: file
         description: VEP-annotated somatic small-variant VCF (SOMATIC_VEP output), or `[]` if VEP was skipped
-        pattern: "*.vcf.gz"
+        pattern: "*_SOMATIC_VEP.vcf.gz"
+    - sv_vep:
+        type: file
+        description: VEP-annotated structural-variant VCF (SV_VEP output); the report's primary SV annotation source, or `[]` if VEP was skipped
+        pattern: "*_SV_VEP.vcf.gz"
     - severus_vcf:
         type: file
-        description: Severus somatic structural-variant VCF, or `[]` if not available
-        pattern: "*.vcf.gz"
+        description: Severus somatic structural-variant VCF (raw breakpoints, used for the circos tracks), or `[]` if not available
+        pattern: "severus_somatic.vcf.gz"
     - somatic_vcf:
         type: file
-        description: Final somatic small-variant VCF (ClairS/ClairS-TO/DeepSomatic or consensus), or `[]` if not available
+        description: Phased somatic small-variant VCF (the VCF that VEP annotated); source of the VAF, depth and phase-set columns, or `[]` if not available
         pattern: "*.vcf.gz"
     - ascat_files:
         type: file
@@ -42,9 +46,12 @@ input:
     - qc_normal_files:
         type: file
         description: Collected normal-sample QC files (matched mode only), or `[]` for tumor-only samples or if QC was skipped
+    - wakhan_files:
+        type: file
+        description: Collected Wakhan outputs (solutions_ranks.tsv, the ploidy/purity heatmap HTML and the per-solution `solution_<rank>/` directories), or `[]` if Wakhan was skipped
   - - report_src:
         type: directory
-        description: Staged lrsomatic_report repository (bin/, R/, templates/, assets/), shared across all samples
+        description: lrsomatic_report source tree (bin/, R/, templates/, assets/), shared across all samples; defaults to the vendored copy at `assets/lrsomatic_report`
 
 output:
   report:
@@ -63,11 +70,11 @@ output:
       - "lrsomatic_report":
           type: string
           description: The name of the tool
-      - "1.0":
+      - "1.1.0":
           type: string
           description: |
-            Manually pinned version (the tool has no CLI version flag; the report
-            footer literal is "LRSomatic report v1.0", templates/per_sample.qmd)
+            Manually pinned version (the tool has no CLI version flag); matches the
+            vendored release recorded in assets/lrsomatic_report/VENDORED.md
 
 topics:
   versions:
@@ -77,7 +84,7 @@ topics:
       - lrsomatic_report:
           type: string
           description: The name of the tool
-      - "1.0":
+      - "1.1.0":
           type: string
           description: Manually pinned version (tool has no CLI version flag)
 

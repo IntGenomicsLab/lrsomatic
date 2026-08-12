@@ -1,0 +1,292 @@
+---
+title: "LRSomatic — per-sample genomics report"
+date: today
+format:
+  html:
+    self-contained: true
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    theme: [flatly, ../assets/styles/report.scss]
+    code-fold: true
+    page-layout: full
+params:
+  sample_id:     "SAMPLE"
+  sample_dir:    ""
+  reference:     "t2t"
+  sex:           "female"
+  gene_panel:    "none"     # "none" | builtin panel name | path to a TSV
+  default_panel: "__all__"  # panel selected on load; "__all__" = no filter
+  all_panels:    NULL   # named list from load_all_gene_panels()
+  title:         "LRSomatic Report"
+  repo_dir:      "."
+  outputs:       NULL   # named list from locate_outputs()
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+suppressPackageStartupMessages({
+  library(data.table)
+  library(dplyr)
+  library(DT)
+  library(htmltools)
+  library(ggplot2)
+})
+
+repo_dir = params$repo_dir
+source(file.path(repo_dir, "R/utils.R"))
+source(file.path(repo_dir, "R/references.R"))
+source(file.path(repo_dir, "R/locate_outputs.R"))
+source(file.path(repo_dir, "R/parse_smallvariants.R"))
+source(file.path(repo_dir, "R/parse_severus.R"))
+source(file.path(repo_dir, "R/parse_ascat.R"))
+source(file.path(repo_dir, "R/parse_qc.R"))
+source(file.path(repo_dir, "R/circos.R"))
+
+source(file.path(repo_dir, "R/sections.R"))
+for (f in list.files(file.path(repo_dir, "R/sections"), pattern = "\\.R$", full.names = TRUE)) {
+  source(f)
+}
+
+outputs = params$outputs
+sample_id = params$sample_id
+sample_dir = params$sample_dir
+
+# Section-module contract: each registered section owns its own file
+# discovery (locate) and parsing (parse). See CLAUDE.md.
+SECTION_DATA = list()
+for (s in SECTIONS) {
+  SECTION_DATA[[s$id]] = s$parse(s$locate(sample_dir, sample_id), SECTION_DATA)
+}
+
+# Load reference data
+cytobands    = load_cytobands(params$reference, file.path(repo_dir, "assets"))
+chrom_lens   = load_chrom_lengths(params$reference, file.path(repo_dir, "assets"))
+chromosomes  = chromosomes_for_sex(params$sex)
+chromosomes  = chromosomes[chromosomes %in% unique(cytobands$chrom)]
+
+# Load the gene panel selected on load (NULL when --gene-panel none, i.e. no
+# filtering). Only the "Panel variants"/"Panel SVs" summary cards use it — the
+# tables themselves are built unfiltered and filtered client-side.
+panel_arg = params$gene_panel
+panel_genes = tryCatch(
+  resolve_gene_panel(panel_arg, file.path(repo_dir, "assets")),
+  error = function(e) { message("Gene panel error: ", e$message); NULL }
+)
+
+# Parse ASCAT
+ascat_segments = parse_ascat_segments(outputs$ascat_segments)
+ascat_pp       = parse_ascat_purityploidy(outputs$ascat_purityploidy)
+
+# Parse Wakhan
+wakhan_solutions = parse_wakhan_solutions(outputs$wakhan_solutions)
+wakhan_cn_plots  = locate_wakhan_cn_plots(outputs$wakhan_dir, wakhan_solutions)
+
+# Parse QC
+qc_mosdepth = parse_mosdepth_summary(outputs$mosdepth_summary)
+qc_mosdist  = parse_mosdepth_dist(outputs$mosdepth_dist)
+qc_cramino  = parse_cramino(outputs$cramino)
+qc_flagstat = parse_flagstat(outputs$flagstat)
+samtools_stats = parse_samtools_stats(outputs$samtools_stats)
+qc_normal_mosdepth = parse_mosdepth_summary(outputs$normal_mosdepth_summary)
+qc_normal_cramino  = parse_cramino(outputs$normal_cramino)
+qc_normal_flagstat = parse_flagstat(outputs$normal_flagstat)
+qc_normal_samtools_stats = parse_samtools_stats(outputs$normal_samtools_stats)
+
+# Parse VEP + raw callers
+vep_data = parse_vep(outputs$vep_somatic)
+
+vaf_data = parse_caller_vcf(outputs$somatic_vaf_vcf, "somatic")
+
+variant_table = build_variant_table(vep_data, vaf_data, gene_panel = NULL)
+tmb_info = compute_tmb(variant_table)
+
+# SNV data for circos (from VEP file — contains all somatic variants)
+snv_circos = NULL
+if (!is.null(vep_data) && nrow(vep_data) > 0) {
+  snv_circos = unique(vep_data[, .(chrom, pos, ref, alt)])
+}
+
+# Draw circos to temp file, then embed as base64
+circos_tmp = tempfile(fileext = ".svg")
+tryCatch({
+  draw_circos(
+    snv_data    = snv_circos,
+    sv_nontrans = SECTION_DATA$sv$circos$nontrans,
+    sv_trans    = SECTION_DATA$sv$circos$translocations,
+    cnv_data    = ascat_segments,
+    cytobands   = cytobands,
+    chrom_lengths = chrom_lens,
+    chromosomes = chromosomes,
+    output_path = circos_tmp
+  )
+}, error = function(e) {
+  message("Circos plot failed: ", e$message)
+  circos_tmp <<- NULL
+})
+
+# Summary counts
+sv_table = SECTION_DATA$sv$table
+n_snv        = if (!is.null(vep_data)) nrow(unique(vep_data[, .(chrom, pos, ref, alt)])) else NA_integer_
+n_sv         = if (!is.null(SECTION_DATA$sv))
+                 nrow(SECTION_DATA$sv$circos$nontrans) + nrow(SECTION_DATA$sv$circos$translocations) else NA_integer_
+# No panel selected on load → the panel cards have nothing to count, so they read
+# "N/A" rather than a "0" that looks like "no panel genes hit".
+have_panel   = length(panel_genes) > 0
+n_panel_vars = if (!have_panel) NA_integer_ else
+               if (!is.null(variant_table))
+                 sum(variant_table$symbol %in% panel_genes, na.rm = TRUE) else 0L
+# Gene-hits column differs by annotation source: "gene_hits" (VEP path) vs
+# "NHL_GENE_HITS" (gene-annotated TSV fallback path)
+sv_gene_col  = intersect(c("gene_hits", "NHL_GENE_HITS"), names(sv_table))
+n_panel_svs  = if (!have_panel) NA_integer_ else
+               if (!is.null(sv_table) && nrow(sv_table) > 0 && length(sv_gene_col) > 0)
+                 sum(vapply(sv_table[[sv_gene_col[1]]], function(h)
+                   any(trimws(unlist(strsplit(as.character(h), "[;,]+"))) %in% panel_genes),
+                   logical(1)), na.rm = TRUE) else 0L
+```
+
+```{r panel-js-data, results='asis'}
+all_p = if (!is.null(params$all_panels) && length(params$all_panels) > 0)
+          params$all_panels else list()
+js_panels = paste0(
+  "const GENE_PANELS = {",
+  paste(vapply(names(all_p), function(nm) {
+    genes_json = paste0('"', all_p[[nm]], '"', collapse = ", ")
+    paste0('"', nm, '": new Set([', genes_json, '])')
+  }, character(1)), collapse = ",\n"),
+  "};\n",
+  'const DEFAULT_PANEL = "', params$default_panel, '";\n'
+)
+cat("<script>\n", js_panels, "\n</script>\n", sep = "")
+```
+
+{{< include sections/_header.qmd >}}
+
+---
+
+{{< include sections/_circos.qmd >}}
+
+---
+
+{{< include sections/_ascat.qmd >}}
+
+---
+
+{{< include sections/_gene_filter.qmd >}}
+
+---
+
+{{< include sections/_smallvariants.qmd >}}
+
+---
+
+{{< include sections/_sv.qmd >}}
+
+---
+
+{{< include sections/_whatshap.qmd >}}
+
+---
+
+{{< include sections/_qc.qmd >}}
+
+---
+
+*Report generated `r format(Sys.time(), "%Y-%m-%d %H:%M")` · LRSomatic report v1.1.0*
+
+```{=html}
+<script>
+(function () {
+  let activePanel = DEFAULT_PANEL;
+  let customGenes = new Set();
+
+  // Cache the gene-hits column index for the SV table (looked up lazily on first use).
+  // Column name differs by annotation source: "gene_hits" (VEP path) vs "NHL_GENE_HITS"
+  // (gene-annotated TSV fallback path).
+  let svNhlColIdx = -1;
+  function getSvNhlColIdx() {
+    if (svNhlColIdx >= 0) return svNhlColIdx;
+    if (!window.svTableElem) return -1;
+    $(window.svTableElem).find('thead th').each(function (i) {
+      const h = $(this).text().trim();
+      if (h === 'gene_hits' || h === 'NHL_GENE_HITS') { svNhlColIdx = i; }
+    });
+    return svNhlColIdx;
+  }
+
+  $.fn.dataTable.ext.search.push(function (settings, data) {
+    const node = settings.nTable;
+    if (node !== window.snvTableElem && node !== window.svTableElem) return true;
+    if (activePanel === "__all__") return true;
+
+    let hits;
+    if (node === window.snvTableElem) {
+      hits = [(data[0] || "").toUpperCase()];
+    } else {
+      const idx = getSvNhlColIdx();
+      if (idx < 0) return true;
+      hits = (data[idx] || "").toUpperCase().split(/[;,]+/).map(function (g) { return g.trim(); }).filter(function (g) { return g.length > 0; });
+    }
+
+    if (activePanel === "__custom__") return hits.some(function (g) { return customGenes.has(g); });
+    const panel = GENE_PANELS[activePanel];
+    return panel ? hits.some(function (g) { return panel.has(g); }) : true;
+  });
+
+  function parseCustomGenes(text) {
+    return new Set(
+      text.split(/[\s,\n]+/).map(g => g.trim().toUpperCase()).filter(g => g.length > 0)
+    );
+  }
+
+  function updateCount() {
+    const parts = [];
+    if (window.snvTableElem) {
+      const n = $(window.snvTableElem).DataTable().rows({ search: "applied" }).count();
+      parts.push(n + " small variant" + (n === 1 ? "" : "s"));
+    }
+    if (window.svTableElem) {
+      const n = $(window.svTableElem).DataTable().rows({ search: "applied" }).count();
+      parts.push(n + " SV" + (n === 1 ? "" : "s"));
+    }
+    const el = document.getElementById("panel-variant-count");
+    if (el) el.textContent = parts.length ? parts.join(" · ") + " shown" : "";
+  }
+
+  function redraw() {
+    if (window.snvTableElem) $(window.snvTableElem).DataTable().draw();
+    if (window.svTableElem)  $(window.svTableElem).DataTable().draw();
+    updateCount();
+  }
+
+  $(document).ready(function () {
+    $("#panel-select").on("change", function () {
+      activePanel = this.value;
+      const isCustom = activePanel === "__custom__";
+      $("#custom-gene-panel").toggle(isCustom);
+      redraw();
+    });
+
+    let debounceTimer;
+    $("#custom-gene-input").on("input", function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        customGenes = parseCustomGenes(document.getElementById("custom-gene-input").value);
+        redraw();
+      }, 300);
+    });
+
+    let _waitAttempts = 0;
+    const waitForTables = setInterval(function () {
+      if (window.snvTableElem || window.svTableElem) {
+        clearInterval(waitForTables);
+        redraw();
+      } else if (++_waitAttempts > 100) {
+        clearInterval(waitForTables);
+      }
+    }, 100);
+  });
+})();
+</script>
+```

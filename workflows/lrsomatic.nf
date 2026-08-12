@@ -813,6 +813,8 @@ workflow LRSOMATIC {
         .set { sv_vep }
     // sv_vep: [meta, severus_all_vcf, []]  -- all SVs ready for VEP annotation
 
+    ch_sv_vep_vcf = channel.empty()
+
     if(!params.skip_vep) {
         //
         // MODULE: SV_VEP (ENSEMBLVEP_VEP alias; label: process_medium)
@@ -830,6 +832,8 @@ workflow LRSOMATIC {
             vep_custom,
             vep_custom_tbi
         )
+
+        ch_sv_vep_vcf = SV_VEP.out.vcf
     }
 
 
@@ -967,6 +971,8 @@ workflow LRSOMATIC {
     // Output: WAKHAN assembly reports (written to outdir)
     //
 
+    ch_wakhan_files = channel.empty()
+
     if (!params.skip_wakhan) {
 
         // Attach SEVERUS SV VCF to the severus_input channel (dropping the phased TBI)
@@ -984,29 +990,37 @@ workflow LRSOMATIC {
             ch_fasta,
             file(params.centromere_bed)
         )
+
+        // The subset of WAKHAN's outputs the report renders: the ranked purity/ploidy
+        // solutions table, the ploidy/purity heatmap and each solution's directory
+        // (which holds that solution's genome copy-number/breakpoints plot).
+        ch_wakhan_files = WAKHAN.out.solutions_ranks
+            .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
+            .groupTuple()
+            .map { meta, files -> [meta, files.flatten()] }  // solution_dirs contributes a list
+        // ch_wakhan_files: [meta, [file_or_dir, ...]]
     }
 
     //
     // MODULE: LRSOMATICREPORT (label: process_medium)
     // Final step: render a per-sample HTML report from the key analytical outputs
-    // (VEP-annotated somatic SNVs, Severus somatic SVs, ASCAT copy number, QC).
+    // (VEP-annotated somatic SNVs, Severus somatic SVs with their VEP annotation,
+    // ASCAT and Wakhan copy number, QC).
     // Every input is optional -- the report tool shows a "not available" notice for
     // any section whose file is missing, so joins below use `remainder: true` and a
     // plain String (tumor sample id) as the join key throughout, to avoid relying on
     // exact Groovy-map equality across differently-stripped meta values.
     //
-    // Known simplification: `ch_somatic_vcf` is the FINAL somatic small-variant VCF
-    // (single caller, or consensus if multiple somatic callers were combined). It is
-    // staged under variants/clairs/ (matched) or variants/clairsto/ (tumor-only) purely
-    // to drive the report tool's run-mode detection and its per-caller VAF column; if a
-    // consensus of multiple callers was used, that VAF column will not reflect a single
-    // real caller. The VEP-based variant table (the primary source) is unaffected.
+    // The VAF/depth/phasing columns come from the *phased* somatic VCF -- the same file
+    // SOMATIC_VEP annotated -- so the two halves of the small-variant table are guaranteed
+    // to describe the same variant set. Run mode (matched vs tumour-only) is derived by the
+    // report tool from whether normal-side QC is present, not declared here.
     //
 
     if (!params.skip_report) {
 
         // Canonical per-report-row identity: keyed on the tumor sample's own id (also
-        // used by severus_input/ascat_ch/ch_somatic_vcf), carrying the definitive meta
+        // used by severus_input/ascat_ch/wakhan_input), carrying the definitive meta
         // to attach to the final module call.
         severus_input
             .map { meta, _tumor_bam, _tumor_bai, _normal_bam, _normal_bai, _phased_vcf, _phased_tbi ->
@@ -1019,17 +1033,25 @@ workflow LRSOMATIC {
             .map { meta, vcf -> [meta.id, vcf] }
             .set { report_vep_ch }
 
+        ch_sv_vep_vcf
+            .map { meta, vcf -> [meta.id, vcf] }
+            .set { report_sv_vep_ch }
+
         SEVERUS.out.somatic_vcf
             .map { meta, vcf -> [meta.id, vcf] }
             .set { report_severus_ch }
 
-        ch_somatic_vcf
+        PHASING_HAPLOTYPING.out.phased_somatic_vcf
             .map { meta, vcf, _tbi -> [meta.id, vcf] }
             .set { report_somatic_ch }
 
         ch_ascat_files
             .map { meta, files -> [meta.id, files] }
             .set { report_ascat_ch }
+
+        ch_wakhan_files
+            .map { meta, files -> [meta.id, files] }
+            .set { report_wakhan_ch }
 
         // Tumor-side QC: keyed by the sample's own id, which for tumor rows is already the report id
         ch_mosdepth_summary
@@ -1051,25 +1073,29 @@ workflow LRSOMATIC {
 
         report_id_meta
             .join(report_vep_ch,        remainder: true)
+            .join(report_sv_vep_ch,     remainder: true)
             .join(report_severus_ch,    remainder: true)
             .join(report_somatic_ch,    remainder: true)
             .join(report_ascat_ch,      remainder: true)
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
-            .filter { _id, meta, _vep, _severus, _somatic, _ascat, _qc_t, _qc_n -> meta != null }
-            .map { _id, meta, vep, severus, somatic, ascat, qc_t, qc_n ->
+            .join(report_wakhan_ch,     remainder: true)
+            .filter { _id, meta, _vep, _sv_vep, _severus, _somatic, _ascat, _qc_t, _qc_n, _wakhan -> meta != null }
+            .map { _id, meta, vep, sv_vep_vcf, severus, somatic, ascat, qc_t, qc_n, wakhan ->
                 return [
                     meta,
-                    vep     ?: [],
-                    severus ?: [],
-                    somatic ?: [],
-                    ascat   ?: [],
-                    qc_t    ?: [],
-                    qc_n    ?: []
+                    vep        ?: [],
+                    sv_vep_vcf ?: [],
+                    severus    ?: [],
+                    somatic    ?: [],
+                    ascat      ?: [],
+                    qc_t       ?: [],
+                    qc_n       ?: [],
+                    wakhan     ?: []
                 ]
             }
             .set { report_input_ch }
-        // report_input_ch: [meta, vep_somatic, severus_vcf, somatic_vcf, ascat_files, qc_tumor_files, qc_normal_files]
+        // report_input_ch: [meta, vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, qc_tumor_files, qc_normal_files, wakhan_files]
 
         LRSOMATICREPORT (
             report_input_ch,

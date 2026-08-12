@@ -528,13 +528,22 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── {sample}_report.html
 ```
 
-| File                   | Description                                                                                                                                                                                                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report)): circos plot, small/structural variant tables, ASCAT copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+| File                   | Description                                                                                                                                                                                                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report)): circos plot, small/structural variant tables, copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
 
 </details>
 
-This is the final step of the pipeline, run after SNV/SV calling, ASCAT, and QC. Disable it with `--skip_report`.
+This is the final step of the pipeline, run after SNV/SV calling, ASCAT, WAKHAN and QC. Disable it with `--skip_report`.
+
+Sections:
+
+- **Small variants** — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set taken from the phased somatic VCF that VEP annotated. Unfiltered by default; see `--report_gene_panel` in [usage](usage.md#report-options) for panel filtering.
+- **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`). Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
+- **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
+
+The report is one self-contained file — plots and tables are embedded, so it can be copied or emailed on its own.
 
 ### `multiqc`
 

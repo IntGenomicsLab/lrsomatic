@@ -18,11 +18,13 @@ nextflow_process {
                 input[0] = [
                     [ id:'test', paired_data: null, sex: 'male' ],
                     [], // vep_somatic
+                    [], // sv_vep
                     [], // severus_vcf
                     [], // somatic_vcf
                     [], // ascat_files
                     [], // qc_tumor_files
-                    []  // qc_normal_files
+                    [], // qc_normal_files
+                    []  // wakhan_files
                 ]
                 input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
                 """
@@ -38,19 +40,25 @@ nextflow_process {
 
     }
 
-    test("no optional inputs - real render") {
+    // Renders for real (no -stub): catches a broken container, a missing or incomplete
+    // vendored tool tree, and any CLI drift between the module and render_report.R --
+    // none of which a stub run can see. The VEP somatic VCF is supplied so the
+    // small-variant table is actually built rather than short-circuited as "not available".
+    test("vep somatic vcf - real render") {
 
         when {
             process {
                 """
                 input[0] = [
                     [ id:'test', paired_data: null, sex: 'male' ],
-                    [], // vep_somatic
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/test_SOMATIC_VEP.vcf.gz", checkIfExists: true),
+                    [], // sv_vep
                     [], // severus_vcf
                     [], // somatic_vcf
                     [], // ascat_files
                     [], // qc_tumor_files
-                    []  // qc_normal_files
+                    [], // qc_normal_files
+                    []  // wakhan_files
                 ]
                 input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
                 """
@@ -59,7 +67,14 @@ nextflow_process {
 
         then {
             assert process.success
-            assert process.out.report.get(0).get(1).endsWith("_report.html")
+            assertAll(
+                { assert process.out.report.get(0).get(1).endsWith("test_report.html") },
+                // The rendered HTML is not snapshotted (Quarto embeds timestamps and
+                // per-render element ids); assert on content that must be there instead.
+                { assert path(process.out.report.get(0).get(1)).readLines().size() > 0 },
+                { assert path(process.out.report.get(0).get(1)).text.contains("TP53") },
+                { assert snapshot(process.out.versions_lrsomaticreport).match("versions") }
+            )
         }
 
     }

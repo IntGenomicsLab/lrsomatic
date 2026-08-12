@@ -6,6 +6,7 @@ channels:
 dependencies:
   - "conda-forge::r-base=4.4.*"
   - "conda-forge::quarto=1.5.*"
+  - "conda-forge::r-base64enc"
   - "conda-forge::r-data.table"
   - "conda-forge::r-dplyr"
   - "conda-forge::r-dt"

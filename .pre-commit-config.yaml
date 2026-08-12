@@ -15,6 +15,7 @@ repos:
               .*ro-crate-metadata.json$|
               modules/(?!local/).*|
               subworkflows/(?!local/).*|
+              assets/lrsomatic_report/.*|
               .*\.snap$
           )$
       - id: end-of-file-fixer
@@ -23,6 +24,7 @@ repos:
               .*ro-crate-metadata.json$|
               modules/(?!local/).*|
               subworkflows/(?!local/).*|
+              assets/lrsomatic_report/.*|
               .*\.snap$
           )$
   - repo: https://github.com/seqeralabs/nf-lint-pre-commit

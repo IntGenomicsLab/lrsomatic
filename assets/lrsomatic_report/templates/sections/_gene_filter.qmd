@@ -1,0 +1,36 @@
+## Gene panel filter
+
+_Applies to both the small-variant and structural-variant tables below. Tables are
+unfiltered unless a panel is selected here._
+
+```{r gene-filter-ui, results='asis'}
+# "__all__" (no filter) is listed first and is the default selection unless the
+# render was given a --gene-panel. Every builtin panel stays selectable either way.
+all_p = if (!is.null(params$all_panels) && length(params$all_panels) > 0)
+          params$all_panels else list()
+sel = function(value) if (identical(value, params$default_panel)) " selected" else ""
+
+panel_opts = paste0(
+  '<option value="__all__"', sel("__all__"), '>All genes (no filter)</option>\n')
+for (nm in names(all_p)) {
+  label = paste0(toupper(substr(nm, 1, 1)), substr(nm, 2, nchar(nm)))
+  panel_opts = paste0(panel_opts,
+    '<option value="', nm, '"', sel(nm), '>', label, '</option>\n')
+}
+panel_opts = paste0(panel_opts,
+  '<option value="__custom__">Custom&hellip;</option>\n')
+
+cat(paste0('
+<div class="panel-controls">
+  <label class="panel-controls__label" for="panel-select">Gene panel:</label>
+  <select id="panel-select" class="panel-controls__select">',
+    panel_opts,
+  '</select>
+  <span id="panel-variant-count" class="panel-controls__count"></span>
+</div>
+<div id="custom-gene-panel" class="panel-controls__custom-area" style="display:none;">
+  <label>Custom genes (one per line, or comma/space separated, case-insensitive):</label>
+  <textarea id="custom-gene-input" rows="4"></textarea>
+</div>
+'))
+```

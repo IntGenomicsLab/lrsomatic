@@ -1,0 +1,47 @@
+## Structural variants in gene panel
+
+```{r sv-info}
+if (is.null(sv_table) || nrow(sv_table) == 0) {
+  section_notice(
+    if (!isTRUE(SECTION_DATA$sv$annotation_found)) "SV annotation file (VEP or gene TSV) not found."
+    else "No somatic structural variants detected."
+  )
+}
+```
+
+```{r sv-table}
+if (!is.null(sv_table) && nrow(sv_table) > 0) {
+  # Column casing differs by annotation source: "svtype" (VEP path) vs "SVTYPE" (TSV path)
+  svtype_col = intersect(c("svtype", "SVTYPE"), names(sv_table))
+
+  dtbl = DT::datatable(
+    sv_table,
+    rownames   = FALSE,
+    filter     = "top",
+    elementId  = "sv-table",
+    extensions = c("Buttons", "Scroller"),
+    options    = list(
+      dom       = "Bfrtip",
+      buttons   = c("copy", "csv"),
+      scrollX   = TRUE,
+      scrollY   = "350px",
+      scroller  = TRUE,
+      deferRender = TRUE,
+      pageLength = 25,
+      initComplete = JS("function() { window.svTableElem = this.api().table().node(); }")
+    )
+  )
+  if (length(svtype_col) > 0) {
+    dtbl = dtbl |>
+      DT::formatStyle(
+        columns = svtype_col[1],
+        target  = "cell",
+        backgroundColor = DT::styleEqual(
+          c("DEL",     "DUP",     "INV",     "INS",     "BND"),
+          c("#dbeafe", "#dcfce7", "#fef9c3", "#fee2e2", "#f3e8ff")
+        )
+      )
+  }
+  dtbl
+}
+```

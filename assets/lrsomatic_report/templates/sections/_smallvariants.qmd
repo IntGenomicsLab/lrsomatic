@@ -1,0 +1,39 @@
+## Small variants
+
+```{r small-variant-table}
+if (!is.null(variant_table) && nrow(variant_table) > 0) {
+  # Format the VAF as a percentage
+  dt_display = copy(variant_table)
+  if ("vaf" %in% names(dt_display)) {
+    dt_display[, vaf := round(vaf * 100, 1)]
+    setnames(dt_display, "vaf", "VAF%")
+  }
+
+  DT::datatable(
+    dt_display,
+    rownames    = FALSE,
+    filter      = "top",
+    elementId   = "snv-table",
+    extensions  = c("Buttons", "Scroller"),
+    options     = list(
+      dom        = "Bfrtip",
+      buttons    = c("copy", "csv"),
+      scrollX    = TRUE,
+      scrollY    = "400px",
+      scroller   = TRUE,
+      deferRender = TRUE,
+      pageLength = 25,
+      columnDefs = list(list(className = "dt-left", targets = "_all")),
+      initComplete = JS("function() { window.snvTableElem = this.api().table().node(); }")
+    )
+  ) |>
+    DT::formatStyle(
+      columns     = "impact",
+      target      = "cell",
+      backgroundColor = DT::styleEqual(
+        c("HIGH",     "MODERATE", "LOW",      "MODIFIER"),
+        c("#f7e3df",  "#f6edd6",  "#e4efe3",  "#f3f1ea")
+      )
+    )
+}
+```

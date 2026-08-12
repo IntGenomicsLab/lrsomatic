@@ -3,13 +3,17 @@ process LRSOMATICREPORT {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    // Built via the Wave containers API from this module's environment.yml (frozen
-    // build). Two separate Wave builds were needed: a singularity.enabled=true
-    // session only produces a Singularity-native SIF artifact (blob URL below),
-    // while a docker.enabled=true session produces a genuine OCI image (plain tag).
+    // Dependencies only (R, Quarto and the tool's R packages), built via the Wave
+    // containers API from this module's environment.yml (frozen build). The tool
+    // itself is vendored at assets/lrsomatic_report -- see VENDORED.md there.
+    // Two separate Wave builds are needed: `wave --singularity` produces a
+    // Singularity-native SIF artifact (the oras:// reference), while the default
+    // build produces a genuine OCI image (the plain tag). Rebuild both whenever
+    // environment.yml changes:
+    //   wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await [--singularity]
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/e0/e0d4fabb2f79dcc0d3446f1bda84507eb52ac21ebea75fd29ee5b1b26c61ee34/data'
-        : 'community.wave.seqera.io/library/r-base_quarto_r-data.table_r-dplyr_pruned:9d12b9297c3c4d38'}"
+        ? 'oras://community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:dc62d809aa6fd497'
+        : 'community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:c1049dbaf31bf178'}"
 
     input:
     // All per-sample report inputs are optional (path may be `[]` if the corresponding
@@ -19,13 +23,14 @@ process LRSOMATICREPORT {
     // mosdepth/samtools default to a `${meta.id}`-only prefix (see conf/modules.config),
     // so for a matched T/N pair (same meta.id) the tumor and normal QC files are
     // identically named -- staging both lists flat would collide.
-    tuple val(meta), path(vep_somatic), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*')
-    path(report_src) // staged lrsomatic_report repo (bin/, R/, templates/, assets/)
+    tuple val(meta), path(vep_somatic), path(sv_vep), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*'), path(wakhan_files, stageAs: 'wakhan/*')
+    path(report_src) // lrsomatic_report source tree (bin/, R/, templates/, assets/)
 
     output:
     tuple val(meta), path("*_report.html"), emit: report
-    // No CLI version flag is provided by the tool; footer literal is "LRSomatic report v1.0" (templates/per_sample.qmd)
-    tuple val("${task.process}"), val('lrsomatic_report'), val("1.0"), topic: versions, emit: versions_lrsomaticreport
+    // No CLI version flag is provided by the tool; keep in sync with the vendored
+    // release recorded in assets/lrsomatic_report/VENDORED.md
+    tuple val("${task.process}"), val('lrsomatic_report'), val("1.1.0"), topic: versions, emit: versions_lrsomaticreport
 
     when:
     task.ext.when == null || task.ext.when
@@ -34,63 +39,33 @@ process LRSOMATICREPORT {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
-    // matched (T/N) samples publish under variants/clairs/; tumor-only samples under variants/clairsto/
-    // -- this only controls the report tool's run-mode detection/labelling, see locate_outputs.R
-    def somatic_dir = meta.paired_data ? 'variants/clairs' : 'variants/clairsto'
 
-    def link_vep = vep_somatic ? """
-    mkdir -p sample_dir/vep/somatic
-    ln -s "\$PWD/${vep_somatic}" "sample_dir/vep/somatic/${prefix}_SOMATIC_VEP.vcf.gz"
+    // Discovery (R/locate_outputs.R, R/sections/sv.R) is recursive under sample_dir and
+    // matches on the *base name*, so anything identified by a distinctive filename suffix
+    // can be linked flat: the VEP somatic VCF (*_SOMATIC_VEP.vcf.gz), the VEP SV VCF
+    // (*_SV_VEP.vcf.gz), the Severus SV VCF (severus_somatic.vcf.gz) and every ASCAT file
+    // (*.segments_raw.txt, *.purityploidy.txt, the diagnostic PNGs).
+    def flat_inputs = [vep_somatic, sv_vep, severus_vcf, ascat_files].flatten().findAll { f -> f }
+    def link_flat = flat_inputs ? """
+    for f in ${flat_inputs.join(' ')}; do ln -s "\$PWD/\$f" "sample_dir/\$f"; done
     """ : ''
 
-    def link_severus = severus_vcf ? """
-    mkdir -p sample_dir/variants/severus/somatic_SVs
-    ln -s "\$PWD/${severus_vcf}" "sample_dir/variants/severus/somatic_SVs/severus_somatic.vcf.gz"
-    """ : ''
-
+    // The VAF/depth/phasing source is the exception: locate_outputs() looks for it at the
+    // literal path variants/phased/somatic_smallvariants.vcf.gz before falling back to a
+    // caller-specific directory, so this one file needs its canonical name and location.
     def link_somatic = somatic_vcf ? """
-    mkdir -p sample_dir/${somatic_dir}
-    ln -s "\$PWD/${somatic_vcf}" "sample_dir/${somatic_dir}/somatic.vcf.gz"
-    """ : ''
-
-    def ascat_file_list = ascat_files ? ascat_files.join(' ') : ''
-    def link_ascat = ascat_files ? """
-    mkdir -p sample_dir/ascat
-    for f in ${ascat_file_list}; do ln -s "\$PWD/\$f" "sample_dir/ascat/\$f"; done
-    """ : ''
-
-    // $f includes the 'qc_tumor/' staging subdirectory (see stageAs above); the
-    // destination link name uses just the basename.
-    def qc_tumor_file_list = qc_tumor_files ? qc_tumor_files.join(' ') : ''
-    def link_qc_tumor = qc_tumor_files ? """
-    mkdir -p sample_dir/qc/tumor/mosdepth sample_dir/qc/tumor/cramino_aln sample_dir/qc/tumor/samtools
-    for f in ${qc_tumor_file_list}; do
-        fname=\$(basename "\$f")
-        case "\$fname" in
-            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/tumor/mosdepth/\$fname" ;;
-            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/tumor/cramino_aln/\$fname" ;;
-            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/tumor/samtools/\$fname" ;;
-        esac
-    done
-    """ : ''
-
-    def qc_normal_file_list = qc_normal_files ? qc_normal_files.join(' ') : ''
-    def link_qc_normal = qc_normal_files ? """
-    mkdir -p sample_dir/qc/normal/mosdepth sample_dir/qc/normal/cramino_aln sample_dir/qc/normal/samtools
-    for f in ${qc_normal_file_list}; do
-        fname=\$(basename "\$f")
-        case "\$fname" in
-            *.mosdepth.*.txt)    ln -s "\$PWD/\$f" "sample_dir/qc/normal/mosdepth/\$fname" ;;
-            *_cramino.txt)       ln -s "\$PWD/\$f" "sample_dir/qc/normal/cramino_aln/\$fname" ;;
-            *.flagstat|*.stats)  ln -s "\$PWD/\$f" "sample_dir/qc/normal/samtools/\$fname" ;;
-        esac
-    done
+    mkdir -p sample_dir/variants/phased
+    ln -s "\$PWD/${somatic_vcf}" sample_dir/variants/phased/somatic_smallvariants.vcf.gz
     """ : ''
 
     """
-    # Quarto/Deno write a cache dir under \$HOME; point it at the task work dir
-    # (always writable) rather than relying on the container's \$HOME being bound.
+    # Quarto/Deno write a cache dir under \$HOME and a session dir under \$TMPDIR;
+    # point both at the task work dir, which is always writable and always bound into
+    # the container. Relying on the container's own \$HOME and /tmp fails on clusters
+    # that mount them read-only ("Read-only file system (os error 30): tmpdir").
     export HOME=\$PWD
+    export TMPDIR=\$PWD/tmp TMP=\$PWD/tmp TEMP=\$PWD/tmp
+    mkdir -p "\$TMPDIR"
 
     # The Wave/conda-built container doesn't auto-source conda's activation hooks
     # (e.g. quarto needs QUARTO_SHARE_PATH); source them if present. Some hooks
@@ -101,20 +76,31 @@ process LRSOMATICREPORT {
     done
 
     mkdir -p sample_dir
-    ${link_vep}
-    ${link_severus}
+    ${link_flat}
     ${link_somatic}
-    ${link_ascat}
-    ${link_qc_tumor}
-    ${link_qc_normal}
 
-    # Quarto renders in-place next to the .qmd it's given (render_report.R's own
-    # post-render step relies on this). report_src is a single fixed path shared
-    # by every sample's task, so dereferencing it into a private, task-local copy
-    # avoids concurrent per-sample renders colliding on the same physical directory.
-    cp -rL "${report_src}" report_src_local
+    # QC is split tumor/normal by path: locate_outputs() takes the first suffix match
+    # outside any /normal/ component as tumor, and the first one inside it as normal.
+    # Link file by file rather than symlinking the staging directory itself -- R's
+    # list.files(recursive = TRUE) does not descend into symlinked directories.
+    if [ -d qc_tumor ]; then
+        mkdir -p sample_dir/qc/tumor
+        for f in qc_tumor/*; do ln -s "\$PWD/\$f" "sample_dir/qc/tumor/\$(basename "\$f")"; done
+    fi
+    if [ -d qc_normal ]; then
+        mkdir -p sample_dir/qc/normal
+        for f in qc_normal/*; do ln -s "\$PWD/\$f" "sample_dir/qc/normal/\$(basename "\$f")"; done
+    fi
 
-    Rscript report_src_local/bin/render_report.R \\
+    # Wakhan is addressed by fixed path, not by suffix: sample_dir/wakhan must hold
+    # solutions_ranks.tsv, *heatmap_ploidy_purity.html and the per-solution
+    # solution_<rank>/ directories (R/parse_ascat.R:locate_wakhan_cn_plots).
+    if [ -d wakhan ]; then
+        mkdir -p sample_dir/wakhan
+        for f in wakhan/*; do ln -s "\$PWD/\$f" "sample_dir/wakhan/\$(basename "\$f")"; done
+    fi
+
+    Rscript ${report_src}/bin/render_report.R \\
         --sample-dir sample_dir \\
         --sample-id ${prefix} \\
         --sex ${sex} \\

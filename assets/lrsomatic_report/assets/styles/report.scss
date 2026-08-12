@@ -1,0 +1,951 @@
+// ============================================================
+// LRSomatic Report — custom SCSS theme
+// Aesthetic: "laboratory precision meets scientific-journal editorial"
+//   · Spectral (serif) for display / section headings
+//   · IBM Plex Sans for body
+//   · IBM Plex Mono for all numeric + genomic-coordinate data
+// Fonts are base64-embedded (assets/styles/_fonts.scss) so the
+// report stays fully self-contained and offline-legible.
+//
+// Section structure follows Quarto convention:
+//   /*-- scss:defaults --*/  Bootstrap variable overrides (resolved before theme)
+//   /*-- scss:rules --*/     Custom CSS rules (resolved after theme)
+// ============================================================
+
+/*-- scss:defaults --*/
+
+// ── Core palette — warm paper + ink + a single confident accent ──
+$report-primary:       #0d5c75; // deep cyan-teal — clinical spine accent
+$report-primary-light: #128aa6; // brighter teal
+$report-primary-muted: #e8f1f4; // pale teal wash — quiet fills
+
+$report-success:       #3f7d4e; // muted clinical green
+$report-warning:       #a9781a; // ochre / amber
+$report-danger:        #b3402f; // brick red
+
+$report-text:          #1b1e22; // warm near-black ink
+$report-text-muted:    #6a6f76;
+$report-bg:            #f6f4ee; // warm archival paper
+$report-surface:       #ffffff;
+$report-border:        #e4e0d6; // warm hairline
+
+// ── Bootstrap SCSS variable overrides ─────────────────────────
+$primary:              $report-primary;
+$success:              $report-success;
+$warning:              $report-warning;
+$danger:               $report-danger;
+$body-bg:              $report-bg;
+$body-color:           $report-text;
+$border-color:         $report-border;
+$link-color:           $report-primary;
+
+// Typography — embedded webfonts, graceful system fallbacks
+$font-family-sans-serif: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+$font-family-monospace:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+$headings-font-family:   "Spectral", Georgia, "Times New Roman", serif;
+
+$font-size-base:       0.92rem;
+$headings-color:       $report-text;
+$headings-font-weight: 600;
+$line-height-base:     1.6;
+
+$border-radius:        8px;
+$border-radius-sm:     5px;
+$border-radius-lg:     12px;
+
+/*-- scss:rules --*/
+
+@import "fonts";
+
+// ============================================================
+// CSS custom properties — light mode
+// ============================================================
+:root {
+  --color-primary:        #{$report-primary};
+  --color-primary-light:  #{$report-primary-light};
+  --color-primary-muted:  #{$report-primary-muted};
+  --color-success:        #{$report-success};
+  --color-warning:        #{$report-warning};
+  --color-danger:         #{$report-danger};
+  --color-text:           #{$report-text};
+  --color-text-muted:     #{$report-text-muted};
+  --color-bg:             #{$report-bg};
+  --color-surface:        #{$report-surface};
+  --color-surface-alt:    #faf8f2;
+  --color-border:         #{$report-border};
+
+  --font-sans:    "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+
+  --card-radius:       12px;
+  --card-shadow:       0 1px 2px rgba(27, 30, 34, 0.05), 0 8px 24px -16px rgba(27, 30, 34, 0.18);
+  --card-shadow-hover: 0 2px 6px rgba(27, 30, 34, 0.08), 0 18px 40px -20px rgba(27, 30, 34, 0.28);
+
+  // Impact colour tokens (values match formatStyle in _smallvariants.qmd)
+  --impact-high:     #f7e3df;
+  --impact-moderate: #f6edd6;
+  --impact-low:      #e4efe3;
+  --impact-modifier: #f3f1ea;
+
+  // SV-type colour tokens (values match formatStyle in _severus.qmd)
+  --sv-del:  #dbeafe;
+  --sv-dup:  #dcfce7;
+  --sv-inv:  #fef9c3;
+  --sv-ins:  #fee2e2;
+  --sv-bnd:  #f3e8ff;
+
+  // Circos ring palette — keep in sync with colour constants in R/circos.R
+  // SNV (SBS-6, softened toward report ink/brick/paper)
+  --circos-snv-ca:  #2EBAED;
+  --circos-snv-cg:  #1b1e22;
+  --circos-snv-ct:  #b3402f;
+  --circos-snv-ta:  #c7c2b8;
+  --circos-snv-tc:  #ADCC54;
+  --circos-snv-tg:  #F0D0CE;
+  // SV (hue-matched to --sv-* table tokens)
+  --circos-sv-ins:  #cf5b46;
+  --circos-sv-del:  #2f6db3;
+  --circos-sv-inv:  #c08a1e;
+  --circos-sv-dup:  #3f7d4e;
+  // CNV (tied to report spine)
+  --circos-cnv-major: #b3402f;
+  --circos-cnv-minor: #0d5c75;
+  --circos-cnv-total: #1b1e22;
+  // BND/translocation
+  --circos-bnd:     #8a5fa3;
+
+  // Metric-card accent colours
+  --metric-purity:     #{$report-danger};
+  --metric-ploidy:     #{$report-warning};
+  --metric-coverage:   #{$report-primary};
+  --metric-n50:        #{$report-success};
+  --metric-snvs:       #6d4b8a;
+  --metric-svs:        #2c4a6e;
+  --metric-panel-vars: #{$report-primary-light};
+  --metric-panel-svs:  #17877a;
+  --metric-tmb:        #{$report-success};
+  --metric-error:      #{$report-text-muted};
+  --metric-phased:     #4a6d8a;
+}
+
+// ============================================================
+// Dark mode — warm-neutral ink
+// ============================================================
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary:        #3fb0cc;
+    --color-primary-light:  #5cc7e0;
+    --color-primary-muted:  #16323d;
+    --color-success:        #5fb874;
+    --color-warning:        #d6a23c;
+    --color-danger:         #e0715f;
+    --color-text:           #e8e6df;
+    --color-text-muted:     #9aa0a6;
+    --color-bg:             #14161a;
+    --color-surface:        #1d2025;
+    --color-surface-alt:    #21252b;
+    --color-border:         #31363d;
+    --card-shadow:          0 1px 2px rgba(0,0,0,0.4), 0 10px 30px -18px rgba(0,0,0,0.7);
+    --card-shadow-hover:    0 2px 6px rgba(0,0,0,0.5), 0 20px 44px -20px rgba(0,0,0,0.8);
+    // Circos legend swatches that would be invisible on dark bg — lighten to match --color-text
+    --circos-snv-cg:        #e8e6df;
+    --circos-cnv-total:     #e8e6df;
+  }
+
+  body { background: var(--color-bg) !important; color: var(--color-text) !important; }
+
+  // Bootstrap alert boxes — default light text is unreadable on dark bg
+  .alert {
+    background: var(--color-surface) !important;
+    color: var(--color-text) !important;
+    border-color: var(--color-border) !important;
+  }
+  .alert-info    { border-left: 3px solid var(--color-primary) !important; }
+  .alert-warning { border-left: 3px solid var(--color-warning) !important; }
+
+  // DT dark-mode reset (overrides DT inline backgrounds)
+  table.dataTable tbody tr {
+    background: var(--color-surface) !important;
+    td {
+      background-color: var(--color-surface) !important;
+      color: var(--color-text) !important;
+      border-color: var(--color-border) !important;
+    }
+    &:hover td { background-color: var(--color-primary-muted) !important; }
+  }
+
+  .callout { background: var(--color-surface) !important; border-color: var(--color-border) !important; }
+  .callout-header { background: transparent !important; }
+  .quarto-title-block, .quarto-title-meta { color: var(--color-text) !important; }
+  #TOC, .sidebar-navigation { background: transparent !important; }
+}
+
+// ============================================================
+// Page atmosphere — warm paper with a whisper of grain
+// ============================================================
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv05";
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(1200px 520px at 78% -8%, rgba(18, 138, 166, 0.10), transparent 60%),
+    radial-gradient(900px 480px at -6% 4%, rgba(179, 64, 47, 0.05), transparent 55%),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC44NScgbnVtT2N0YXZlcz0nMicgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjxmZUNvbG9yTWF0cml4IHR5cGU9J3NhdHVyYXRlJyB2YWx1ZXM9JzAnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDI1Jy8+PC9zdmc+");
+  background-attachment: fixed, fixed, fixed;
+  counter-reset: section-counter;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-image:
+      radial-gradient(1200px 520px at 78% -8%, rgba(63, 176, 204, 0.10), transparent 60%),
+      radial-gradient(900px 480px at -6% 4%, rgba(224, 113, 95, 0.06), transparent 55%),
+      url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC44NScgbnVtT2N0YXZlcz0nMicgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjxmZUNvbG9yTWF0cml4IHR5cGU9J3NhdHVyYXRlJyB2YWx1ZXM9JzAnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDQnLz48L3N2Zz4=");
+  }
+}
+
+p { line-height: 1.65; }
+
+// ============================================================
+// Masthead — Quarto's auto title block becomes a slim eyebrow
+// ============================================================
+.quarto-title-block .quarto-title .title,
+header#title-block-header .title {
+  font-family: var(--font-sans);
+  font-size: 0.74rem !important;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 0.15rem;
+}
+
+.quarto-title-block .quarto-title-meta,
+header#title-block-header .quarto-title-meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.quarto-title-meta-heading { display: none; }
+
+// ============================================================
+// Hero — sample identity band
+// ============================================================
+.report-hero {
+  position: relative;
+  margin: 0.4rem 0 2.2rem;
+  padding: 1.6rem 0 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 88px; height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+    border-radius: 3px;
+  }
+}
+
+.report-hero__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.report-hero__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 4.5vw, 3.1rem);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  margin: 0 0 0.85rem;
+  word-break: break-word;
+}
+
+.report-hero__badges { display: flex; flex-wrap: wrap; gap: 7px; }
+
+// ============================================================
+// Section headings — editorial numbered rules
+// ============================================================
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.6rem;
+  letter-spacing: -0.005em;
+  color: var(--color-text);
+  margin-top: 2.8rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+
+  &::before {
+    counter-increment: section-counter;
+    content: counter(section-counter, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.04em;
+    transform: translateY(-0.15em);
+    flex: none;
+  }
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+}
+
+code, pre { font-family: var(--font-mono); }
+code:not(pre code) {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+  padding: 0.08em 0.38em;
+  border-radius: 4px;
+  font-size: 0.86em;
+}
+
+// Section intro blockquotes (e.g. circos legend) → quiet note panel
+blockquote {
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+  margin: 0 0 1.4rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  box-shadow: var(--card-shadow);
+
+  p { margin: 0; }
+  strong { color: var(--color-text); }
+}
+
+// ============================================================
+// Badges (run mode / reference / sex)
+// ============================================================
+.report-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  &.is-matched {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 35%, transparent);
+  }
+  &.is-tumour-only {
+    color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-warning) 35%, transparent);
+  }
+  &.is-meta {
+    color: var(--color-text-muted);
+    background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+}
+
+// ============================================================
+// Metric cards grid
+// ============================================================
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 14px;
+  margin: 18px 0 30px;
+}
+
+.metric-card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  padding: 15px 16px 14px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+
+  // animated entrance
+  opacity: 0;
+  transform: translateY(8px);
+  animation: metric-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+
+  // accent keyline (left) — colour set per modifier below
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--_accent, var(--color-primary));
+    opacity: 0.85;
+    transition: width 0.18s ease;
+  }
+
+  &:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--_accent, var(--color-primary)) 45%, var(--color-border));
+    &::before { width: 5px; }
+  }
+
+  &.metric-purity     { --_accent: var(--metric-purity); }
+  &.metric-ploidy     { --_accent: var(--metric-ploidy); }
+  &.metric-coverage   { --_accent: var(--metric-coverage); }
+  &.metric-n50        { --_accent: var(--metric-n50); }
+  &.metric-snvs       { --_accent: var(--metric-snvs); }
+  &.metric-svs        { --_accent: var(--metric-svs); }
+  &.metric-panel-vars { --_accent: var(--metric-panel-vars); }
+  &.metric-panel-svs  { --_accent: var(--metric-panel-svs); }
+  &.metric-tmb        { --_accent: var(--metric-tmb); }
+  &.metric-error      { --_accent: var(--metric-error); }
+  &.metric-phased     { --_accent: var(--metric-phased); }
+
+  // staggered reveal
+  &:nth-child(1) { animation-delay: 0.02s; }
+  &:nth-child(2) { animation-delay: 0.06s; }
+  &:nth-child(3) { animation-delay: 0.10s; }
+  &:nth-child(4) { animation-delay: 0.14s; }
+  &:nth-child(5) { animation-delay: 0.18s; }
+  &:nth-child(6) { animation-delay: 0.22s; }
+  &:nth-child(7) { animation-delay: 0.26s; }
+  &:nth-child(8) { animation-delay: 0.30s; }
+  &:nth-child(9) { animation-delay: 0.34s; }
+  &:nth-child(10){ animation-delay: 0.38s; }
+  &:nth-child(11){ animation-delay: 0.42s; }
+}
+
+@keyframes metric-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.metric-card__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 7px;
+
+  &::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--_accent, var(--color-primary));
+    flex: none;
+  }
+
+  // Opt-out of uppercase for a single character (e.g. the trailing "s" in "SNVs")
+  .lc { text-transform: none; }
+}
+
+.metric-card__value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-feature-settings: "tnum" 1;
+  color: var(--color-text);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-card__subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--color-text-muted);
+  margin-top: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metric-card { animation: none; opacity: 1; transform: none; }
+}
+
+// ============================================================
+// Panel controls (gene-panel selector)
+// ============================================================
+.panel-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.panel-controls__label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.panel-controls__select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+}
+
+.panel-controls__count {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.panel-controls__custom-area {
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  margin-bottom: 14px;
+  box-shadow: var(--card-shadow);
+
+  label {
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 440px;
+    max-width: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+    }
+  }
+}
+
+// ============================================================
+// DT tables
+// ============================================================
+.datatables, div.dataTables_wrapper {
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+  padding: 4px 12px 10px;
+}
+
+table.dataTable {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  font-family: var(--font-sans);
+
+  thead th {
+    background: var(--color-surface-alt) !important;
+    color: var(--color-text-muted) !important;
+    border-bottom: 1.5px solid var(--color-border) !important;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 12px !important;
+    white-space: nowrap;
+  }
+
+  thead input, thead select {
+    border: 1px solid var(--color-border) !important;
+    border-radius: 5px !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    padding: 3px 7px !important;
+    background: var(--color-bg) !important;
+    color: var(--color-text) !important;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  tbody {
+    tr td {
+      font-size: 0.8rem;
+      padding: 7px 12px !important;
+      border-bottom: 1px solid var(--color-border) !important;
+      color: var(--color-text) !important;
+    }
+    tr td:first-child { font-weight: 500; }
+    tr.odd  td { background: var(--color-surface) !important; }
+    tr.even td { background: var(--color-surface-alt) !important; }
+    tr:hover td { background: var(--color-primary-muted) !important; }
+  }
+}
+
+// DT Buttons toolbar
+div.dt-buttons {
+  margin-bottom: 10px !important;
+
+  button.dt-button {
+    background: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 6px !important;
+    color: var(--color-text-muted) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 14px !important;
+    margin-right: 5px !important;
+    box-shadow: none !important;
+    transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+
+    &:hover {
+      background: var(--color-primary-muted) !important;
+      border-color: var(--color-primary) !important;
+      color: var(--color-primary) !important;
+    }
+  }
+}
+
+.dataTables_info,
+.dataTables_length,
+.dataTables_paginate {
+  font-family: var(--font-mono) !important;
+  font-size: 0.74rem !important;
+  color: var(--color-text-muted) !important;
+}
+
+.dataTables_paginate .paginate_button.current {
+  border-radius: 5px !important;
+  color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+.dataTables_filter input {
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.76rem !important;
+  padding: 4px 10px !important;
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+  }
+}
+
+// ============================================================
+// Tabset (ASCAT panel-tabset)
+// ============================================================
+.panel-tabset > .nav-tabs {
+  border-bottom: 1px solid var(--color-border);
+  gap: 2px;
+
+  .nav-link {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-text-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 8px 14px;
+    background: transparent;
+    transition: color 0.15s, border-color 0.15s;
+
+    &:hover { color: var(--color-primary); }
+    &.active {
+      color: var(--color-primary);
+      background: transparent;
+      border-bottom-color: var(--color-primary);
+    }
+  }
+}
+
+// ============================================================
+// TOC / sidebar
+// ============================================================
+#TOC {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  padding-right: 14px;
+
+  ul { list-style: none; padding-left: 0; }
+  li { margin: 1px 0; }
+
+  a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    display: block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+    transition: color 0.12s, background 0.12s, border-color 0.12s;
+
+    &:hover  { color: var(--color-primary); background: var(--color-primary-muted); }
+    &.active {
+      color: var(--color-primary);
+      font-weight: 600;
+      border-left-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    }
+  }
+}
+
+.sidebar nav[role="doc-toc"] > h2,
+#toc-title {
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border: none;
+  padding: 0 0 0.4rem 10px;
+  margin: 0;
+}
+
+// ============================================================
+// Circos — lightbox plate + editorial HTML legend
+// ============================================================
+.circos-container {
+  background: #fcfbf7;
+  border: 1px solid #d8d3c8;
+  border-radius: var(--card-radius);
+  padding: 26px;
+  display: inline-block;
+  box-shadow: var(--card-shadow), inset 0 0 0 1px rgba(255,255,255,0.6);
+  text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .circos-container {
+    // Lightbox stays light — only the frame adapts to signal intentionality
+    border-color: #4a4540;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 8px 32px -8px rgba(0,0,0,0.7);
+  }
+}
+
+.circos-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.6rem;
+}
+
+// Legend below the plate
+.circos-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.circos-legend__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.circos-legend__title {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 3px;
+}
+
+.circos-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+// SNV swatches — round dots
+.circos-swatch--dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--_swatch);
+}
+
+// SV / CNV swatches — short horizontal bar
+.circos-swatch--bar {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--_swatch);
+}
+
+// BND/translocation — curved arc glyph via border trick
+.circos-swatch--arc {
+  width: 14px;
+  height: 7px;
+  border-radius: 14px 14px 0 0;
+  border: 2px solid var(--_swatch);
+  border-bottom: none;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+@media print {
+  .circos-legend { border-top-color: #ccc; }
+  .circos-eyebrow { color: #666; }
+}
+
+// ============================================================
+// Callouts
+// ============================================================
+.callout {
+  border-radius: var(--card-radius) !important;
+  border: 1px solid var(--color-border) !important;
+  border-left-width: 3px !important;
+  font-size: 0.88rem !important;
+  box-shadow: var(--card-shadow);
+}
+
+.callout .callout-title,
+.callout-header {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+// horizontal rules between sections — quiet, the numbered h2 carries the break
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  opacity: 0.5;
+  margin: 2.4rem 0 0;
+}
+
+// Footer line
+main > p:last-child em,
+.quarto-document-content > p:last-child em {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+// ============================================================
+// Max-width guard for full-page-layout
+// ============================================================
+.page-full .quarto-title-block,
+.page-full > .column-body {
+  max-width: 1400px;
+}
+
+// ============================================================
+// Print stylesheet
+// ============================================================
+@media print {
+  #TOC, .sidebar-navigation, .quarto-sidebar,
+  .dt-buttons, div.dt-buttons, .panel-controls,
+  #custom-gene-panel, .dataTables_filter, .dataTables_length,
+  .dataTables_paginate, .dataTables_info { display: none !important; }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    background-image: none !important;
+  }
+
+  .dataTables_scrollBody {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .datatables, div.dataTables_wrapper { box-shadow: none !important; }
+
+  table.dataTable {
+    thead th { background: #f0f0ec !important; color: #000 !important; }
+    tbody tr td { color: #000 !important; }
+  }
+
+  .metric-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .metric-grid { grid-template-columns: repeat(5, 1fr) !important; }
+  .report-hero { border-color: #ccc; }
+
+  h2 { page-break-after: avoid; }
+  section { page-break-inside: avoid; }
+}

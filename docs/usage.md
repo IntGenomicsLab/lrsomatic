@@ -211,10 +211,29 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 
 #### Report Options
 
-| Parameter             | Description                                                                                                                                                                  |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--report_src`        | Path to the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) repository (bin/, R/, templates/, assets/). Default = `${projectDir}/assets/lrsomatic_report` |
-| `--report_gene_panel` | Gene panel for the report: a builtin panel name (e.g. `lymphoid`) or a path to a TSV file with a `gene` column. Default = `null`                                             |
+| Parameter             | Description                                                                                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--report_src`        | Override the report tool source tree (bin/, R/, templates/, assets/). Not needed for normal runs: a copy of [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) ships inside the pipeline. Point it at a local checkout to render with an unreleased version of the tool. Default = `${projectDir}/assets/lrsomatic_report` |
+| `--report_gene_panel` | Gene panel selected when the report opens. One of `none` (no filtering), a builtin panel name (e.g. `lymphoid`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered                                                                                                                                           |
+
+Gene panel filtering is a view, not a filter on the data: every builtin panel is embedded in
+the rendered report and the reader can switch between them (or back to the unfiltered table)
+in the browser. `--report_gene_panel` only decides which one is selected on load. A custom
+panel is a tab-separated file with a header row containing at least a `gene` column:
+
+```tsv
+gene	panel	note
+TP53	mypanel	Tumour suppressor
+KRAS	mypanel	Oncogene
+```
+
+```bash
+nextflow run IntGenomicsLab/lrsomatic \
+    -profile <docker/singularity> \
+    --input samplesheet.csv \
+    --outdir results \
+    --report_gene_panel /path/to/mypanel.tsv
+```
 
 #### WAKHAN Options
 

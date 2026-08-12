@@ -46,6 +46,9 @@
                 "LONGPHASE_PHASE_SOMATIC": {
                     "longphase": "2.0.1"
                 },
+                "LRSOMATICREPORT": {
+                    "lrsomatic_report": "1.1.0"
+                },
                 "METAEXTRACT": {
                     "samtools": 1.21
                 },
@@ -271,6 +274,8 @@
                 "sample1/qc/whatshap_stats/sample1_whatshap_stats.gtf",
                 "sample1/qc/whatshap_stats/sample1_whatshap_stats.log",
                 "sample1/qc/whatshap_stats/sample1_whatshap_stats.tsv",
+                "sample1/report",
+                "sample1/report/sample1_report.html",
                 "sample1/variants",
                 "sample1/variants/clair3",
                 "sample1/variants/clair3/merge_output.vcf.gz",
@@ -386,6 +391,8 @@
                 "sample2/qc/whatshap_stats/sample2_whatshap_stats.gtf",
                 "sample2/qc/whatshap_stats/sample2_whatshap_stats.log",
                 "sample2/qc/whatshap_stats/sample2_whatshap_stats.tsv",
+                "sample2/report",
+                "sample2/report/sample2_report.html",
                 "sample2/variants",
                 "sample2/variants/clair3",
                 "sample2/variants/clair3/merge_output.vcf.gz",
@@ -468,6 +475,8 @@
                 "sample3/qc/whatshap_stats/sample3_whatshap_stats.gtf",
                 "sample3/qc/whatshap_stats/sample3_whatshap_stats.log",
                 "sample3/qc/whatshap_stats/sample3_whatshap_stats.tsv",
+                "sample3/report",
+                "sample3/report/sample3_report.html",
                 "sample3/variants",
                 "sample3/variants/clairsto",
                 "sample3/variants/clairsto/germline.vcf.gz",
@@ -561,6 +570,8 @@
                 "sample4/qc/whatshap_stats/sample4_whatshap_stats.gtf",
                 "sample4/qc/whatshap_stats/sample4_whatshap_stats.log",
                 "sample4/qc/whatshap_stats/sample4_whatshap_stats.tsv",
+                "sample4/report",
+                "sample4/report/sample4_report.html",
                 "sample4/variants",
                 "sample4/variants/clairsto",
                 "sample4/variants/clairsto/germline.vcf.gz",
@@ -644,6 +655,8 @@
                 "sample5/qc/whatshap_stats/sample5_whatshap_stats.gtf",
                 "sample5/qc/whatshap_stats/sample5_whatshap_stats.log",
                 "sample5/qc/whatshap_stats/sample5_whatshap_stats.tsv",
+                "sample5/report",
+                "sample5/report/sample5_report.html",
                 "sample5/variants",
                 "sample5/variants/clairsto",
                 "sample5/variants/clairsto/germline.vcf.gz",
