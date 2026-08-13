@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### `Fixed`
+
+- [#181](https://github.com/IntGenomicsLab/lrsomatic/pull/181) - NanoPlot pre- and post-alignment statistics now reach MultiQC. `ch_nanoplot_pre_txt` and `ch_nanoplot_post_txt` were declared empty and mixed into the MultiQC inputs, but never assigned from `NANOPLOT_PRE.out.txt` / `NANOPLOT_POST.out.txt`, so the NanoStat section was silently missing from every report (@ljwharbers).
+- [#181](https://github.com/IntGenomicsLab/lrsomatic/pull/181) - `NANOPLOT_PRE` now includes the replicate in its output prefix, so samples with more than one replicate no longer collapse into a single MultiQC sample (@ljwharbers).
+
 ## v1.1.0 - [2026-04-28]
 
 ### `Added`
