@@ -7,7 +7,7 @@ include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_somatic_pipeline'
+include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,7 +15,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lr_s
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow LR_SOMATIC {
+workflow LRSOMATIC {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
@@ -53,7 +53,7 @@ workflow LR_SOMATIC {
         .mix(topic_versions_string)
         .collectFile(
             storeDir: "${outdir}/pipeline_info",
-            name:  'lr_somatic_software_'  + 'mqc_'  + 'versions.yml',
+            name:  'lrsomatic_software_'  + 'mqc_'  + 'versions.yml',
             sort: true,
             newLine: true
         )
@@ -73,7 +73,7 @@ workflow LR_SOMATIC {
     MULTIQC(
         ch_multiqc_files.flatten().collect().map { files ->
             [
-                [id: 'lr_somatic'],
+                [id: 'lrsomatic'],
                 files,
                 multiqc_config
                     ? file(multiqc_config, checkIfExists: true)

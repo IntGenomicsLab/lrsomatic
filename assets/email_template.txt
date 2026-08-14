@@ -1,10 +1,10 @@
 Run Name: $runName
 
 <% if (success){
-    out << "## IntGenomicsLab/lr_somatic execution completed successfully! ##"
+    out << "## IntGenomicsLab/lrsomatic execution completed successfully! ##"
 } else {
     out << """####################################################
-## IntGenomicsLab/lr_somatic execution completed unsuccessfully! ##
+## IntGenomicsLab/lrsomatic execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -27,5 +27,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-IntGenomicsLab/lr_somatic
-https://github.com/IntGenomicsLab/lr_somatic
+IntGenomicsLab/lrsomatic
+https://github.com/IntGenomicsLab/lrsomatic

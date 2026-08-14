@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the IntGenomicsLab/lr_somatic pipeline
+// Subworkflow with functionality specific to the IntGenomicsLab/lrsomatic pipeline
 //
 
 /*
@@ -71,7 +71,8 @@ workflow PIPELINE_INITIALISATION {
         show_hidden,
         before_text,
         after_text,
-        command
+        command,
+        false
     )
 
     //

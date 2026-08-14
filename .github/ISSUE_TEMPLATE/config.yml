@@ -2,6 +2,6 @@ contact_links:
   - name: Join nf-core
     url: https://nf-co.re/join
     about: Please join the nf-core community here
-  - name: "Slack #lr_somatic channel"
-    url: https://nfcore.slack.com/channels/lr_somatic
-    about: Discussion about the IntGenomicsLab/lr_somatic pipeline
+  - name: "Slack #lrsomatic channel"
+    url: https://nfcore.slack.com/channels/lrsomatic
+    about: Discussion about the IntGenomicsLab/lrsomatic pipeline
