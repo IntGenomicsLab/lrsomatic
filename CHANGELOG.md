@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.2.0dev
+
+### `Fixed`
+
+- [#182](https://github.com/IntGenomicsLab/lrsomatic/pull/182) - Added `--vcf` to the default `vep_args` so VEP writes VCF output rather than its default tab-delimited format (@AmberVerhasselt).
+
 ## v1.1.0 - [2026-04-28]
 
 ### `Added`

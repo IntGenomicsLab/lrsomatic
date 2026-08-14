@@ -164,7 +164,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
 | `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                         |
-| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf"`                |
+| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`          |
 | `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
 | `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
 | `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                        |
