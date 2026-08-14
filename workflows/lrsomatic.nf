@@ -1097,9 +1097,17 @@ workflow LRSOMATIC {
             .set { report_input_ch }
         // report_input_ch: [meta, vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, qc_tumor_files, qc_normal_files, wakhan_files]
 
+        // --report_gene_panel accepts a builtin panel name, the `none` sentinel, or a path
+        // to a TSV. Only a real file needs staging (so it is bound into the container);
+        // a builtin name reaches the tool through ext.args alone -- see conf/modules.config.
+        def report_gene_panel_file = params.report_gene_panel && file(params.report_gene_panel).exists()
+            ? file(params.report_gene_panel, checkIfExists: true)
+            : []
+
         LRSOMATICREPORT (
             report_input_ch,
-            file(params.report_src)
+            file(params.report_src, checkIfExists: true),
+            report_gene_panel_file
         )
     }
 

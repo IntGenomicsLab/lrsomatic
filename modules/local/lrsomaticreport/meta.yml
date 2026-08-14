@@ -52,6 +52,10 @@ input:
   - - report_src:
         type: directory
         description: lrsomatic_report source tree (bin/, R/, templates/, assets/), shared across all samples; defaults to the vendored copy at `assets/lrsomatic_report`
+  - - gene_panel:
+        type: file
+        description: Optional user-supplied gene panel TSV (a `gene` column) to select on load, staged so it is bound into the container; `[]` when `--report_gene_panel` names a builtin panel or is unset
+        pattern: "*.tsv"
 
 output:
   report:

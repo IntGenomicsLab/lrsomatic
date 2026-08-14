@@ -25,6 +25,12 @@ process LRSOMATICREPORT {
     // identically named -- staging both lists flat would collide.
     tuple val(meta), path(vep_somatic), path(sv_vep), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*'), path(wakhan_files, stageAs: 'wakhan/*')
     path(report_src) // lrsomatic_report source tree (bin/, R/, templates/, assets/)
+    // Optional user-supplied gene panel TSV, staged so it is bound into the container;
+    // `[]` when --report_gene_panel names a builtin panel (or is unset), which the tool
+    // resolves from report_src/assets/gene_lists instead. Either way the `--gene-panel`
+    // argument itself is built in conf/modules.config, which passes the *base* name --
+    // the staged name of this file when it is one.
+    path(gene_panel)
 
     output:
     tuple val(meta), path("*_report.html"), emit: report
@@ -70,8 +76,10 @@ process LRSOMATICREPORT {
     # The Wave/conda-built container doesn't auto-source conda's activation hooks
     # (e.g. quarto needs QUARTO_SHARE_PATH); source them if present. Some hooks
     # (e.g. gcc_linux-64) reference \$CONDA_PREFIX under `set -u`, so export it first.
-    export CONDA_PREFIX=/opt/conda
-    for f in /opt/conda/etc/conda/activate.d/*.sh; do
+    # Under `-profile conda` CONDA_PREFIX already points at the task's own env, so
+    # only fall back to the container's /opt/conda when it is unset.
+    export CONDA_PREFIX="\${CONDA_PREFIX:-/opt/conda}"
+    for f in "\$CONDA_PREFIX"/etc/conda/activate.d/*.sh; do
         [ -f "\$f" ] && source "\$f"
     done
 
