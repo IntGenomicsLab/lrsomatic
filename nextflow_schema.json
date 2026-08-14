@@ -197,7 +197,7 @@
                     "type": "string",
                     "description": "Additional command line arguments to pass to VEP.",
                     "fa_icon": "fas fa-terminal",
-                    "default": "--everything --filter_common --per_gene --total_length --offline --format vcf"
+                    "default": "--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"
                 },
                 "vep_cache_version": {
                     "type": "integer",

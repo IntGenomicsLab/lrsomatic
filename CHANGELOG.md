@@ -3,13 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## v1.2.0dev
 
 ### `Added`
 
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added `LRSOMATICREPORT` as the final pipeline step: a self-contained per-sample HTML report covering small variants, structural variants, copy number and QC. Skip it with `--skip_report`; choose the gene panel selected on load with `--report_gene_panel` (@ljwharbers).
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Vendored the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) v1.1.0 tool source at `assets/lrsomatic_report`, so `nextflow run IntGenomicsLab/lrsomatic` ships it without a submodule checkout (@ljwharbers).
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added a `solution_dirs` output to the WAKHAN module so its per-solution copy-number plots can be staged downstream (@ljwharbers).
+
+### `Fixed`
+
+- [#182](https://github.com/IntGenomicsLab/lrsomatic/pull/182) - Added `--vcf` to the default `vep_args` so VEP writes VCF output rather than its default tab-delimited format (@AmberVerhasselt).
 
 ## v1.1.0 - [2026-04-28]
 
