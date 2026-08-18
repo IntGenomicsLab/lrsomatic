@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated to the nf-core template for [nf-core/tools 4.1.0](https://github.com/nf-core/tools/releases/tag/4.1.0). Adds the `check-added-large-files`, `check-merge-conflict` and `block-pipeline-outdir` pre-commit hooks, a `process_low_memory` resource label, and a split-out `pr-comment.yml` workflow. `conf/igenomes.config` was converted to the template's strict-syntax `params.genomes` map literal, and the MultiQC module was bumped to 1.35.
 - Raised the minimum Nextflow version to `25.10.4`, following the template, and bumped the nf-test CI matrix to match.
 - Filled in the `manifest.contributors` `contribution` fields: @ljwharbers and @robert-a-forsyth as author and maintainer, all other contributors as author. Previously empty, which left the RO-Crate metadata without any authors.
+- Added @AmberVerhasselt to `manifest.contributors` as a contributor and to the README credits, and expanded @ljwharbers' affiliation to match the other core contributors. RO-Crate metadata updated to match.
 
 ### `Fixed`
 
