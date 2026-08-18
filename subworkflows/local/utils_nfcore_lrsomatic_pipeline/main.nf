@@ -64,7 +64,8 @@ workflow PIPELINE_INITIALISATION {
         show_hidden,
         "",
         "",
-        command
+        command,
+        false
     )
 
     //
