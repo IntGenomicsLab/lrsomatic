@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raised the minimum Nextflow version to `25.10.4`, following the template, and bumped the nf-test CI matrix to match.
 - Filled in the `manifest.contributors` `contribution` fields: @ljwharbers and @robert-a-forsyth as author and maintainer, all other contributors as author. Previously empty, which left the RO-Crate metadata without any authors.
 - Added @AmberVerhasselt to `manifest.contributors` as a contributor and to the README credits, and expanded @ljwharbers' affiliation to match the other core contributors. RO-Crate metadata updated to match.
+- Set @laulambr's affiliation to the same three-part VIB/KU Leuven string as the other core contributors.
 
 ### `Fixed`
 
