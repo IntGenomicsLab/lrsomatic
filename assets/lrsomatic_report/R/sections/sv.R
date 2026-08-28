@@ -28,29 +28,36 @@ register_section(list(
   parse = function(inputs, section_data) {
     tabs = list()
     circ = list(nontrans = data.table(), translocations = data.table())
-    any_annotation = FALSE
+    annotation_path = NULL
 
     for (nm in names(inputs$callers)) {
       caller_inputs = inputs$callers[[nm]]
-      v = parse_severus_vcf(caller_inputs$vcf)
 
-      # VEP SV VCF is the primary annotation source; the gene-annotated TSV (not produced
-      # by most pipelines) is a fallback for samples that have it instead.
-      if (!is.null(caller_inputs$vep_vcf)) {
-        t = build_sv_table_from_vep(caller_inputs$vcf, caller_inputs$vep_vcf)
+      # One parse of the caller VCF feeds both the table and the circos tracks, so the
+      # SV count, the panel filter and the drawn links cannot disagree about what a
+      # rearrangement is.
+      records = parse_severus_somatic_records(caller_inputs$vcf)
+
+      if (nrow(records) > 0) {
+        # The VEP SV VCF only supplies the per-breakend display symbols; a missing one
+        # leaves those columns empty rather than losing the SVs, because panel matching
+        # is done on coordinates (see sv_panel_hits()).
+        t = build_sv_table_from_vep(records, caller_inputs$vep_vcf)
+        if (!is.null(caller_inputs$vep_vcf)) annotation_path = caller_inputs$vep_vcf
       } else {
-        g = parse_severus_gene_tsv(caller_inputs$gene_tsv)
-        t = build_sv_table(g, gene_panel = NULL)
+        # No caller VCF: the gene-annotated TSV is the fallback for pipelines that
+        # publish it instead.
+        t = build_sv_table(parse_severus_gene_tsv(caller_inputs$gene_tsv))
+        if (nrow(t) > 0) annotation_path = caller_inputs$gene_tsv
       }
+
       if (!is.null(t) && nrow(t) > 0) {
-        any_annotation = TRUE
         t[, caller := nm]
         tabs[[nm]] = t
       }
-      # Circos tracks are drawn from raw breakpoints, not the gene table;
+      # Circos tracks are drawn from the same mate-collapsed records as the table;
       # with a single caller today, last-write-wins is a no-op.
-      circ$nontrans = v$nontrans
-      circ$translocations = v$translocations
+      circ = severus_circos_tracks(records)
     }
 
     tbl = if (length(tabs) > 0) rbindlist(tabs, fill = TRUE) else data.table()
@@ -58,7 +65,8 @@ register_section(list(
     list(
       table            = tbl,
       circos           = circ,
-      annotation_found = any_annotation
+      annotation_path  = annotation_path,
+      annotation_found = !is.null(annotation_path)
     )
   }
 ))

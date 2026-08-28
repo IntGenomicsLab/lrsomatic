@@ -16,7 +16,7 @@
                     [
                         "LRSOMATICREPORT",
                         "lrsomatic_report",
-                        "1.1.0"
+                        "1.2.1"
                     ]
                 ],
                 "report": [
@@ -33,12 +33,12 @@
                     [
                         "LRSOMATICREPORT",
                         "lrsomatic_report",
-                        "1.1.0"
+                        "1.2.1"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-08-12T11:17:36.821182267",
+        "timestamp": "2026-08-28T14:51:14.481830202",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
@@ -50,11 +50,11 @@
                 [
                     "LRSOMATICREPORT",
                     "lrsomatic_report",
-                    "1.1.0"
+                    "1.2.1"
                 ]
             ]
         ],
-        "timestamp": "2026-08-12T11:19:49.036321128",
+        "timestamp": "2026-08-28T14:51:33.53813418",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

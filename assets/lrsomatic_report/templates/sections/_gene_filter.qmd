@@ -1,7 +1,17 @@
 ## Gene panel filter
 
-_Applies to both the small-variant and structural-variant tables below. Tables are
-unfiltered unless a panel is selected here._
+```{r gene-filter-note}
+table_details(
+  summary = "What the panel filter applies to",
+  "Applies to both the small-variant and structural-variant tables below. Tables are",
+  "unfiltered unless a panel is selected here. Small variants match on gene symbol; SVs",
+  "match on breakend position when the panel carries coordinates — see the note under the",
+  "SV table for which mode is in force.",
+  tags$br(),
+  "A custom list is bare symbols, which carry no coordinates, so its SVs are matched on",
+  "the annotated breakend genes only — no positional window."
+)
+```
 
 ```{r gene-filter-ui, results='asis'}
 # "__all__" (no filter) is listed first and is the default selection unless the
@@ -29,7 +39,7 @@ cat(paste0('
   <span id="panel-variant-count" class="panel-controls__count"></span>
 </div>
 <div id="custom-gene-panel" class="panel-controls__custom-area" style="display:none;">
-  <label>Custom genes (one per line, or comma/space separated, case-insensitive):</label>
+  <label>Custom genes — one per line, or comma/space separated, case-insensitive:</label>
   <textarea id="custom-gene-input" rows="4"></textarea>
 </div>
 '))

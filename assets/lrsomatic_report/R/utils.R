@@ -2,8 +2,14 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
+# Type-stable: fread() reads a bare-contig CHROM column ("1", "2", ...) as integer, and
+# ifelse() on an all-NA test returns logical NA — both of which break every downstream
+# string comparison, so coerce on the way in and on the way out.
 ensure_chr_prefix = function(x) {
-  ifelse(startsWith(x, "chr"), x, paste0("chr", x))
+  x   = as.character(x)
+  out = as.character(ifelse(startsWith(x, "chr"), x, paste0("chr", x)))
+  out[is.na(x)] = NA_character_
+  out
 }
 
 strip_chr_prefix = function(x) {
@@ -28,23 +34,166 @@ extract_extra_key = function(extra_vec, key) {
   }, character(1), USE.NAMES = FALSE)
 }
 
-# Load a gene panel TSV or plain text file; returns character vector of gene symbols
-load_gene_panel = function(path) {
-  if (!file.exists(path)) stop("Gene panel file not found: ", path)
-  dt = tryCatch(
-    fread(path, header = TRUE, sep = "\t", fill = TRUE),
-    error = function(e) fread(path, header = FALSE, sep = "\t", fill = TRUE)
-  )
-  gene_col = if ("gene" %in% tolower(names(dt))) names(dt)[tolower(names(dt)) == "gene"][1] else names(dt)[1]
-  unique(dt[[gene_col]])
+# ---- Gene panels ---------------------------------------------------------
+#
+# A panel is a plain list — not a data.table — because it round-trips through
+# Quarto's execute_params as YAML (see bin/render_report.R):
+#
+#   list(name, path, reference, has_coords, genes,
+#        chrom, start, end, interval_gene)   # the last four only when has_coords
+#
+# `genes` is deduplicated, for symbol matching; the interval vectors are parallel and
+# not deduplicated, because one symbol can legitimately carry several loci.
+#
+# `has_coords` selects the SV matching mode: a panel carrying chrom/start/end is
+# matched against SV breakend coordinates with a window (sv_panel_hits()), while a
+# symbol-only panel can only be matched against the per-side VEP symbols. Small
+# variants always match on `genes` — VEP annotates SNVs reliably, and per-gene
+# symbols are the right semantics there — so one file serves both tables.
+
+# Canonical reference names. Panel coordinates are only valid for one reference, so
+# a coordinate-carrying panel has to declare which, and the declaration is compared
+# against the reference the report was rendered for.
+normalise_reference_name = function(x) {
+  if (is.null(x) || length(x) != 1 || is.na(x) || !nzchar(trimws(x))) return(NA_character_)
+  x = tolower(trimws(x))
+  if (x %in% c("t2t", "chm13", "chm13v2", "chm13v2.0", "t2t-chm13")) return("t2t")
+  if (x %in% c("hg38", "grch38", "hg38-noalt")) return("hg38")
+  x
 }
 
-# Filter a data frame to rows where the gene column matches the panel.
-# panel_genes = NULL means "no panel" and returns dt untouched; an empty
-# character vector is a genuinely empty panel and filters everything out.
-filter_by_gene_panel = function(dt, panel_genes, gene_col = "gene") {
-  if (is.null(panel_genes)) return(dt)
-  dt[dt[[gene_col]] %in% panel_genes, ]
+# Reference suffix in a builtin panel filename ("lymphoid.hg38.tsv" -> "hg38").
+# Returns list(name, reference); reference is NA for an unsuffixed file.
+.split_panel_filename = function(path) {
+  stem  = tools::file_path_sans_ext(basename(path))
+  parts = strsplit(stem, ".", fixed = TRUE)[[1]]
+  if (length(parts) >= 2) {
+    ref = normalise_reference_name(parts[length(parts)])
+    if (!is.na(ref) && ref %in% c("t2t", "hg38"))
+      return(list(name = paste(parts[-length(parts)], collapse = "."), reference = ref))
+  }
+  list(name = stem, reference = NA_character_)
+}
+
+# Read the leading "#"-comment block of a panel TSV, which may declare the reference
+# the coordinates belong to ("# reference: hg38").
+.panel_header = function(path) {
+  lines = readLines(path, warn = FALSE)
+  n_comment = 0L
+  declared  = NA_character_
+  for (ln in lines) {
+    if (!startsWith(ln, "#")) break
+    n_comment = n_comment + 1L
+    m = regmatches(ln, regexpr("^#\\s*reference\\s*:\\s*\\S+", ln))
+    if (length(m) > 0) declared = sub("^#\\s*reference\\s*:\\s*", "", m)
+  }
+  list(n_comment = n_comment, reference = declared)
+}
+
+# Load a gene panel TSV. Required: a `gene` column (or a single unnamed column of
+# symbols). Optional but all-or-nothing: `chrom` (or `chr`), `start`, `end` — a file
+# carrying some but not all three is malformed and errors rather than silently
+# downgrading to symbol matching.
+#
+# `reference` is the reference the report is being rendered for. A coordinate-carrying
+# panel that declares a different one errors; one that declares none loads with
+# reference "" ("unverified" in the section footnote) rather than being guessed at.
+load_gene_panel = function(path, reference = NULL) {
+  if (!file.exists(path)) stop("Gene panel file not found: ", path)
+
+  hdr = .panel_header(path)
+  dt = tryCatch(
+    fread(path, header = TRUE, sep = "\t", fill = TRUE, skip = hdr$n_comment),
+    error = function(e) fread(path, header = FALSE, sep = "\t", fill = TRUE,
+                              skip = hdr$n_comment)
+  )
+  if (nrow(dt) == 0 && ncol(dt) == 0) stop("Gene panel file is empty: ", path)
+
+  # copy(): setnames() rewrites the names vector in place, which would otherwise
+  # clobber this reference to it.
+  orig_names = copy(names(dt))
+  setnames(dt, tolower(names(dt)))
+  setnames(dt, old = c("chr", "chromosome"), new = c("chrom", "chrom"), skip_absent = TRUE)
+
+  if ("gene" %in% names(dt)) {
+    genes = as.character(dt[["gene"]])
+  } else if (ncol(dt) == 1) {
+    # A headerless one-column list: fread consumed the first symbol as the column
+    # name, so put it back — with its original casing — rather than dropping it.
+    genes = c(orig_names[1], as.character(dt[[1]]))
+  } else {
+    genes = as.character(dt[[1]])
+  }
+  genes = trimws(genes)
+  keep  = nzchar(genes) & !is.na(genes) & genes != "-"
+
+  coord_cols = c("chrom", "start", "end")
+  present    = intersect(coord_cols, names(dt))
+  if (length(present) > 0 && length(present) < 3) {
+    stop("Gene panel ", path, " carries coordinate column(s) ",
+         paste(present, collapse = ", "), " but not all of ",
+         paste(coord_cols, collapse = ", "),
+         ". Supply all three, or none for symbol-only matching.")
+  }
+  has_coords = length(present) == 3
+
+  # A `reference` column is an alternative to the "# reference:" comment line.
+  declared = hdr$reference
+  if (is.na(declared) && "reference" %in% names(dt)) {
+    vals = unique(trimws(as.character(dt[["reference"]])))
+    vals = vals[nzchar(vals) & !is.na(vals)]
+    if (length(vals) > 1)
+      stop("Gene panel ", path, " declares more than one reference: ",
+           paste(vals, collapse = ", "))
+    if (length(vals) == 1) declared = vals
+  }
+  declared_norm = normalise_reference_name(declared)
+  want          = normalise_reference_name(reference)
+
+  # Only coordinate panels are reference-specific; a symbol-only panel is agnostic.
+  if (has_coords && !is.na(declared_norm) && !is.na(want) && declared_norm != want) {
+    stop("Gene panel ", path, " declares reference '", declared_norm,
+         "' but the report is being rendered against '", want,
+         "'. Panel coordinates are only valid for the reference they were built on.")
+  }
+
+  out = list(
+    name       = .split_panel_filename(path)$name,
+    path       = path,
+    reference  = if (is.na(declared_norm)) "" else declared_norm,
+    has_coords = has_coords,
+    genes      = unique(genes[keep])
+  )
+
+  if (has_coords) {
+    chrom = ensure_chr_prefix(trimws(as.character(dt[["chrom"]])))
+    start = suppressWarnings(as.integer(dt[["start"]]))
+    end   = suppressWarnings(as.integer(dt[["end"]]))
+    bad   = keep & (is.na(chrom) | !nzchar(chrom) | is.na(start) | is.na(end))
+    if (any(bad))
+      stop("Gene panel ", path, " has missing or non-numeric coordinates for: ",
+           paste(utils::head(genes[bad], 5), collapse = ", "),
+           if (sum(bad) > 5) paste0(" (and ", sum(bad) - 5L, " more)") else "")
+    out$chrom = chrom[keep]
+    out$start = start[keep]
+    out$end   = end[keep]
+    # `genes` is deduplicated for symbol matching; the interval vectors are not,
+    # because one symbol can legitimately carry several loci.
+    out$interval_gene = genes[keep]
+  }
+
+  out
+}
+
+# Panel intervals as a keyed data.table, or NULL for a symbol-only panel.
+panel_intervals = function(panel) {
+  if (is.null(panel) || !isTRUE(panel$has_coords)) return(NULL)
+  dt = data.table(gene  = as.character(panel$interval_gene),
+                  chrom = as.character(panel$chrom),
+                  start = as.integer(panel$start),
+                  end   = as.integer(panel$end))
+  setkey(dt, chrom, start, end)
+  dt
 }
 
 # Is a --gene-panel argument the "no filtering" sentinel?
@@ -53,25 +202,104 @@ is_no_gene_panel = function(panel_arg) {
     identical(tolower(trimws(panel_arg)), "none")
 }
 
+# Path of a builtin panel, preferring the variant built for `reference`
+# ("lymphoid.hg38.tsv") over an unsuffixed one ("lymphoid.tsv"). NULL if neither exists.
+builtin_panel_path = function(assets_dir, name, reference = NULL) {
+  ref = normalise_reference_name(reference)
+  dir = file.path(assets_dir, "gene_lists")
+  candidates = c(if (!is.na(ref)) file.path(dir, paste0(name, ".", ref, ".tsv")),
+                 file.path(dir, paste0(name, ".tsv")))
+  hit = candidates[file.exists(candidates)]
+  if (length(hit) > 0) hit[1] else NULL
+}
+
 # Resolve a --gene-panel arg: the "none" sentinel (no filtering, returns NULL),
 # a builtin name ("lymphoid"), or a path to a TSV. A value that is neither is an
 # error rather than a silent fall-through to unfiltered output.
-resolve_gene_panel = function(panel_arg, assets_dir) {
+resolve_gene_panel = function(panel_arg, assets_dir, reference = NULL) {
   if (is_no_gene_panel(panel_arg)) return(NULL)
-  builtin_path = file.path(assets_dir, "gene_lists", paste0(panel_arg, ".tsv"))
-  if (file.exists(builtin_path)) return(load_gene_panel(builtin_path))
-  if (file.exists(panel_arg)) return(load_gene_panel(panel_arg))
+  builtin = builtin_panel_path(assets_dir, panel_arg, reference)
+  if (!is.null(builtin)) return(load_gene_panel(builtin, reference))
+  if (file.exists(panel_arg)) return(load_gene_panel(panel_arg, reference))
   stop("Gene panel not found (tried builtin '", panel_arg, "' and as file path)")
 }
 
-# Load all gene panels from assets/gene_lists/*.tsv
-# Returns a named list (name = panel name, value = character vector of gene symbols)
-load_all_gene_panels = function(assets_dir) {
+# Load all gene panels from assets/gene_lists/*.tsv, resolving reference-specific
+# files ("lymphoid.hg38.tsv" / "lymphoid.t2t.tsv") to one selectable "lymphoid" entry.
+# A panel that only ships for other references is skipped — offering it would mean
+# matching coordinates from the wrong genome.
+# Returns a named list of panel objects (see load_gene_panel()).
+load_all_gene_panels = function(assets_dir, reference = NULL) {
   tsv_files = Sys.glob(file.path(assets_dir, "gene_lists", "*.tsv"))
   if (length(tsv_files) == 0) return(list())
-  panels = lapply(tsv_files, load_gene_panel)
-  names(panels) = tools::file_path_sans_ext(basename(tsv_files))
+
+  meta = lapply(tsv_files, .split_panel_filename)
+  ref  = normalise_reference_name(reference)
+
+  panels = list()
+  for (nm in unique(vapply(meta, `[[`, character(1), "name"))) {
+    idx  = which(vapply(meta, `[[`, character(1), "name") == nm)
+    refs = vapply(meta[idx], function(m) m$reference, character(1))
+    pick = if (!is.na(ref) && any(refs == ref, na.rm = TRUE)) idx[which(refs == ref)[1]]
+           else if (any(is.na(refs))) idx[which(is.na(refs))[1]]
+           else NA_integer_
+    if (is.na(pick)) {
+      message("Gene panel '", nm, "' ships only for reference(s) ",
+              paste(unique(refs), collapse = ", "), " — not offered for ",
+              if (is.na(ref)) "an unknown reference" else ref)
+      next
+    }
+    p = tryCatch(load_gene_panel(tsv_files[pick], reference),
+      error = function(e) {
+        message("Skipping gene panel '", nm, "': ", conditionMessage(e)); NULL })
+    if (!is.null(p)) panels[[nm]] = p
+  }
   panels
+}
+
+# ---- Small JS serialisation helpers --------------------------------------
+# The report ships panel data and column positions to its own client-side filter.
+# Keeping these here means the R table and the JS that indexes it are generated
+# from the same object, instead of the JS re-deriving positions from the rendered
+# header (which breaks under DT's filter row and Scroller's cloned thead).
+
+js_quote = function(x) paste0('"', gsub('"', '\\\\"', as.character(x)), '"')
+
+# {"col":0,"other":1} — column name to zero-based index, for a rownames=FALSE DT.
+js_col_index_map = function(nms) {
+  if (length(nms) == 0) return("{}")
+  paste0("{", paste0(js_quote(nms), ":", seq_along(nms) - 1L, collapse = ","), "}")
+}
+
+# One JS number literal per element. Element-wise rather than vectorised because
+# format() on a vector pads every element to a common format — c(1, 2.5) becomes
+# "1.0","2.5" — and scientific notation on a base-pair coordinate would read back as a
+# different number than the one it names.
+js_num = function(x) {
+  vapply(x, function(v) {
+    if (is.na(v)) "null" else format(v, scientific = FALSE, trim = TRUE)
+  }, character(1), USE.NAMES = FALSE)
+}
+
+.js_cell = function(v) if (is.numeric(v)) js_num(v) else ifelse(is.na(v), "null", js_quote(v))
+
+# A JS array literal from an atomic vector. Numbers are emitted bare, everything else
+# quoted; NA becomes null so the client can test for it. Written by hand rather than with
+# jsonlite because that would be a new dependency in both recipe/meta.yaml and the
+# pipeline's environment.yml — see the "R package requirements" note in CLAUDE.md.
+js_vec = function(x) {
+  if (length(x) == 0) return("[]")
+  paste0("[", paste(.js_cell(x), collapse = ","), "]")
+}
+
+# A JS array of arrays, one inner array per row of `dt`, columns in `cols` order.
+# Row-major and positional: far smaller than an array of objects, which matters when the
+# payload is a few thousand cytobands inlined into a self-contained HTML file.
+js_rows = function(dt, cols) {
+  if (is.null(dt) || nrow(dt) == 0) return("[]")
+  cells = lapply(cols, function(cl) .js_cell(dt[[cl]]))
+  rows = do.call(paste, c(cells, sep = ","))
+  paste0("[[", paste(rows, collapse = "],["), "]]")
 }
 
 # Format a number for human-readable display

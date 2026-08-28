@@ -36,7 +36,7 @@ process LRSOMATICREPORT {
     tuple val(meta), path("*_report.html"), emit: report
     // No CLI version flag is provided by the tool; keep in sync with the vendored
     // release recorded in assets/lrsomatic_report/VENDORED.md
-    tuple val("${task.process}"), val('lrsomatic_report'), val("1.1.0"), topic: versions, emit: versions_lrsomaticreport
+    tuple val("${task.process}"), val('lrsomatic_report'), val("1.2.1"), topic: versions, emit: versions_lrsomaticreport
 
     when:
     task.ext.when == null || task.ext.when

@@ -214,7 +214,7 @@ If you want to run with a CHM13 reference without using `--genome CHM13` (for ex
 | Parameter             | Description                                                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `--report_src`        | Override the report tool source tree (bin/, R/, templates/, assets/). Not needed for normal runs: a copy of [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) ships inside the pipeline. Point it at a local checkout to render with an unreleased version of the tool. Default = `${projectDir}/assets/lrsomatic_report` |
-| `--report_gene_panel` | Gene panel selected when the report opens. One of `none` (no filtering), a builtin panel name (e.g. `lymphoid`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered                                                                                                                                           |
+| `--report_gene_panel` | Gene panel selected when the report opens. One of `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered                                                                                                                                   |
 
 Gene panel filtering is a view, not a filter on the data: every builtin panel is embedded in
 the rendered report and the reader can switch between them (or back to the unfiltered table)
@@ -226,6 +226,17 @@ gene	panel	note
 TP53	mypanel	Tumour suppressor
 KRAS	mypanel	Oncogene
 ```
+
+A panel may also carry `chrom`, `start` and `end` columns — all three or none. With
+coordinates, structural variants are matched on position (within 1 Mb of a breakend, or
+100 kb of the SV span) rather than on the VEP gene symbol, which is what makes breakend
+filtering reliable: whether a breakend carries a gene symbol at all depends on the VEP
+invocation. A coordinate-carrying panel must declare the reference its coordinates are
+valid for, either as a leading `# reference: hg38` comment or as a `reference` column; a
+panel declaring a reference other than the one the sample was called against is a hard
+error rather than a silently wrong filter. Symbol-only panels need no declaration. The
+builtin panels ship one file per reference and are selected by their bare name
+(`lymphoid`, `sarcoma`), resolved against the detected reference.
 
 ```bash
 nextflow run IntGenomicsLab/lrsomatic \

@@ -3,20 +3,24 @@
 ::: {.callout-note collapse="true"}
 ### Coverage summary
 
-```{r coverage-table, results='asis'}
+```{r coverage-table}
+# The widget must be the chunk's *value*, not print()ed: under quarto_render()
+# interactive() is FALSE and getOption("viewer") is NULL, so print.htmlwidget writes a
+# standalone file to a temp dir and returns invisibly — knit_print.htmlwidget, which is
+# what emits the widget div and registers its dependencies, never runs. That is why this
+# table rendered as an empty callout while every other DT in the report worked.
+cov_dt = function(x) DT::datatable(x, rownames = FALSE,
+                                   options = list(pageLength = 30, dom = "ft",
+                                                  scrollY = "300px"))
 show_normal_cov = outputs$has_normal && !is.null(qc_normal_mosdepth) && nrow(qc_normal_mosdepth$table) > 0
-if (show_normal_cov) cat("**Tumour**\n\n")
-if (!is.null(qc_mosdepth$table) && nrow(qc_mosdepth$table) > 0) {
-  print(DT::datatable(qc_mosdepth$table, rownames = FALSE,
-                options = list(pageLength = 30, dom = "ft", scrollY = "300px")))
-} else {
-  cat("Mosdepth summary not available.\n")
-}
-if (show_normal_cov) {
-  cat("\n\n**Normal**\n\n")
-  print(DT::datatable(qc_normal_mosdepth$table, rownames = FALSE,
-                options = list(pageLength = 30, dom = "ft", scrollY = "300px")))
-}
+have_cov = !is.null(qc_mosdepth$table) && nrow(qc_mosdepth$table) > 0
+
+htmltools::tagList(
+  if (show_normal_cov) tags$p(tags$strong("Tumour")),
+  if (have_cov) cov_dt(qc_mosdepth$table) else section_notice("Mosdepth summary not available."),
+  if (show_normal_cov) tags$p(tags$strong("Normal")),
+  if (show_normal_cov) cov_dt(qc_normal_mosdepth$table)
+)
 ```
 :::
 
@@ -70,3 +74,5 @@ if (show_normal_cr) {
 }
 ```
 :::
+
+{{< include sections/_whatshap.qmd >}}

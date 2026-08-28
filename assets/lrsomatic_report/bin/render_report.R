@@ -55,34 +55,6 @@ output     = if (!is.null(opt[["output"]])) opt[["output"]] else
 title      = if (!is.null(opt[["title"]])) opt[["title"]] else
              paste0("LRSomatic Report – ", sample_id)
 
-# ---- Load all available gene panels ----------------------------------------
-# The rendered report always ships every builtin panel so the reader can switch
-# panels client-side; --gene-panel only decides which one is selected on load.
-# "__all__" is the sentinel the report's JS uses for "no filter" — it must stay
-# in sync with templates/sections/_gene_filter.qmd and the search hook in
-# templates/per_sample.qmd.
-all_panels = load_all_gene_panels(file.path(repo_dir, "assets"))
-default_panel = if (is_no_gene_panel(gene_panel)) {
-  gene_panel = "none"
-  "__all__"
-} else if (file.exists(file.path(repo_dir, "assets", "gene_lists",
-                                 paste0(gene_panel, ".tsv")))) {
-  gene_panel
-} else if (file.exists(gene_panel)) {
-  # A user-supplied TSV: register it alongside the builtins so it can be
-  # selected on load (and switched away from and back to) in the report.
-  nm = tools::file_path_sans_ext(basename(gene_panel))
-  if (nm %in% names(all_panels)) nm = paste0(nm, "-custom")
-  all_panels[[nm]] = load_gene_panel(gene_panel)
-  # Absolute, because the template resolves it again from Quarto's own working
-  # directory (the copied template dir), not from where this script was invoked.
-  gene_panel = normalizePath(gene_panel)
-  nm
-} else {
-  abort(paste0("--gene-panel not found: tried builtin '", gene_panel,
-               "' and as a file path. Use 'none' for no filtering."))
-}
-
 # ---- Locate per-tool outputs ---------------------------------------------
 message("Locating outputs in: ", sample_dir)
 outputs = locate_outputs(sample_dir, sample_id)
@@ -93,6 +65,8 @@ message("Somatic VAF VCF: ", ifelse(is.null(outputs$somatic_vaf_vcf), "NOT FOUND
 message("ASCAT segments: ", ifelse(is.null(outputs$ascat_segments), "NOT FOUND", outputs$ascat_segments))
 
 # ---- Auto-detect reference -----------------------------------------------
+# Resolved before the gene panels below, which are reference-specific: a panel's
+# coordinates are only valid for the genome they were built on.
 reference = opt[["reference"]]
 if (reference == "auto") {
   # Reuse already-resolved paths rather than a fixed vep/somatic/* glob
@@ -106,6 +80,41 @@ if (reference == "auto") {
   message("Auto-detected reference: ", reference)
 }
 reference = tolower(reference)
+
+# ---- Load all available gene panels ----------------------------------------
+# The rendered report always ships every builtin panel so the reader can switch
+# panels client-side; --gene-panel only decides which one is selected on load.
+# "__all__" is the sentinel the report's JS uses for "no filter" — it must stay
+# in sync with templates/sections/_gene_filter.qmd and the search hook in
+# templates/per_sample.qmd.
+# Builtins that ship per reference ("lymphoid.hg38.tsv") resolve to one entry for
+# the reference detected above; a coordinate panel declaring a different one is a
+# hard error rather than a filter matching the wrong genome.
+all_panels = load_all_gene_panels(file.path(repo_dir, "assets"), reference)
+default_panel = if (is_no_gene_panel(gene_panel)) {
+  gene_panel = "none"
+  "__all__"
+} else if (!is.null(builtin_panel_path(file.path(repo_dir, "assets"), gene_panel, reference))) {
+  # Load it here too, so a builtin that fails to resolve against this reference aborts
+  # now rather than part-way through the Quarto render.
+  invisible(tryCatch(resolve_gene_panel(gene_panel, file.path(repo_dir, "assets"), reference),
+                     error = function(e) abort(conditionMessage(e))))
+  gene_panel
+} else if (file.exists(gene_panel)) {
+  # A user-supplied TSV: register it alongside the builtins so it can be
+  # selected on load (and switched away from and back to) in the report.
+  nm = tools::file_path_sans_ext(basename(gene_panel))
+  if (nm %in% names(all_panels)) nm = paste0(nm, "-custom")
+  all_panels[[nm]] = tryCatch(load_gene_panel(gene_panel, reference),
+                              error = function(e) abort(conditionMessage(e)))
+  # Absolute, because the template resolves it again from Quarto's own working
+  # directory (the copied template dir), not from where this script was invoked.
+  gene_panel = normalizePath(gene_panel)
+  nm
+} else {
+  abort(paste0("--gene-panel not found: tried builtin '", gene_panel,
+               "' and as a file path. Use 'none' for no filtering."))
+}
 
 # ---- Render the Quarto template -----------------------------------------
 # Copy templates/ and assets/ into a writable working directory: repo_dir's

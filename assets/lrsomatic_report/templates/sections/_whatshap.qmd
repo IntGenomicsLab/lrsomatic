@@ -1,4 +1,5 @@
-## Phasing
+::: {.callout-note collapse="true"}
+### Phasing
 
 ```{r whatshap-info}
 whatshap = SECTION_DATA[["whatshap"]]
@@ -21,12 +22,6 @@ if (!is.null(whatshap) && nrow(whatshap$per_chrom) > 0) {
   }
 
   htmltools::tagList(
-    htmltools::p(
-      htmltools::tags$em(
-        sprintf("Germline phasing statistics, from %s.",
-                if (!is.na(whatshap$vcf)) whatshap$vcf else "the phased germline VCF")
-      )
-    ),
     DT::datatable(
       wt,
       rownames    = FALSE,
@@ -42,7 +37,15 @@ if (!is.null(whatshap) && nrow(whatshap$per_chrom) > 0) {
         pageLength  = 25,
         columnDefs  = list(list(className = "dt-left", targets = "_all"))
       )
+    ),
+    # These statistics are germline, not somatic — worth stating, but not worth a line
+    # of prose above every table. See table_details() in R/sections.R.
+    table_details(
+      summary = "Source",
+      sprintf("Germline phasing statistics, from %s.",
+              if (!is.na(whatshap$vcf)) whatshap$vcf else "the phased germline VCF")
     )
   )
 }
 ```
+:::

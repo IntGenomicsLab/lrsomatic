@@ -114,6 +114,10 @@ $border-radius-lg:     12px;
   --circos-cnv-total: #1b1e22;
   // BND/translocation
   --circos-bnd:     #8a5fa3;
+  // Breakend circos only (R/circos_bnd.R): the arc a table row selects, and the
+  // panel-gene bodies drawn on the ideogram.
+  --circos-bnd-selected: #d7263d;
+  --circos-bnd-gene:     #0d5c75;
 
   // Metric-card accent colours
   --metric-purity:     #{$report-danger};
@@ -151,6 +155,8 @@ $border-radius-lg:     12px;
     // Circos legend swatches that would be invisible on dark bg — lighten to match --color-text
     --circos-snv-cg:        #e8e6df;
     --circos-cnv-total:     #e8e6df;
+    // The breakend circos keeps a light plate, so its own colours are unchanged; only
+    // the caption and the selected-row tint sit on the dark surface.
   }
 
   body { background: var(--color-bg) !important; color: var(--color-text) !important; }
@@ -860,6 +866,161 @@ div.dt-buttons {
 @media print {
   .circos-legend { border-top-color: #ccc; }
   .circos-eyebrow { color: #666; }
+}
+
+// ============================================================
+// Breakend circos — drawn client-side, cross-linked to the SV table
+// ============================================================
+// The plot is built by assets/js/bnd_circos.js and redrawn on every filter change, so
+// that its sector layout follows the *filtered* link set. The drawing code sets geometry
+// and nothing else; everything visual is here.
+.bnd-circos {
+  background: #fcfbf7;
+  border: 1px solid #d8d3c8;
+  border-radius: var(--card-radius);
+  padding: 18px 18px 10px;
+  box-shadow: var(--card-shadow), inset 0 0 0 1px rgba(255,255,255,0.6);
+  max-width: 640px;
+  margin: 0 auto;
+  // The plate stays light in dark mode, as .circos-container does, which is also what
+  // lets the labels resolve currentColor to dark ink in both themes.
+  color: #1b1e22;
+
+  // aspect-ratio rather than relying on `height: auto` resolving through the viewBox:
+  // an inline <svg> with no width/height attributes has fallen back to the default
+  // 150px height in some engines, which would squash the plot.
+  svg { width: 100%; height: auto; aspect-ratio: 1 / 1; display: block; }
+
+  .bnd-link {
+    fill: none;
+    stroke: var(--circos-bnd);
+    stroke-width: 1;
+    opacity: 0.5;
+    transition: opacity 0.12s ease, stroke 0.12s ease, stroke-width 0.12s ease;
+  }
+  // Filtered-out arcs are not drawn at all, so there is no dim state to style.
+  .bnd-link.is-selected {
+    stroke: var(--circos-bnd-selected);
+    stroke-width: 2.4;
+    opacity: 1;
+  }
+
+  // Ideogram: the bands carry their Giemsa fill inline (it is data, not decoration);
+  // the sector outline underneath keeps a sparsely-banded chromosome reading as a block.
+  .bnd-sector { fill: none; stroke: #b0a99c; stroke-width: 0.6; }
+  .bnd-band   { stroke: none; }
+
+  .bnd-gene-body { fill: var(--circos-bnd-gene); stroke: none; }
+  .bnd-gene-line { fill: none; stroke: #b8b2a6; stroke-width: 0.8; }
+
+  .bnd-gene-label {
+    font-family: var(--font-sans);
+    font-size: 15px;      // user-space units: the viewBox is 1000 wide
+    font-weight: 600;
+    fill: var(--circos-bnd-gene);
+  }
+  .bnd-chrom-label {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    font-weight: 600;
+    fill: currentColor;
+  }
+
+  .bnd-circos-empty {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #6b6153;
+    padding: 3rem 0;
+    margin: 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .bnd-circos {
+    border-color: #4a4540;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 8px 32px -8px rgba(0,0,0,0.7);
+  }
+}
+
+.bnd-circos-caption {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0.55rem 0 0;
+}
+
+// Rows picked in the SV table — the ones whose arcs are highlighted
+#sv-table table.dataTable tbody tr { cursor: pointer; }
+#sv-table table.dataTable tbody tr.bnd-selected td {
+  background: var(--color-primary-muted) !important;
+  box-shadow: inset 3px 0 0 var(--circos-bnd-selected);
+}
+
+// ============================================================
+// Table footnote — provenance / caveats printed under a data table
+// ============================================================
+.table-footnote {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 0.6rem 0 0;
+  max-width: 78ch;
+
+  code {
+    font-size: 0.95em;
+    background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+  }
+
+  // The consensus caveat is the one line a reader must not skim past.
+  .table-footnote__warn { color: var(--color-text); font-weight: 500; }
+}
+
+// Footnotes are folded away by default — they are provenance, consulted on demand, not
+// something to read past on every table. The disclosure stays quiet until hovered.
+.table-details {
+  margin: 0.6rem 0 0;
+
+  > summary {
+    cursor: pointer;
+    width: fit-content;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    opacity: 0.75;
+    list-style: none;          // suppress the default triangle; ::before draws it
+    user-select: none;
+
+    &::-webkit-details-marker { display: none; }
+
+    &::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 0.4em;
+      font-size: 0.9em;
+      transition: transform 0.12s ease;
+    }
+
+    &:hover { opacity: 1; }
+  }
+
+  &[open] > summary::before { transform: rotate(90deg); }
+
+  // The body is a .table-footnote; its own top margin would double the gap.
+  > .table-footnote { margin-top: 0.4rem; }
+}
+
+@media print {
+  .table-footnote { color: #666; }
+  // Print is a static medium — a collapsed disclosure would silently drop the
+  // provenance from the printed page.
+  .table-details > .table-footnote { display: block !important; }
+  .table-details > summary { display: none; }
 }
 
 // ============================================================

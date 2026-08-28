@@ -1,6 +1,6 @@
 ## Small variants
 
-```{r small-variant-table}
+```{r small-variant-prepare, results='asis'}
 if (!is.null(variant_table) && nrow(variant_table) > 0) {
   # Format the VAF as a percentage
   dt_display = copy(variant_table)
@@ -8,8 +8,23 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
     dt_display[, vaf := round(vaf * 100, 1)]
     setnames(dt_display, "vaf", "VAF%")
   }
+  # The panel filter reads the symbol column by name, not by a hard-coded position.
+  cat("<script>window.SNV_COLS = ", js_col_index_map(names(dt_display)), ";</script>\n",
+      sep = "")
+}
+```
 
-  DT::datatable(
+```{r small-variant-table}
+if (!is.null(variant_table) && nrow(variant_table) > 0) {
+
+  # Cells to flag: a variant reported by several callers has its VAF/DP/GT/PS taken from
+  # whichever one won the consensus merge, so those columns need not describe the caller
+  # named beside them. styleEqual() needs the literal values, not a predicate.
+  mc_vals = if ("callers" %in% names(dt_display))
+              unique(grep(",", dt_display$callers, fixed = TRUE, value = TRUE)) else
+              character(0)
+
+  snv_dt = DT::datatable(
     dt_display,
     rownames    = FALSE,
     filter      = "top",
@@ -35,5 +50,66 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
         c("#f7e3df",  "#f6edd6",  "#e4efe3",  "#f3f1ea")
       )
     )
+
+  if (length(mc_vals) > 0) {
+    snv_dt = DT::formatStyle(
+      snv_dt,
+      columns     = "callers",
+      target      = "cell",
+      # Deliberately outside the impact palette above — the same tint in two columns of
+      # one table would read as one scale.
+      backgroundColor = DT::styleEqual(mc_vals, rep("#e6ecf5", length(mc_vals)))
+    )
+  }
+
+  # Provenance footnote. One VCF supplies VAF/DP/GT/PS for every variant in this table, and
+  # after a consensus merge its FORMAT fields come from whichever caller won each variant —
+  # so say which file it was, how much of the table it actually covered, and flag the rows
+  # where the attribution is ambiguous.
+  #
+  # n_multi is always 0 on the VEP text path, which carries no per-variant caller: the
+  # caveat therefore appears only on the merged multi-caller (CSQ) path, which is exactly
+  # where the ambiguity exists.
+  footnote = table_details(
+    summary = "VAF provenance",
+    tags$p(
+      if (!is.null(vaf_prov)) {
+        tagList(
+          "VAF, depth, genotype and phase set are joined from ",
+          lapply(seq_along(vaf_prov$paths), function(i) {
+            tagList(if (i > 1) ", ", tags$code(vaf_prov$paths[i]))
+          }),
+          # Punctuation rides along with the preceding element: adjacent tagList members
+          # are emitted on separate lines, which HTML collapses to a space.
+          if (length(vaf_prov$sources) > 0)
+            paste0(" (", paste(vaf_prov$sources, collapse = ", "), ");") else ";",
+          "the variant set itself comes from the VEP annotation.",
+          # Named only when the VCF held more than one sample — that is the only case
+          # where picking the wrong column would silently report the normal's VAF.
+          if (length(vaf_prov$sample) > 0)
+            sprintf("Read from sample %s.", paste(vaf_prov$sample, collapse = ", ")) else NULL,
+          if (!is.na(n_vaf))
+            sprintf("%s of %s variants carry a VAF.",
+                    format(n_vaf, big.mark = ","),
+                    format(nrow(variant_table), big.mark = ",")) else NULL
+        )
+      } else {
+        "No VAF source VCF was found, so the VAF, depth, genotype and phase set columns are empty."
+      },
+      if (length(mc_vals) > 0) tagList(
+        tags$br(),
+        tags$span(
+          class = "table-footnote__warn",
+          sprintf(paste("%s variants were reported by more than one caller (highlighted).",
+                        "Their VAF, depth, genotype and phase set come from whichever caller",
+                        "won the consensus merge, so those columns need not correspond to the",
+                        "callers column beside them."),
+                  format(n_multi, big.mark = ","))
+        )
+      )
+    )
+  )
+
+  tagList(snv_dt, footnote)
 }
 ```

@@ -6,14 +6,9 @@ Do not edit it here — fix upstream, tag a release, and re-sync.
 | | |
 |---|---|
 | Upstream | <https://github.com/ljwharbers/lrsomatic_report> |
-| Release | `v1.1.0` (`9d660a77d5f23f92e1f7ff34f85da7956f445009`) |
-| Vendored commit | `d17a636aeb3f79462b7f58db9102f4030941195b` (`main`) |
+| Release | `v1.2.1` (`1c28f9cde24e903a5a607897e275108e3dff6677`) |
+| Vendored commit | `1c28f9cde24e903a5a607897e275108e3dff6677` (the tag itself) |
 | License | MIT (see `LICENSE`) |
-
-The vendored commit is two chore commits ahead of the `v1.1.0` tag. Neither changes
-behaviour: `b4cc7620` scrubs real sample identifiers out of the README and the
-`--sample-id` help string, `d17a636a` drops a development helper script. Vendoring the
-tag itself would publish those identifiers in this repository.
 
 ## Why vendored rather than a submodule
 
@@ -34,24 +29,44 @@ Only what `bin/render_report.R` needs at run time:
 bin/  R/  templates/  assets/  LICENSE  README.md
 ```
 
-Upstream `docs/`, `tests/` and `recipe/` are deliberately excluded — the same set marked
-`export-ignore` in the upstream `.gitattributes`.
+Upstream `docs/`, `tests/`, `recipe/` and `CLAUDE.md` are deliberately excluded. (Upstream
+marks `docs/` and `tests/` `export-ignore` in its `.gitattributes`; `recipe/` and
+`CLAUDE.md` are not marked, so they must be left behind by hand when copying.)
 
 ## Re-syncing on the next upstream release
 
 ```bash
-TAG=v1.2.0
-git clone --depth 1 --branch "$TAG" https://github.com/ljwharbers/lrsomatic_report.git /tmp/lrr
+TAG=v1.3.0
+git clone --depth 1 --branch "$TAG" https://github.com/ljwharbers/lrsomatic_report.git "$TMPDIR/lrr"
 rm -rf assets/lrsomatic_report/{bin,R,templates,assets,LICENSE,README.md}
-cp -a /tmp/lrr/{bin,R,templates,assets,LICENSE,README.md} assets/lrsomatic_report/
-# then update the table above, and:
-#  - modules/local/lrsomaticreport/environment.yml   if upstream recipe/meta.yaml gained a dependency
-#  - modules/local/lrsomaticreport/main.nf           container digest + the hard-coded version topic
-#  - modules/local/lrsomaticreport/meta.yml          the same version string
+cp -a "$TMPDIR"/lrr/{bin,R,templates,assets,LICENSE,README.md} assets/lrsomatic_report/
 ```
 
-Rebuild the container after any `environment.yml` change so the image and the file agree:
+The `rm -rf` before the copy is not optional: it is what removes files *deleted* upstream.
+Copying over the top would have left the pre-v1.2.1 `assets/gene_lists/lymphoid.tsv` behind,
+where `load_all_gene_panels()` would glob it as a second, reference-less `lymphoid` panel
+alongside the `lymphoid.hg38.tsv` / `lymphoid.t2t.tsv` pair that replaced it.
+
+Then update the table above, and:
+
+- `modules/local/lrsomaticreport/environment.yml` — if upstream `recipe/meta.yaml` gained a
+  dependency. The two files are kept in exact agreement; check with a `library()`/`require()`
+  grep over the upstream `R/`, `bin/` and `templates/` rather than trusting the README.
+- `modules/local/lrsomaticreport/main.nf` — the hard-coded version topic (the tool has no
+  `--version` flag), and the container digests **only if `environment.yml` changed**.
+- `modules/local/lrsomaticreport/meta.yml` — the same version string, in two places.
+- `modules/local/lrsomaticreport/tests/main.nf.test.snap` — regenerate.
+- `tests/{default,clair_only,deep_only,consensus,union}.nf.test.snap` — the
+  `"lrsomatic_report": "<version>"` line in each.
+- `CHANGELOG.md` — the vendored version named in the `#176` entry.
+
+Nothing checks these for consistency; miss one and the snapshots go stale silently.
+
+Rebuild the containers after any `environment.yml` change so the images and the file agree.
+**Two** builds are needed and both must be updated in `main.nf`: `--singularity` produces a
+Singularity-native SIF (the `oras://` reference), the default build a genuine OCI image.
 
 ```bash
 wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await
+wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await --singularity
 ```

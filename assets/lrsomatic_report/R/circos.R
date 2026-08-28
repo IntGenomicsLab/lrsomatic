@@ -48,8 +48,8 @@ BND_COLOUR = "#8a5fa3"
 # Draw a circos plot and write it to output_path (SVG or PNG depending on extension)
 #
 # @param snv_data      data.table: chrom, pos, ref, alt  (single-base SNVs only)
-# @param sv_nontrans   data.table from parse_severus_vcf()$nontrans
-# @param sv_trans      data.table from parse_severus_vcf()$translocations
+# @param sv_nontrans   data.table from severus_circos_tracks()$nontrans
+# @param sv_trans      data.table from severus_circos_tracks()$translocations
 # @param cnv_data      data.table from parse_ascat_segments()
 # @param cytobands     data.frame: chrom, start, end, name, stain
 # @param chrom_lengths named integer vector (chrom → bp length)
@@ -246,6 +246,9 @@ draw_circos = function(snv_data = NULL,
   )
 
   # ---- Translocation links (BND) in the centre ----------------------------
+  # One arc per rearrangement: severus_circos_tracks() has already collapsed Severus's
+  # two mate records into one row, so nothing here draws the same arc twice (which used
+  # to show as doubled opacity at alpha.f = 0.5).
   if (nrow(sv_tr) > 0) {
     for (i in seq_len(nrow(sv_tr))) {
       tryCatch(

@@ -4,7 +4,11 @@ suppressPackageStartupMessages({
 
 # Parse mosdepth summary (*.mosdepth.summary.txt)
 # Returns list: mean_depth, total_row (the "total" row from mosdepth)
-parse_mosdepth_summary = function(summary_file) {
+#
+# `keep_chroms` is the reference's own contig list. Without it the per-chromosome table
+# falls back to a bare "^chr" match, which admits the ~2500 chrUn_*_decoy contigs and —
+# worse — comes back *empty* on any reference whose contigs carry no "chr" prefix.
+parse_mosdepth_summary = function(summary_file, keep_chroms = NULL) {
   if (is.null(summary_file) || !file.exists(summary_file)) {
     return(list(mean_depth = NA_real_, table = data.table()))
   }
@@ -14,7 +18,12 @@ parse_mosdepth_summary = function(summary_file) {
   mean_depth = if (nrow(total_row) > 0) total_row$mean[1] else NA_real_
 
   # Keep per-chromosome rows (exclude region-level and total)
-  chr_rows = dt[grepl("^chr", chrom) & !grepl("_region", chrom)]
+  chr_rows = dt[chrom != "total" & !grepl("_region", chrom)]
+  if (!is.null(keep_chroms) && length(keep_chroms) > 0) {
+    chr_rows = chr_rows[ensure_chr_prefix(chrom) %in% ensure_chr_prefix(keep_chroms)]
+  } else {
+    chr_rows = chr_rows[grepl("^chr", chrom)]
+  }
   total_length = if (nrow(total_row) > 0) total_row$length[1] else NA_real_
   total_bases  = if (nrow(total_row) > 0) total_row$bases[1]  else NA_real_
   list(mean_depth = round(mean_depth, 2), total_length = total_length, total_bases = total_bases, table = chr_rows)

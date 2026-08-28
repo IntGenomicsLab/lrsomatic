@@ -1,47 +1,408 @@
-## Structural variants in gene panel
+## Structural variants
 
 ```{r sv-info}
+# The table is built from the caller VCF, not from the annotation, so it survives a
+# missing VEP SV VCF — an empty table here means no SV records were found at all.
 if (is.null(sv_table) || nrow(sv_table) == 0) {
-  section_notice(
-    if (!isTRUE(SECTION_DATA$sv$annotation_found)) "SV annotation file (VEP or gene TSV) not found."
-    else "No somatic structural variants detected."
+  section_notice("No somatic structural variants detected.")
+}
+```
+
+```{r sv-bnd-circos}
+# Breakend circos: the same rearrangements as the table below, drawn as arcs over just
+# the chromosomes they touch. R only selects and serialises the data — the plot itself is
+# built by assets/js/bnd_circos.js, so that it can re-lay-out to the chromosomes that
+# survive the current filter instead of dimming a fixed set. See R/circos_bnd.R.
+bnd_res = NULL
+if (!is.null(sv_table) && nrow(sv_table) > 0) {
+  bnd_res = tryCatch({
+    # One filtered set feeds both calls, so the gene track cannot label an arc that was
+    # never drawn.
+    bnd_drawn = bnd_links(sv_table, chromosomes)
+    bnd_circos_data(bnd_drawn,
+                    bnd_panel_genes(bnd_drawn, params$all_panels),
+                    cytobands, chrom_lens, chromosomes)
+  }, error = function(e) {
+    message("Breakend circos failed: ", conditionMessage(e))
+    NULL
+  })
+}
+
+if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
+  legend_item = function(swatch, var, label) {
+    tags$div(class = "circos-legend__item",
+             tags$span(class = paste0("circos-swatch--", swatch),
+                       style = paste0("--_swatch: var(", var, ")")),
+             label)
+  }
+  tagList(
+    # The chromosome count is filled in by the plot, since it changes with the filter.
+    tags$p(class = "circos-eyebrow",
+           tags$span(id = "bnd-eyebrow", "Breakends"),
+           " · select a row below to highlight its arc"),
+    tags$div(class = "bnd-circos", id = "bnd-circos"),
+    tags$div(class = "circos-legend",
+      tags$div(class = "circos-legend__group",
+        tags$div(class = "circos-legend__title", "Breakend circos"),
+        legend_item("arc", "--circos-bnd",          "Rearrangement"),
+        legend_item("arc", "--circos-bnd-selected", "Selected in the table"),
+        legend_item("bar", "--circos-bnd-gene",     "Panel gene")
+      )
+    ),
+    tags$p(class = "bnd-circos-caption", tags$span(id = "bnd-shown-count"))
   )
+} else if (!is.null(bnd_res)) {
+  section_notice(bnd_res$reason)
+}
+```
+
+```{r sv-bnd-circos-data, results='asis'}
+# The payload, then the drawing code. bnd_circos.js is inlined from its own file rather
+# than pasted into an R string so it stays lintable and editable as JavaScript; the
+# report is self-contained, so it cannot be linked.
+if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
+  cat(bnd_circos_script(bnd_res), "\n")
+  cat("<script>\n")
+  cat(readLines(file.path(params$repo_dir, "assets/js/bnd_circos.js")), sep = "\n")
+  cat("\n</script>\n")
+}
+```
+
+```{r sv-prepare, results='asis'}
+# Column positions are published from R rather than scraped from the rendered header:
+# see the panel-filter script in per_sample.qmd.
+if (!is.null(sv_table) && nrow(sv_table) > 0) {
+  sv_display = copy(sv_table)
+  # Populated client-side by the panel filter, so switching panels updates it on the
+  # existing redraw. The load-time panel's hits are already in sv_panel_hit (same
+  # function, same windows) and drive the "Panel SVs" card.
+  sv_display[, panel_hit := ""]
+  # Readable location/size/gene columns. The bedpe-shaped raw columns stay in the frame
+  # — hidden below, but still read by every by-name lookup in the JS layer and still
+  # exported — so this is presentation only: see sv_display_columns() in
+  # R/parse_severus.R for why svclass, not the contig, decides what a row means.
+  sv_display = cbind(sv_display, sv_display_columns(sv_display, chromosomes))
+  setcolorder(sv_display, c("id", "panel_hit", "svclass", "svtype",
+                            "locus", "size", "genes",
+                            "vaf", "consequence", "impact", "caller"))
+  cat("<script>window.SV_COLS = ", js_col_index_map(names(sv_display)), ";</script>\n",
+      sep = "")
 }
 ```
 
 ```{r sv-table}
 if (!is.null(sv_table) && nrow(sv_table) > 0) {
-  # Column casing differs by annotation source: "svtype" (VEP path) vs "SVTYPE" (TSV path)
-  svtype_col = intersect(c("svtype", "SVTYPE"), names(sv_table))
+  idx0 = function(nm) which(names(sv_display) == nm) - 1L
+
+  # A breakend annotated as truncating a whole span can carry a hundred-odd symbols.
+  # Truncate the *display* only — sorting, searching and the CSV/copy buttons below ask
+  # for other renderings, all of which return the full list.
+  gene_render = JS(
+    "function(data, type) {",
+    "  if (type !== 'display' || !data) return data;",
+    "  const g = String(data).split(',');",
+    "  if (g.length <= 6) return data;",
+    "  return '<span title=\"' + String(data).replace(/\"/g, '') + '\">' +",
+    "         g.slice(0, 6).join(',') + ' +' + (g.length - 6) + ' more</span>';",
+    "}")
+
+  # Same predicate as the row filter, so the column always agrees with what is shown.
+  panel_hit_render = JS(
+    "function(data, type, row) {",
+    "  return window.svPanelHitLabel ? window.svPanelHitLabel(row, window.SV_COLS) : '';",
+    "}")
+
+  # `locus` and `size` are formatted strings, so they sort lexically — "chr2:…" after
+  # "chr13:…", "613 kb" after "1.2 Mb". Sort them on the hidden numeric column built
+  # alongside each. Only the sort types are redirected: display, filter and export all
+  # fall through to the readable string, which is what lets a per-column search for
+  # "chr8" match a translocation on *either* side — something the chrom_a box could not.
+  orthogonal_render = function(key) JS(
+    "function(data, type, row) {",
+    "  if (type !== 'sort' && type !== 'type') return data;",
+    "  const cols = window.SV_COLS || {};",
+    sprintf("  const k = cols['%s'];", key),
+    "  return k === undefined ? data : row[k];",
+    "}")
+
+  # Kept in the frame, out of the view: every by-name lookup in the JS layer reads these
+  # (svPanelHits() in per_sample.qmd, rowId() below), and the export selector below keeps
+  # them in the CSV. DataTables hands render and search callbacks the whole row array,
+  # invisible columns included, so hiding them costs nothing downstream.
+  hidden = c("chrom_a", "pos_a", "chrom_b", "pos_b", "gene_a", "gene_b",
+             "sv_len", "size_bp", "locus_sort")
+
+  exp_opts = list(orthogonal = "export",
+                  columns    = seq_len(ncol(sv_display)) - 1L)
 
   dtbl = DT::datatable(
-    sv_table,
+    sv_display,
     rownames   = FALSE,
     filter     = "top",
     elementId  = "sv-table",
+    # A static DT widget carries no selection config, and the binding then defaults
+    # data.selection.mode to "none" and does no row selection at all
+    # (DT/htmlwidgets/datatables.js:230). Saying so explicitly keeps that true if this
+    # table ever gains a server/Shiny mode, so the breakend circos's own selection below
+    # stays the only one and cannot end up fighting DT's `.selected` styling.
+    selection  = "none",
     extensions = c("Buttons", "Scroller"),
     options    = list(
       dom       = "Bfrtip",
-      buttons   = c("copy", "csv"),
+      # "export" rather than "sort": the sort rendering of `locus` is now a zero-padded
+      # key, and of `size` a bare number. Neither renderer recognises "export", so both
+      # fall through to the full readable string — untruncated, since only "display"
+      # truncates. The explicit column list keeps the hidden raw coordinate columns in
+      # the download, which Buttons' ":visible" default would drop.
+      buttons   = list(list(extend = "copy", exportOptions = exp_opts),
+                       list(extend = "csv",  exportOptions = exp_opts)),
       scrollX   = TRUE,
       scrollY   = "350px",
       scroller  = TRUE,
       deferRender = TRUE,
       pageLength = 25,
+      columnDefs = list(
+        list(targets = idx0("panel_hit"), render = panel_hit_render),
+        list(targets = idx0("genes"),     render = gene_render),
+        list(targets = idx0("locus"),     render = orthogonal_render("locus_sort")),
+        list(targets = idx0("size"),      render = orthogonal_render("size_bp")),
+        list(targets = vapply(hidden, idx0, integer(1), USE.NAMES = FALSE),
+             visible = FALSE)
+      ),
       initComplete = JS("function() { window.svTableElem = this.api().table().node(); }")
     )
-  )
-  if (length(svtype_col) > 0) {
-    dtbl = dtbl |>
-      DT::formatStyle(
-        columns = svtype_col[1],
-        target  = "cell",
-        backgroundColor = DT::styleEqual(
-          c("DEL",     "DUP",     "INV",     "INS",     "BND"),
-          c("#dbeafe", "#dcfce7", "#fef9c3", "#fee2e2", "#f3e8ff")
-        )
+  ) |>
+    DT::formatStyle(
+      columns = "svtype",
+      target  = "cell",
+      backgroundColor = DT::styleEqual(
+        c("DEL",     "DUP",     "INV",     "INS",     "BND",     "sBND"),
+        c("#dbeafe", "#dcfce7", "#fef9c3", "#fee2e2", "#f3e8ff", "#f3e8ff")
       )
-  }
+    )
   dtbl
+}
+```
+
+```{r sv-bnd-circos-js, results='asis'}
+# Cross-link the table to the circos. This owns the row selection outright — see the
+# `selection` note above. Row identity comes from the DataTables API rather than from a
+# DOM id, because Scroller plus deferRender recycle the <tr> nodes, which is also why the
+# selected class is re-applied on every draw.
+#
+# Every filter change redraws the plot from window.BND_DATA rather than restyling what is
+# already there, so the sector layout follows the filtered link set. The old viewBox
+# repair is gone with the inlined markup it existed for: Quarto's HTML pipeline lowercases
+# attribute names on markup it processes, but nodes built by createElementNS() never pass
+# through it.
+if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
+  cat("<script>\n")
+  cat(r"----(
+(function () {
+  const SELECTED = new Set();
+  // null until the first sync: everything counts as visible.
+  let visibleIds = null;
+  let visibleGenes = new Set();
+
+  const table = () => (window.svTableElem ? $(window.svTableElem).DataTable() : null);
+  const host = () => document.getElementById("bnd-circos");
+
+  function rowId(row) {
+    const cols = window.SV_COLS || {};
+    return cols["id"] === undefined ? null : String(row[cols["id"]]);
+  }
+
+  // The panel genes a row hits, from the very predicate that fills its panel_hit cell —
+  // so a gene is labelled on the plot exactly when it is named in the table. Labels
+  // arrive as "MYC (A, direct), BCL2 (B, 188.5 kb)"; everything from " (" on describes
+  // the match, and is not part of the gene name.
+  function rowGenes(row) {
+    if (!window.svPanelHits) return [];
+    return window.svPanelHits(row, window.SV_COLS)
+      .map((lab) => lab.split(" (")[0])
+      .join(",")
+      .split(",")
+      .map((g) => g.trim().toUpperCase())
+      .filter((g) => g.length > 0);
+  }
+
+  // Redraw the plot for the current filter and selection. The sector set is recomputed
+  // from the visible links, so chromosomes nothing touches leave the plot entirely rather
+  // than sitting there dimmed.
+  function apply() {
+    if (!window.bndCircos) return;
+    const stats = window.bndCircos.render(host(), visibleIds, visibleGenes, SELECTED);
+    caption(stats);
+  }
+
+  function caption(stats) {
+    const total = (window.BND_DATA && window.BND_DATA.links)
+      ? window.BND_DATA.links.length : stats.arcs;
+    const eyebrow = document.getElementById("bnd-eyebrow");
+    if (eyebrow) {
+      eyebrow.textContent = "Breakends · " + stats.chroms + " chromosome" +
+                            (stats.chroms === 1 ? "" : "s");
+    }
+    const el = document.getElementById("bnd-shown-count");
+    if (!el) return;
+    const parts = [stats.arcs + " of " + total + " arc" + (total === 1 ? "" : "s") + " shown"];
+    if (stats.genes > 0) parts.push(stats.genes + " panel gene" + (stats.genes === 1 ? "" : "s"));
+    if (SELECTED.size > 0) parts.push(SELECTED.size + " selected");
+    el.textContent = parts.join(" · ");
+  }
+
+  // Re-apply the selected class to the rows currently rendered. Scroller destroys and
+  // rebuilds <tr> nodes, so this has to run on every draw, not just on click.
+  function paintRows() {
+    const t = table();
+    if (!t) return;
+    $(t.table().body()).find("tr").each(function () {
+      const d = t.row(this).data();
+      if (!d) return;
+      const id = rowId(d);
+      $(this).toggleClass("bnd-selected", id !== null && SELECTED.has(id));
+    });
+  }
+
+  window.bndSyncFilter = function () {
+    const t = table();
+    if (!t) return;
+    const ids = new Set();
+    const genes = new Set();
+    t.rows({ search: "applied" }).data().each(function (row) {
+      const id = rowId(row);
+      if (id !== null) ids.add(id);
+      rowGenes(row).forEach((g) => genes.add(g));
+    });
+    visibleIds = ids;
+    visibleGenes = genes;
+    apply();
+    paintRows();
+  };
+
+  $(document).on("click", "#sv-table tbody tr", function () {
+    const t = table();
+    if (!t) return;
+    const d = t.row(this).data();
+    if (!d) return;
+    const id = rowId(d);
+    if (id === null) return;
+    if (SELECTED.has(id)) SELECTED.delete(id); else SELECTED.add(id);
+    $(this).toggleClass("bnd-selected", SELECTED.has(id));
+    apply();
+  });
+
+  // Covers the per-column search boxes too, which do not go through redraw().
+  $(document).on("draw.dt", function (e) {
+    if (e.target === window.svTableElem) window.bndSyncFilter();
+  });
+
+  // The host starts empty, so draw once immediately with no filter applied. Waiting for
+  // the table's first draw.dt would leave a blank gap where the plot should be, and would
+  // leave the plot missing entirely if the table failed to initialise.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", apply);
+  } else {
+    apply();
+  }
+})();
+)----")
+  cat("\n</script>\n")
+}
+```
+
+```{r sv-footnote}
+# Provenance footnote, following the vaf_provenance() pattern in _smallvariants.qmd:
+# say where the breakend symbols came from, and — because it is the difference between
+# a filter that works on every sample and one that works on some — which panel matching
+# mode is active, against which reference, with which windows.
+if (!is.null(sv_table) && nrow(sv_table) > 0) {
+  rel = function(p) {
+    if (is.null(p)) return(NULL)
+    root = sub("/+$", "", normalizePath(sample_dir, mustWork = FALSE))
+    full = normalizePath(p, mustWork = FALSE)
+    if (startsWith(full, paste0(root, "/"))) substring(full, nchar(root) + 2L) else p
+  }
+
+  # Built as one HTML string rather than a tagList: htmltools puts each child on its
+  # own line, which HTML collapses to a space — leaving " ," after every <code>.
+  code = function(x) paste0("<code>", htmltools::htmlEscape(x), "</code>")
+
+  panel_note = if (is.null(panel)) {
+    "No gene panel is applied on load; select one above to filter both tables."
+  } else if (isTRUE(panel$has_coords)) {
+    sprintf(paste("Panel %s matches on <strong>breakend coordinates</strong> (%s intervals,",
+                  "within %s of either breakend of a BND or %s of the span of any other",
+                  "type)%s Each %s entry names the gene, the side it matched on (%s, %s,",
+                  "or %s for a contiguous type), and then either %s — the breakend or span",
+                  "overlaps the gene itself — or the distance to it. Those windows are wide,",
+                  "so a hit is not on its own a disrupted gene: read the second token."),
+            code(basename(panel$path)), length(panel$start),
+            fmt_bp(SV_PANEL_WINDOW_BND), fmt_bp(SV_PANEL_WINDOW_OTHER),
+            if (nzchar(panel$reference)) paste0(", built on ", panel$reference, ".")
+            else paste(", whose reference is unverified — the panel declares none, so",
+                       "nothing checks it against this report's."),
+            code("panel_hit"), code("A"), code("B"), code("span"), code("direct"))
+  } else {
+    sprintf(paste("Panel %s carries no coordinates, so SVs are matched on <strong>gene",
+                  "symbol</strong> only: a breakend VEP did not annotate cannot match,",
+                  "whatever it is near. Every %s entry therefore reads %s — a symbol sits",
+                  "on the breakend itself, and there is no distance to report. Add %s, %s",
+                  "and %s columns to match on position instead."),
+            code(basename(panel$path)), code("panel_hit"), code("direct"),
+            code("chrom"), code("start"), code("end"))
+  }
+
+  annot_note = if (!is.null(SECTION_DATA$sv$annotation_path))
+    sprintf(paste("Breakend genes are from %s, joined on record ID; records that",
+                  "annotation dropped (it keeps only FILTER PASS) have none."),
+            code(rel(SECTION_DATA$sv$annotation_path)))
+  else
+    "No SV annotation file was found, so the gene column is empty."
+
+  # The point of the locus/size convention, said where the columns are: a contiguous type
+  # is one span, a breakend is two joined loci, and conflating them is exactly what the
+  # old chrom_a/pos_a/chrom_b/pos_b columns invited.
+  locus_note = sprintf(paste("%s reads as a span (%s) for a contiguous type and as two",
+                             "joined loci (%s or %s) for a breakend, which is also why %s",
+                             "is blank for a breakend: its two loci bound no interval, so",
+                             "there is no length to report. The underlying %s columns are",
+                             "hidden rather than dropped — they are still what the panel",
+                             "filter matches on, and the copy and CSV buttons still export",
+                             "them. %s merges both sides for a contiguous type and labels",
+                             "them %s and %s for a breakend, where which partner carries",
+                             "which gene is the point."),
+                       code("locus"), code("chr13:48,303,151–48,915,700"),
+                       code("→"), code("↔"), code("size"),
+                       paste(code("chrom_a"), code("pos_a"), code("chrom_b"),
+                             code("pos_b"), sep = ", "),
+                       code("genes"), code("A:"), code("B:"))
+
+  # What the circos above is showing, said once, next to the numbers it shares with the
+  # table. Only mentioned when there is a plot to explain.
+  circos_note = if (!is.null(bnd_res) && !is.null(bnd_res$data))
+    sprintf(paste("The circos above draws one arc per breakend with both loci mapped, and",
+                  "is redrawn whenever the filter changes — it shows only the chromosomes",
+                  "the visible rows touch, out of the %d these %d arc%s span in total.",
+                  "Gene bodies are the panel genes within %s of a breakend — the same test",
+                  "that fills the %s column, so a gene is drawn exactly when a visible row",
+                  "names it, and a panel carrying no coordinates draws none. Bodies are",
+                  "markers at a minimum visible width, not spans to scale."),
+            length(bnd_res$chroms), bnd_res$n_links,
+            if (bnd_res$n_links == 1) "" else "s",
+            fmt_bp(SV_PANEL_WINDOW_BND), code("panel_hit"))
+  else NULL
+
+  table_details(
+    summary = "How these rows and this plot are built",
+    HTML(paste(
+      sprintf("%s rearrangement%s, one row each — Severus writes both sides of a breakend as two records, and mate pairs are collapsed here%s.",
+              nrow(sv_table), if (nrow(sv_table) == 1) "" else "s",
+              if (!is.na(n_trans) && !is.na(n_intra_bnd))
+                sprintf(" (%s interchromosomal, %s intra-chromosomal breakend%s)",
+                        n_trans, n_intra_bnd, if (n_intra_bnd == 1) "" else "s")
+              else ""),
+      locus_note, annot_note, panel_note, circos_note))
+  )
 }
 ```

@@ -104,6 +104,17 @@ parse_vep_text = function(vep_file) {
   # with parse_vep_vcf().
   dt[, caller := NA_character_]
 
+  # Record identity, for contract parity with parse_vep_vcf()'s `id`. The text format
+  # has no VCF ID column, so this is VEP's own Uploaded_variation name — never a
+  # caller-assigned ID, which is why the SV table's ID-keyed join only ever sees the
+  # VCF path.
+  dt[, id := variant_id]
+
+  # chrom/pos/ref/alt here come from `variant_id`, i.e. VEP's own notation — indels
+  # already shifted one base right and possibly dash-form. See coord_space in
+  # build_variant_table().
+  dt[, coord_space := "vep"]
+
   dt
 }
 
@@ -172,12 +183,16 @@ parse_vep_vcf = function(vep_file) {
 
   # A variant reported by two somatic callers appears as two records; collapse to one
   # row per variant so the CSQ expansion below doesn't duplicate every annotation.
-  dt = dt[, .(CSQ = CSQ[1], caller = paste(sort(unique(caller)), collapse = ",")),
+  # ID rides along: it is what links an SV annotation record back to the caller record
+  # it came from (see build_sv_table_from_vep()), and is more reliable than the locus.
+  dt = dt[, .(CSQ = CSQ[1], id = ID[1],
+              caller = paste(sort(unique(caller)), collapse = ",")),
           by = .(CHROM, POS, REF, ALT)]
+  dt[id == ".", id := NA_character_]
 
   # One row per gene/transcript annotation (comma-separated CSQ entries)
   dt_long = dt[, .(csq_entry = unlist(strsplit(CSQ, ",", fixed = TRUE))),
-               by = .(CHROM, POS, REF, ALT, caller)]
+               by = .(CHROM, POS, REF, ALT, id, caller)]
   if (nrow(dt_long) == 0) return(NULL)
 
   # Split each entry on "|", materialising only the fields actually used below
@@ -215,46 +230,123 @@ parse_vep_vcf = function(vep_file) {
   dt_long[, ref   := REF]
   dt_long[, alt   := ALT]
 
+  # Unlike parse_vep_text(), these are the VCF's own POS/REF/ALT — the *original* input
+  # coordinate, not VEP's shifted one. Keying them as VEP-space is what stopped every
+  # indel on this path from joining. See build_variant_table().
+  dt_long[, coord_space := "vcf"]
+
   # dbSNP / COSMIC IDs, derived from Existing_variation
   dt_long = derive_dbsnp_cosmic(dt_long)
 
-  dt_long[, .(chrom, pos, ref, alt, symbol, gene_id, consequence, impact, hgvsp,
-              existing, dbsnp, cosmic, sift, polyphen, caller)]
+  dt_long[, .(chrom, pos, ref, alt, id, symbol, gene_id, consequence, impact, hgvsp,
+              existing, dbsnp, cosmic, sift, polyphen, caller, coord_space)]
+}
+
+# Which sample column of a VCF to read, given its sample names.
+# One sample is unambiguous; otherwise prefer the one named for this report, then the
+# first that is not obviously the normal. Falling through to the first column is a guess,
+# so say so — silently reporting the normal's VAF is the failure this exists to prevent.
+pick_sample_column = function(samples, sample_id = NULL, vcf_file = "") {
+  if (length(samples) == 1L) return(1L)
+
+  if (!is.null(sample_id) && nzchar(sample_id)) {
+    i = match(sample_id, samples)
+    if (!is.na(i)) return(i)
+  }
+  not_normal = which(!grepl("^(normal|blood|germline|ref)", samples, ignore.case = TRUE))
+  if (length(not_normal) > 0) {
+    if (length(not_normal) > 1L || is.null(sample_id))
+      warning("VCF '", vcf_file, "' has samples [", paste(samples, collapse = ", "),
+              "]; reading '", samples[not_normal[1]], "'.")
+    return(not_normal[1])
+  }
+  warning("VCF '", vcf_file, "' has samples [", paste(samples, collapse = ", "),
+          "] and none looks like a tumour; reading '", samples[1], "'.")
+  1L
+}
+
+# The allele fraction, from whichever FORMAT tag this VCF happens to use.
+#
+# LRSomatic *renames* this tag according to which caller was prioritised — see
+# STANDARDIZE_AF in subworkflows/local/small_variant_consensus.nf: AF -> VAF for
+# deepvariant/deepsomatic, VAF -> AF for clair — and a `consensus` merge skips the
+# renaming entirely, so both names reach this parser. Hard-coding "AF" is what produced
+# an entirely empty VAF column on a DeepSomatic run. AD is the last resort: every caller
+# in the pipeline emits it, and it is the only recoverable source when neither tag exists.
+allele_fraction = function(field, fields) {
+  for (tag in c("AF", "VAF")) {
+    if (tag %in% fields) {
+      # Multi-allelic records carry one value per ALT; the first is the one that pairs
+      # with the record's first ALT allele, which is all this table joins on.
+      v = suppressWarnings(as.numeric(sub(",.*$", "", field(tag))))
+      if (any(!is.na(v))) return(v)
+    }
+  }
+  if ("AD" %in% fields) {
+    ad = strsplit(field("AD"), ",", fixed = TRUE)
+    return(vapply(ad, function(x) {
+      n = suppressWarnings(as.numeric(x))
+      if (length(n) < 2L || anyNA(n[1:2]) || sum(n[1:2]) == 0) return(NA_real_)
+      n[2] / sum(n[1:2])
+    }, numeric(1)))
+  }
+  rep(NA_real_, length(field("GT")))
 }
 
 # Parse a raw caller VCF for variant coordinates, VAF, depth and phasing.
 # `vcf_file` may be several paths, in which case they are read and stacked into one
 # table — ClairS splits its matched-mode output into snvs.vcf.gz + indel.vcf.gz.
 # Returns data.table with: chrom, pos, ref, alt, vaf, dp, gt, ps, caller
-parse_caller_vcf = function(vcf_file, caller_name = "unknown") {
+#
+# `sample_id` picks the sample column by name. Reading it positionally reports the
+# *normal's* VAF/DP on a matched two-sample VCF — wrong numbers, no error, and nothing in
+# the report that would reveal it.
+parse_caller_vcf = function(vcf_file, caller_name = "unknown", sample_id = NULL) {
   if (is.null(vcf_file)) return(NULL)
   if (length(vcf_file) > 1) {
-    parts = lapply(vcf_file, parse_caller_vcf, caller_name = caller_name)
+    parts = lapply(vcf_file, parse_caller_vcf, caller_name = caller_name,
+                   sample_id = sample_id)
     parts = parts[!vapply(parts, is.null, logical(1))]
     return(if (length(parts) > 0) rbindlist(parts) else NULL)
   }
   if (!file.exists(vcf_file)) return(NULL)
 
-  # Count header lines
+  # Count header lines, keeping the #CHROM line itself — it carries the sample names.
   con = gzfile(vcf_file, "rb")
   skip_n = 0L
+  chrom_line = NULL
   repeat {
     line = readLines(con, n = 1, warn = FALSE)
     if (length(line) == 0) break
-    if (startsWith(line, "#CHROM")) break
+    if (startsWith(line, "#CHROM")) { chrom_line = line; break }
     skip_n = skip_n + 1L
   }
   close(con)
+  if (is.null(chrom_line)) return(NULL)
 
-  # Read up to 10 columns (standard VCF single-sample layout)
-  col_names = c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", "SAMPLE1")
-  dt = fread(vcf_file, skip = skip_n + 1L, sep = "\t", header = FALSE,
-             select = 1:10, col.names = col_names)
-  if (nrow(dt) == 0) return(NULL)
+  header  = strsplit(chrom_line, "\t", fixed = TRUE)[[1]]
+  samples = if (length(header) > 9L) header[10:length(header)] else character(0)
+  # A sites-only VCF has no genotypes to read. Return NULL rather than letting fread()
+  # error on `select = 1:10` — every other parser here degrades gracefully.
+  if (length(samples) == 0) return(NULL)
+
+  sample_col = pick_sample_column(samples, sample_id, vcf_file)
+
+  # 1:9 are the fixed VCF columns; the chosen sample sits at 9 + its index.
+  col_names = c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT",
+                "SAMPLE1")
+  dt = tryCatch(
+    fread(vcf_file, skip = skip_n + 1L, sep = "\t", header = FALSE,
+          select = c(1:9, 9L + sample_col), col.names = col_names),
+    error = function(e) {
+      warning("Could not read VCF '", vcf_file, "': ", conditionMessage(e))
+      NULL
+    })
+  if (is.null(dt) || nrow(dt) == 0) return(NULL)
 
   dt[, CHROM := ensure_chr_prefix(CHROM)]
 
-  # Extract AF, DP, GT and PS from the FORMAT + SAMPLE1 columns.
+  # Extract the allele fraction, DP, GT and PS from the FORMAT + SAMPLE1 columns.
   # Work format-group by format-group to avoid splitting every single row redundantly.
   fmt_groups = unique(dt$FORMAT)
   vaf_list = rep(NA_real_,      nrow(dt))
@@ -275,7 +367,7 @@ parse_caller_vcf = function(vcf_file, caller_name = "unknown") {
              character(1))
     }
 
-    vaf_list[idx_rows] = suppressWarnings(as.numeric(field("AF")))
+    vaf_list[idx_rows] = allele_fraction(field, fields)
     dp_list[idx_rows]  = suppressWarnings(as.integer(field("DP")))
     gt_list[idx_rows]  = field("GT")
     ps_list[idx_rows]  = field("PS")
@@ -289,6 +381,78 @@ parse_caller_vcf = function(vcf_file, caller_name = "unknown") {
   data.table(chrom = dt$CHROM, pos = dt$POS, ref = dt$REF, alt = dt$ALT,
              vaf = vaf_list, dp = dp_list, gt = gt_list, ps = ps_list,
              caller = caller_name)
+}
+
+# Header-only provenance for the VCF(s) that supplied VAF/DP/GT/PS.
+#
+# Which file this is matters to a reader: when the pipeline ran several somatic callers
+# through consensus, the FORMAT fields in the surviving VCF come from whichever caller won
+# each merge, so they need not correspond to the `callers` column beside them. The report
+# names the file rather than silently implying one caller — see the footnote in
+# templates/sections/_smallvariants.qmd.
+#
+# `vcf_files` may be several paths (parse_caller_vcf() stacks them; ClairS splits matched
+# mode into snvs.vcf.gz + indel.vcf.gz). Returns NULL when there is nothing to describe,
+# matching the graceful-missing contract of the parsers above. Only the header is read —
+# no record parsing — so this stays cheap on a multi-million-variant VCF.
+vaf_provenance = function(vcf_files, sample_dir = NULL, sample_id = NULL) {
+  if (is.null(vcf_files) || length(vcf_files) == 0) return(NULL)
+  vcf_files = vcf_files[!is.na(vcf_files) & nzchar(vcf_files)]
+  if (length(vcf_files) == 0) return(NULL)
+
+  # Paths read better relative to the sample directory the caller passed in.
+  rel = function(p) {
+    if (is.null(sample_dir) || !nzchar(sample_dir)) return(p)
+    root = sub("/+$", "", normalizePath(sample_dir, mustWork = FALSE))
+    full = normalizePath(p, mustWork = FALSE)
+    if (startsWith(full, paste0(root, "/"))) substring(full, nchar(root) + 2L) else p
+  }
+
+  # "##source=Clair3" and friends. Plenty of VCFs carry no source line at all, which is why
+  # the footnote treats this as optional colour rather than the identifying fact.
+  read_sources = function(p) {
+    if (!file.exists(p)) return(character(0))
+    con = gzfile(p, "rb")
+    on.exit(close(con), add = TRUE)
+    out = character(0)
+    repeat {
+      line = readLines(con, n = 1, warn = FALSE)
+      if (length(line) == 0) break
+      if (!startsWith(line, "##")) break   # #CHROM or a malformed header ends the scan
+      if (startsWith(line, "##source=")) out = c(out, sub("^##source=", "", line))
+    }
+    out
+  }
+
+  # Which sample column parse_caller_vcf() will have read. Worth naming in the footnote:
+  # on a matched two-sample VCF the wrong pick reports the normal's VAF for every somatic
+  # variant, and nothing else in the report would show it.
+  read_sample = function(p) {
+    if (!file.exists(p)) return(NA_character_)
+    con = gzfile(p, "rb")
+    on.exit(close(con), add = TRUE)
+    repeat {
+      line = readLines(con, n = 1, warn = FALSE)
+      if (length(line) == 0) return(NA_character_)
+      if (startsWith(line, "#CHROM")) {
+        header = strsplit(line, "\t", fixed = TRUE)[[1]]
+        if (length(header) <= 9L) return(NA_character_)
+        samples = header[10:length(header)]
+        # Only worth reporting when there was a choice to get wrong.
+        if (length(samples) == 1L) return(NA_character_)
+        return(samples[suppressWarnings(pick_sample_column(samples, sample_id, p))])
+      }
+      if (!startsWith(line, "##")) return(NA_character_)
+    }
+  }
+  chosen = unique(unlist(lapply(vcf_files, read_sample)))
+  chosen = chosen[!is.na(chosen)]
+
+  list(
+    paths   = unname(vapply(vcf_files, rel, character(1))),
+    sources = unique(unlist(lapply(vcf_files, read_sources))),
+    sample  = chosen
+  )
 }
 
 # Canonical variant key, used to join VEP annotation rows to the VCF they came from.
@@ -371,7 +535,14 @@ build_variant_table = function(vep_data, vaf_data, gene_panel = NULL) {
 
   # Join VEP rows to the VCF they were produced from, via the canonical key that
   # reconciles the two sides' indel representations (see variant_key()).
-  vep_data[, join_key := variant_key(chrom, pos, ref, alt, space = "vep")]
+  #
+  # The space is the parser's to declare, not ours to assume: parse_vep_text() returns
+  # VEP-space coordinates (read from `variant_id`), parse_vep_vcf() returns the VCF's own
+  # POS/REF/ALT. Hard-coding "vep" here shifted only one side of the key on the CSQ path,
+  # so no indel could ever match and its VAF/DP/GT/PS came back silently NA.
+  vep_space = if ("coord_space" %in% names(vep_data)) unique(vep_data$coord_space) else "vep"
+  stopifnot(length(vep_space) == 1L, vep_space %in% c("vep", "vcf"))
+  vep_data[, join_key := variant_key(chrom, pos, ref, alt, space = vep_space)]
 
   if (!is.null(vaf_data) && nrow(vaf_data) > 0) {
     vdt = vaf_data[, .(join_key = variant_key(chrom, pos, ref, alt, space = "vcf"),

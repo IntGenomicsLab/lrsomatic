@@ -29,9 +29,13 @@ card = function(label, value, css_class = "", subtitle = NULL) {
   )
 }
 
-# Keep acronym uppercase but let the trailing plural "s" stay lowercase
+# Keep the acronym uppercase but let the trailing plural "s" stay lowercase.
+# Built as one HTML string rather than nested tags: htmltools puts each child on its own
+# line, and that newline renders as a space — the label came out as "SNV s".
 lc_plural = function(text) {
-  tags$span(substr(text, 1, nchar(text) - 1L), tags$span(class = "lc", "s"))
+  stopifnot(endsWith(text, "s"))
+  HTML(paste0(htmlEscape(substr(text, 1, nchar(text) - 1L)),
+              '<span class="lc">s</span>'))
 }
 
 div(class = "metric-grid",
@@ -40,7 +44,10 @@ div(class = "metric-grid",
   card("Mean coverage", paste0(fmt_val(qc_mosdepth$mean_depth), "×"), "metric-coverage"),
   card("Read N50",      if (!is.na(qc_cramino$n50)) fmt_bp(qc_cramino$n50) else "N/A", "metric-n50"),
   card(lc_plural("Somatic SNVs"),  fmt_val(n_snv, 0),         "metric-snvs"),
-  card(lc_plural("Somatic SVs"),   fmt_val(n_sv, 0),          "metric-svs"),
+  # One row per rearrangement, not per breakend record — see the note under the SV table.
+  card(lc_plural("Somatic SVs"),   fmt_val(n_sv, 0),          "metric-svs",
+       subtitle = if (!is.na(n_trans) && !is.na(n_intra_bnd))
+         paste0(n_trans, " interchrom · ", n_intra_bnd, " intrachrom BND") else NULL),
   card("Panel variants",fmt_val(n_panel_vars, 0),            "metric-panel-vars"),
   card(lc_plural("Panel SVs"),     fmt_val(n_panel_svs, 0),   "metric-panel-svs"),
   card("Coding TMB",
