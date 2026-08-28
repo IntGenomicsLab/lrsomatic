@@ -125,6 +125,8 @@ nextflow run IntGenomicsLab/lrsomatic \
 
 If you want to run with a CHM13 reference without using `--genome CHM13` (for example, via a custom FASTA or configuration), you must also specify `--vep_genome T2T-CHM13v2.0` and `--vep_species homo_sapiens_gca009914755v4`.
 
+For structural variants, the CHM13 panel of normals is a merged panel combining the 1000 Genomes CHM13 panel shipped with SEVERUS and the ASAP cohort, with median confidence intervals per breakpoint. The pipeline exposes it as `--pon_file` and hands it to SEVERUS via that tool's own `--PON` flag; it is downloaded automatically with `--genome CHM13`. GRCh38 continues to use the 1000 Genomes panel shipped with SEVERUS.
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -250,7 +252,7 @@ The following parameters are automatically populated from the `--genome` iGenome
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--fasta`          | Full path to the reference FASTA file. Auto-populated from `--genome`. Override for custom genomes.                                          |
 | `--bed_file`       | BED file of callable/target regions passed to SEVERUS for SV calling. Auto-populated from `--genome`.                                        |
-| `--pon_file`       | Panel of Normals VCF file used by SEVERUS for somatic SV filtering. Auto-populated from `--genome`.                                          |
+| `--pon_file`       | Panel of Normals breakpoint table (bgzipped CSV) for SEVERUS somatic SV filtering in tumor-only mode. Auto-populated from `--genome`.        |
 | `--centromere_bed` | BED file of centromere coordinates passed to WAKHAN. Auto-populated from `--genome`.                                                         |
 | `--genome_name`    | Assembly name string passed to ASCAT for genome-specific reference file selection. Auto-populated from `--genome`.                           |
 | `--vep_genome`     | VEP genome identifier (e.g. `GRCh38`, `T2T-CHM13v2.0`). Auto-populated from `--genome`. Override for CHM13 or custom assemblies.             |
