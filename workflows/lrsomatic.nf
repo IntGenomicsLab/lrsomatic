@@ -959,6 +959,7 @@ workflow LRSOMATIC {
         ch_ascat_files = ASCAT.out.segments_raw
             .mix(ASCAT.out.purityploidy, ASCAT.out.png)
             .groupTuple()
+            .map { meta, files -> [meta, files.flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
     }
 

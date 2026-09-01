@@ -11,7 +11,7 @@ process LRSOMATICREPORT {
     // build produces a genuine OCI image (the plain tag). Rebuild both whenever
     // environment.yml changes:
     //   wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await [--singularity]
-    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+    container "${workflow.containerEngine == 'singularity'
         ? 'oras://community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:dc62d809aa6fd497'
         : 'community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:c1049dbaf31bf178'}"
 
