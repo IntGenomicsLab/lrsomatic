@@ -10,6 +10,14 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "$outputDir"
+                // A builtin and a panel file at once, to cover the comma-separated form of
+                // --report_gene_panel end to end: the launch-time validation, the staging
+                // decision in workflows/lrsomatic.nf and the repeated --gene-panel flags
+                // built in conf/modules.config -- including the rewrite of a file entry to
+                // the gene_panels/ path it is staged at, which only the real
+                // conf/modules.config exercises. The report HTML is nftignored, so this
+                // does not move the snapshot.
+                report_gene_panel = "lymphoid,$projectDir/modules/local/lrsomaticreport/tests/test_panel.tsv"
             }
         }
 
@@ -43,6 +51,14 @@ nextflow_pipeline {
                     assert file("$launchDir/output/sample3/variants/clairsto/snv.vcf.gz").exists()
                     assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
                     assert file("$launchDir/output/sample3/variants/clairsto/germline.vcf.gz").exists()
+                },
+                { // both panels named in --report_gene_panel are ticked on load
+                    def report = file("$launchDir/output/sample1/report/sample1_report.html")
+                    assert report.exists()
+                    def matcher = (report.text =~ /const DEFAULT_PANELS = (\[[^\]]*\])/)
+                    assert matcher.find()
+                    assert matcher.group(1).contains("lymphoid")
+                    assert matcher.group(1).contains("test_panel")
                 },
                 { assert snapshot(
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions

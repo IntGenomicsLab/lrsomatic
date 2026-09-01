@@ -29,14 +29,23 @@ option_list = list(
   make_option("--sex",         type = "character", default = NULL,
               help = "Biological sex: male | female | XY | XX (required)"),
   make_option("--gene-panel",  type = "character", default = "none",
-              help = "Gene panel applied on load: none | builtin name (lymphoid) | path to TSV (default: none, i.e. unfiltered)"),
+              help = paste("Gene panel applied on load: none | builtin name (lymphoid) | path to TSV",
+                           "(default: none, i.e. unfiltered). Repeatable — pass it several times to",
+                           "open with several panels applied at once; a variant or SV is kept if it",
+                           "hits any of them.")),
   make_option("--output",      type = "character", default = NULL,
               help = "Output HTML path (default: <sample-id>_report.html in current dir)"),
   make_option("--title",       type = "character", default = NULL,
               help = "Report title (default: 'LRSomatic Report – <sample-id>')")
 )
 
-opt = parse_args(OptionParser(option_list = option_list))
+# --gene-panel is repeatable, which optparse cannot express (it has no action="append"
+# and would keep only the last value). Strip every occurrence from argv first and hand
+# parse_args() the remainder; --help and --version are untouched by the pre-scan.
+argv        = commandArgs(trailingOnly = TRUE)
+gene_panel_args = extract_repeated_option(argv, "--gene-panel")
+opt         = parse_args(OptionParser(option_list = option_list), args = gene_panel_args$rest)
+gene_panels = if (length(gene_panel_args$values) == 0) "none" else gene_panel_args$values
 
 # ---- Validate required arguments ----------------------------------------
 abort = function(...) { cat("ERROR:", ..., "\n"); quit(status = 1) }
@@ -49,7 +58,6 @@ sample_id   = if (!is.null(opt[["sample-id"]])) opt[["sample-id"]] else basename
 sex         = tolower(trimws(opt[["sex"]]))
 sex         = switch(sex, xy = "male", xx = "female", sex)  # normalise XY/XX
 
-gene_panel = opt[["gene-panel"]]
 output     = if (!is.null(opt[["output"]])) opt[["output"]] else
              file.path(getwd(), paste0(sample_id, "_report.html"))
 title      = if (!is.null(opt[["title"]])) opt[["title"]] else
@@ -83,38 +91,52 @@ reference = tolower(reference)
 
 # ---- Load all available gene panels ----------------------------------------
 # The rendered report always ships every builtin panel so the reader can switch
-# panels client-side; --gene-panel only decides which one is selected on load.
-# "__all__" is the sentinel the report's JS uses for "no filter" — it must stay
-# in sync with templates/sections/_gene_filter.qmd and the search hook in
-# templates/per_sample.qmd.
+# panels client-side; --gene-panel only decides which ones are checked on load.
+# "__all__" is the sentinel for "nothing selected"; it survives here and in the
+# params default of templates/per_sample.qmd, but no longer reaches the browser —
+# in the report, no panel checked *is* the unfiltered state.
 # Builtins that ship per reference ("lymphoid.hg38.tsv") resolve to one entry for
 # the reference detected above; a coordinate panel declaring a different one is a
 # hard error rather than a filter matching the wrong genome.
-all_panels = load_all_gene_panels(file.path(repo_dir, "assets"), reference)
-default_panel = if (is_no_gene_panel(gene_panel)) {
-  gene_panel = "none"
-  "__all__"
-} else if (!is.null(builtin_panel_path(file.path(repo_dir, "assets"), gene_panel, reference))) {
-  # Load it here too, so a builtin that fails to resolve against this reference aborts
-  # now rather than part-way through the Quarto render.
-  invisible(tryCatch(resolve_gene_panel(gene_panel, file.path(repo_dir, "assets"), reference),
-                     error = function(e) abort(conditionMessage(e))))
-  gene_panel
-} else if (file.exists(gene_panel)) {
-  # A user-supplied TSV: register it alongside the builtins so it can be
-  # selected on load (and switched away from and back to) in the report.
-  nm = tools::file_path_sans_ext(basename(gene_panel))
-  if (nm %in% names(all_panels)) nm = paste0(nm, "-custom")
-  all_panels[[nm]] = tryCatch(load_gene_panel(gene_panel, reference),
-                              error = function(e) abort(conditionMessage(e)))
-  # Absolute, because the template resolves it again from Quarto's own working
-  # directory (the copied template dir), not from where this script was invoked.
-  gene_panel = normalizePath(gene_panel)
-  nm
-} else {
-  abort(paste0("--gene-panel not found: tried builtin '", gene_panel,
-               "' and as a file path. Use 'none' for no filtering."))
+assets_dir = file.path(repo_dir, "assets")
+all_panels = load_all_gene_panels(assets_dir, reference)
+
+# "none" means unfiltered, so combining it with a real panel is contradictory rather
+# than a case where one of the two quietly wins.
+if (any(vapply(gene_panels, is_no_gene_panel, logical(1))) && length(gene_panels) > 1) {
+  abort("--gene-panel none cannot be combined with other panels; drop the 'none'.")
 }
+# Deduplicate by resolved path so the same TSV passed twice registers once rather
+# than a second time under a "-custom" key.
+gene_panels = unique(vapply(gene_panels, function(g)
+  if (file.exists(g)) normalizePath(g) else g, character(1)))
+
+default_panels = character(0)
+for (gp in gene_panels) {
+  if (is_no_gene_panel(gp)) next
+  if (!is.null(builtin_panel_path(assets_dir, gp, reference))) {
+    # Load it here too, so a builtin that fails to resolve against this reference aborts
+    # now rather than part-way through the Quarto render.
+    invisible(tryCatch(resolve_gene_panel(gp, assets_dir, reference),
+                       error = function(e) abort(conditionMessage(e))))
+    default_panels = c(default_panels, gp)
+  } else if (file.exists(gp)) {
+    # A user-supplied TSV: register it alongside the builtins so it can be
+    # selected on load (and switched away from and back to) in the report.
+    nm = unique_panel_name(tools::file_path_sans_ext(basename(gp)), names(all_panels))
+    all_panels[[nm]] = tryCatch(load_gene_panel(gp, reference),
+                                error = function(e) abort(conditionMessage(e)))
+    default_panels = c(default_panels, nm)
+  } else {
+    abort(paste0("--gene-panel not found: tried builtin '", gp,
+                 "' and as a file path. Use 'none' for no filtering."))
+  }
+}
+default_panels = unique(default_panels)
+# Kept as a sentinel rather than character(0): an empty vector round-trips through
+# Quarto's YAML execute_params as NULL, not as an empty character vector.
+if (length(default_panels) == 0) default_panels = "__all__"
+message("Gene panels selected on load: ", paste(default_panels, collapse = ", "))
 
 # ---- Render the Quarto template -----------------------------------------
 # Copy templates/ and assets/ into a writable working directory: repo_dir's
@@ -138,8 +160,7 @@ quarto::quarto_render(
     sample_dir    = sample_dir,
     reference     = reference,
     sex           = sex,
-    gene_panel    = gene_panel,
-    default_panel = default_panel,
+    default_panels = default_panels,
     all_panels    = all_panels,
     title         = title,
     repo_dir      = repo_dir,

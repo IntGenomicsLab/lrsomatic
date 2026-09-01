@@ -52,6 +52,17 @@ A one-column file of symbols (with or without a `gene` header) is accepted, and 
 symbol-only matching. The report's "Custom…" textarea takes bare symbols, so it is
 symbol-only too.
 
+`--gene-panel` is repeatable, so several panels can be applied at once — a builtin and your
+own list together, say. A variant or SV is kept if it hits any of them:
+
+```bash
+  --gene-panel lymphoid --gene-panel /path/to/my_genes.tsv
+```
+
+Each panel is registered under its filename stem; two files sharing a basename both stay
+selectable, the second as `<name>-custom`. Every registered panel is a checkbox in the
+report, so the reader can retick them without re-rendering.
+
 ## Bundled panels
 
 | File | Contents |

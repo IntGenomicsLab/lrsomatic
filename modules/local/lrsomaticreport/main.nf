@@ -25,18 +25,20 @@ process LRSOMATICREPORT {
     // identically named -- staging both lists flat would collide.
     tuple val(meta), path(vep_somatic), path(sv_vep), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*'), path(wakhan_files, stageAs: 'wakhan/*')
     path(report_src) // lrsomatic_report source tree (bin/, R/, templates/, assets/)
-    // Optional user-supplied gene panel TSV, staged so it is bound into the container;
-    // `[]` when --report_gene_panel names a builtin panel (or is unset), which the tool
+    // Optional user-supplied gene panel TSVs, staged so they are bound into the container;
+    // `[]` when --report_gene_panel names only builtin panels (or is unset), which the tool
     // resolves from report_src/assets/gene_lists instead. Either way the `--gene-panel`
-    // argument itself is built in conf/modules.config, which passes the *base* name --
-    // the staged name of this file when it is one.
-    path(gene_panel)
+    // arguments themselves are built in conf/modules.config -- one repeated flag per panel
+    // (the tool accepts several since v1.3.0), and for a file it names `gene_panels/<base>`,
+    // the path this input stages it at. The subdirectory keeps user-named files clear of the
+    // task root, which also holds sample_dir/, versions.yml and the output HTML.
+    path(gene_panels, stageAs: 'gene_panels/*')
 
     output:
     tuple val(meta), path("*_report.html"), emit: report
     // No CLI version flag is provided by the tool; keep in sync with the vendored
     // release recorded in assets/lrsomatic_report/VENDORED.md
-    tuple val("${task.process}"), val('lrsomatic_report'), val("1.2.1"), topic: versions, emit: versions_lrsomaticreport
+    tuple val("${task.process}"), val('lrsomatic_report'), val('1.3.0'), topic: versions, emit: versions_lrsomaticreport
 
     when:
     task.ext.when == null || task.ext.when

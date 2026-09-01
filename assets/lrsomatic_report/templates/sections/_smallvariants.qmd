@@ -11,6 +11,26 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
   # The panel filter reads the symbol column by name, not by a hard-coded position.
   cat("<script>window.SNV_COLS = ", js_col_index_map(names(dt_display)), ";</script>\n",
       sep = "")
+
+  # Values present in each tickbox-filtered column, with row counts, for the checkbox
+  # dropdowns that replace those columns' text filter boxes (assets/js/facet_filter.js).
+  # Built from the display frame, so the names match what SNV_COLS publishes. The
+  # separators mirror how the cells were built — see js_facet_defs() in R/utils.R — so
+  # ticking one consequence term matches a cell holding several. `callers` is empty on the
+  # VEP text path, and js_facet_defs() then omits it (with a message) so it keeps its text
+  # box rather than offering an empty dropdown.
+  #
+  # The requested list is published too: js_facet_defs() drops a column it cannot offer a
+  # dropdown for, and knitr swallows its message(), so the browser console is where that
+  # decision is actually visible.
+  snv_facet_cols = c("consequence", "impact", "callers")
+  cat("<script>window.SNV_FACET_COLS = ", js_vec(snv_facet_cols), ";</script>\n", sep = "")
+  cat("<script>window.SNV_FACETS = ",
+      js_facet_defs(dt_display,
+                    cols   = snv_facet_cols,
+                    seps   = c(consequence = ",", callers = ","),
+                    levels = list(impact = IMPACT_LEVELS)),
+      ";</script>\n", sep = "")
 }
 ```
 

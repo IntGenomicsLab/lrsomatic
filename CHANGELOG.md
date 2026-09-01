@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added `LRSOMATICREPORT` as the final pipeline step: a self-contained per-sample HTML report covering small variants, structural variants, copy number and QC. Skip it with `--skip_report`; choose the gene panel selected on load with `--report_gene_panel` (@ljwharbers).
-- [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Vendored the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) v1.2.1 tool source at `assets/lrsomatic_report`, so `nextflow run IntGenomicsLab/lrsomatic` ships it without a submodule checkout (@ljwharbers).
+- [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Vendored the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) v1.3.0 tool source at `assets/lrsomatic_report`, so `nextflow run IntGenomicsLab/lrsomatic` ships it without a submodule checkout (@ljwharbers).
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added a `solution_dirs` output to the WAKHAN module so its per-solution copy-number plots can be staged downstream (@ljwharbers).
 
 ### `Changed`
 
+- [#186](https://github.com/IntGenomicsLab/lrsomatic/pull/186) - Re-synced the vendored [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) to v1.3.0, which adds tickbox dropdown filters on the categorical columns of both variant tables and turns the report's gene panel selector into checkboxes (@ljwharbers).
+- [#186](https://github.com/IntGenomicsLab/lrsomatic/pull/186) - `--report_gene_panel` now takes a comma-separated list, so several panels can be applied at once: a variant or SV is kept if it hits any of them. Panel values are also validated at launch instead of failing inside the report task (@ljwharbers).
 - [#184](https://github.com/IntGenomicsLab/lrsomatic/pull/184) - Replaced the CHM13 Severus panel of normals with the merged 1000 Genomes + ASAP panel (@AmberVerhasselt).
 
 ### `Fixed`

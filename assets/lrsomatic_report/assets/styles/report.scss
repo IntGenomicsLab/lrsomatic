@@ -517,21 +517,72 @@ blockquote {
   white-space: nowrap;
 }
 
-.panel-controls__select {
-  padding: 6px 12px;
-  border-radius: 6px;
+.panel-controls__toggles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// One chip per panel. `.is-on` is toggled from JS rather than styled off :checked, so
+// the chip and the checkbox cannot disagree after a programmatic Clear.
+.panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
   border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 500;
-  background: var(--color-bg);
-  color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 
-  &:focus {
-    outline: none;
+  &:hover { border-color: var(--color-primary); }
+
+  &.is-on {
     border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  }
+
+  input {
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+  }
+
+  &:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+}
+
+// Shared by both buttons in the control bar: #panel-clear, which unticks every gene
+// panel, and #facet-clear, which clears the column tickbox filters and stays hidden
+// until one is set (see assets/js/facet_filter.js). They are two neutral secondary
+// controls sitting side by side, so they take one style — restyling one restyles both.
+.panel-controls__clear {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    outline: none;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
   }
 }
@@ -694,6 +745,184 @@ div.dt-buttons {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
   }
 }
+
+// ============================================================
+// Column facet filters (tickbox dropdowns)
+// ============================================================
+// The widget replaces DT's text input inside DT's own div.form-group — see
+// assets/js/facet_filter.js for why that div is kept rather than replaced. Everything here
+// is built from the palette custom properties, which the dark-mode block above already
+// redefines, so there are no separate dark rules.
+.facet {
+  position: relative;
+  display: block;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+// Typography matches the `thead input` rule above, so a faceted column reads at the same
+// visual weight as the text boxes beside it.
+.facet__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+}
+
+.facet__label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facet__caret {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+// A set filter has to be visible: with 400px of scrolled table the header is often the only
+// place it shows.
+.facet--active .facet__btn {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.facet__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  min-width: 210px;
+  max-width: 320px;
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+
+  // Flipped by the script when the menu would run off the right of the viewport.
+  &--right { left: auto; right: 0; }
+
+  // The base rule below sets display, so [hidden] needs saying explicitly.
+  &[hidden] { display: none; }
+}
+
+.facet__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 2px 6px;
+  border-bottom: 1px solid var(--color-border);
+
+  .facet__find {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 3px 7px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .facet__all,
+  .facet__none {
+    flex: 0 0 auto;
+    padding: 3px 7px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    cursor: pointer;
+
+    &:hover { color: var(--color-primary); border-color: var(--color-primary); }
+  }
+}
+
+.facet__list {
+  max-height: 240px;   // consequence is ~30 VEP terms
+  overflow-y: auto;
+  padding-top: 4px;
+}
+
+.facet__opt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 3px 5px;
+  border-radius: 4px;
+  font-weight: 400;
+  cursor: pointer;
+
+  &:hover { background: var(--color-surface-alt); }
+
+  // The `thead input` rule pads every input in the header; a checkbox is not a text box.
+  input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0 !important;
+    width: auto !important;
+    cursor: pointer;
+  }
+
+  &--hidden { display: none; }
+  &--none .facet__v { color: var(--color-text-muted); font-style: italic; }
+}
+
+.facet__v {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text);
+}
+
+.facet__n {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.facet__foot {
+  margin: 6px 0 2px;
+  padding: 0 4px;
+  font-family: var(--font-sans);
+  font-size: 0.64rem;
+  color: var(--color-text-muted);
+}
+
+// Both of these carry overflow:hidden above (for the card's border radius), and DT's own
+// show/hide handler only un-clips the scroll head inside them — so an open menu near the
+// bottom or right edge of a short table would be cut off. Relaxed only while one is open.
+.datatables.facet-open,
+div.dataTables_wrapper.facet-open { overflow: visible; }
 
 // ============================================================
 // Tabset (ASCAT panel-tabset)
@@ -1073,7 +1302,7 @@ main > p:last-child em,
 @media print {
   #TOC, .sidebar-navigation, .quarto-sidebar,
   .dt-buttons, div.dt-buttons, .panel-controls,
-  #custom-gene-panel, .dataTables_filter, .dataTables_length,
+  #custom-gene-panel, .facet, .dataTables_filter, .dataTables_length,
   .dataTables_paginate, .dataTables_info { display: none !important; }
 
   body {

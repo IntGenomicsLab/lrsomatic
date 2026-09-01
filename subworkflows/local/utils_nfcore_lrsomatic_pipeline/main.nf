@@ -240,6 +240,101 @@ workflow PIPELINE_COMPLETION {
 //
 def validateInputParameters() {
     genomeExistsError()
+    validateReportGenePanels()
+}
+
+//
+// Split --report_gene_panel into its individual panel tokens.
+//
+// The report tool's own --gene-panel is repeatable (lrsomatic_report >= v1.3.0), so the
+// pipeline exposes several panels as one comma-separated value. This is the single source
+// of truth for that split -- conf/modules.config mirrors the expression, because a config
+// file cannot include a function from here.
+//
+def reportGenePanelTokens(panel_spec) {
+    if (!panel_spec) {
+        return []
+    }
+    return panel_spec.toString().split(',').collect { it.trim() }.findAll { it }
+}
+
+//
+// Does a --report_gene_panel entry name a panel file rather than a builtin panel?
+//
+// Textual on purpose: conf/modules.config has to make the same call when it builds the
+// --gene-panel flags, and `file()` is not in scope inside an ext.args closure. A builtin
+// is a bare panel name, so anything with a path separator or a .tsv suffix is a file --
+// and validateReportGenePanels() rejects any entry where that disagrees with the
+// filesystem, so the textual test and the staging decision cannot drift apart.
+//
+def reportGenePanelIsFile(tok) {
+    return tok.contains('/') || tok.toLowerCase().endsWith('.tsv')
+}
+
+//
+// Names of the panels bundled with the report tool, with the reference suffix dropped:
+// "lymphoid.hg38.tsv" and "lymphoid.t2t.tsv" are both the builtin "lymphoid".
+//
+def reportBuiltinGenePanels() {
+    def gene_lists_dir = file("${params.report_src}/assets/gene_lists")
+    if (!gene_lists_dir.exists()) {
+        return []
+    }
+    return gene_lists_dir
+        .list()
+        .findAll { it.endsWith('.tsv') }
+        .collect { it.replaceFirst(/(\.(hg38|t2t))?\.tsv$/, '') }
+        .unique()
+        .sort()
+}
+
+//
+// Check --report_gene_panel before anything runs.
+//
+// Without this a typo is swallowed silently: workflows/lrsomatic.nf stages only tokens
+// that exist as files, so a misspelled path stages nothing and the run dies inside the
+// report task -- after alignment, calling and annotation have already run.
+//
+def validateReportGenePanels() {
+    if (params.skip_report) {
+        return
+    }
+    def tokens = reportGenePanelTokens(params.report_gene_panel)
+    if (!tokens) {
+        return
+    }
+
+    // "none" means unfiltered, so combining it with a real panel is contradictory rather
+    // than a case where one of the two quietly wins. The tool errors on this too; erroring
+    // here just makes it immediate.
+    if (tokens.size() > 1 && tokens.any { it.toLowerCase() == 'none' }) {
+        error("--report_gene_panel: 'none' means unfiltered and cannot be combined with other panels, got '${params.report_gene_panel}'. Drop the 'none'.")
+    }
+
+    def named = tokens.findAll { tok -> tok.toLowerCase() != 'none' && !reportGenePanelIsFile(tok) }
+    def panel_files = tokens.findAll { tok -> reportGenePanelIsFile(tok) }
+
+    def missing = panel_files.findAll { tok -> !file(tok).exists() }
+    if (missing) {
+        error("--report_gene_panel: panel file not found: '${missing.join("', '")}'.")
+    }
+
+    def builtins = reportBuiltinGenePanels()
+    def unknown = named.findAll { tok -> !builtins.contains(tok) }
+    if (unknown) {
+        error("--report_gene_panel: '${unknown.join("', '")}' is not a builtin panel. Builtin panels: ${builtins ? builtins.join(', ') : '<none found>'}. To use a panel file give its path, or a name ending in '.tsv'; use 'none' for no filtering.")
+    }
+
+    // Panel files are staged side by side into the task's gene_panels/ directory, so two
+    // panels sharing a base name would collide there whatever their source directories.
+    def duplicates = panel_files
+        .collect { tok -> file(tok).name }
+        .countBy { name -> name }
+        .findAll { _name, count -> count > 1 }
+        .keySet()
+    if (duplicates) {
+        error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
 }
 
 //

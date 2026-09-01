@@ -543,6 +543,11 @@ Sections:
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
 - **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. Phasing statistics (WhatsHap) are a collapsible block within this section.
 
+Filtering in the browser:
+
+- **Gene panels** are checkboxes in the panel bar. Tick any number and a row is kept if it hits any of them (a union); with none ticked the tables are unfiltered. `--report_gene_panel` only sets which are ticked on load — see [usage](usage.md#applying-several-panels-at-once). With two or more ticked, each `panel_hit` entry names the panel it matched in square brackets.
+- **Categorical columns** filter by tickbox dropdown rather than a text box: `consequence`, `impact` and `callers` on the small-variant table, and `svclass`, `svtype`, `impact`, `consequence` and `caller` on the SV table. Each dropdown lists the values actually present in that sample with a row count. Ticking several values in one column is OR; ticking values in two columns is AND. A column with fewer than two distinct values keeps a plain text box. Every other column keeps its text box, and the table's own search box still does substring across all columns.
+
 The report is one self-contained file — plots and tables are embedded, so it can be copied or emailed on its own.
 
 ### `multiqc`
