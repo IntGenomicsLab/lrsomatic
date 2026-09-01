@@ -956,12 +956,6 @@ workflow LRSOMATIC {
 
         // Collect all ASCAT copy-number files (segments_raw, purityploidy, diagnostic PNGs) per sample
         // for the final report module -- it globs by suffix, so exact grouping doesn't matter.
-        // NOTE (local patch, not upstream): added .flatten() -- ASCAT.out.png already emits a
-        // list of PNGs per sample, so groupTuple() alone leaves a nested list ([file, file,
-        // [file, file, ...]]), which the LRSOMATICREPORT module's `path(ascat_files)` input
-        // rejects ("Not a valid path value type: java.util.ArrayList"). Same fix already
-        // applied to ch_wakhan_files just below (its own comment: "solution_dirs contributes
-        // a list") -- this channel was the one spot that fix wasn't also applied.
         ch_ascat_files = ASCAT.out.segments_raw
             .mix(ASCAT.out.purityploidy, ASCAT.out.png)
             .groupTuple()

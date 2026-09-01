@@ -11,12 +11,6 @@ process LRSOMATICREPORT {
     // build produces a genuine OCI image (the plain tag). Rebuild both whenever
     // environment.yml changes:
     //   wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await [--singularity]
-    // NOTE (local patch, not upstream): dropped the `&& !task.ext.singularity_pull_docker_container`
-    // guard -- `task` is not in scope inside a `container` directive closure on this cluster's
-    // Nextflow build (25.09.0-beta), so the original line threw "No such variable: task" and
-    // killed the whole run at the very last step. Nothing in this project's config ever sets
-    // ext.singularity_pull_docker_container for this process, so the guard was always a no-op
-    // for us anyway -- safe to drop rather than work around.
     container "${workflow.containerEngine == 'singularity'
         ? 'oras://community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:dc62d809aa6fd497'
         : 'community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:c1049dbaf31bf178'}"
