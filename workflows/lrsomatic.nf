@@ -46,6 +46,8 @@ include { TUMORONLY_SMALLVAR              } from '../subworkflows/local/tumor_on
 include { PAIRED_SMALLVAR_SOMATIC         } from '../subworkflows/local/paired/paired_smallvar_somatic'
 include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/paired_smallvar_germline'
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
+include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
+include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
 
 
 
@@ -939,6 +941,58 @@ workflow LRSOMATIC {
         )
 
         ch_versions = ch_versions.mix(ASCAT.out.versions)
+    }
+
+    //
+    // SUBWORKFLOWS: TUMORONLY_SAVANA / PAIRED_SAVANA (SAVANA SV + copy-number calling)
+    // Mirrors SEVERUS's input (reuses severus_input directly, including the phased germline VCF),
+    // but SAVANA's tumor-only and matched-normal modes are genuinely different tool invocations
+    // (`savana to` vs `savana run`+`savana classify`+`savana cna`), not a single flag-conditioned
+    // module -- so, like this pipeline's small-variant callers, it gets tumor-only/paired
+    // subworkflow variants rather than one shared process.
+    // Input:  severus_input, branched on whether normal_bam is present
+    //         ch_fasta / ch_fai
+    // Output: .somatic_vcf -- [meta, vcf]  -- classified somatic SV VCF
+    //         .cn_calls    -- [meta, tsv]  -- segmented absolute copy number
+    //
+
+    if (!params.skip_savana) {
+        severus_input
+            .branch { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, phased_tbi ->
+                tumor_only: !normal_bam
+                paired: normal_bam
+            }
+            .set { branched_savana_input }
+        // branched_savana_input.tumor_only / .paired: same 7-tuple shape as severus_input
+
+        branched_savana_input.tumor_only
+            .map { meta, tumor_bam, tumor_bai, _normal_bam, _normal_bai, phased_vcf, phased_tbi ->
+                return [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
+            }
+            .set { tumoronly_savana_input }
+        // tumoronly_savana_input: [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
+
+        TUMORONLY_SAVANA (
+            tumoronly_savana_input,
+            ch_fasta,
+            ch_fai
+        )
+
+        PAIRED_SAVANA (
+            branched_savana_input.paired,
+            ch_fasta,
+            ch_fai
+        )
+
+        TUMORONLY_SAVANA.out.somatic_vcf
+            .mix(PAIRED_SAVANA.out.somatic_vcf)
+            .set { savana_somatic_vcf }
+        // savana_somatic_vcf: [meta, vcf]
+
+        TUMORONLY_SAVANA.out.cn_calls
+            .mix(PAIRED_SAVANA.out.cn_calls)
+            .set { savana_cn_calls }
+        // savana_cn_calls: [meta, tsv]
     }
 
     //

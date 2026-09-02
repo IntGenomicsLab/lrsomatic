@@ -337,6 +337,10 @@
                     "type": "boolean",
                     "description": "Skip ASCAT"
                 },
+                "skip_savana": {
+                    "type": "boolean",
+                    "description": "Skip SAVANA (SV + copy-number calling)"
+                },
                 "skip_m6a": {
                     "type": "boolean",
                     "description": "Skip m6a calling by Fibertools"
