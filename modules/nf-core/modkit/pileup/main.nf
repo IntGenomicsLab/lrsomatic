@@ -3,9 +3,10 @@ process MODKIT_PILEUP {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ont-modkit:0.6.1--hcdda2d0_0':
-        'biocontainers/ont-modkit:0.6.1--hcdda2d0_0' }"
+    // Patched modkit 0.6.4 (ljwharbers/modkit@697de7b, nanoporetech/modkit#720): stock 0.4.3-0.6.4
+    // drops 32-65 % of reads from recent PacBio HiFi BAMs whose 5mC+5hmC probabilities sum above 1
+    // (nanoporetech/modkit#612). Return to the nf-core biocontainer once a release includes the fix.
+    container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b'
 
     input:
     tuple val(meta), path(bam), path(bai)
