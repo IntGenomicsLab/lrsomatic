@@ -257,6 +257,74 @@ load_all_gene_panels = function(assets_dir, reference = NULL) {
   panels
 }
 
+# Give a user-supplied panel a key that doesn't collide with an already-registered
+# one. The first collision keeps the plain "-custom" suffix the single-panel code
+# used; further collisions number from 2, so several TSVs sharing a basename all
+# stay selectable instead of overwriting each other.
+unique_panel_name = function(nm, taken) {
+  if (!(nm %in% taken)) return(nm)
+  cand = paste0(nm, "-custom")
+  i = 1L
+  while (cand %in% taken) {
+    i = i + 1L
+    cand = paste0(nm, "-custom", i)
+  }
+  cand
+}
+
+# Resolve the panel keys selected on load into real panel objects, keyed by the same
+# names params$all_panels uses (which is also what the checkboxes carry).
+#
+# Deliberately re-read from disk rather than reusing params$all_panels directly: a
+# panel object that has round-tripped through Quarto's YAML execute_params comes back
+# with list-typed vectors, and panel_intervals() and the `%in%` symbol tests want real
+# atomic ones. A custom TSV's key is not a builtin name, so its location is recovered
+# from the registered object's own $path.
+#
+# Not wrapped in tryCatch, for the same reason resolve_gene_panel() isn't: a panel that
+# can't be resolved has to fail the render rather than silently match nothing.
+resolve_selected_panels = function(keys, all_panels, assets_dir, reference = NULL) {
+  keys = setdiff(as.character(unlist(keys)), "__all__")
+  keys = keys[!is.na(keys) & nzchar(keys)]
+  if (length(keys) == 0) return(list())
+  out = list()
+  for (k in unique(keys)) {
+    p    = if (!is.null(all_panels)) all_panels[[k]] else NULL
+    path = if (!is.null(p) && !is.null(p$path)) as.character(p$path)[1] else NA_character_
+    out[[k]] = if (!is.na(path) && file.exists(path)) load_gene_panel(path, reference)
+               else resolve_gene_panel(k, assets_dir, reference)
+  }
+  out[!vapply(out, is.null, logical(1))]
+}
+
+# Pull every occurrence of a repeatable flag out of an argv vector.
+#
+# optparse has no action="append": given `--gene-panel a --gene-panel b` it silently
+# keeps only "b". So the flag is stripped from argv here and parse_args() is handed the
+# remainder; its make_option() entry stays in option_list purely so --help documents it.
+# Both `--flag value` and `--flag=value` are accepted.
+extract_repeated_option = function(args, flag) {
+  args = as.character(args)
+  vals = character(0)
+  rest = character(0)
+  i = 1L
+  while (i <= length(args)) {
+    a = args[i]
+    if (identical(a, flag)) {
+      if (i == length(args)) stop(flag, " requires a value")
+      vals = c(vals, args[i + 1L])
+      i = i + 2L
+    } else if (startsWith(a, paste0(flag, "="))) {
+      vals = c(vals, substring(a, nchar(flag) + 2L))
+      i = i + 1L
+    } else {
+      rest = c(rest, a)
+      i = i + 1L
+    }
+  }
+  list(values = vals, rest = rest)
+}
+
 # ---- Small JS serialisation helpers --------------------------------------
 # The report ships panel data and column positions to its own client-side filter.
 # Keeping these here means the R table and the JS that indexes it are generated
@@ -300,6 +368,98 @@ js_rows = function(dt, cols) {
   cells = lapply(cols, function(cl) .js_cell(dt[[cl]]))
   rows = do.call(paste, c(cells, sep = ","))
   paste0("[[", paste(rows, collapse = "],["), "]]")
+}
+
+# VEP's impact severity order. The tickbox dropdowns present impact in this order rather
+# than by count, because severity is the only order a reader expects — and it is the order
+# the styleEqual() palettes in _smallvariants.qmd and _sv.qmd already use.
+IMPACT_LEVELS = c("HIGH", "MODERATE", "LOW", "MODIFIER")
+
+# A column with fewer than this many distinct values is not worth a dropdown, and one with
+# more would inline a large payload into a self-contained report: either way it keeps its
+# plain text filter. 0 and 1 are real cases, not defects — `callers` is "" for every row on
+# the VEP text path, and the SV table has a single caller today.
+FACET_MIN_VALUES = 2L
+FACET_MAX_VALUES = 200L
+
+# Distinct values, with row counts, for the checkbox-dropdown ("tickbox") column filters —
+# see assets/js/facet_filter.js. Enumerated here rather than by a client-side scan because
+# the small-variant table runs 27k–167k rows.
+#
+# cols   : facet column names as they appear in the *display* frame (post-setnames), which
+#          is what the client resolves through window.SNV_COLS / window.SV_COLS.
+# seps   : named vector of per-column separators. A column named here is split into tokens,
+#          one not named is matched whole. The separator has to mirror how the cell was
+#          built — `consequence` is VEP's "&"-joined terms rewritten to commas and `callers`
+#          is paste(sort(unique(caller)), collapse = ",") — so that ticking one term matches
+#          a two-term cell. It travels in the payload rather than being hard-coded in the JS.
+# levels : named list of fixed value orders (impact). Values not listed fall in after them,
+#          by descending row count then alphabetically, so the output is deterministic.
+#
+# Returns a JS object literal keyed by column name:
+#   {"impact":{"sep":null,"values":[["HIGH",1203],["MODERATE",8140],[null,17]]},
+#    "consequence":{"sep":",","values":[["intron_variant",90210], ...]}}
+# `sep: null` means match the whole cell. A `null` value is the "no value" bucket (NA, or
+# empty after trimming) and always sorts last; its "(none)" label is applied client-side, so
+# a literal cell value of "(none)" cannot collide with it. Counts are *rows* per distinct
+# token — a split column's counts therefore sum to more than nrow() — and they are over the
+# whole table, never recomputed per filter.
+#
+# A column that is absent, or outside [FACET_MIN_VALUES, FACET_MAX_VALUES] distinct values,
+# is omitted with a message() and keeps its text box. The message is the point: a renamed
+# facet column is otherwise invisible, because the text box left behind looks intentional.
+js_facet_defs = function(dt, cols, seps = character(0), levels = list()) {
+  if (is.null(dt) || nrow(dt) == 0 || length(cols) == 0) return("{}")
+  entries = character(0)
+
+  for (nm in cols) {
+    if (!nm %in% names(dt)) {
+      message("Facet column '", nm, "' is not in the table - no value filter for it.")
+      next
+    }
+    sp = if (nm %in% names(seps)) seps[[nm]] else NA_character_
+    v  = as.character(dt[[nm]])
+
+    if (!is.na(sp) && nzchar(sp)) {
+      lst  = strsplit(v, sp, fixed = TRUE)
+      lens = lengths(lst)
+      # A cell that splits into nothing at all still contributes its row to the NA bucket.
+      lst[lens == 0L] = NA_character_
+      d = data.table(row = rep.int(seq_along(v), pmax(lens, 1L)),
+                     tok = trimws(unlist(lst, use.names = FALSE)))
+      d = unique(d, by = c("row", "tok"))   # "a,a" counts its row once
+    } else {
+      d = data.table(row = seq_along(v), tok = trimws(v))
+    }
+    d[is.na(tok) | !nzchar(tok), tok := NA_character_]
+
+    cnt   = d[, .N, by = tok]
+    n_val = nrow(cnt[!is.na(tok)])
+    if (n_val < FACET_MIN_VALUES || n_val > FACET_MAX_VALUES) {
+      message("Facet column '", nm, "': ", n_val,
+              " distinct value(s) - keeping the plain text filter.")
+      next
+    }
+
+    # Fixed levels first (only those actually present), then by descending count, then
+    # alphabetically so ties are stable. The NA bucket is an escape hatch rather than a
+    # value competing for attention, so it sorts last whatever its count.
+    lv   = intersect(as.character(levels[[nm]]), cnt$tok[!is.na(cnt$tok)])
+    rank = ifelse(is.na(cnt$tok), length(lv) + 2L,
+                  ifelse(cnt$tok %in% lv, match(cnt$tok, lv), length(lv) + 1L))
+    cnt  = cnt[order(rank, -N, tok)]
+
+    vals = sprintf("[%s,%s]",
+                   ifelse(is.na(cnt$tok), "null", js_quote(cnt$tok)),
+                   js_num(cnt$N))
+    entries = c(entries,
+                sprintf('%s:{"sep":%s,"values":[%s]}',
+                        js_quote(nm),
+                        if (is.na(sp) || !nzchar(sp)) "null" else js_quote(sp),
+                        paste(vals, collapse = ",")))
+  }
+
+  paste0("{", paste(entries, collapse = ","), "}")
 }
 
 # Format a number for human-readable display

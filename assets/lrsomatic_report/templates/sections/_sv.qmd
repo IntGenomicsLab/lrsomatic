@@ -87,6 +87,19 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
                             "vaf", "consequence", "impact", "caller"))
   cat("<script>window.SV_COLS = ", js_col_index_map(names(sv_display)), ";</script>\n",
       sep = "")
+
+  # Values present in each tickbox-filtered column, for the checkbox dropdowns in the
+  # filter row (assets/js/facet_filter.js). Emitted after setcolorder so the names are
+  # final. `caller` is a single value today, so js_facet_defs() omits it and it keeps its
+  # text box — see R/utils.R.
+  sv_facet_cols = c("svclass", "svtype", "impact", "consequence", "caller")
+  cat("<script>window.SV_FACET_COLS = ", js_vec(sv_facet_cols), ";</script>\n", sep = "")
+  cat("<script>window.SV_FACETS = ",
+      js_facet_defs(sv_display,
+                    cols   = sv_facet_cols,
+                    seps   = c(consequence = ","),
+                    levels = list(impact = IMPACT_LEVELS)),
+      ";</script>\n", sep = "")
 }
 ```
 
@@ -328,30 +341,63 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
   # own line, which HTML collapses to a space — leaving " ," after every <code>.
   code = function(x) paste0("<code>", htmltools::htmlEscape(x), "</code>")
 
-  panel_note = if (is.null(panel)) {
-    "No gene panel is applied on load; select one above to filter both tables."
-  } else if (isTRUE(panel$has_coords)) {
-    sprintf(paste("Panel %s matches on <strong>breakend coordinates</strong> (%s intervals,",
-                  "within %s of either breakend of a BND or %s of the span of any other",
-                  "type)%s Each %s entry names the gene, the side it matched on (%s, %s,",
-                  "or %s for a contiguous type), and then either %s — the breakend or span",
-                  "overlaps the gene itself — or the distance to it. Those windows are wide,",
-                  "so a hit is not on its own a disrupted gene: read the second token."),
-            code(basename(panel$path)), length(panel$start),
-            fmt_bp(SV_PANEL_WINDOW_BND), fmt_bp(SV_PANEL_WINDOW_OTHER),
-            if (nzchar(panel$reference)) paste0(", built on ", panel$reference, ".")
-            else paste(", whose reference is unverified — the panel declares none, so",
-                       "nothing checks it against this report's."),
-            code("panel_hit"), code("A"), code("B"), code("span"), code("direct"))
-  } else {
-    sprintf(paste("Panel %s carries no coordinates, so SVs are matched on <strong>gene",
-                  "symbol</strong> only: a breakend VEP did not annotate cannot match,",
-                  "whatever it is near. Every %s entry therefore reads %s — a symbol sits",
-                  "on the breakend itself, and there is no distance to report. Add %s, %s",
-                  "and %s columns to match on position instead."),
-            code(basename(panel$path)), code("panel_hit"), code("direct"),
-            code("chrom"), code("start"), code("end"))
+  # One note per *registered* panel, not just the ones ticked on load, all but the
+  # active ones hidden. The reader can retick at will, and a note written once from the
+  # load-time selection went stale the moment they did. updatePanelNotes() below shows
+  # the matching ones; `hidden` rather than inline display, so the print stylesheet
+  # isn't fought over it.
+  panel_body = function(p) {
+    if (isTRUE(p$has_coords)) {
+      sprintf(paste("Panel %s matches on <strong>breakend coordinates</strong> (%s intervals,",
+                    "within %s of either breakend of a BND or %s of the span of any other",
+                    "type)%s Each %s entry names the gene, the side it matched on (%s, %s,",
+                    "or %s for a contiguous type), and then either %s — the breakend or span",
+                    "overlaps the gene itself — or the distance to it. Those windows are wide,",
+                    "so a hit is not on its own a disrupted gene: read the second token."),
+              code(basename(as.character(p$path)[1])), length(unlist(p$start)),
+              fmt_bp(SV_PANEL_WINDOW_BND), fmt_bp(SV_PANEL_WINDOW_OTHER),
+              if (nzchar(as.character(p$reference)[1]))
+                paste0(", built on ", as.character(p$reference)[1], ".")
+              else paste(", whose reference is unverified — the panel declares none, so",
+                         "nothing checks it against this report's."),
+              code("panel_hit"), code("A"), code("B"), code("span"), code("direct"))
+    } else {
+      sprintf(paste("Panel %s carries no coordinates, so SVs are matched on <strong>gene",
+                    "symbol</strong> only: a breakend VEP did not annotate cannot match,",
+                    "whatever it is near. Every %s entry therefore reads %s — a symbol sits",
+                    "on the breakend itself, and there is no distance to report. Add %s, %s",
+                    "and %s columns to match on position instead."),
+              code(basename(as.character(p$path)[1])), code("panel_hit"), code("direct"),
+              code("chrom"), code("start"), code("end"))
+    }
   }
+
+  note_span = function(key, body, shown) {
+    sprintf('<span class="sv-panel-note" data-panel="%s"%s>%s</span>',
+            htmltools::htmlEscape(key, attribute = TRUE),
+            if (shown) "" else " hidden", body)
+  }
+
+  all_p    = if (!is.null(params$all_panels)) params$all_panels else list()
+  selected = setdiff(as.character(unlist(params$default_panels)), "__all__")
+
+  panel_note = paste(c(
+    note_span("__none__",
+              "No gene panel is ticked; tick one above to filter both tables.",
+              length(selected) == 0),
+    vapply(names(all_p), function(nm)
+      note_span(nm, panel_body(all_p[[nm]]), nm %in% selected),
+      character(1)),
+    note_span("__custom__",
+              paste("The custom list is bare symbols, so its SVs are matched on the",
+                    "annotated breakend genes only — no positional window."),
+              FALSE),
+    note_span("__multi__",
+              sprintf(paste("With more than one panel ticked a row is kept if it hits",
+                            "<strong>any</strong> of them, and each %s entry ends with the",
+                            "panel it matched in square brackets."), code("panel_hit")),
+              length(selected) >= 2)
+  ), collapse = " ")
 
   annot_note = if (!is.null(SECTION_DATA$sv$annotation_path))
     sprintf(paste("Breakend genes are from %s, joined on record ID; records that",
@@ -405,4 +451,22 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
       locus_note, annot_note, panel_note, circos_note))
   )
 }
+```
+
+```{r sv-panel-notes-js, results='asis'}
+# Show the notes for the ticked panels. Defined here rather than in per_sample.qmd's
+# handler block because the spans it drives are written above; the handler calls it
+# through a guard, so the ordering between the two is not load-bearing.
+cat(r"----(<script>
+window.updatePanelNotes = function () {
+  var active = (window.svPanelState && window.svPanelState.panels) || [];
+  document.querySelectorAll(".sv-panel-note").forEach(function (el) {
+    var key = el.getAttribute("data-panel");
+    if (key === "__none__")       el.hidden = active.length > 0;
+    else if (key === "__multi__") el.hidden = active.length < 2;
+    else                          el.hidden = active.indexOf(key) < 0;
+  });
+};
+</script>
+)----")
 ```

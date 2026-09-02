@@ -27,7 +27,7 @@ nextflow_process {
                     []  // wakhan_files
                 ]
                 input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
-                input[2] = [] // gene_panel
+                input[2] = [] // gene_panels
                 """
             }
         }
@@ -62,7 +62,7 @@ nextflow_process {
                     []  // wakhan_files
                 ]
                 input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
-                input[2] = [] // gene_panel
+                input[2] = [] // gene_panels
                 """
             }
         }
@@ -83,8 +83,8 @@ nextflow_process {
 
     // A user-supplied panel TSV lives outside the task work dir, so it only reaches
     // render_report.R if it is staged (and therefore bound into the container) via the
-    // `gene_panel` input -- otherwise the tool aborts with "--gene-panel not found".
-    // conf/modules.config passes the *base* name, which is the staged name here.
+    // `gene_panels` input -- otherwise the tool aborts with "--gene-panel not found".
+    // conf/modules.config passes `gene_panels/<base name>`, which is the staged path here.
     test("custom gene panel tsv - real render") {
 
         config "./gene_panel.config"
@@ -104,7 +104,7 @@ nextflow_process {
                     []  // wakhan_files
                 ]
                 input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
-                input[2] = file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true)
+                input[2] = [ file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true) ]
                 """
             }
         }
@@ -116,6 +116,61 @@ nextflow_process {
                 // base name, so its presence in the HTML proves the TSV was read.
                 { assert path(process.out.report.get(0).get(1)).text.contains("test_panel") },
                 { assert path(process.out.report.get(0).get(1)).text.contains("TP53") }
+            )
+        }
+
+    }
+
+    // The tool's --gene-panel is repeatable since v1.3.0, and conf/modules.config emits one
+    // flag per comma-separated entry of --report_gene_panel. This covers the union path with
+    // two staged TSVs plus a builtin: both files have to be staged under distinct names in
+    // gene_panels/, and the panel each hit came from has to be named in the label -- the
+    // suffix only appears when more than one panel is active, so it is the marker that this
+    // is not silently the single-panel path.
+    test("several gene panels - real render") {
+
+        config "./multi_gene_panel.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/test_SOMATIC_VEP.vcf.gz", checkIfExists: true),
+                    [], // sv_vep
+                    [], // severus_vcf
+                    [], // somatic_vcf
+                    [], // ascat_files
+                    [], // qc_tumor_files
+                    [], // qc_normal_files
+                    []  // wakhan_files
+                ]
+                input[1] = file("${projectDir}/assets/lrsomatic_report", checkIfExists: true)
+                input[2] = [
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel_b.tsv", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def report_text = path(process.out.report.get(0).get(1)).text
+            // This line is what carries the repeated --gene-panel flags through to the
+            // report: had only the last flag survived, it would name a single panel.
+            def matcher = (report_text =~ /const DEFAULT_PANELS = (\[[^\]]*\])/)
+            assert matcher.find()
+            def default_panels = matcher.group(1)
+            assertAll(
+                { assert default_panels.contains("test_panel") },
+                { assert default_panels.contains("test_panel_b") },
+                { assert default_panels.contains("lymphoid") },
+                // SMAD4 and VHL appear in no builtin panel, so their presence proves
+                // test_panel_b was read off disk rather than merely named.
+                { assert report_text.contains("SMAD4") },
+                { assert report_text.contains("VHL") },
+                { assert report_text.contains("TP53") }
             )
         }
 

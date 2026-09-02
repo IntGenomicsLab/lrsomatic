@@ -6,8 +6,8 @@ Do not edit it here — fix upstream, tag a release, and re-sync.
 | | |
 |---|---|
 | Upstream | <https://github.com/ljwharbers/lrsomatic_report> |
-| Release | `v1.2.1` (`1c28f9cde24e903a5a607897e275108e3dff6677`) |
-| Vendored commit | `1c28f9cde24e903a5a607897e275108e3dff6677` (the tag itself) |
+| Release | `v1.3.0` (`236ab35d5d7c018df1c6b477ecc867c60efd2ff9`) |
+| Vendored commit | `236ab35d5d7c018df1c6b477ecc867c60efd2ff9` (the tag itself) |
 | License | MIT (see `LICENSE`) |
 
 ## Why vendored rather than a submodule
@@ -29,14 +29,15 @@ Only what `bin/render_report.R` needs at run time:
 bin/  R/  templates/  assets/  LICENSE  README.md
 ```
 
-Upstream `docs/`, `tests/`, `recipe/` and `CLAUDE.md` are deliberately excluded. (Upstream
-marks `docs/` and `tests/` `export-ignore` in its `.gitattributes`; `recipe/` and
-`CLAUDE.md` are not marked, so they must be left behind by hand when copying.)
+Upstream `docs/`, `tests/` (both `tests/testthat/` and `tests/js/`), `recipe/` and
+`CLAUDE.md` are deliberately excluded. (Upstream marks `docs/` and `tests/`
+`export-ignore` in its `.gitattributes`; `recipe/` and `CLAUDE.md` are not marked, so
+they must be left behind by hand when copying.)
 
 ## Re-syncing on the next upstream release
 
 ```bash
-TAG=v1.3.0
+TAG=v1.4.0
 git clone --depth 1 --branch "$TAG" https://github.com/ljwharbers/lrsomatic_report.git "$TMPDIR/lrr"
 rm -rf assets/lrsomatic_report/{bin,R,templates,assets,LICENSE,README.md}
 cp -a "$TMPDIR"/lrr/{bin,R,templates,assets,LICENSE,README.md} assets/lrsomatic_report/

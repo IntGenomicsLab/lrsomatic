@@ -27,7 +27,8 @@ Matched and tumour-only runs take the same command: the run mode and every input
 are discovered from the sample directory.
 
 Tables render unfiltered. Add `--gene-panel lymphoid` (or a path to your own TSV) to have a
-panel selected when the report opens — see [Gene panels](#gene-panels).
+panel applied when the report opens, and pass the option more than once to apply several at
+the same time — see [Gene panels](#gene-panels).
 
 ## All options
 
@@ -37,7 +38,8 @@ panel selected when the report opens — see [Gene panels](#gene-panels).
 --reference    t2t | hg38 | auto  (default: auto)
 --sex          male | female | XY | XX  (required)
 --gene-panel   none | builtin panel name (e.g. lymphoid) | path to a custom TSV
-               (default: none — tables render unfiltered)
+               (default: none — tables render unfiltered). Repeatable: pass it
+               several times to apply several panels at once (union).
 --output       Output HTML path  (default: <sample-id>_report.html in current dir)
 --title        Report title
 ```
@@ -65,11 +67,44 @@ panel selected when the report opens — see [Gene panels](#gene-panels).
 >   `lymphoid.tsv` is replaced by `lymphoid.hg38.tsv` and `lymphoid.t2t.tsv`; a custom
 >   symbol-only TSV still works and still matches on symbols.
 
+> **Changed in v1.3.0:**
+> - The categorical columns of both variant tables now filter by **tickbox dropdown**
+>   instead of a free-text box: `consequence`, `impact` and `callers` on the small-variant
+>   table, `svclass`, `svtype`, `impact`, `consequence` and `caller` on the SV table. Each
+>   dropdown lists the values actually present in that sample with a row count, so it also
+>   answers "what is even in this column?". Every other column keeps its text box, and the
+>   table's own search box still does substring across all columns.
+> - Ticking several values in one column is **OR**; ticking values in two columns is
+>   **AND**. A ticked term matches a cell holding several — ticking `missense_variant` also
+>   shows a row whose consequence is `missense_variant,splice_region_variant`. Counts are
+>   over all rows and do not change as you filter, and `(none)` selects the rows with no
+>   value in that column.
+> - A column with fewer than two distinct values keeps its plain text box rather than
+>   offering an empty dropdown. That is expected for `callers` when VEP produced its default
+>   text output (which carries no per-variant caller) and for the SV `caller` column, which
+>   has one value today.
+> - Ticks survive changing the gene panel, are reflected in the "N shown" count, and are
+>   honoured by the copy/CSV buttons. **Clear value filters** in the panel bar resets them —
+>   it appears only while something is ticked, since a filter set on a header that has been
+>   scrolled past is otherwise easy to lose track of.
+> - Fixed: the "N small variants · N SVs shown" line went stale when a per-column filter was
+>   used, having only followed the gene-panel selector.
+> - `--gene-panel` is now **repeatable**, and the report's panel selector is a row of
+>   checkboxes rather than a dropdown: tick any number and a row is kept if it hits **any**
+>   of them. No box ticked is the unfiltered state, so the "All genes" entry is gone. With
+>   two or more ticked, each `panel_hit` entry ends with the panel it matched in square
+>   brackets — with one, the labels read exactly as before. `--gene-panel none` combined
+>   with a real panel is now an error rather than a case where one quietly wins.
+> - The SV table's footnote about how the panel matches now follows the ticked boxes; it
+>   previously described the load-time panel and went stale the moment a reader switched.
+
 ## Gene panels
 
-Reports are **unfiltered by default**. `--gene-panel` only chooses which panel is selected when
+Reports are **unfiltered by default**. `--gene-panel` only chooses which panels are ticked when
 the report opens; the rendered HTML always contains every variant and every builtin panel, so a
-reader can switch panels (or paste a custom gene list) in the browser without re-rendering.
+reader can tick and untick panels (or paste a custom gene list) in the browser without
+re-rendering. In the report the panels are checkboxes: tick any number and a variant or SV is
+kept if it hits **any** of them, and with none ticked the tables are unfiltered.
 
 Built-in panels live in `assets/gene_lists/`. Each is a TSV with a `gene` column (HGNC symbols)
 and, optionally, `chrom`/`start`/`end` — which changes how structural variants are matched:
@@ -96,10 +131,18 @@ single entry, resolved against the detected one.
 ```bash
 --gene-panel lymphoid                # open with the builtin lymphoid panel applied
 --gene-panel /path/to/my_genes.tsv   # must have a 'gene' column or be a single-column file
+
+# Repeatable — open with both applied, a row kept if it hits either:
+--gene-panel lymphoid --gene-panel /path/to/my_genes.tsv
 ```
 
+With more than one panel ticked, each `panel_hit` entry ends with the panel it matched in
+square brackets (`MYC (A, direct) [lymphoid]`); with one, there is no suffix. Two TSVs sharing
+a basename both stay selectable — the second is registered as `<name>-custom`.
+
 A `--gene-panel` value that is neither `none`, a builtin name, nor an existing file is an error —
-a typo will not silently produce an unfiltered report. See
+a typo will not silently produce an unfiltered report. `none` combined with a real panel is an
+error too, rather than a case where one of the two quietly wins. See
 [`assets/gene_lists/README.md`](assets/gene_lists/README.md) for the full file format.
 
 ## Expected input layout
@@ -206,12 +249,15 @@ lrsomatic_report/
 │   ├── parse_ascat.R            ASCAT segments + purity/ploidy parsers
 │   ├── parse_qc.R               Mosdepth, cramino, flagstat parsers
 │   ├── circos.R                 draw_circos() — the genome-wide circos SVG
-│   └── circos_bnd.R             draw_bnd_circos() — the breakend circos, inline and row-linked
+│   └── circos_bnd.R             Breakend circos: selects and serialises it for the browser
 ├── templates/per_sample.qmd    Quarto template (HTML report)
 ├── assets/
 │   ├── references/{t2t,hg38}/  Cytobands + chrom lengths (bundled, no network needed)
-│   └── gene_lists/             lymphoid.{hg38,t2t}.tsv + README
-└── tests/                      Unit tests (testthat)
+│   ├── gene_lists/             lymphoid.{hg38,t2t}.tsv + README
+│   ├── styles/                 report.scss (the report theme)
+│   └── js/                     bnd_circos.js (breakend circos), facet_filter.js (tickbox
+│                               column filters) — inlined at render time
+└── tests/                      testthat unit tests + tests/js (node, no dependencies)
 ```
 
 ## Roadmap

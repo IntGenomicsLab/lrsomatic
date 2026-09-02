@@ -390,14 +390,52 @@ sv_display_columns = function(sv_table, chrom_levels = NULL) {
 # not disruption. The "Panel SVs" summary card counts the non-empty entries; the
 # client-side filter applies the same test with the same windows and builds the same
 # labels.
-sv_panel_hits = function(sv_table, panel,
+#
+# Several panels can be active at once, so `panels` is either a single panel object or a
+# named list of them; a hit against any of them counts (union). When more than one is
+# active each label gains a " [name]" suffix saying which panel matched — with one panel
+# the labels are exactly what they always were, since there is nothing to disambiguate.
+# svPanelHits() in the panel-js-data chunk of templates/per_sample.qmd mirrors this rule
+# and must change with it.
+sv_panel_hits = function(sv_table, panels,
                          bnd_window = SV_PANEL_WINDOW_BND,
                          other_window = SV_PANEL_WINDOW_OTHER) {
   n = if (is.null(sv_table)) 0L else nrow(sv_table)
   if (n == 0) return(character(0))
+
+  ps = .as_panel_list(panels)
+  if (length(ps) == 0) return(rep("", n))
+  if (length(ps) == 1) return(.sv_panel_hits_one(sv_table, ps[[1]], "", bnd_window, other_window))
+
+  per_panel = lapply(names(ps), function(nm)
+    .sv_panel_hits_one(sv_table, ps[[nm]], paste0(" [", nm, "]"), bnd_window, other_window))
+  vapply(seq_len(n), function(i) {
+    parts = unique(unlist(lapply(per_panel, `[[`, i), use.names = FALSE))
+    paste(parts[nzchar(parts)], collapse = ", ")
+  }, character(1))
+}
+
+# A panel object is a plain list, and so is a list of panels — tell them apart by the
+# fields load_gene_panel() always sets rather than by class.
+.as_panel_list = function(panels) {
+  if (is.null(panels) || length(panels) == 0) return(list())
+  if (!is.null(panels$genes) || !is.null(panels$has_coords)) {
+    nm = if (!is.null(panels$name)) as.character(panels$name)[1] else "panel"
+    return(setNames(list(panels), nm))
+  }
+  ps = panels[!vapply(panels, is.null, logical(1))]
+  if (is.null(names(ps))) names(ps) = paste0("panel", seq_along(ps))
+  ps
+}
+
+# One panel's per-row labels. `tag` is appended to every label ("" for a lone panel).
+.sv_panel_hits_one = function(sv_table, panel, tag = "",
+                              bnd_window = SV_PANEL_WINDOW_BND,
+                              other_window = SV_PANEL_WINDOW_OTHER) {
+  n = nrow(sv_table)
   if (is.null(panel)) return(rep("", n))
 
-  label = function(genes, side, how) paste0(genes, " (", side, ", ", how, ")")
+  label = function(genes, side, how) paste0(genes, " (", side, ", ", how, ")", tag)
 
   if (!isTRUE(panel$has_coords)) {
     symbols = toupper(panel$genes)
