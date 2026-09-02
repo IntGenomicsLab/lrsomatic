@@ -1,4 +1,14 @@
 {
+    "sample4_merged_reads": {
+        "content": [
+            "88c8d3cf9cb49fdbc53372b2275d5f3e"
+        ],
+        "timestamp": "2026-09-02T10:24:37.511974063",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
     "-profile test, clair only, extended samplesheet": {
         "content": [
             {
@@ -754,8 +764,6 @@
                 "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample4_tumor.bam:md5,598d3f6c6c1dd30edc5b96a34932d3ac",
-                "sample4_tumor.bam.bai:md5,39d022831f9927574898140340a75111",
                 "sample4.flagstat:md5,5710382ba31b23172ca19f9407f689b4",
                 "sample4.idxstats:md5,3bf4793a1667f41f0b31d578f99e3955",
                 "sample4.stats:md5,b998982ea897721c529959e39b693ec6",
@@ -784,10 +792,10 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
+        "timestamp": "2026-09-02T10:24:40.426465897",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "26.04.1"
-        },
-        "timestamp": "2026-06-03T11:04:06.530937361"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
     }
 }

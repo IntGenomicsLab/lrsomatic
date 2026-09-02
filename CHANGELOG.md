@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
+- [#186](https://github.com/IntGenomicsLab/lrsomatic/pull/186) - Stopped snapshotting the md5 of sample4's merged tumour BAM and its index in the `clair_only` nf-test: `samtools merge` gives the colliding `@PG` IDs of the two replicates a random hex suffix, so neither digest is reproducible. The alignment records are, and are now asserted with `bam().getReadsMD5()` instead (@ljwharbers).
 - [#182](https://github.com/IntGenomicsLab/lrsomatic/pull/182) - Added `--vcf` to the default `vep_args` so VEP writes VCF output rather than its default tab-delimited format (@AmberVerhasselt).
 
 ## v1.1.0 - [2026-04-28]
