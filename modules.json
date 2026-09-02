@@ -235,7 +235,8 @@
                         "git_sha": "cc9117a41906d96832594d98f23da7805a87eca2",
                         "installed_by": [
                             "modules"
-                        ]
+                        ],
+                        "patch": "modules/nf-core/savana/cna/savana-cna.diff"
                     },
                     "savana/run": {
                         "branch": "master",
