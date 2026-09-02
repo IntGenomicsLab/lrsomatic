@@ -3,41 +3,29 @@ process LRSOMATICREPORT {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    // Dependencies only (R, Quarto and the tool's R packages), built via the Wave
-    // containers API from this module's environment.yml (frozen build). The tool
-    // itself is vendored at assets/lrsomatic_report -- see VENDORED.md there.
-    // Two separate Wave builds are needed: `wave --singularity` produces a
-    // Singularity-native SIF artifact (the oras:// reference), while the default
-    // build produces a genuine OCI image (the plain tag). Rebuild both whenever
-    // environment.yml changes:
+    // Dependencies only -- the tool itself is vendored at assets/lrsomatic_report.
+    // Singularity needs a Wave-built SIF (oras://), Docker a plain OCI image; rebuild
+    // both whenever environment.yml changes:
     //   wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await [--singularity]
     container "${workflow.containerEngine == 'singularity'
         ? 'oras://community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:dc62d809aa6fd497'
         : 'community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:c1049dbaf31bf178'}"
 
     input:
-    // All per-sample report inputs are optional (path may be `[]` if the corresponding
-    // upstream tool was skipped or produced no output for this sample); the report tool
-    // renders a "not available" notice for any missing section.
-    // qc_tumor_files/qc_normal_files are staged into distinct subdirectories:
-    // mosdepth/samtools default to a `${meta.id}`-only prefix (see conf/modules.config),
-    // so for a matched T/N pair (same meta.id) the tumor and normal QC files are
-    // identically named -- staging both lists flat would collide.
+    // Every path input is optional (`[]` when the upstream tool was skipped); the report
+    // renders a "not available" notice for the missing section. Tumor and normal QC stage
+    // into separate subdirectories because a matched pair shares meta.id, so their QC
+    // files are identically named and would collide if staged flat.
     tuple val(meta), path(vep_somatic), path(sv_vep), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*'), path(wakhan_files, stageAs: 'wakhan/*')
     path(report_src) // lrsomatic_report source tree (bin/, R/, templates/, assets/)
     // Optional user-supplied gene panel TSVs, staged so they are bound into the container;
-    // `[]` when --report_gene_panel names only builtin panels (or is unset), which the tool
-    // resolves from report_src/assets/gene_lists instead. Either way the `--gene-panel`
-    // arguments themselves are built in conf/modules.config -- one repeated flag per panel
-    // (the tool accepts several since v1.3.0), and for a file it names `gene_panels/<base>`,
-    // the path this input stages it at. The subdirectory keeps user-named files clear of the
-    // task root, which also holds sample_dir/, versions.yml and the output HTML.
+    // `[]` for builtin panels, which the tool resolves from report_src itself. The matching
+    // `--gene-panel gene_panels/<base>` arguments are built in conf/modules.config.
     path(gene_panels, stageAs: 'gene_panels/*')
 
     output:
     tuple val(meta), path("*_report.html"), emit: report
-    // No CLI version flag is provided by the tool; keep in sync with the vendored
-    // release recorded in assets/lrsomatic_report/VENDORED.md
+    // WARN: Manually update to match the vendored release in assets/lrsomatic_report/VENDORED.md
     tuple val("${task.process}"), val('lrsomatic_report'), val('1.3.0'), topic: versions, emit: versions_lrsomaticreport
 
     when:
@@ -48,38 +36,32 @@ process LRSOMATICREPORT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
 
-    // Discovery (R/locate_outputs.R, R/sections/sv.R) is recursive under sample_dir and
-    // matches on the *base name*, so anything identified by a distinctive filename suffix
-    // can be linked flat: the VEP somatic VCF (*_SOMATIC_VEP.vcf.gz), the VEP SV VCF
-    // (*_SV_VEP.vcf.gz), the Severus SV VCF (severus_somatic.vcf.gz) and every ASCAT file
-    // (*.segments_raw.txt, *.purityploidy.txt, the diagnostic PNGs).
+    // Discovery is recursive under sample_dir and matches on the base name, so anything
+    // with a distinctive filename suffix can be linked flat
     def flat_inputs = [vep_somatic, sv_vep, severus_vcf, ascat_files].flatten().findAll { f -> f }
     def link_flat = flat_inputs ? """
     for f in ${flat_inputs.collect { f -> "\"${f}\"" }.join(' ')}; do ln -s "\$PWD/\$f" "sample_dir/\$f"; done
     """ : ''
 
-    // The VAF/depth/phasing source is the exception: locate_outputs() looks for it at the
-    // literal path variants/phased/somatic_smallvariants.vcf.gz before falling back to a
-    // caller-specific directory, so this one file needs its canonical name and location.
+    // The exception: the VAF/depth/phasing source is looked up at a literal path, so it
+    // needs its canonical name and location
     def link_somatic = somatic_vcf ? """
     mkdir -p sample_dir/variants/phased
     ln -s "\$PWD/${somatic_vcf}" sample_dir/variants/phased/somatic_smallvariants.vcf.gz
     """ : ''
 
     """
-    # Quarto/Deno write a cache dir under \$HOME and a session dir under \$TMPDIR;
-    # point both at the task work dir, which is always writable and always bound into
-    # the container. Relying on the container's own \$HOME and /tmp fails on clusters
-    # that mount them read-only ("Read-only file system (os error 30): tmpdir").
+    # Quarto/Deno write a cache dir under \$HOME and a session dir under \$TMPDIR; point
+    # both at the task work dir, as clusters may mount the container's \$HOME and /tmp
+    # read-only
     export HOME=\$PWD
     export TMPDIR=\$PWD/tmp TMP=\$PWD/tmp TEMP=\$PWD/tmp
     mkdir -p "\$TMPDIR"
 
-    # The Wave/conda-built container doesn't auto-source conda's activation hooks
-    # (e.g. quarto needs QUARTO_SHARE_PATH); source them if present. Some hooks
-    # (e.g. gcc_linux-64) reference \$CONDA_PREFIX under `set -u`, so export it first.
-    # Under `-profile conda` CONDA_PREFIX already points at the task's own env, so
-    # only fall back to the container's /opt/conda when it is unset.
+    # The Wave/conda-built container doesn't auto-source conda's activation hooks (quarto
+    # needs QUARTO_SHARE_PATH). Some hooks reference \$CONDA_PREFIX under `set -u`, so export
+    # it first -- falling back to the container's /opt/conda only when unset, as
+    # `-profile conda` already points it at the task's own env
     export CONDA_PREFIX="\${CONDA_PREFIX:-/opt/conda}"
     for f in "\$CONDA_PREFIX"/etc/conda/activate.d/*.sh; do
         [ -f "\$f" ] && source "\$f"
@@ -89,10 +71,8 @@ process LRSOMATICREPORT {
     ${link_flat}
     ${link_somatic}
 
-    # QC is split tumor/normal by path: locate_outputs() takes the first suffix match
-    # outside any /normal/ component as tumor, and the first one inside it as normal.
-    # Link file by file rather than symlinking the staging directory itself -- R's
-    # list.files(recursive = TRUE) does not descend into symlinked directories.
+    # QC is split tumor/normal by path. Link file by file rather than symlinking the
+    # staging directory -- R's list.files(recursive = TRUE) does not descend into symlinks
     if [ -d qc_tumor ]; then
         mkdir -p sample_dir/qc/tumor
         for f in qc_tumor/*; do ln -s "\$PWD/\$f" "sample_dir/qc/tumor/\$(basename "\$f")"; done
@@ -103,8 +83,7 @@ process LRSOMATICREPORT {
     fi
 
     # Wakhan is addressed by fixed path, not by suffix: sample_dir/wakhan must hold
-    # solutions_ranks.tsv, *heatmap_ploidy_purity.html and the per-solution
-    # solution_<rank>/ directories (R/parse_ascat.R:locate_wakhan_cn_plots).
+    # solutions_ranks.tsv, the heatmap HTML and the per-solution solution_<rank>/ directories
     if [ -d wakhan ]; then
         mkdir -p sample_dir/wakhan
         for f in wakhan/*; do ln -s "\$PWD/\$f" "sample_dir/wakhan/\$(basename "\$f")"; done

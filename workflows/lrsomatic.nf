@@ -543,8 +543,8 @@ workflow LRSOMATIC {
 
     ch_index_minimap
         .branch { meta, _bams, _bais ->
-                paired: meta.paired_data       // meta.paired_data is true for both tumor and normal rows of a matched pair
-                tumor_only: !meta.paired_data  // meta.paired_data is false for tumor-only samples
+                paired: meta.paired_data
+                tumor_only: !meta.paired_data
         }
         .set { branched_minimap }
 
@@ -995,8 +995,7 @@ workflow LRSOMATIC {
         )
 
         // The subset of WAKHAN's outputs the report renders: the ranked purity/ploidy
-        // solutions table, the ploidy/purity heatmap and each solution's directory
-        // (which holds that solution's genome copy-number/breakpoints plot).
+        // solutions, the ploidy/purity heatmap and each solution's plot directory
         ch_wakhan_files = WAKHAN.out.solutions_ranks
             .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
             .groupTuple()
@@ -1009,22 +1008,14 @@ workflow LRSOMATIC {
     // Final step: render a per-sample HTML report from the key analytical outputs
     // (VEP-annotated somatic SNVs, Severus somatic SVs with their VEP annotation,
     // ASCAT and Wakhan copy number, QC).
-    // Every input is optional -- the report tool shows a "not available" notice for
-    // any section whose file is missing, so joins below use `remainder: true` and a
-    // plain String (tumor sample id) as the join key throughout, to avoid relying on
-    // exact Groovy-map equality across differently-stripped meta values.
-    //
-    // The VAF/depth/phasing columns come from the *phased* somatic VCF -- the same file
-    // SOMATIC_VEP annotated -- so the two halves of the small-variant table are guaranteed
-    // to describe the same variant set. Run mode (matched vs tumour-only) is derived by the
-    // report tool from whether normal-side QC is present, not declared here.
+    // Every input is optional -- a missing section renders as "not available" -- so the
+    // joins below use `remainder: true` and key on the tumor sample id rather than the
+    // full meta map.
     //
 
     if (!params.skip_report) {
 
-        // Canonical per-report-row identity: keyed on the tumor sample's own id (also
-        // used by severus_input/ascat_ch/wakhan_input), carrying the definitive meta
-        // to attach to the final module call.
+        // Report identity: the tumor sample's id, carrying the meta to attach to the module call
         severus_input
             .map { meta, _tumor_bam, _tumor_bai, _normal_bam, _normal_bai, _phased_vcf, _phased_tbi ->
                 return [meta.id, meta]
@@ -1064,9 +1055,8 @@ workflow LRSOMATIC {
             .groupTuple()
             .set { report_qc_tumor_ch }
 
-        // Normal-side QC (matched mode only): tumor and normal rows of a matched pair
-        // share the same meta.id (see branching comment above), so this is already
-        // keyed by the report id -- no re-keying needed.
+        // Normal-side QC (matched mode only): both rows of a pair share meta.id, so this is
+        // already keyed by the report id
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
@@ -1100,11 +1090,8 @@ workflow LRSOMATIC {
             .set { report_input_ch }
         // report_input_ch: [meta, vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, qc_tumor_files, qc_normal_files, wakhan_files]
 
-        // --report_gene_panel is a comma-separated list, each entry a builtin panel name,
-        // the `none` sentinel, or a path to a TSV. Only real files need staging (so they are
-        // bound into the container); a builtin name reaches the tool through ext.args alone
-        // -- see conf/modules.config. Every entry has already been checked by
-        // validateReportGenePanels() at initialisation, so nothing here can silently drop.
+        // Only panel files need staging, so they are bound into the container; builtin names
+        // reach the tool through ext.args alone -- see conf/modules.config
         def report_gene_panel_files = reportGenePanelTokens(params.report_gene_panel)
             .findAll { tok -> reportGenePanelIsFile(tok) }
             .collect { tok -> file(tok, checkIfExists: true) }

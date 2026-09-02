@@ -9,9 +9,8 @@ lint:
     - .github/workflows/awsfulltest.yml
     - .github/CONTRIBUTING.md
   files_unchanged:
-    # Carries `assets/lrsomatic_report/** linguist-vendored` so the vendored tool
-    # source (see assets/lrsomatic_report/VENDORED.md) is excluded from GitHub's
-    # language statistics -- 338 KB of it is a single base64-font SCSS file.
+    # Exempt: carries `assets/lrsomatic_report/** linguist-vendored`, which keeps the
+    # vendored tool source out of GitHub's language statistics
     - .gitattributes
     - CODE_OF_CONDUCT.md
     - assets/nf-core-lrsomatic_logo_light.png

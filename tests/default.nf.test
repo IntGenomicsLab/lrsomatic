@@ -11,12 +11,8 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 // A builtin and a panel file at once, to cover the comma-separated form of
-                // --report_gene_panel end to end: the launch-time validation, the staging
-                // decision in workflows/lrsomatic.nf and the repeated --gene-panel flags
-                // built in conf/modules.config -- including the rewrite of a file entry to
-                // the gene_panels/ path it is staged at, which only the real
-                // conf/modules.config exercises. The report HTML is nftignored, so this
-                // does not move the snapshot.
+                // --report_gene_panel end to end -- validation, staging and the repeated
+                // --gene-panel flags built in the real conf/modules.config
                 report_gene_panel = "lymphoid,$projectDir/modules/local/lrsomaticreport/tests/test_panel.tsv"
             }
         }

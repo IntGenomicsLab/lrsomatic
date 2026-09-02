@@ -244,12 +244,8 @@ def validateInputParameters() {
 }
 
 //
-// Split --report_gene_panel into its individual panel tokens.
-//
-// The report tool's own --gene-panel is repeatable (lrsomatic_report >= v1.3.0), so the
-// pipeline exposes several panels as one comma-separated value. This is the single source
-// of truth for that split -- conf/modules.config mirrors the expression, because a config
-// file cannot include a function from here.
+// Split --report_gene_panel into its individual panel tokens
+// (conf/modules.config mirrors this, as a config file cannot include a function from here)
 //
 def reportGenePanelTokens(panel_spec) {
     if (!panel_spec) {
@@ -260,12 +256,8 @@ def reportGenePanelTokens(panel_spec) {
 
 //
 // Does a --report_gene_panel entry name a panel file rather than a builtin panel?
-//
-// Textual on purpose: conf/modules.config has to make the same call when it builds the
-// --gene-panel flags, and `file()` is not in scope inside an ext.args closure. A builtin
-// is a bare panel name, so anything with a path separator or a .tsv suffix is a file --
-// and validateReportGenePanels() rejects any entry where that disagrees with the
-// filesystem, so the textual test and the staging decision cannot drift apart.
+// Textual on purpose: conf/modules.config makes the same call when it builds the
+// --gene-panel flags, and `file()` is not in scope inside an ext.args closure.
 //
 def reportGenePanelIsFile(tok) {
     return tok.contains('/') || tok.toLowerCase().endsWith('.tsv')
@@ -289,11 +281,8 @@ def reportBuiltinGenePanels() {
 }
 
 //
-// Check --report_gene_panel before anything runs.
-//
-// Without this a typo is swallowed silently: workflows/lrsomatic.nf stages only tokens
-// that exist as files, so a misspelled path stages nothing and the run dies inside the
-// report task -- after alignment, calling and annotation have already run.
+// Check --report_gene_panel at launch, so a typo fails immediately rather than inside the
+// report task after alignment, calling and annotation have already run
 //
 def validateReportGenePanels() {
     if (params.skip_report) {
@@ -304,9 +293,7 @@ def validateReportGenePanels() {
         return
     }
 
-    // "none" means unfiltered, so combining it with a real panel is contradictory rather
-    // than a case where one of the two quietly wins. The tool errors on this too; erroring
-    // here just makes it immediate.
+    // "none" means unfiltered, so combining it with a real panel is contradictory
     if (tokens.size() > 1 && tokens.any { it.toLowerCase() == 'none' }) {
         error("--report_gene_panel: 'none' means unfiltered and cannot be combined with other panels, got '${params.report_gene_panel}'. Drop the 'none'.")
     }
@@ -325,8 +312,7 @@ def validateReportGenePanels() {
         error("--report_gene_panel: '${unknown.join("', '")}' is not a builtin panel. Builtin panels: ${builtins ? builtins.join(', ') : '<none found>'}. To use a panel file give its path, or a name ending in '.tsv'; use 'none' for no filtering.")
     }
 
-    // Panel files are staged side by side into the task's gene_panels/ directory, so two
-    // panels sharing a base name would collide there whatever their source directories.
+    // Panel files are staged side by side into gene_panels/, so equal base names collide
     def duplicates = panel_files
         .collect { tok -> file(tok).name }
         .countBy { name -> name }

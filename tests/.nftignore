@@ -28,10 +28,8 @@ pipeline_info/*.{html,json,txt,yml}
 */variants/deepsomatic/*.{vcf.gz,vcf.gz.tbi}
 */variants/deepvariant/*.{vcf.gz,vcf.gz.tbi}
 */report/*.html
-# samtools merge disambiguates the colliding @PG IDs of sample4's two tumour replicates
-# (both carry ID:minimap2 and ID:samtools from identical align/sort commands) with a random
-# hex suffix, so this file's md5 -- and its index's, via the shifted BGZF offsets -- differ
-# every run while the alignment records stay byte-identical. The reads are asserted instead,
-# in tests/clair_only.nf.test.
+# samtools merge disambiguates the colliding @PG IDs of sample4's two tumour replicates with
+# a random hex suffix, so this file's md5 -- and its index's -- differ every run while the
+# alignment records stay byte-identical. The reads are asserted in tests/clair_only.nf.test.
 sample4/bamfiles/sample4_tumor.bam
 sample4/bamfiles/sample4_tumor.bam.bai
