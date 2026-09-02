@@ -55,7 +55,7 @@ process LRSOMATICREPORT {
     // (*.segments_raw.txt, *.purityploidy.txt, the diagnostic PNGs).
     def flat_inputs = [vep_somatic, sv_vep, severus_vcf, ascat_files].flatten().findAll { f -> f }
     def link_flat = flat_inputs ? """
-    for f in ${flat_inputs.join(' ')}; do ln -s "\$PWD/\$f" "sample_dir/\$f"; done
+    for f in ${flat_inputs.collect { f -> "\"${f}\"" }.join(' ')}; do ln -s "\$PWD/\$f" "sample_dir/\$f"; done
     """ : ''
 
     // The VAF/depth/phasing source is the exception: locate_outputs() looks for it at the
@@ -110,12 +110,12 @@ process LRSOMATICREPORT {
         for f in wakhan/*; do ln -s "\$PWD/\$f" "sample_dir/wakhan/\$(basename "\$f")"; done
     fi
 
-    Rscript ${report_src}/bin/render_report.R \\
+    Rscript "${report_src}/bin/render_report.R" \\
         --sample-dir sample_dir \\
-        --sample-id ${prefix} \\
-        --sex ${sex} \\
+        --sample-id "${prefix}" \\
+        --sex "${sex}" \\
         --reference auto \\
-        --output ${prefix}_report.html \\
+        --output "${prefix}_report.html" \\
         ${args}
     """
 
