@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-- [#XXX](https://github.com/IntGenomicsLab/lrsomatic/pull/XXX) - Added SAVANA structural variant and copy-number calling, running alongside Severus/ASCAT (@yannvrb).
+- [#189](https://github.com/IntGenomicsLab/lrsomatic/pull/189) - Added SAVANA structural variant and copy-number calling, running alongside Severus/ASCAT (@yannvrb).
 
 ### `Changed`
 

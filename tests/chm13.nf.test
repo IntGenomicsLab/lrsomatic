@@ -28,13 +28,9 @@ nextflow_pipeline {
                     assert file("$outputDir/sample2/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
                     assert file("$outputDir/sample2/variants/savana/sample2.classified.somatic.vcf").exists()
                     assert file("$outputDir/sample3/variants/clairsto/somatic.vcf.gz").exists()
-                    // sample3 (tumor-only) is intentionally not asserted on for SAVANA: savana to
-                    // bundles SV-calling + classify + CNA into one process, and its internal CNA
-                    // step is errorStrategy='ignore'd on this minimal test data (see test.config)
-                    // -- when it fails, the whole process (including the classify-equivalent
-                    // output) produces nothing, not just the CNA-specific files. Only paired mode
-                    // (sample1/sample2) keeps RUN/CLASSIFY as separate processes unaffected by
-                    // CNA's crash, so only those are safe to assert on.
+                    // sample3 (tumor-only) SAVANA output isn't asserted: `savana to` bundles CNA
+                    // internally, and errorStrategy='ignore' on its CNA sparsity failures can
+                    // discard the whole process's output, not just the CNA files (see PR description).
                 }
             )
         }

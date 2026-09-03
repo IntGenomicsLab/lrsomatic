@@ -7,43 +7,41 @@ workflow TUMORONLY_SAVANA {
     tumor_input // [meta, tumor_bam, tumor_bai, phased_germline_vcf, phased_germline_tbi]  -- tumor-only, no matched normal
     fasta       // [[:], fasta]
     fai         // [[:], fai]
+    contigs     // [[:], contigs]  -- one contig per line, restricts SAVANA to canonical chromosomes
+    g1000_vcf   // [[:], '1000g_hg38' | '1000g_t2t']  -- bundled 1000 Genomes population SNP set (genome-specific)
 
     main:
-    ch_fasta_fai = fasta.combine(fai.map { it[1] })
+    // .first() re-establishes a value channel: fasta/fai are singletons reused for every sample,
+    // but .map() on fai strips that property, so plain .combine() would only fire once for the run.
+    ch_fasta_fai = fasta.combine(fai.map { _meta, index -> index }).first()
     // ch_fasta_fai: [[:], fasta, fai]
 
     //
     // MODULE: SAVANA_TO (label: process_high)
-    // `savana to` chains breakpoint-calling + classification + CNA internally in one call --
-    // SAVANA's own docs recommend the matched tumor/normal mode for best performance and flag
-    // tumor-only as a fallback; we still wire it in (mirroring how this pipeline already supports
-    // tumor-only variants of its other callers) and let users opt in.
-    //
-    // Input:  [meta, tumor_bam, tumor_bai, snp_vcf, [], []]
-    //           snp_vcf -- reuses the phased germline VCF already computed for SEVERUS/phasing; the
-    //                      same allele-frequency source PAIRED_SAVANA's SAVANA_CNA call uses
-    //         [[:], fasta, fai]
-    //         [[:],[]] / [[:],[]] / [[:],[]]  -- contigs / blacklist / g1000_vcf (all unused)
+    // Chains breakpoint-calling + classification + CNA internally. Tumor-only has no matched
+    // germline control, so allele counting uses the bundled 1000g population SNP set
+    // (--g1000_vcf) rather than the tumour's own phased VCF, per SAVANA's README.
+    // Input:  [meta, tumor_bam, tumor_bai, [], [], []]  -- snp_vcf/allele_counts_het_snps/breakpoints unused
+    //         [[:], fasta, fai] / contigs / [[:],[]] blacklist / g1000_vcf
     // Output: .somatic_vcf -- [meta, vcf]  -- classified somatic SV VCF (savana classify, run internally)
-    //         .cna         -- [meta, tsv]  -- segmented absolute copy number (savana cna, run internally),
-    //                                         optional -- only produced when allele-frequency info
-    //                                         (snp_vcf here) is available
+    //         .cna         -- [meta, tsv]  -- segmented absolute copy number (savana cna, run internally)
     //
     tumor_input
-        .map { meta, tumor_bam, tumor_bai, phased_vcf, _phased_tbi ->
+        .map { meta, tumor_bam, tumor_bai, _phased_vcf, _phased_tbi ->
+            def snp_vcf = []
             def allele_counts_het_snps = []
             def breakpoints = []
-            return [meta, tumor_bam, tumor_bai, phased_vcf, allele_counts_het_snps, breakpoints]
+            return [meta, tumor_bam, tumor_bai, snp_vcf, allele_counts_het_snps, breakpoints]
         }
         .set { savana_to_input }
-    // savana_to_input: [meta, tumor_bam, tumor_bai, snp_vcf, [], []]
+    // savana_to_input: [meta, tumor_bam, tumor_bai, [], [], []]
 
     SAVANA_TO (
         savana_to_input,
         ch_fasta_fai,
-        [[:], []],  // contigs (unused)
+        contigs,
         [[:], []],  // blacklist (unused)
-        [[:], []]   // g1000_vcf (unused -- snp_vcf takes priority)
+        g1000_vcf
     )
 
     emit:

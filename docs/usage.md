@@ -213,11 +213,16 @@ For structural variants, the CHM13 panel of normals is a merged panel combining 
 
 #### SAVANA Options
 
-No dedicated parameters yet -- SAVANA reuses the aligned/phased BAMs and the phased germline VCF
-already computed for SEVERUS/phasing (as the SNP allele-frequency source for copy-number fitting), and
-the same reference FASTA/index as every other caller. Matched tumor/normal samples run `savana run` +
-`savana classify` + `savana cna`; tumor-only samples run `savana to` instead, which chains the
-equivalent steps internally.
+SAVANA reuses the haplotagged BAMs from `PHASING_HAPLOTYPING` and the same reference FASTA/index as
+every other caller. Matched tumor/normal samples run `savana run` + `savana classify` + `savana cna`,
+using the phased germline VCF as the SNP allele-frequency source for copy-number fitting; tumor-only
+samples run `savana to` instead (which chains the equivalent steps internally), using SAVANA's bundled
+1000 Genomes population SNP set rather than the tumour's own calls. Both modes are restricted to
+canonical chromosomes via a genome-specific `--contigs` file.
+
+| Parameter                | Description                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `--savana_pb_minsupport`  | Minimum supporting reads for SAVANA to call a variant on PacBio samples (`--min_support` with `--pb`). Default = `10`  |
 
 #### WAKHAN Options
 
