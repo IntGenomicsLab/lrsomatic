@@ -104,7 +104,7 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 ## Pipeline output
 
-This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report from that combines the output from `mosdepth` and `samtools` into one html report.
+This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report that combines the output from `mosdepth` and `samtools` into one HTML report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`) covering small variants, structural variants, copy number and QC in one place — disable it with `--skip_report`.
 
 Besides QC and the aligned and phased bam file, we have output from (structural) variant and copy number callers, of which some are optional. The output from these variant callers can be found in their respective folders. For small and structural variant callers (`clairS`, `clairS-TO`, and `severus`) these will contain, among others, `vcf` files with called variants. For `ascat` these contain files with final copy number information and plots of the copy number profiles.
 
@@ -128,6 +128,7 @@ Example output directory structure:
 │    │   ├── germline
 │    │   ├── somatic
 │    │   ├── SVs
+│    ├── report
 │
 ├── Sample 2
 │    ├── ascat
