@@ -4,16 +4,14 @@ Changes in component 'nf-core/modkit/pileup'
 Changes in 'modkit/pileup/main.nf':
 --- modules/nf-core/modkit/pileup/main.nf
 +++ modules/nf-core/modkit/pileup/main.nf
-@@ -3,14 +3,16 @@
+@@ -3,14 +3,14 @@
      label 'process_high'
  
      conda "${moduleDir}/environment.yml"
 -    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
 -        'https://depot.galaxyproject.org/singularity/ont-modkit:0.6.1--hcdda2d0_0':
 -        'biocontainers/ont-modkit:0.6.1--hcdda2d0_0' }"
-+    // Patched modkit 0.6.4 (ljwharbers/modkit@697de7b, nanoporetech/modkit#720): stock 0.4.3-0.6.4
-+    // drops 32-65 % of reads from recent PacBio HiFi BAMs whose 5mC+5hmC probabilities sum above 1
-+    // (nanoporetech/modkit#612). Return to the nf-core biocontainer once a release includes the fix.
++    // Patched modkit 0.6.4 (nanoporetech/modkit#720) that keeps PacBio reads with 5mC+5hmC > 1; revert to the biocontainer once released
 +    container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b'
  
      input:

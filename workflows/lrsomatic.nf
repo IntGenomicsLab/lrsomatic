@@ -652,10 +652,8 @@ workflow LRSOMATIC {
     )
 
     //
-    // MODULE: MODKIT_PILEUP
+    // MODULE: MODKIT_PILEUP (haplotagged BAM with --modkit_phased, merged BAM otherwise)
     //
-    // Input: ch_index_minimap (default)                       -- [meta, bam, bai]  -- unphased merged BAM
-    //        PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch -- [meta, bam, bai]  -- haplotagged BAM (--modkit_phased)
     if (!params.skip_modkit) {
         ch_modkit_input = params.modkit_phased
             ? PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch

@@ -3,9 +3,7 @@ process MODKIT_PILEUP {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
-    // Patched modkit 0.6.4 (ljwharbers/modkit@697de7b, nanoporetech/modkit#720): stock 0.4.3-0.6.4
-    // drops 32-65 % of reads from recent PacBio HiFi BAMs whose 5mC+5hmC probabilities sum above 1
-    // (nanoporetech/modkit#612). Return to the nf-core biocontainer once a release includes the fix.
+    // Patched modkit 0.6.4 (nanoporetech/modkit#720) that keeps PacBio reads with 5mC+5hmC > 1; revert to the biocontainer once released
     container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b'
 
     input:
