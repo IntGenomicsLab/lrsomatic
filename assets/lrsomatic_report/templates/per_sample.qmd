@@ -52,8 +52,7 @@ outputs = params$outputs
 sample_id = params$sample_id
 sample_dir = params$sample_dir
 
-# Section-module contract: each registered section owns its own file
-# discovery (locate) and parsing (parse). See CLAUDE.md.
+# Section-module contract: each section owns locate() and parse(); see CLAUDE.md
 SECTION_DATA = list()
 for (s in SECTIONS) {
   SECTION_DATA[[s$id]] = s$parse(s$locate(sample_dir, sample_id), SECTION_DATA)
@@ -65,15 +64,7 @@ chrom_lens   = load_chrom_lengths(params$reference, file.path(repo_dir, "assets"
 chromosomes  = chromosomes_for_sex(params$sex)
 chromosomes  = chromosomes[chromosomes %in% unique(cytobands$chrom)]
 
-# Load the gene panels checked on load (an empty list when --gene-panel none, i.e. no
-# filtering). Several can be active at once and they union. Only the "Panel
-# variants"/"Panel SVs" summary cards use them — the tables themselves are built
-# unfiltered and filtered client-side.
-#
-# Deliberately not wrapped in tryCatch: a panel that can't be resolved, or whose
-# declared reference is not the one being rendered against, has to fail the render
-# rather than produce a report whose filter silently matches nothing (or matches the
-# wrong genome's coordinates).
+# Panels checked on load (empty for --gene-panel none); only the summary cards use them, the tables filter client-side. Not tryCatch-wrapped: an unresolvable panel must fail the render
 panels      = resolve_selected_panels(params$default_panels, params$all_panels,
                                       file.path(repo_dir, "assets"), params$reference)
 panel_genes = unique(unlist(lapply(panels, `[[`, "genes"), use.names = FALSE))
@@ -102,20 +93,16 @@ vep_data = parse_vep(outputs$vep_somatic)
 
 vaf_data = parse_caller_vcf(outputs$somatic_vaf_vcf, "somatic", sample_id = params$sample_id)
 
-# Where the VAF/DP/GT/PS columns came from, for the footnote under the variant table. One
-# file supplies them for every variant, which is ambiguous after a consensus merge — see
-# templates/sections/_smallvariants.qmd.
+# Source of the VAF/DP/GT/PS columns, for the footnote (ambiguous after a consensus merge)
 vaf_prov = vaf_provenance(outputs$somatic_vaf_vcf, sample_dir, sample_id = params$sample_id)
 
 variant_table = build_variant_table(vep_data, vaf_data, gene_panel = NULL)
 tmb_info = compute_tmb(variant_table)
 
 # Join coverage: a silently failing variant_key() shows up here as a near-zero count
-# rather than as an error (see the variant_key() note in CLAUDE.md).
 n_vaf = if (!is.null(variant_table) && "vaf" %in% names(variant_table))
           sum(!is.na(variant_table$vaf)) else NA_integer_
-# Variants reported by more than one caller: `callers` collapses to "clairs,deepsomatic".
-# Always 0 on the VEP text path, which carries no per-variant caller at all.
+# Variants reported by more than one caller; always 0 on the VEP text path
 n_multi = if (!is.null(variant_table) && "callers" %in% names(variant_table))
             sum(grepl(",", variant_table$callers, fixed = TRUE)) else 0L
 
@@ -146,27 +133,22 @@ tryCatch({
 # Summary counts
 sv_table = SECTION_DATA$sv$table
 n_snv        = if (!is.null(vep_data)) nrow(unique(vep_data[, .(chrom, pos, ref, alt)])) else NA_integer_
-# One rearrangement, one row: Severus writes both sides of a breakend as separate
-# records, and parse_severus_somatic_records() has already collapsed them.
+# One rearrangement per row (mates already collapsed)
 n_sv         = if (!is.null(sv_table) && nrow(sv_table) > 0) nrow(sv_table) else
                if (!is.null(SECTION_DATA$sv))
                  nrow(SECTION_DATA$sv$circos$nontrans) +
                  nrow(SECTION_DATA$sv$circos$translocations) else NA_integer_
-# Interchromosomal breakends, reported apart from the intra-chromosomal ones (which
-# are mostly foldbacks, and which the old count filed under "translocations").
+# Interchromosomal breakends, apart from the intra-chromosomal ones
 n_trans      = if (!is.null(sv_table) && "svclass" %in% names(sv_table))
                  sum(sv_table$svclass == "translocation", na.rm = TRUE) else NA_integer_
 n_intra_bnd  = if (!is.null(sv_table) && "svclass" %in% names(sv_table))
                  sum(sv_table$svclass == "intra-chr breakend", na.rm = TRUE) else NA_integer_
-# No panel checked on load → the panel cards have nothing to count, so they read
-# "N/A" rather than a "0" that looks like "no panel genes hit". With several panels
-# checked the counts are the union, matching what the browser shows.
+# No panel checked: cards read "N/A" rather than a misleading "0"; several panels union
 have_panel   = length(panels) > 0 && length(panel_genes) > 0
 n_panel_vars = if (!have_panel) NA_integer_ else
                if (!is.null(variant_table))
                  sum(variant_table$symbol %in% panel_genes, na.rm = TRUE) else 0L
-# Same test, same windows as the client-side filter — sv_panel_hits() is the one
-# implementation both call, so the card and the filter cannot drift.
+# Same test and windows as the client-side filter (sv_panel_hits())
 sv_panel_hit = if (!is.null(sv_table) && nrow(sv_table) > 0)
                  sv_panel_hits(sv_table, panels) else character(0)
 n_panel_svs  = if (!have_panel) NA_integer_ else sum(nzchar(sv_panel_hit))
@@ -176,11 +158,7 @@ n_panel_svs  = if (!have_panel) NA_integer_ else sum(nzchar(sv_panel_hit))
 all_p = if (!is.null(params$all_panels) && length(params$all_panels) > 0)
           params$all_panels else list()
 
-# Each panel ships both forms: the symbol set (small variants always match on symbols,
-# and a symbol-only panel matches SVs that way too) and, for a coordinate-carrying
-# panel, its intervals. The two windows come from R (SV_PANEL_WINDOW_* in
-# R/parse_severus.R) rather than being written out again here, so the "Panel SVs" card
-# and this filter cannot drift apart.
+# Each panel ships symbols and, if coordinate-carrying, intervals; windows come from R (SV_PANEL_WINDOW_*) so card and filter agree
 panel_defs = vapply(names(all_p), function(nm) {
   p    = all_p[[nm]]
   syms = paste0("new Set([",
@@ -198,36 +176,22 @@ panel_defs = vapply(names(all_p), function(nm) {
 cat("<script>\n")
 cat("const GENE_PANELS = {", paste(panel_defs, collapse = ",\n"), "};\n", sep = "")
 default_panels = setdiff(as.character(unlist(params$default_panels)), "__all__")
-# js_vec() rather than paste(collapse=","): an empty selection has to emit [], and
-# pasting an empty vector inside brackets yields [""] — one panel named "", which is
-# the unfiltered state only by accident.
+# js_vec(): an empty selection must emit [], not [""]
 cat("const DEFAULT_PANELS = ", js_vec(default_panels), ";\n", sep = "")
 cat("const SV_PANEL_WINDOW_BND = ",   format(SV_PANEL_WINDOW_BND,   scientific = FALSE), ";\n", sep = "")
 cat("const SV_PANEL_WINDOW_OTHER = ", format(SV_PANEL_WINDOW_OTHER, scientific = FALSE), ";\n", sep = "")
 cat("const BND_SVTYPES = [", paste(js_quote(BND_SVTYPES), collapse = ","), "];\n", sep = "")
 cat(r"----(
-// Checked panels, shared by the filter hook, the row counter, the panel_hit column's
-// renderer and the SV footnote. Each table publishes its own column-name -> index map
-// (window.SV_COLS / window.SNV_COLS) from R, so nothing here has to re-derive
-// column positions from the rendered header: DT's filter row and Scroller's cloned
-// thead both break that, and the failure mode is a filter that silently passes
-// every row.
-//
-// An empty `panels` is the unfiltered state — there is no "__all__" entry in the UI,
-// because "no boxes ticked" says the same thing without a sentinel to keep in sync.
+// Checked panels, shared by the filter hook, row counter, panel_hit renderer and SV footnote; column maps come from R (window.*_COLS). Empty `panels` is the unfiltered state
 window.svPanelState = { panels: DEFAULT_PANELS.slice(), customGenes: new Set() };
 
-// Every checked panel, as {name, symbols, hasCoords, intervals}. A row passes if it
-// hits any of them (union), which is what makes ticking a second box widen the view
-// rather than narrow it.
+// Every checked panel as {name, symbols, hasCoords, intervals}; a row passes if it hits any (union)
 function activePanelDefs() {
   const st = window.svPanelState;
   const out = [];
   (st.panels || []).forEach(function (key) {
     if (key === "__custom__") {
-      // Pasted symbols carry no coordinates, so the custom panel is symbol-only. An
-      // empty box contributes nothing rather than filtering everything out — under
-      // union semantics that is the only reading that leaves the other panels alone.
+      // Pasted symbols are symbol-only; an empty box contributes nothing
       if (st.customGenes && st.customGenes.size > 0)
         out.push({ name: "custom", symbols: st.customGenes, hasCoords: false, intervals: [] });
       return;
@@ -245,9 +209,7 @@ function splitGenes(cell) {
     .filter(function (g) { return g.length > 0; });
 }
 
-// fmt_bp() from R/utils.R. Math.round(x * 10) / 10 rather than toFixed(1) because R
-// prints the rounded number, not a fixed number of decimals: 188531 reads "188.5 kb" in
-// both, but toFixed would turn a round 306000 into "306.0 kb" where R writes "306 kb".
+// fmt_bp() from R/utils.R; Math.round(x * 10) / 10 matches R's output (306000 -> "306 kb", not "306.0 kb")
 function fmtBp(x) {
   const r = function (v) { return String(Math.round(v * 10) / 10); };
   if (Math.abs(x) >= 1e6) return r(x / 1e6) + " Mb";
@@ -255,15 +217,7 @@ function fmtBp(x) {
   return String(x) + " bp";
 }
 
-// Panel genes an SV row hits, as "GENE (side, how)" labels — `how` being "direct" when
-// the locus overlaps the gene, or the distance to it when it only fell inside the window.
-// Mirrors sv_panel_hits() in R/parse_severus.R: a coordinate panel matches within
-// SV_PANEL_WINDOW_BND of either breakend of a BND, or within SV_PANEL_WINDOW_OTHER of the
-// span of any other type; a symbol-only panel matches the per-side VEP symbols directly.
-//
-// With more than one panel checked each label gains a " [name]" suffix naming the panel
-// it matched, since with a union that is the only thing distinguishing two hits on the
-// same gene. With one panel the labels are unchanged — R applies the same rule.
+// Panel hits per SV row as "GENE (side, how)" labels, mirroring sv_panel_hits() in R/parse_severus.R (windows, symbol-only fallback, " [name]" suffix with several panels)
 function svPanelHits(row, cols) {
   const defs = activePanelDefs();
   if (!defs.length) return [];
@@ -294,8 +248,7 @@ function onePanelHits(row, cols, p) {
   const isBnd = BND_SVTYPES.indexOf(String(at("svtype"))) >= 0;
   const ca = at("chrom_a"), cb = at("chrom_b");
   const pa = Number(at("pos_a")), pb = Number(at("pos_b"));
-  // [chrom, windowStart, windowEnd, side, locusLo, locusHi] — the last two are the
-  // unpadded locus, which is what the distance is measured from.
+  // [chrom, windowStart, windowEnd, side, locusLo, locusHi]; the last two are the unpadded locus
   const q = [];
   if (isBnd) {
     if (ca && isFinite(pa)) q.push([ca, pa - SV_PANEL_WINDOW_BND, pa + SV_PANEL_WINDOW_BND, "A", pa, pa]);
@@ -319,8 +272,7 @@ function onePanelHits(row, cols, p) {
   return out;
 }
 
-// Small variants match on gene symbol in both panel modes: VEP annotates SNVs
-// reliably, and per-gene symbols are the right semantics there.
+// Small variants match on gene symbol in both panel modes
 function snvPanelHit(symbolCell) {
   const defs = activePanelDefs();
   if (!defs.length) return true;
@@ -340,40 +292,24 @@ cat("</script>\n")
 
 {{< include sections/_header.qmd >}}
 
----
-
 {{< include sections/_circos.qmd >}}
-
----
 
 {{< include sections/_ascat.qmd >}}
 
----
-
 {{< include sections/_gene_filter.qmd >}}
-
----
 
 {{< include sections/_smallvariants.qmd >}}
 
----
-
 {{< include sections/_sv.qmd >}}
-
----
 
 {{< include sections/_qc.qmd >}}
 
----
-
-*Report generated `r format(Sys.time(), "%Y-%m-%d %H:%M")` · LRSomatic report v1.3.0*
+*Report generated `r format(Sys.time(), "%Y-%m-%d %H:%M")` · LRSomatic report v1.3.1*
 
 ```{=html}
 <script>
 (function () {
-  // Panel state, the matching predicates and the column-index maps all live outside
-  // this block (emitted from R above, and by each table's own script), so the
-  // panel_hit renderer can use the same logic before this runs.
+  // Panel state, predicates and column maps live outside this block so the panel_hit renderer can use them first
   const state = window.svPanelState;
 
   $.fn.dataTable.ext.search.push(function (settings, searchData, index, rowData) {
@@ -382,8 +318,7 @@ cat("</script>\n")
     // No panel ticked is the unfiltered state.
     if (!state.panels || !state.panels.length) return true;
 
-    // rowData carries the original (typed) values; searchData is the rendered
-    // strings, and breakend positions have to be compared as numbers.
+    // rowData carries typed values; positions must compare as numbers
     const row = rowData || searchData;
 
     if (node === window.snvTableElem) {
@@ -419,8 +354,7 @@ cat("</script>\n")
     return $(".panel-checkbox:checked").map(function () { return this.value; }).get();
   }
 
-  // Chip appearance and the custom textarea follow the checkboxes, not the other way
-  // round, so the load-time `checked` attributes and a Clear both land in one place.
+  // Chips and the custom textarea follow the checkboxes, not the other way round
   function syncControls() {
     $(".panel-checkbox").each(function () {
       $(this).closest(".panel-toggle").toggleClass("is-on", this.checked);
@@ -433,18 +367,12 @@ cat("</script>\n")
     if (window.snvTableElem) $(window.snvTableElem).DataTable().draw();
     if (window.svTableElem)  $(window.svTableElem).DataTable().draw();
     updateCount();
-    // The breakend circos follows whatever the SV table is showing. Its own draw.dt
-    // handler covers the per-column search boxes; this call is what paints it the first
-    // time, before any filter has been touched.
+    // Paint the breakend circos once before any filter; its draw.dt handler covers the rest
     if (window.bndSyncFilter) window.bndSyncFilter();
   }
 
   $(document).ready(function () {
-    // The count follows any draw of either table, not just a panel change. The per-column
-    // search boxes and the tickbox dropdowns redraw directly — exactly as the breakend
-    // circos's own draw.dt handler in _sv.qmd already assumes — so before this, typing in a
-    // column filter left "N small variants shown" stale. It also means facet_filter.js
-    // needs no coupling to this block: it calls draw(), and the count and the circos follow.
+    // The count follows any draw of either table (search boxes and dropdowns redraw directly)
     $(document).on("draw.dt", function (e) {
       if (e.target === window.snvTableElem || e.target === window.svTableElem) updateCount();
     });
@@ -462,8 +390,7 @@ cat("</script>\n")
       redraw();
     });
 
-    // The boxes carry their load-time state as `checked` attributes; adopt it rather
-    // than assuming DEFAULT_PANELS and the rendered chips agree.
+    // Adopt the load-time `checked` attributes rather than assuming DEFAULT_PANELS matches
     state.panels = readCheckboxes();
     syncControls();
 
@@ -491,12 +418,7 @@ cat("</script>\n")
 ```
 
 ```{r facet-filter-js, results='asis'}
-# Checkbox-dropdown ("tickbox") column filters for the two big tables. Inlined once, at the
-# end, from its own .js file rather than pasted into an R string — same reason as
-# bnd_circos.js: it stays lintable JavaScript, and the report is self-contained so it
-# cannot be linked. Each table's values (window.SNV_FACETS / window.SV_FACETS) and column
-# map are emitted by its own prepare chunk above; the widget reads them when a table
-# announces itself, so this only has to be parsed before the tables initialise.
+# Tickbox column filters, inlined from facet_filter.js (lintable JS, self-contained report); reads window.*_FACETS / *_COLS when a table announces itself
 cat("<script>\n")
 cat(readLines(file.path(params$repo_dir, "assets/js/facet_filter.js")), sep = "\n")
 cat("\n</script>\n")

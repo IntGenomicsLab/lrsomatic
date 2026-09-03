@@ -4,11 +4,7 @@
 ### Coverage summary
 
 ```{r coverage-table}
-# The widget must be the chunk's *value*, not print()ed: under quarto_render()
-# interactive() is FALSE and getOption("viewer") is NULL, so print.htmlwidget writes a
-# standalone file to a temp dir and returns invisibly — knit_print.htmlwidget, which is
-# what emits the widget div and registers its dependencies, never runs. That is why this
-# table rendered as an empty callout while every other DT in the report worked.
+# The widget must be the chunk's value, not print()ed: under quarto_render() print.htmlwidget writes to a temp file and emits nothing
 cov_dt = function(x) DT::datatable(x, rownames = FALSE,
                                    options = list(pageLength = 30, dom = "ft",
                                                   scrollY = "300px"))

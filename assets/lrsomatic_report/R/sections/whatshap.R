@@ -1,8 +1,4 @@
-# Phasing section. Reads the WhatsHap phasing statistics the pipeline writes to
-# qc/whatshap_stats/. See R/sections.R and CLAUDE.md for the section-module contract.
-#
-# Note these are *germline* phasing statistics: the pipeline runs WHATSHAP_STATS on the
-# phased germline VCF, so every row's file_name is germline_smallvariants.vcf.gz.
+# Phasing section (WhatsHap stats from qc/whatshap_stats/); these are germline statistics
 
 register_section(list(
   id = "whatshap",
@@ -16,8 +12,7 @@ register_section(list(
       if (length(hits) > 0) hits[1] else NULL
     }
 
-    # qc/whatshap_stats/ is not tumour/normal-scoped, unlike the rest of qc/, so a plain
-    # recursive match is correct here.
+    # qc/whatshap_stats/ is not tumour/normal-scoped, so a plain recursive match is correct
     list(stats_tsv = find1("_whatshap_stats\\.tsv$"))
   },
 
@@ -41,8 +36,7 @@ register_section(list(
       return(NULL)
     }
 
-    # bp_per_block_sum exceeds .Machine$integer.max and reads as integer64, which DT
-    # renders badly. Widen every integer64 column to double.
+    # bp_per_block_sum reads as integer64, which DT renders badly; widen to double
     for (col in names(dt)) {
       if (inherits(dt[[col]], "integer64")) dt[, (col) := as.numeric(get(col))]
     }

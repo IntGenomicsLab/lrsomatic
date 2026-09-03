@@ -2,37 +2,17 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
-# Breakend circos: a second, BND-only plot drawn over just the chromosomes a breakend
-# touches, cross-linked to the SV table so selecting a row highlights its arc.
-#
-# R selects the data; the browser draws it. That split exists because the plot has to
-# re-lay-out when the gene panel changes: which chromosomes get a sector, and therefore
-# every sector's angular width, is a function of the *filtered* link set. A server-drawn
-# SVG bakes those angles in, and its arcs are flattened point lists carrying no genomic
-# coordinates, so no client script can recompute them — the previous version could only
-# dim arcs in place, leaving every chromosome on the plot whatever the filter said.
-#
-# This also retires the sentinel-colour tagging that the inlined-SVG design needed
-# (svglite emits no ids, so each object had to be drawn in a unique colour and the markup
-# rewritten afterwards), along with its "a mistagged arc disables highlighting" fallback:
-# nodes the client creates itself carry their own ids by construction.
-#
-# See assets/js/bnd_circos.js for the drawing half.
+# Breakend-only circos cross-linked to the SV table; R selects the data, assets/js/bnd_circos.js draws it so sectors re-lay-out per filter
 
-# Above this the payload stops being worth its bytes: real samples on this cluster carry
-# 50-115 arcs after mate collapse, but an unfiltered run can carry ~13k.
+# Payload cap: real samples carry 50-115 arcs, an unfiltered run can carry ~13k
 BND_CIRCOS_MAX_LINKS = 2000L
 
-# The BND classes with two loci to draw an arc between; svclass is set by
-# parse_severus_somatic_records() / build_sv_table(). A "single breakend" has no partner
-# locus and so cannot be drawn at all.
+# BND classes with two loci to draw between (a single breakend has no partner)
 BND_CIRCOS_CLASSES = c("translocation", "intra-chr breakend")
 
 # ---- Data selection ------------------------------------------------------
 
-# The rearrangements the circos can draw: BNDs with both loci known, on chromosomes the
-# report is plotting. Callers pass the result to both bnd_panel_genes() and
-# bnd_circos_data(), so the gene track cannot annotate an arc that was never drawn.
+# Drawable rearrangements: BNDs with both loci on plotted chromosomes; feeds both bnd_panel_genes() and bnd_circos_data()
 bnd_links = function(sv_table, chromosomes) {
   cols = c("id", "svclass", "chrom_a", "pos_a", "chrom_b", "pos_b")
   empty = data.table(id = character(), svclass = character(),
@@ -52,15 +32,7 @@ bnd_links = function(sv_table, chromosomes) {
   b[]
 }
 
-# The panel genes to label: for every coordinate-carrying panel, those whose interval
-# falls within `window` of either breakend of a drawn arc.
-#
-# This is the same test, with the same window, that sv_panel_hits() applies to fill the
-# table's panel_hit column — deliberately, because the report only shows a gene here once
-# it appears in that column. Reimplementing the predicate would let the two drift.
-#
-# A symbol-only panel (and the custom paste-in panel) carries no coordinates, so it can
-# produce panel_hit labels but no gene bodies.
+# Panel genes within `window` of a drawn breakend, using the same test as sv_panel_hits() so the two cannot drift
 bnd_panel_genes = function(links, all_panels, window = SV_PANEL_WINDOW_BND) {
   empty = data.table(chrom = character(), start = integer(), end = integer(),
                      gene = character(), panels = character())
@@ -100,14 +72,7 @@ bnd_panel_genes = function(links, all_panels, window = SV_PANEL_WINDOW_BND) {
 
 # ---- Payload for the client-side plot -------------------------------------
 
-# Everything the browser needs to draw the breakend circos at any filter state.
-#
-# Returns list(data, n_links, n_genes, chroms, reason). `data` is NULL when there is
-# nothing to draw or too much of it, with `reason` saying which; the template shows that
-# through section_notice() instead of an empty ring.
-#
-# `chroms` here is the *unfiltered* superset — every chromosome some drawable breakend
-# touches. The client narrows it per filter; R only needs to bound the payload.
+# Payload for the client-side breakend circos: list(data, n_links, n_genes, chroms, reason); data is NULL when there is nothing, or too much, to draw
 bnd_circos_data = function(links, genes = NULL, cytobands, chrom_lengths, chromosomes) {
 
   fail = function(reason) list(data = NULL, n_links = 0L, n_genes = 0L,
@@ -130,8 +95,7 @@ bnd_circos_data = function(links, genes = NULL, cytobands, chrom_lengths, chromo
   chroms = chromosomes[chromosomes %in% unique(c(b$chrom_a, b$chrom_b))]
 
   lens = chrom_lengths[chroms]
-  # A locus past the end of its sector would be drawn outside the ring; clamp, as the
-  # circlize version did, rather than dropping the row and losing its table cross-link.
+  # Clamp a locus past its sector end rather than dropping the row
   b[, `:=`(pos_a = pmin(pmax(as.numeric(pos_a), 1), lens[chrom_a]),
            pos_b = pmin(pmax(as.numeric(pos_b), 1), lens[chrom_b]))]
 

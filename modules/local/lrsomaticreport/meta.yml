@@ -74,7 +74,7 @@ output:
       - "lrsomatic_report":
           type: string
           description: The name of the tool
-      - "1.3.0":
+      - "1.3.2":
           type: string
           description: |
             Manually pinned version (the tool has no CLI version flag); matches the
@@ -88,7 +88,7 @@ topics:
       - lrsomatic_report:
           type: string
           description: The name of the tool
-      - "1.3.0":
+      - "1.3.2":
           type: string
           description: Manually pinned version (tool has no CLI version flag)
 

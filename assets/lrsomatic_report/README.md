@@ -98,6 +98,21 @@ the same time — see [Gene panels](#gene-panels).
 > - The SV table's footnote about how the panel matches now follows the ticked boxes; it
 >   previously described the load-time panel and went stale the moment a reader switched.
 
+> **Changed in v1.3.1:**
+> - A calmer look. The page texture, gradients, card animations and shadows are gone;
+>   every card, table and plot frame shares one flat surface. The summary numbers are
+>   grouped into **Tumour**, **Somatic variants** and **Sequencing** instead of one row of
+>   eleven differently-coloured cards. The circos drops the per-chromosome Mb axes and the
+>   alternating track bands, and its legend sits beside the plate. ASCAT plots are framed
+>   and captioned, and the QC tables match the variant tables. Nothing about the data,
+>   filters or exports changed.
+> - The tickbox dropdown counts are now **live**: each value's count is measured over the
+>   rows passing every *other* filter (gene panel, text boxes, the other dropdowns), so it
+>   says how many rows ticking it would leave. Values with no rows left grey out in place;
+>   the unfiltered count moves into the tooltip.
+> - Fixed: opening a dropdown on a right-hand column of a wide table no longer snaps the
+>   table back to its first column.
+
 ## Gene panels
 
 Reports are **unfiltered by default**. `--gene-panel` only chooses which panels are ticked when

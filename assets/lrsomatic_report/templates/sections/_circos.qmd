@@ -37,12 +37,13 @@ if (!is.null(circos_tmp) && file.exists(circos_tmp)) {
     })
   }
 
-  tagList(
-    tags$p(class = "circos-eyebrow",
-           "Tracks (outer → inner): ideogram · SNV (SBS-6) · SV · copy number"),
-    tags$div(class = "circos-container",
+  # Plate and legend side by side (.circos-figure grid); the track order is the caption
+  tags$div(class = "circos-figure",
+    tags$figure(class = "circos-container",
       tags$img(src   = paste0("data:image/svg+xml;base64,", img_b64),
-               style = "max-width:710px; display:block; margin:auto;")
+               style = "max-width:680px; display:block; margin:auto;"),
+      tags$figcaption(class = "report-figure__caption",
+                      "Tracks, outer to inner: ideogram · SNV (SBS-6) · SV · copy number")
     ),
     tags$div(class = "circos-legend",
       tags$div(class = "circos-legend__group",
@@ -69,7 +70,7 @@ if (!is.null(circos_tmp) && file.exists(circos_tmp)) {
   )
 
 } else {
-  tags$div(class = "alert alert-warning",
-           "Circos plot could not be generated. Check that ASCAT and Severus output files are present.")
+  section_notice(paste("Circos plot could not be generated. Check that ASCAT and Severus",
+                       "output files are present."), warn = TRUE)
 }
 ```

@@ -1,6 +1,4 @@
-# Structural variants section. Reference implementation of the section-module
-# contract (see R/sections.R and CLAUDE.md). Keyed by caller so a second SV
-# caller can be added later without touching the plumbing below.
+# Structural variants section (reference implementation of the section-module contract), keyed by caller
 
 register_section(list(
   id = "sv",
@@ -16,8 +14,7 @@ register_section(list(
 
     severus_vcf      = find1("^severus_somatic\\.vcf\\.gz$")
     severus_gene_tsv = find1("^SV_filtered_with_gene_annotations\\.tsv$")
-    # VEP SV VCF (CSQ-annotated) is the more commonly produced annotation source; the
-    # gene-annotated TSV above is a fallback for pipelines that produce it instead.
+    # VEP SV VCF is the usual annotation source; the gene-annotated TSV is the fallback
     severus_vep_vcf  = find1("_SV_VEP\\.vcf\\.gz$")
 
     list(callers = list(
@@ -33,20 +30,15 @@ register_section(list(
     for (nm in names(inputs$callers)) {
       caller_inputs = inputs$callers[[nm]]
 
-      # One parse of the caller VCF feeds both the table and the circos tracks, so the
-      # SV count, the panel filter and the drawn links cannot disagree about what a
-      # rearrangement is.
+      # One parse feeds both the table and the circos tracks
       records = parse_severus_somatic_records(caller_inputs$vcf)
 
       if (nrow(records) > 0) {
-        # The VEP SV VCF only supplies the per-breakend display symbols; a missing one
-        # leaves those columns empty rather than losing the SVs, because panel matching
-        # is done on coordinates (see sv_panel_hits()).
+        # A missing VEP SV VCF only empties the symbol columns; panel matching is on coordinates
         t = build_sv_table_from_vep(records, caller_inputs$vep_vcf)
         if (!is.null(caller_inputs$vep_vcf)) annotation_path = caller_inputs$vep_vcf
       } else {
-        # No caller VCF: the gene-annotated TSV is the fallback for pipelines that
-        # publish it instead.
+        # No caller VCF: fall back to the gene-annotated TSV
         t = build_sv_table(parse_severus_gene_tsv(caller_inputs$gene_tsv))
         if (nrow(t) > 0) annotation_path = caller_inputs$gene_tsv
       }
@@ -55,8 +47,7 @@ register_section(list(
         t[, caller := nm]
         tabs[[nm]] = t
       }
-      # Circos tracks are drawn from the same mate-collapsed records as the table;
-      # with a single caller today, last-write-wins is a no-op.
+      # Circos tracks from the same collapsed records; last-write-wins is a no-op with one caller
       circ = severus_circos_tracks(records)
     }
 

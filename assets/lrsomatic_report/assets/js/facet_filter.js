@@ -1,34 +1,4 @@
-// Checkbox-dropdown ("tickbox") column filters for the small-variant and SV tables.
-//
-// DT gives every column a free-text search box (filter = "top"), which only helps a reader
-// who already knows what the column contains — nobody remembers the ~30 VEP consequence
-// terms. For the categorical columns this replaces that box with a dropdown listing the
-// values actually present in this sample, with per-value row counts, so the filter doubles
-// as a summary of the column.
-//
-// R publishes the values (window.SNV_FACETS / window.SV_FACETS, from js_facet_defs() in
-// R/utils.R) and the column-name -> index maps (window.SNV_COLS / window.SV_COLS) that
-// every by-name lookup here goes through. Four things about the DOM this works in, each
-// learned from DT/DataTables internals rather than assumed:
-//
-//   1. DT's own `div.form-group` in the filter cell is KEPT and the <input> inside it only
-//      hidden. DT binds the handler that un-clips `overflow:hidden` on
-//      .dataTables_scrollHead to that div, so triggering its "show"/"hide" events is what
-//      lets an open menu escape the scroll head under scrollX. The widget is appended
-//      inside that div so DT's own $td.children('div').first()/.last() lookups still hold.
-//   2. No `id` attributes anywhere in this markup, and no handlers delegated from
-//      `document` onto widget classes. DataTables rebuilds a zero-height sizing clone of
-//      the whole header in the scroll body on every draw, refilling each cell by innerHTML
-//      after stripping ids — an id here would reappear duplicated once per draw. Hence
-//      aria-expanded rather than aria-controls, handlers bound to the nodes we create, and
-//      every query rooted at api.table().header(), never at `document`.
-//   3. The R-side column index is NOT the DOM position: DataTables detaches the filter
-//      cells of visible:false columns. columns(':visible').indexes() translates it, and the
-//      header label above the chosen cell is compared to the column name — a reorder that
-//      broke the translation would otherwise attach a working dropdown to the wrong column.
-//   4. Ticked state lives here, in a closure, not in the DOM and not in DT's per-column
-//      search slots. That is what makes it survive a gene-panel redraw, Scroller's node
-//      recycling and the per-draw header clone.
+// Checkbox-dropdown ("tickbox") column filters for the SNV and SV tables. R publishes values and column maps (window.*_FACETS / window.*_COLS); the menu lives in <body> as position:fixed because DT's scroll containers clip it; no ids or document-delegated handlers (DT clones the header every draw); ticked state lives in a closure; this predicate must stay LAST in ext.search so the live counts measure the rows every other filter leaves
 (function () {
   "use strict";
 
@@ -38,9 +8,7 @@
   var DRAW_DEBOUNCE_MS = 120;
   var LABEL_MAX = 16;
 
-  // Which tables get facets, keyed on the globals they publish from initComplete — the same
-  // identity test the gene-panel predicate in per_sample.qmd uses, which excludes the QC,
-  // ASCAT and phasing DT tables without any extra condition.
+  // Tables that get facets, keyed on the globals they publish (same test as the gene-panel predicate)
   var TABLES = [
     { key: "snv",
       elem:      function () { return window.snvTableElem; },
@@ -54,13 +22,22 @@
       requested: function () { return window.SV_FACET_COLS; } }
   ];
 
-  // key -> { colName -> Set of ticked tokens }. `null` in a Set is the "(none)" bucket.
-  // A column absent from a table's object is unconstrained.
+  // key -> { colName -> Set of ticked tokens }; null is the "(none)" bucket, an absent column is unconstrained
   var STATE    = { snv: {}, sv: {} };
   var ATTACHED = {};
   var WIDGETS  = [];      // every built widget, for the "clear all" control
   var PENDING  = {};      // per-table draw debounce timers
   var OPEN     = null;    // the one open menu
+
+  // Counting machinery keyed by table; FCOLS = facet columns resolved in *_COLS, everything else parallel to it
+  var FCOLS   = {};       // key -> [colName]
+  var VOCAB   = {};       // key -> colName -> { strs: [token|null], map: Map, noneId: int }
+  var CIDX    = {};       // key -> colName -> { starts: Int32Array, ids: Int32Array }
+  var COUNTS  = {};       // key -> colName -> [rows per vocabulary id]
+  var TOUCHED = {};       // key -> has the predicate run since the last flush?
+
+  // Per-pass scratch indexed by FCOLS position, reused across rows
+  var SC_SRC = [], SC_LO = [], SC_HI = [], SC_TMP = [];
 
   function tableFor(node) {
     for (var i = 0; i < TABLES.length; i++) if (TABLES[i].elem() === node) return TABLES[i];
@@ -72,11 +49,7 @@
                     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  // ---- matching ------------------------------------------------------------
-  // Mirrors how the cell was built, which is why the separator comes from R rather than
-  // being guessed here: `consequence` is VEP's "&"-joined terms rewritten to commas
-  // (R/parse_smallvariants.R) and `callers` is paste(sort(unique(caller)), collapse = ",").
-  // NA and "" both collapse to the single null bucket the dropdown labels "(none)".
+  // ---- matching: separators come from R so tokens mirror how the cell was built; NA and "" fall in the null bucket ----
   function tokens(v, sep) {
     if (v === null || v === undefined) return [null];
     var s = String(v).trim();
@@ -87,80 +60,250 @@
     return out.length ? out : [null];
   }
 
-  // One predicate for both tables, keyed on the table node exactly as the gene-panel
-  // predicate is. OR within a column, AND across columns. Both predicates are ext.search
-  // entries, so DataTables ANDs them: a tick composes with the panel filter and with every
-  // remaining per-column text box for free.
-  //
-  // Chosen over column().search() with a regex because the token rule is the load-bearing
-  // part: as a regex it would be re-encoded in a second language with an escaping
-  // obligation (svclass values carry spaces, callers carries "clairs-to"), and an
-  // unescaped metacharacter yields a filter that matches MORE rows and says nothing.
-  $.fn.dataTable.ext.search.push(function (settings, searchData, index, rowData) {
+  // ---- vocabulary: tokens interned to integer ids, seeded in payload order, auto-extending for the fallback split path ----
+  function addTok(v, tok) {
+    var id = v.strs.length;
+    v.strs.push(tok);
+    if (tok === null) v.noneId = id; else v.map.set(tok, id);
+    return id;
+  }
+
+  function idOf(v, tok) {
+    if (tok === null || tok === undefined) {
+      return v.noneId >= 0 ? v.noneId : addTok(v, null);
+    }
+    var id = v.map.get(tok);
+    return id === undefined ? addTok(v, tok) : id;
+  }
+
+  function newVocab(def) {
+    var v = { strs: [], map: new Map(), noneId: -1 };
+    var vals = (def && def.values) || [];
+    for (var i = 0; i < vals.length; i++) addTok(v, vals[i][0]);
+    return v;
+  }
+
+  // Distinct ids of one cell into `out`, deduplicated per row like js_facet_defs()
+  function idsInto(voc, toks, out) {
+    var n = 0;
+    for (var i = 0; i < toks.length; i++) {
+      var id = idOf(voc, toks[i]), dup = false;
+      for (var k = 0; k < n; k++) if (out[k] === id) { dup = true; break; }
+      if (!dup) out[n++] = id;
+    }
+    return n;
+  }
+
+  function resetCounts(key) {
+    var cnt = COUNTS[key], voc = VOCAB[key];
+    if (!cnt) return;
+    Object.keys(cnt).forEach(function (nm) {
+      var a = cnt[nm], n = voc[nm].strs.length;
+      a.length = n;
+      for (var i = 0; i < n; i++) a[i] = 0;
+    });
+  }
+
+  // Set up counting structures for a table on first sight (from the predicate or attach())
+  function ensureTable(t) {
+    if (FCOLS[t.key]) return FCOLS[t.key].length > 0;
+    var defs = t.facets(), cols = t.cols();
+    if (!defs || !cols) return false;             // not published yet — retry on the next row
+    var names = [], voc = {}, cnt = {};
+    Object.keys(defs).forEach(function (nm) {
+      if (cols[nm] === undefined) return;         // renamed column: attach() warns loudly
+      names.push(nm);
+      voc[nm] = newVocab(defs[nm]);
+      cnt[nm] = [];
+    });
+    FCOLS[t.key]  = names;
+    VOCAB[t.key]  = voc;
+    COUNTS[t.key] = cnt;
+    resetCounts(t.key);
+    return names.length > 0;
+  }
+
+  function bump(arr, src, lo, hi) {
+    for (var k = lo; k < hi; k++) {
+      var id = src[k];
+      arr[id] = (arr[id] || 0) + 1;
+    }
+  }
+
+  // Tokenise every row of every facet column once into a CSR index keyed by DataTables row index (~6 MB for 167k rows)
+  function buildIndex(t, api) {
+    var names = FCOLS[t.key];
+    if (!names || !names.length) return;
+    var defs = t.facets(), cols = t.cols();
+    var idxs = api.rows().indexes().toArray();
+    var data = api.rows().data();
+    var maxRow = -1, k;
+    for (k = 0; k < idxs.length; k++) if (idxs[k] > maxRow) maxRow = idxs[k];
+    if (maxRow < 0) return;
+
+    var byIdx = new Array(maxRow + 1);
+    for (k = 0; k < idxs.length; k++) byIdx[idxs[k]] = data[k];
+
+    var idx = {}, scratch = [];
+    for (var c = 0; c < names.length; c++) {
+      var nm = names[c], voc = VOCAB[t.key][nm], sep = defs[nm].sep, col = cols[nm];
+      var starts = new Int32Array(maxRow + 2);
+      var buf = new Int32Array(Math.max(16, (maxRow + 1) * 2));
+      var total = 0;
+      for (var r = 0; r <= maxRow; r++) {
+        var row = byIdx[r];
+        var n = (row === undefined) ? 0 : idsInto(voc, tokens(row[col], sep), scratch);
+        if (total + n > buf.length) {
+          var grown = new Int32Array(Math.max(buf.length * 2, total + n));
+          grown.set(buf);
+          buf = grown;
+        }
+        for (var q = 0; q < n; q++) buf[total + q] = scratch[q];
+        total += n;
+        starts[r + 1] = total;
+      }
+      idx[nm] = { starts: starts, ids: buf.subarray(0, total) };
+    }
+    CIDX[t.key] = idx;
+  }
+
+  // One ext.search predicate for both tables: OR within a column, AND across (DataTables ANDs it with the panel and text filters); a token rule rather than a regex avoids escaping bugs. Also accumulates the exclude-own-column counts; `counter` restarts at 0 per pass
+  function facetPredicate(settings, searchData, index, rowData, counter) {
     var t = tableFor(settings.nTable);
     if (!t) return true;                                  // another DT table in the report
-    var sel = STATE[t.key], names = Object.keys(sel);
-    if (names.length === 0) return true;
-    var cols = t.cols() || {}, defs = t.facets() || {};
-    // rowData is the original (typed) row, searchData the rendered strings. Always the
-    // former: the SV table renders `locus`/`size` orthogonally, and mixing the two sources
-    // per column is the trap variant_key() documents on the R side.
+    if (!ensureTable(t)) return true;                     // no facet column on this table
+
+    var key = t.key;
+    if (counter === 0 || !TOUCHED[key]) resetCounts(key);
+    TOUCHED[key] = true;
+
+    var names = FCOLS[key], sel = STATE[key], voc = VOCAB[key], cnt = COUNTS[key];
+    var cols = t.cols(), defs = t.facets(), idx = CIDX[key];
+    // Use rowData (typed), not searchData (rendered): the SV table renders locus/size differently
     var row = rowData || searchData;
-    for (var i = 0; i < names.length; i++) {
-      var chosen = sel[names[i]];
-      if (!chosen || chosen.size === 0) continue;
-      var idx = cols[names[i]];
-      // Defensive only — widgets are built solely for columns that resolved. A vanished
-      // column must not empty the table; the loud failure is the attach-time warning.
-      if (idx === undefined) continue;
-      var def  = defs[names[i]];
-      var toks = tokens(row[idx], def ? def.sep : null);
-      var hit  = false;
-      for (var k = 0; k < toks.length; k++) {
-        if (chosen.has(toks[k])) { hit = true; break; }
+    var fails = 0, failed = -1, i;
+
+    for (i = 0; i < names.length; i++) {
+      var nm = names[i], chosen = sel[nm];
+      var hasSel = !!(chosen && chosen.size);
+      // After one failed column, only that column can still be counted for this row
+      if (!hasSel && fails > 0) { SC_LO[i] = SC_HI[i] = 0; continue; }
+
+      var src, lo, hi;
+      var ci = idx && idx[nm];
+      if (ci && index >= 0 && index + 1 < ci.starts.length) {
+        src = ci.ids; lo = ci.starts[index]; hi = ci.starts[index + 1];
+      } else {
+        var out = SC_TMP[i] || (SC_TMP[i] = []);
+        hi  = idsInto(voc[nm], tokens(row[cols[nm]], defs[nm].sep), out);
+        src = out; lo = 0;
       }
-      if (!hit) return false;                             // AND across columns
+      SC_SRC[i] = src; SC_LO[i] = lo; SC_HI[i] = hi;
+
+      if (hasSel) {
+        var hit = false, strs = voc[nm].strs;
+        for (var k = lo; k < hi; k++) {
+          if (chosen.has(strs[src[k]])) { hit = true; break; }
+        }
+        if (!hit) {
+          fails++; failed = i;
+          if (fails > 1) break;                           // counts for nobody; stop reading
+        }
+      }
+    }
+
+    if (fails > 1) return false;
+    if (fails === 1) {                                    // AND across columns
+      bump(cnt[names[failed]], SC_SRC[failed], SC_LO[failed], SC_HI[failed]);
+      return false;
+    }
+    for (i = 0; i < names.length; i++) {
+      bump(cnt[names[i]], SC_SRC[i], SC_LO[i], SC_HI[i]);
     }
     return true;
-  });
+  }
+
+  $.fn.dataTable.ext.search.push(facetPredicate);
 
   function scheduleDraw(w) {
     clearTimeout(PENDING[w.key]);
     PENDING[w.key] = setTimeout(function () {
-      // resetPaging default: a filter change should return to the top, which is also what
-      // Scroller does with the scroll position.
+      // resetPaging default: a filter change returns to the top
       w.api.draw();
     }, DRAW_DEBOUNCE_MS);
   }
 
   // ---- the open menu -------------------------------------------------------
+  var EDGE = 8;    // keep this much clear of every viewport edge
+
   function closeOpen() {
     if (!OPEN) return;
     var w = OPEN;
-    w.$menu.prop("hidden", true).removeClass("facet__menu--right");
+    w.$menu.prop("hidden", true);
     w.$btn.attr("aria-expanded", "false");
-    w.$wrap.trigger("hide");                 // DT re-clips the scroll head
-    w.$wrapper.removeClass("facet-open");    // and the report's own wrapper overflow
     OPEN = null;
+  }
+
+  // Fixed menu placed from the button's viewport rect: left-aligned, flipped right/up and clamped when there is no room
+  function placeMenu(w) {
+    var b    = w.$btn[0].getBoundingClientRect();
+    var menu = w.$menu[0];
+    var mw   = menu.offsetWidth, mh = menu.offsetHeight;
+
+    var left = b.left;
+    if (left + mw > window.innerWidth - EDGE) left = b.right - mw;
+    left = Math.max(EDGE, Math.min(left, window.innerWidth - EDGE - mw));
+
+    var top = b.bottom + 4;
+    if (top + mh > window.innerHeight - EDGE) {
+      var above = b.top - 4 - mh;
+      top = above >= EDGE ? above
+                          : Math.max(EDGE, window.innerHeight - EDGE - mh);
+    }
+
+    menu.style.left = Math.round(left) + "px";
+    menu.style.top  = Math.round(top) + "px";
   }
 
   function openMenu(w) {
     if (OPEN === w) { closeOpen(); return; }
     closeOpen();
-    w.$wrap.trigger("show");
-    w.$wrapper.addClass("facet-open");
-    w.$menu.prop("hidden", false);
+    w.$menu.prop("hidden", false);           // measurable only once it is not display:none
     w.$btn.attr("aria-expanded", "true");
     OPEN = w;
-    // Flip to the right edge when the menu would run off the viewport. Cheap, and the
-    // faceted columns sit far enough right in the SV table for it to matter.
-    var box = w.$menu[0].getBoundingClientRect();
-    if (box.right > window.innerWidth - 8) w.$menu.addClass("facet__menu--right");
-    if (w.$find.length) w.$find.trigger("focus");
+    placeMenu(w);
+    // preventScroll: letting the browser reveal the focused field would jump the table
+    if (w.$find.length) w.$find[0].focus({ preventScroll: true });
   }
 
-  // ---- widget -------------------------------------------------------------
-  function markup(name, def) {
+  // A fixed menu must follow its button: one capturing document scroll listener covers the page and the scroll containers
+  function followButton() {
+    if (!OPEN) return;
+    var w = OPEN;
+    var b = w.$btn[0].getBoundingClientRect();
+    var clip = w.clip ? w.clip.getBoundingClientRect() : null;
+    // Column scrolled out from under the menu: close it
+    if ((b.width === 0 && b.height === 0) ||
+        b.bottom < 0 || b.top > window.innerHeight ||
+        (clip && (b.right <= clip.left || b.left >= clip.right))) {
+      closeOpen();
+      return;
+    }
+    placeMenu(w);
+  }
+
+  // ---- widget: button in the header cell, menu appended to <body> (see the header note) ----
+  function buttonMarkup(name) {
+    return '<div class="facet">' +
+             '<button type="button" class="facet__btn" aria-expanded="false"' +
+             ' aria-haspopup="true" title="Filter ' + esc(name) + ' by value">' +
+               '<span class="facet__label">All</span>' +
+               '<span class="facet__caret" aria-hidden="true">&#9662;</span>' +
+             '</button>' +
+           '</div>';
+  }
+
+  function menuMarkup(name, def) {
     var withFind = def.values.length > SEARCH_THRESHOLD;
     var opts = def.values.map(function (v) {
       var tok = v[0], n = v[1];
@@ -175,25 +318,18 @@
              '</label>';
     }).join("");
 
-    return '<div class="facet">' +
-             '<button type="button" class="facet__btn" aria-expanded="false"' +
-             ' aria-haspopup="true" title="Filter ' + esc(name) + ' by value">' +
-               '<span class="facet__label">All</span>' +
-               '<span class="facet__caret" aria-hidden="true">&#9662;</span>' +
-             '</button>' +
-             '<div class="facet__menu" role="group" aria-label="' + esc(name) +
-             ' values" hidden>' +
-               '<div class="facet__tools">' +
-                 (withFind ? '<input type="text" class="facet__find"' +
-                             ' placeholder="Find value…" autocomplete="off">' : "") +
-                 '<button type="button" class="facet__all" title="Tick all shown">All' +
-                 '</button>' +
-                 '<button type="button" class="facet__none" title="Untick all shown">None' +
-                 '</button>' +
-               '</div>' +
-               '<div class="facet__list">' + opts + '</div>' +
-               '<p class="facet__foot">counts over all rows</p>' +
+    return '<div class="facet__menu" role="group" aria-label="' + esc(name) +
+           ' values" hidden>' +
+             '<div class="facet__tools">' +
+               (withFind ? '<input type="text" class="facet__find"' +
+                           ' placeholder="Find value…" autocomplete="off">' : "") +
+               '<button type="button" class="facet__all" title="Tick all shown">All' +
+               '</button>' +
+               '<button type="button" class="facet__none" title="Untick all shown">None' +
+               '</button>' +
              '</div>' +
+             '<div class="facet__list">' + opts + '</div>' +
+             '<p class="facet__foot">counts follow the other active filters</p>' +
            '</div>';
   }
 
@@ -201,9 +337,7 @@
     return $cb.data("none") ? null : String($cb.attr("data-tok"));
   }
 
-  // A column with nothing ticked is deliberately absent from STATE rather than holding an
-  // empty Set, so the predicate's `names.length === 0` fast path stays genuinely free for
-  // the untouched table — it runs per row, 167k times per draw.
+  // A column with nothing ticked is absent from STATE, keeping the per-row fast path cheap
   var NO_SELECTION = new Set();
 
   function readSel(w) {
@@ -244,6 +378,28 @@
     w.$container.toggleClass("facet--active", n > 0);
   }
 
+  // Paint the counts from the last filtering pass, touching only changed numbers
+  function flushCounts(key) {
+    var cnt = COUNTS[key];
+    if (!cnt) return;
+    for (var i = 0; i < WIDGETS.length; i++) {
+      var w = WIDGETS[i];
+      if (w.key !== key) continue;
+      var arr = cnt[w.name];
+      if (!arr) continue;
+      for (var j = 0; j < w.optIds.length; j++) {
+        var n = arr[w.optIds[j]] || 0;
+        if (w.optLast[j] === n) continue;
+        w.optLast[j] = n;
+        w.numNodes[j].textContent = n.toLocaleString();
+        // The baseline count moves into the tooltip
+        w.optNodes[j].title = w.optLabel[j] + " — " + n.toLocaleString() + " of " +
+                              w.optBase[j].toLocaleString() + " rows";
+        w.optNodes[j].classList.toggle("facet__opt--empty", n === 0);
+      }
+    }
+  }
+
   function anyActive() {
     return TABLES.some(function (t) {
       return Object.keys(STATE[t.key]).some(function (c) {
@@ -252,9 +408,7 @@
     });
   }
 
-  // The report's own control bar owns the reset, because with scrollY = "400px" a ticked
-  // filter can be scrolled out of sight and "the table is empty and I don't know why" is
-  // the predictable question. Absent in an older template, hence the guard.
+  // Reset lives in the report's control bar (a ticked filter can be scrolled out of sight); guarded for older templates
   function syncClearButton() {
     var el = document.getElementById("facet-clear");
     if (el) el.hidden = !anyActive();
@@ -277,30 +431,38 @@
     var $wrap  = $td.children("div").first();      // DT's div.form-group.has-feedback
     var $input = $wrap.children("input");
 
-    // Hidden, not removed: DT holds a reference to this input, and the scroll-head
-    // un-clipping handler is bound to $wrap itself. We never write to the input, so this
-    // column's DataTables search stays "" and cannot collide with the facet filter.
+    // Hidden, not removed: DT holds a reference to this input; we never write to it
     $input.hide().attr("tabindex", "-1").attr("aria-hidden", "true");
     $wrap.children("span.glyphicon").hide();
 
-    var $container = $(markup(name, def));
+    var $container = $(buttonMarkup(name));
     $wrap.append($container);                      // inside $wrap, see note 1 at the top
+    var $menu = $(menuMarkup(name, def)).appendTo(document.body);
 
-    // Both of these clip: report.scss sets overflow:hidden on .dataTables_wrapper AND on
-    // the htmlwidget's own .datatables div (for the card's border radius), and DT's
-    // show/hide handler only un-clips the scroll head inside them.
+    // What clips the button, so an open menu can tell its column scrolled away
     var $cont = $(api.table().container());
+    var $clip = $cont.find(".dataTables_scrollHead").first();
 
     var w = {
       key: t.key, name: name, api: api,
-      $wrap: $wrap, $wrapper: $cont.add($cont.closest(".datatables")),
+      clip: ($clip.length ? $clip : $cont)[0],
       $container: $container,
       $btn:   $container.find(".facet__btn"),
       $label: $container.find(".facet__label"),
-      $menu:  $container.find(".facet__menu"),
-      $find:  $container.find(".facet__find"),
-      $list:  $container.find(".facet__list")
+      $menu:  $menu,
+      $find:  $menu.find(".facet__find"),
+      $list:  $menu.find(".facet__list")
     };
+
+    // Option rows in payload order, paired with vocabulary ids; cached raw nodes for flushCounts()
+    var voc = VOCAB[t.key][name];
+    w.optNodes = w.$list.children(".facet__opt").toArray();
+    w.numNodes = w.optNodes.map(function (el) { return el.querySelector(".facet__n"); });
+    w.optIds   = def.values.map(function (v) { return idOf(voc, v[0]); });
+    w.optBase  = def.values.map(function (v) { return Number(v[1]) || 0; });
+    w.optLabel = def.values.map(function (v) { return v[0] === null ? "(none)" : v[0]; });
+    w.optLast  = def.values.map(function () { return -1; });   // -1: nothing painted yet
+
     WIDGETS.push(w);
 
     w.$btn.on("click", function (e) {
@@ -308,8 +470,7 @@
       openMenu(w);
     });
 
-    // Delegated within our own node — never from `document`, which the per-draw header
-    // clone would also match.
+    // Delegated within our own node, never from `document` (the header clone would match too)
     w.$menu.on("change", 'input[type="checkbox"]', function () {
       var sel = ensureSel(w), tok = tokenOf($(this));
       if (this.checked) sel.add(tok); else sel.delete(tok);
@@ -322,8 +483,7 @@
     w.$menu.find(".facet__all, .facet__none").on("click", function () {
       var on  = $(this).hasClass("facet__all");
       var sel = ensureSel(w);
-      // Only what is currently shown, which is what the button titles say — once the find
-      // box has narrowed the list, acting on the hidden values too would be a surprise.
+      // Act only on the values currently shown by the find box
       w.$list.children(".facet__opt").not(".facet__opt--hidden")
         .find('input[type="checkbox"]').each(function () {
           this.checked = on;
@@ -346,21 +506,28 @@
       });
     }
 
-    w.$container.on("keydown", function (e) {
+    // Bound to both nodes: Escape must work from the find box and the button
+    w.$container.add(w.$menu).on("keydown", function (e) {
       if (e.key === "Escape" || e.keyCode === 27) {
         closeOpen();
         w.$btn.trigger("focus");
       }
     });
 
-    // A click anywhere inside the menu must not reach the outside-click handler below.
-    w.$menu.on("click", function (e) { e.stopPropagation(); });
-
     refreshLabel(w);
     return w;
   }
 
-  // ---- attach -------------------------------------------------------------
+  // ---- attach: re-push the predicate so it filters last ----
+  function moveToEnd() {
+    var list = $.fn.dataTable.ext.search;
+    var at = list.indexOf(facetPredicate);
+    if (at >= 0 && at !== list.length - 1) {
+      list.splice(at, 1);
+      list.push(facetPredicate);
+    }
+  }
+
   function attach(t) {
     if (ATTACHED[t.key]) return;
     var node = t.elem();
@@ -373,6 +540,8 @@
     var $rows  = $head.children("tr");
     if ($rows.length < 2) return;                  // no filter row: nothing to replace
     ATTACHED[t.key] = true;
+    ensureTable(t);
+    moveToEnd();
 
     var $label  = $rows.first().children("th,td");
     var $filter = $rows.last().children("td");
@@ -385,11 +554,7 @@
       return;
     }
 
-    // R drops a column it cannot offer a dropdown for — fewer than two distinct values, or
-    // gone from the frame entirely — and knitr swallows its message(), so this is where that
-    // decision becomes visible. console.info rather than warn: for `callers` on the VEP text
-    // path and the SV `caller` column it is the expected outcome, and warnings here are
-    // reserved for something actually being wrong.
+    // R drops columns it cannot offer a dropdown for and knitr swallows the message, so log it here (info: expected for `callers`/`caller`)
     var requested = t.requested() || [];
     var missing = requested.filter(function (n) { return !(n in defs); });
     if (missing.length) {
@@ -410,9 +575,7 @@
         console.warn("facet_filter: '" + name + "' is a hidden column.");
         return;
       }
-      // Decisive cross-check on the translation: the label above the cell we picked must be
-      // the column we think it is. Attaching an svtype dropdown to the locus column would
-      // otherwise look like a filter that works and filters the wrong thing.
+      // Cross-check: the header label above the chosen cell must be the expected column
       var got = $.trim($label.eq(pos).text());
       if (got !== name) {
         console.warn("facet_filter: header mismatch for '" + name + "' at visible column " +
@@ -421,8 +584,7 @@
       }
       var $td = $filter.eq(pos);
       if ($td.attr("data-type") !== "character") {
-        // A factor/logical column gets DT's own selectize control; two widgets in one cell
-        // would fight over the same input.
+        // Factor/logical columns already carry DT's selectize control
         console.warn("facet_filter: '" + name + "' has data-type '" +
                      $td.attr("data-type") + "' — leaving DT's own filter in place.");
         return;
@@ -431,12 +593,28 @@
     });
 
     syncClearButton();
+
+    // Speed only: the predicate splits live until the index exists; a failure here must not break the filter
+    try {
+      buildIndex(t, api);
+    } catch (err) {
+      console.warn("facet_filter: could not index " + t.key +
+                   " tokens, falling back to splitting per draw.", err);
+    }
+
+    // DataTables fires `search` right after the pass that filled the counts
+    $(node).on("search.dt", function (e) {
+      if (e.target !== node) return;
+      if (!TOUCHED[t.key]) resetCounts(t.key);
+      TOUCHED[t.key] = false;
+      flushCounts(t.key);
+    });
+
+    // R's counts are the unfiltered baseline and --gene-panel can pre-filter, so force one pass now
+    api.draw(false);
   }
 
-  // DT wires its own filter-row handlers after $().DataTable() returns, i.e. after init.dt
-  // has fired, and one of those is the handler that un-clips the scroll head for an open
-  // menu. Defer a tick so it exists before we touch the cell. The load sweep is the
-  // idempotent fallback for a table that initialised before this script was parsed.
+  // Defer a tick so DT's own filter-row handlers exist; the load sweep covers tables initialised before this script
   $(document).on("init.dt", function (e, settings) {
     var t = tableFor(settings.nTable);
     if (t) setTimeout(function () { attach(t); }, 0);
@@ -449,16 +627,33 @@
     syncClearButton();
   });
 
-  // The one outside-click handler. Bound to document on purpose — it tests containment
-  // against the open menu, not against a widget class, so the header's sizing clone is
-  // irrelevant to it.
+  // Single outside-click handler on document, testing containment against the widget's two nodes
   $(document).on("mousedown", function (e) {
-    if (OPEN && !OPEN.$container[0].contains(e.target)) closeOpen();
+    if (!OPEN) return;
+    if (OPEN.$container[0].contains(e.target) || OPEN.$menu[0].contains(e.target)) return;
+    closeOpen();
   });
 
-  // Which values are ticked, for inspection from the browser console and for
-  // tests/js/test-facet-predicate.js — the ticked state is otherwise unreachable without a
-  // DOM. Same reason window.svPanelState is exposed in per_sample.qmd: one shared object
-  // beats re-deriving the state from the rendered header.
+  // Re-place the fixed menu on any scroll (capturing)
+  document.addEventListener("scroll", followButton, true);
+  window.addEventListener("resize", followButton);
+
+  // Ticked state, exposed for the console and tests/js/test-facet-predicate.js
   window.facetFilterState = STATE;
+
+  // Live counts of the last pass as { table: { column: [[token, n], ...] } }
+  window.facetFilterCounts = function () {
+    var out = {};
+    Object.keys(COUNTS).forEach(function (key) {
+      var cnt = COUNTS[key], voc = VOCAB[key];
+      out[key] = {};
+      Object.keys(cnt).forEach(function (nm) {
+        // Iterate the vocabulary, not the count array: unmatched values are 0, not gaps
+        var strs = voc[nm].strs, pairs = [];
+        for (var id = 0; id < strs.length; id++) pairs.push([strs[id], cnt[nm][id] || 0]);
+        out[key][nm] = pairs;
+      });
+    });
+    return out;
+  };
 })();

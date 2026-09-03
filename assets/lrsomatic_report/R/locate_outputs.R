@@ -1,7 +1,4 @@
-# Discover the per-tool output files for a sample run. Discovery is recursive
-# under sample_dir: the pipeline may dump inputs flat rather than in a fixed
-# directory tree, so files are matched by their distinctive filename suffix.
-# Returns a named list; any missing optional file is NULL.
+# Locate per-tool output files under sample_dir by filename suffix (recursive); missing optional files are NULL
 
 locate_outputs = function(sample_dir, sample_id) {
   d = sample_dir  # shorthand
@@ -19,9 +16,7 @@ locate_outputs = function(sample_dir, sample_id) {
     if (length(hits) > 0) hits[1] else NULL
   }
 
-  # The mirror of find1_tumor: normal-side files, wherever the pipeline puts them.
-  # This has moved (a top-level normal/ historically, qc/normal/ today), so match on
-  # the path component rather than rooting the search at a fixed directory.
+  # Normal-side files, matched on the path component since their directory has moved over time
   find1_normal = function(pattern) {
     hits = list.files(d, pattern = pattern, recursive = TRUE, full.names = TRUE)
     hits = hits[grepl("/normal/", hits)]
@@ -31,12 +26,7 @@ locate_outputs = function(sample_dir, sample_id) {
   # --- small variants -------------------------------------------------------
   vep_somatic = find1("_SOMATIC_VEP\\.vcf\\.gz$")
 
-  # VAF, depth and phasing come from the VCF that VEP annotated, not from a separate
-  # caller VCF. Preferred is the phased somatic VCF, which is what the pipeline feeds to
-  # VEP and which additionally carries FORMAT/PS. Runs predating variants/phased/ fall back
-  # to the raw ClairS(-TO) output, matched on the containing directory because the
-  # basename ("somatic.vcf.gz") is shared across callers. The clairs*/ fallback may return
-  # several paths — parse_caller_vcf() stacks them.
+  # VAF/depth/phasing come from the VCF VEP annotated: prefer the phased somatic VCF, fall back to raw ClairS(-TO) output (may be several paths)
   somatic_vaf_vcf = {
     phased = file.path(d, "variants", "phased", "somatic_smallvariants.vcf.gz")
     if (file.exists(phased)) phased else {
@@ -47,8 +37,7 @@ locate_outputs = function(sample_dir, sample_id) {
     }
   }
 
-  # --- structural variants ---------------------------------------------------
-  # Severus paths are now located by R/sections/sv.R (section-module contract).
+  # --- structural variants: located by R/sections/sv.R ---
 
   # --- ASCAT ----------------------------------------------------------------
   ascat_segments_raw = find1("\\.segments_raw\\.txt$")
@@ -77,12 +66,10 @@ locate_outputs = function(sample_dir, sample_id) {
   normal_flagstat         = find1_normal("\\.flagstat$")
   normal_samtools_stats   = find1_normal("\\.stats$")
 
-  # Driven by what was actually found rather than by directory layout or run mode:
-  # the QC section renders a tumour/normal comparison only if there is normal data.
+  # Driven by what was found: the QC comparison renders only if there is normal data
   has_normal = !is.null(normal_mosdepth_summary) || !is.null(normal_cramino)
 
-  # Run mode is derived from the same evidence rather than declared by the caller; its
-  # only consumer is the hero badge in templates/sections/_header.qmd.
+  # Run mode derived from the same evidence; its only consumer is the header badge
   mode = if (has_normal) "matched" else "tumour-only"
 
   # --- Wakhan (optional) -----------------------------------------------------

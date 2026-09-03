@@ -12,17 +12,7 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
   cat("<script>window.SNV_COLS = ", js_col_index_map(names(dt_display)), ";</script>\n",
       sep = "")
 
-  # Values present in each tickbox-filtered column, with row counts, for the checkbox
-  # dropdowns that replace those columns' text filter boxes (assets/js/facet_filter.js).
-  # Built from the display frame, so the names match what SNV_COLS publishes. The
-  # separators mirror how the cells were built — see js_facet_defs() in R/utils.R — so
-  # ticking one consequence term matches a cell holding several. `callers` is empty on the
-  # VEP text path, and js_facet_defs() then omits it (with a message) so it keeps its text
-  # box rather than offering an empty dropdown.
-  #
-  # The requested list is published too: js_facet_defs() drops a column it cannot offer a
-  # dropdown for, and knitr swallows its message(), so the browser console is where that
-  # decision is actually visible.
+  # Tickbox facet values for the SNV table (see js_facet_defs() in R/utils.R), built from the display frame so names match SNV_COLS; the requested list is published too, since knitr swallows the omission message
   snv_facet_cols = c("consequence", "impact", "callers")
   cat("<script>window.SNV_FACET_COLS = ", js_vec(snv_facet_cols), ";</script>\n", sep = "")
   cat("<script>window.SNV_FACETS = ",
@@ -37,9 +27,7 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
 ```{r small-variant-table}
 if (!is.null(variant_table) && nrow(variant_table) > 0) {
 
-  # Cells to flag: a variant reported by several callers has its VAF/DP/GT/PS taken from
-  # whichever one won the consensus merge, so those columns need not describe the caller
-  # named beside them. styleEqual() needs the literal values, not a predicate.
+  # Flag cells whose VAF/DP/GT/PS came from a consensus winner; styleEqual() needs literal values
   mc_vals = if ("callers" %in% names(dt_display))
               unique(grep(",", dt_display$callers, fixed = TRUE, value = TRUE)) else
               character(0)
@@ -76,20 +64,12 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
       snv_dt,
       columns     = "callers",
       target      = "cell",
-      # Deliberately outside the impact palette above — the same tint in two columns of
-      # one table would read as one scale.
+      # Outside the impact palette so two columns do not read as one scale
       backgroundColor = DT::styleEqual(mc_vals, rep("#e6ecf5", length(mc_vals)))
     )
   }
 
-  # Provenance footnote. One VCF supplies VAF/DP/GT/PS for every variant in this table, and
-  # after a consensus merge its FORMAT fields come from whichever caller won each variant —
-  # so say which file it was, how much of the table it actually covered, and flag the rows
-  # where the attribution is ambiguous.
-  #
-  # n_multi is always 0 on the VEP text path, which carries no per-variant caller: the
-  # caveat therefore appears only on the merged multi-caller (CSQ) path, which is exactly
-  # where the ambiguity exists.
+  # Provenance footnote: which VCF supplied VAF/DP/GT/PS, its coverage, and the ambiguous multi-caller rows (n_multi is 0 on the VEP text path)
   footnote = table_details(
     summary = "VAF provenance",
     tags$p(
@@ -99,13 +79,11 @@ if (!is.null(variant_table) && nrow(variant_table) > 0) {
           lapply(seq_along(vaf_prov$paths), function(i) {
             tagList(if (i > 1) ", ", tags$code(vaf_prov$paths[i]))
           }),
-          # Punctuation rides along with the preceding element: adjacent tagList members
-          # are emitted on separate lines, which HTML collapses to a space.
+          # Punctuation rides with the preceding element (adjacent tagList members render with a space)
           if (length(vaf_prov$sources) > 0)
             paste0(" (", paste(vaf_prov$sources, collapse = ", "), ");") else ";",
           "the variant set itself comes from the VEP annotation.",
-          # Named only when the VCF held more than one sample — that is the only case
-          # where picking the wrong column would silently report the normal's VAF.
+          # Named only when the VCF held more than one sample
           if (length(vaf_prov$sample) > 0)
             sprintf("Read from sample %s.", paste(vaf_prov$sample, collapse = ", ")) else NULL,
           if (!is.na(n_vaf))

@@ -38,8 +38,7 @@ if (!is.null(whatshap) && nrow(whatshap$per_chrom) > 0) {
         columnDefs  = list(list(className = "dt-left", targets = "_all"))
       )
     ),
-    # These statistics are germline, not somatic — worth stating, but not worth a line
-    # of prose above every table. See table_details() in R/sections.R.
+    # Germline, not somatic, statistics; see table_details() in R/sections.R
     table_details(
       summary = "Source",
       sprintf("Germline phasing statistics, from %s.",

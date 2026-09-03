@@ -1,22 +1,10 @@
-/* Breakend circos, drawn in the browser from window.BND_DATA (see R/circos_bnd.R).
- *
- * The point of drawing here rather than in R is re-layout: which chromosomes get a
- * sector, and therefore every sector's angular width, depends on which links survive the
- * current filter. A server-drawn SVG bakes those angles in and can only dim what it
- * already drew.
- *
- * Coordinates are computed in a fixed 1000x1000 user space and the SVG is scaled by its
- * viewBox, so nothing here needs to know the rendered pixel size.
- */
+// Breakend circos drawn in the browser from window.BND_DATA (see R/circos_bnd.R) so sectors re-lay-out per filter; 1000x1000 user space scaled by viewBox
 (function () {
   "use strict";
 
   var SVG_NS = "http://www.w3.org/2000/svg";
 
-  // Geometry, in the 1000x1000 user space. Ordered outward from the centre.
-  // The ring is kept well inside the box because gene labels extend outward from
-  // R_LABEL: a label at 3 o'clock starts at 500+R_LABEL and needs room for its text, and
-  // the root <svg> clips whatever runs past the viewBox.
+  // Geometry in the 1000x1000 user space, ordered outward; the ring stays inside the box to leave room for labels
   var CX = 500, CY = 500;
   var R_LINK  = 314;   // arcs terminate here, just inside the ideogram
   var R_IDEO  = 322;   // ideogram ring, inner edge
@@ -47,10 +35,7 @@
 
   // --- Layout ------------------------------------------------------------
 
-  /* Angular extent of each visible chromosome, proportional to its length over whatever
-   * is left of the circle once the inter-sector gaps are taken out. This is the whole
-   * reason the plot is drawn client-side: drop a chromosome and every other sector moves.
-   */
+  // Angular extent per visible chromosome, proportional to length after the inter-sector gaps
   function layout(chroms, lenOf) {
     var total = 0, i;
     for (i = 0; i < chroms.length; i++) total += lenOf(chroms[i]);
@@ -91,11 +76,7 @@
            "A" + r0 + "," + r0 + " 0 " + large + " 0 " + p3[0] + "," + p3[1] + "Z";
   }
 
-  /* Push labels apart along the circumference until none is closer than
-   * MIN_LABEL_SEP_DEG to its neighbour. One greedy forward pass then one backward pass:
-   * the forward pass can crowd the last label, and the backward pass relieves it.
-   * Labels keep their radius, so a connector line is what shows the displacement.
-   */
+  // Push labels apart until none is closer than MIN_LABEL_SEP_DEG (forward then backward pass); connectors show the displacement
   function deoverlap(items) {
     if (items.length < 2) return items;
     items.sort(function (a, b) { return b.angle - a.angle; });
@@ -197,8 +178,7 @@
       return sectors[g.chrom] && visibleGenes.has(g.gene);
     });
 
-    // A gene span is invisible at this scale — MYC is 7 kb against a 145 Mb sector — so
-    // bodies get a floor of about half a degree. They are markers, not spans to scale.
+    // Gene bodies get a floor of ~half a degree: they are markers, not spans to scale
     var placed = deoverlap(genes.map(function (g) {
       var mid = (g.start + g.end) / 2;
       return {
@@ -225,8 +205,7 @@
         class: "bnd-gene-line", "data-gene": g.gene
       }));
 
-      // Labels read outward on the right half and inward on the left, so none is upside
-      // down. Flipping is why each needs its own rotate() rather than a shared transform.
+      // Labels read outward on the right half and inward on the left, so each needs its own rotate()
       var flip = Math.cos(g.angle * Math.PI / 180) < 0;
       var lp = pt(g.angle, R_LABEL);
       var rot = flip ? (180 - g.angle) : -g.angle;
@@ -242,8 +221,7 @@
       gLabels.appendChild(t);
     });
 
-    // Arcs. A quadratic Bezier with its control point at the centre gives circlize's
-    // familiar bundling: near-antipodal links run almost straight, close ones bow tight.
+    // Arcs: quadratic Bezier with the control point at the centre (circlize-style bundling)
     links.forEach(function (l) {
       var aA = angleOf(sectors, l.chromA, l.posA);
       var aB = angleOf(sectors, l.chromB, l.posB);
@@ -288,12 +266,7 @@
   var DATA = null;
 
   window.bndCircos = {
-    /* Draw into `host` for the given filter state.
-     * visibleIds:   Set of SV ids the table currently shows, or null for "everything".
-     * visibleGenes: Set of gene symbols those rows name in their panel_hit column.
-     * selected:     Set of SV ids the user has clicked.
-     * Returns {arcs, genes, chroms} for the caption.
-     */
+    // Draw into `host` for a filter state (visibleIds/visibleGenes/selected Sets, null = everything); returns {arcs, genes, chroms}
     render: function (host, visibleIds, visibleGenes, selected) {
       if (!host) return { arcs: 0, genes: 0, chroms: 0 };
       if (!DATA) {

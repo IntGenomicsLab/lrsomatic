@@ -18,10 +18,7 @@ table_details(
 ```
 
 ```{r gene-filter-ui, results='asis'}
-# One checkbox per registered panel. There is no "all genes" entry: no box ticked *is*
-# the unfiltered state, which is one fewer sentinel to keep in sync than the old
-# "__all__" <option> was. The boxes ticked on load are params$default_panels, and the
-# handler in per_sample.qmd reads its initial state back off these attributes.
+# One checkbox per registered panel; no box ticked is the unfiltered state; load-time ticks are params$default_panels
 all_p = if (!is.null(params$all_panels) && length(params$all_panels) > 0)
           params$all_panels else list()
 selected = setdiff(as.character(unlist(params$default_panels)), "__all__")

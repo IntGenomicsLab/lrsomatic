@@ -2,12 +2,7 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
-# Parse mosdepth summary (*.mosdepth.summary.txt)
-# Returns list: mean_depth, total_row (the "total" row from mosdepth)
-#
-# `keep_chroms` is the reference's own contig list. Without it the per-chromosome table
-# falls back to a bare "^chr" match, which admits the ~2500 chrUn_*_decoy contigs and —
-# worse — comes back *empty* on any reference whose contigs carry no "chr" prefix.
+# Parse mosdepth summary; `keep_chroms` avoids a bare "^chr" match (admits decoys, empty on chr-less references)
 parse_mosdepth_summary = function(summary_file, keep_chroms = NULL) {
   if (is.null(summary_file) || !file.exists(summary_file)) {
     return(list(mean_depth = NA_real_, table = data.table()))
@@ -30,7 +25,6 @@ parse_mosdepth_summary = function(summary_file, keep_chroms = NULL) {
 }
 
 # Parse mosdepth global distribution (*.mosdepth.global.dist.txt)
-# Returns data.table with columns: chrom, coverage, fraction
 parse_mosdepth_dist = function(dist_file) {
   if (is.null(dist_file) || !file.exists(dist_file)) return(NULL)
   dt = fread(dist_file, sep = "\t", header = FALSE,
@@ -39,7 +33,6 @@ parse_mosdepth_dist = function(dist_file) {
 }
 
 # Parse cramino alignment report
-# Returns list: n50, yield_gb, mapped_pct, n_reads
 parse_cramino = function(cramino_file) {
   if (is.null(cramino_file) || !file.exists(cramino_file)) {
     return(list(n50 = NA_real_, yield_gb = NA_real_,
@@ -74,7 +67,6 @@ parse_cramino = function(cramino_file) {
 }
 
 # Parse samtools flagstat
-# Returns a named list of counts (total, mapped, ...)
 parse_flagstat = function(flagstat_file) {
   if (is.null(flagstat_file) || !file.exists(flagstat_file)) return(list())
   lines = readLines(flagstat_file, warn = FALSE)
@@ -91,8 +83,7 @@ parse_flagstat = function(flagstat_file) {
   out
 }
 
-# Parse samtools stats (*.stats) — SN summary lines only (long-read relevant)
-# Returns list of summary metrics; NULL if file missing.
+# Parse samtools stats (*.stats), SN summary lines only
 parse_samtools_stats = function(stats_file) {
   if (is.null(stats_file) || !file.exists(stats_file)) return(NULL)
   lines = readLines(stats_file, warn = FALSE)

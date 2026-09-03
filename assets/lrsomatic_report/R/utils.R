@@ -2,9 +2,7 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
-# Type-stable: fread() reads a bare-contig CHROM column ("1", "2", ...) as integer, and
-# ifelse() on an all-NA test returns logical NA — both of which break every downstream
-# string comparison, so coerce on the way in and on the way out.
+# Type-stable: fread() may read CHROM as integer and ifelse() on all-NA returns logical
 ensure_chr_prefix = function(x) {
   x   = as.character(x)
   out = as.character(ifelse(startsWith(x, "chr"), x, paste0("chr", x)))
@@ -34,26 +32,9 @@ extract_extra_key = function(extra_vec, key) {
   }, character(1), USE.NAMES = FALSE)
 }
 
-# ---- Gene panels ---------------------------------------------------------
-#
-# A panel is a plain list — not a data.table — because it round-trips through
-# Quarto's execute_params as YAML (see bin/render_report.R):
-#
-#   list(name, path, reference, has_coords, genes,
-#        chrom, start, end, interval_gene)   # the last four only when has_coords
-#
-# `genes` is deduplicated, for symbol matching; the interval vectors are parallel and
-# not deduplicated, because one symbol can legitimately carry several loci.
-#
-# `has_coords` selects the SV matching mode: a panel carrying chrom/start/end is
-# matched against SV breakend coordinates with a window (sv_panel_hits()), while a
-# symbol-only panel can only be matched against the per-side VEP symbols. Small
-# variants always match on `genes` — VEP annotates SNVs reliably, and per-gene
-# symbols are the right semantics there — so one file serves both tables.
+# ---- Gene panels: plain lists (they round-trip through Quarto execute_params) of name, path, reference, has_coords, genes and, when has_coords, parallel chrom/start/end/interval_gene ----
 
-# Canonical reference names. Panel coordinates are only valid for one reference, so
-# a coordinate-carrying panel has to declare which, and the declaration is compared
-# against the reference the report was rendered for.
+# Canonical reference names; a coordinate panel declares one and it is checked against the render
 normalise_reference_name = function(x) {
   if (is.null(x) || length(x) != 1 || is.na(x) || !nzchar(trimws(x))) return(NA_character_)
   x = tolower(trimws(x))
@@ -62,8 +43,7 @@ normalise_reference_name = function(x) {
   x
 }
 
-# Reference suffix in a builtin panel filename ("lymphoid.hg38.tsv" -> "hg38").
-# Returns list(name, reference); reference is NA for an unsuffixed file.
+# Reference suffix of a builtin panel filename; list(name, reference), reference NA if unsuffixed
 .split_panel_filename = function(path) {
   stem  = tools::file_path_sans_ext(basename(path))
   parts = strsplit(stem, ".", fixed = TRUE)[[1]]
@@ -75,8 +55,7 @@ normalise_reference_name = function(x) {
   list(name = stem, reference = NA_character_)
 }
 
-# Read the leading "#"-comment block of a panel TSV, which may declare the reference
-# the coordinates belong to ("# reference: hg38").
+# Read the leading "#" comment block of a panel TSV (may declare "# reference: hg38")
 .panel_header = function(path) {
   lines = readLines(path, warn = FALSE)
   n_comment = 0L
@@ -90,14 +69,7 @@ normalise_reference_name = function(x) {
   list(n_comment = n_comment, reference = declared)
 }
 
-# Load a gene panel TSV. Required: a `gene` column (or a single unnamed column of
-# symbols). Optional but all-or-nothing: `chrom` (or `chr`), `start`, `end` — a file
-# carrying some but not all three is malformed and errors rather than silently
-# downgrading to symbol matching.
-#
-# `reference` is the reference the report is being rendered for. A coordinate-carrying
-# panel that declares a different one errors; one that declares none loads with
-# reference "" ("unverified" in the section footnote) rather than being guessed at.
+# Load a gene panel TSV: `gene` column required; chrom/start/end all-or-nothing; a coordinate panel declaring another reference errors, one declaring none loads as ""
 load_gene_panel = function(path, reference = NULL) {
   if (!file.exists(path)) stop("Gene panel file not found: ", path)
 
@@ -109,8 +81,7 @@ load_gene_panel = function(path, reference = NULL) {
   )
   if (nrow(dt) == 0 && ncol(dt) == 0) stop("Gene panel file is empty: ", path)
 
-  # copy(): setnames() rewrites the names vector in place, which would otherwise
-  # clobber this reference to it.
+  # copy(): setnames() rewrites the names vector in place
   orig_names = copy(names(dt))
   setnames(dt, tolower(names(dt)))
   setnames(dt, old = c("chr", "chromosome"), new = c("chrom", "chrom"), skip_absent = TRUE)
@@ -118,8 +89,7 @@ load_gene_panel = function(path, reference = NULL) {
   if ("gene" %in% names(dt)) {
     genes = as.character(dt[["gene"]])
   } else if (ncol(dt) == 1) {
-    # A headerless one-column list: fread consumed the first symbol as the column
-    # name, so put it back — with its original casing — rather than dropping it.
+    # Headerless one-column list: fread consumed the first symbol as the column name, put it back
     genes = c(orig_names[1], as.character(dt[[1]]))
   } else {
     genes = as.character(dt[[1]])
@@ -177,8 +147,7 @@ load_gene_panel = function(path, reference = NULL) {
     out$chrom = chrom[keep]
     out$start = start[keep]
     out$end   = end[keep]
-    # `genes` is deduplicated for symbol matching; the interval vectors are not,
-    # because one symbol can legitimately carry several loci.
+    # `genes` is deduplicated; the interval vectors are not (one symbol can carry several loci)
     out$interval_gene = genes[keep]
   }
 
@@ -202,8 +171,7 @@ is_no_gene_panel = function(panel_arg) {
     identical(tolower(trimws(panel_arg)), "none")
 }
 
-# Path of a builtin panel, preferring the variant built for `reference`
-# ("lymphoid.hg38.tsv") over an unsuffixed one ("lymphoid.tsv"). NULL if neither exists.
+# Path of a builtin panel, preferring the `reference`-specific variant; NULL if none
 builtin_panel_path = function(assets_dir, name, reference = NULL) {
   ref = normalise_reference_name(reference)
   dir = file.path(assets_dir, "gene_lists")
@@ -213,9 +181,7 @@ builtin_panel_path = function(assets_dir, name, reference = NULL) {
   if (length(hit) > 0) hit[1] else NULL
 }
 
-# Resolve a --gene-panel arg: the "none" sentinel (no filtering, returns NULL),
-# a builtin name ("lymphoid"), or a path to a TSV. A value that is neither is an
-# error rather than a silent fall-through to unfiltered output.
+# Resolve a --gene-panel arg: "none", a builtin name, or a TSV path; anything else errors
 resolve_gene_panel = function(panel_arg, assets_dir, reference = NULL) {
   if (is_no_gene_panel(panel_arg)) return(NULL)
   builtin = builtin_panel_path(assets_dir, panel_arg, reference)
@@ -224,11 +190,7 @@ resolve_gene_panel = function(panel_arg, assets_dir, reference = NULL) {
   stop("Gene panel not found (tried builtin '", panel_arg, "' and as file path)")
 }
 
-# Load all gene panels from assets/gene_lists/*.tsv, resolving reference-specific
-# files ("lymphoid.hg38.tsv" / "lymphoid.t2t.tsv") to one selectable "lymphoid" entry.
-# A panel that only ships for other references is skipped — offering it would mean
-# matching coordinates from the wrong genome.
-# Returns a named list of panel objects (see load_gene_panel()).
+# Load all builtin panels, resolving reference-specific files to one entry and skipping panels not shipped for this reference
 load_all_gene_panels = function(assets_dir, reference = NULL) {
   tsv_files = Sys.glob(file.path(assets_dir, "gene_lists", "*.tsv"))
   if (length(tsv_files) == 0) return(list())
@@ -257,10 +219,7 @@ load_all_gene_panels = function(assets_dir, reference = NULL) {
   panels
 }
 
-# Give a user-supplied panel a key that doesn't collide with an already-registered
-# one. The first collision keeps the plain "-custom" suffix the single-panel code
-# used; further collisions number from 2, so several TSVs sharing a basename all
-# stay selectable instead of overwriting each other.
+# Non-colliding key for a user panel: the first collision gets "-custom", further ones are numbered
 unique_panel_name = function(nm, taken) {
   if (!(nm %in% taken)) return(nm)
   cand = paste0(nm, "-custom")
@@ -272,17 +231,7 @@ unique_panel_name = function(nm, taken) {
   cand
 }
 
-# Resolve the panel keys selected on load into real panel objects, keyed by the same
-# names params$all_panels uses (which is also what the checkboxes carry).
-#
-# Deliberately re-read from disk rather than reusing params$all_panels directly: a
-# panel object that has round-tripped through Quarto's YAML execute_params comes back
-# with list-typed vectors, and panel_intervals() and the `%in%` symbol tests want real
-# atomic ones. A custom TSV's key is not a builtin name, so its location is recovered
-# from the registered object's own $path.
-#
-# Not wrapped in tryCatch, for the same reason resolve_gene_panel() isn't: a panel that
-# can't be resolved has to fail the render rather than silently match nothing.
+# Resolve selected panel keys to panel objects, re-read from disk (the YAML round trip list-ifies the vectors); not tryCatch-wrapped so an unresolvable panel fails the render
 resolve_selected_panels = function(keys, all_panels, assets_dir, reference = NULL) {
   keys = setdiff(as.character(unlist(keys)), "__all__")
   keys = keys[!is.na(keys) & nzchar(keys)]
@@ -297,12 +246,7 @@ resolve_selected_panels = function(keys, all_panels, assets_dir, reference = NUL
   out[!vapply(out, is.null, logical(1))]
 }
 
-# Pull every occurrence of a repeatable flag out of an argv vector.
-#
-# optparse has no action="append": given `--gene-panel a --gene-panel b` it silently
-# keeps only "b". So the flag is stripped from argv here and parse_args() is handed the
-# remainder; its make_option() entry stays in option_list purely so --help documents it.
-# Both `--flag value` and `--flag=value` are accepted.
+# Pull every occurrence of a repeatable flag out of argv (optparse has no action="append"); accepts `--flag value` and `--flag=value`
 extract_repeated_option = function(args, flag) {
   args = as.character(args)
   vals = character(0)
@@ -325,11 +269,7 @@ extract_repeated_option = function(args, flag) {
   list(values = vals, rest = rest)
 }
 
-# ---- Small JS serialisation helpers --------------------------------------
-# The report ships panel data and column positions to its own client-side filter.
-# Keeping these here means the R table and the JS that indexes it are generated
-# from the same object, instead of the JS re-deriving positions from the rendered
-# header (which breaks under DT's filter row and Scroller's cloned thead).
+# ---- Small JS serialisation helpers: the R table and the JS indexing it are generated from the same object ----
 
 js_quote = function(x) paste0('"', gsub('"', '\\\\"', as.character(x)), '"')
 
@@ -339,10 +279,7 @@ js_col_index_map = function(nms) {
   paste0("{", paste0(js_quote(nms), ":", seq_along(nms) - 1L, collapse = ","), "}")
 }
 
-# One JS number literal per element. Element-wise rather than vectorised because
-# format() on a vector pads every element to a common format — c(1, 2.5) becomes
-# "1.0","2.5" — and scientific notation on a base-pair coordinate would read back as a
-# different number than the one it names.
+# One JS number literal per element; element-wise so format() cannot pad or switch to scientific notation
 js_num = function(x) {
   vapply(x, function(v) {
     if (is.na(v)) "null" else format(v, scientific = FALSE, trim = TRUE)
@@ -351,18 +288,13 @@ js_num = function(x) {
 
 .js_cell = function(v) if (is.numeric(v)) js_num(v) else ifelse(is.na(v), "null", js_quote(v))
 
-# A JS array literal from an atomic vector. Numbers are emitted bare, everything else
-# quoted; NA becomes null so the client can test for it. Written by hand rather than with
-# jsonlite because that would be a new dependency in both recipe/meta.yaml and the
-# pipeline's environment.yml — see the "R package requirements" note in CLAUDE.md.
+# JS array literal from an atomic vector (numbers bare, NA as null); hand-written to avoid a jsonlite dependency
 js_vec = function(x) {
   if (length(x) == 0) return("[]")
   paste0("[", paste(.js_cell(x), collapse = ","), "]")
 }
 
-# A JS array of arrays, one inner array per row of `dt`, columns in `cols` order.
-# Row-major and positional: far smaller than an array of objects, which matters when the
-# payload is a few thousand cytobands inlined into a self-contained HTML file.
+# JS array of arrays, one per row of `dt`, columns in `cols` order (row-major to keep the payload small)
 js_rows = function(dt, cols) {
   if (is.null(dt) || nrow(dt) == 0) return("[]")
   cells = lapply(cols, function(cl) .js_cell(dt[[cl]]))
@@ -370,44 +302,14 @@ js_rows = function(dt, cols) {
   paste0("[[", paste(rows, collapse = "],["), "]]")
 }
 
-# VEP's impact severity order. The tickbox dropdowns present impact in this order rather
-# than by count, because severity is the only order a reader expects — and it is the order
-# the styleEqual() palettes in _smallvariants.qmd and _sv.qmd already use.
+# VEP impact severity order, as used by the styleEqual() palettes
 IMPACT_LEVELS = c("HIGH", "MODERATE", "LOW", "MODIFIER")
 
-# A column with fewer than this many distinct values is not worth a dropdown, and one with
-# more would inline a large payload into a self-contained report: either way it keeps its
-# plain text filter. 0 and 1 are real cases, not defects — `callers` is "" for every row on
-# the VEP text path, and the SV table has a single caller today.
+# Distinct-value bounds for offering a dropdown; outside them a column keeps its text filter
 FACET_MIN_VALUES = 2L
 FACET_MAX_VALUES = 200L
 
-# Distinct values, with row counts, for the checkbox-dropdown ("tickbox") column filters —
-# see assets/js/facet_filter.js. Enumerated here rather than by a client-side scan because
-# the small-variant table runs 27k–167k rows.
-#
-# cols   : facet column names as they appear in the *display* frame (post-setnames), which
-#          is what the client resolves through window.SNV_COLS / window.SV_COLS.
-# seps   : named vector of per-column separators. A column named here is split into tokens,
-#          one not named is matched whole. The separator has to mirror how the cell was
-#          built — `consequence` is VEP's "&"-joined terms rewritten to commas and `callers`
-#          is paste(sort(unique(caller)), collapse = ",") — so that ticking one term matches
-#          a two-term cell. It travels in the payload rather than being hard-coded in the JS.
-# levels : named list of fixed value orders (impact). Values not listed fall in after them,
-#          by descending row count then alphabetically, so the output is deterministic.
-#
-# Returns a JS object literal keyed by column name:
-#   {"impact":{"sep":null,"values":[["HIGH",1203],["MODERATE",8140],[null,17]]},
-#    "consequence":{"sep":",","values":[["intron_variant",90210], ...]}}
-# `sep: null` means match the whole cell. A `null` value is the "no value" bucket (NA, or
-# empty after trimming) and always sorts last; its "(none)" label is applied client-side, so
-# a literal cell value of "(none)" cannot collide with it. Counts are *rows* per distinct
-# token — a split column's counts therefore sum to more than nrow() — and they are over the
-# whole table, never recomputed per filter.
-#
-# A column that is absent, or outside [FACET_MIN_VALUES, FACET_MAX_VALUES] distinct values,
-# is omitted with a message() and keeps its text box. The message is the point: a renamed
-# facet column is otherwise invisible, because the text box left behind looks intentional.
+# Distinct values with row counts for the tickbox column filters (assets/js/facet_filter.js): `seps` splits a column into tokens, `levels` fixes value order; returns a JS object literal {col: {sep, values: [[value, n], ...]}} with null as the "(none)" bucket. Columns absent or outside the FACET_*_VALUES bounds are omitted with a message
 js_facet_defs = function(dt, cols, seps = character(0), levels = list()) {
   if (is.null(dt) || nrow(dt) == 0 || length(cols) == 0) return("{}")
   entries = character(0)
@@ -441,9 +343,7 @@ js_facet_defs = function(dt, cols, seps = character(0), levels = list()) {
       next
     }
 
-    # Fixed levels first (only those actually present), then by descending count, then
-    # alphabetically so ties are stable. The NA bucket is an escape hatch rather than a
-    # value competing for attention, so it sorts last whatever its count.
+    # Fixed levels first, then descending count, then alphabetical; the NA bucket sorts last
     lv   = intersect(as.character(levels[[nm]]), cnt$tok[!is.na(cnt$tok)])
     rank = ifelse(is.na(cnt$tok), length(lv) + 2L,
                   ifelse(cnt$tok %in% lv, match(cnt$tok, lv), length(lv) + 1L))
@@ -470,28 +370,24 @@ fmt_bp = function(x) {
       paste0(x, " bp")))
 }
 
-# Embed a local PNG file as a self-contained base64 img tag
-embed_png = function(path, max_width = "900px") {
+# Embed a PNG as a framed figure (.report-figure in report.scss) with an optional caption
+embed_png = function(path, max_width = "900px", caption = NULL) {
   if (is.null(path) || !file.exists(path)) return(NULL)
   b64 = base64enc::base64encode(path)
-  htmltools::tags$img(
-    src   = paste0("data:image/png;base64,", b64),
-    style = paste0("max-width:", max_width, "; display:block; margin:auto;")
+  htmltools::tags$figure(
+    class = "report-figure",
+    htmltools::tags$img(
+      src   = paste0("data:image/png;base64,", b64),
+      style = paste0("max-width:", max_width, "; display:block; margin:auto;")
+    ),
+    if (!is.null(caption)) htmltools::tags$figcaption(class = "report-figure__caption", caption)
   )
 }
 
-# Build a data: URI for a Wakhan Plotly HTML file, with a small responsive-resize
-# script injected before </body> so the plot fills the iframe's width instead of
-# rendering at Plotly's fixed native layout.width (which causes horizontal scroll
-# inside the iframe). Runs on the iframe's own `load` event so it fires after
-# Plotly.newPlot() has already drawn the figure.
+# data: URI for a Wakhan Plotly HTML file, with a resize script injected so the plot fills the iframe
 wakhan_plot_datauri = function(path) {
   html = paste(readLines(path, warn = FALSE), collapse = "\n")
-  # Wakhan's Plotly divs carry an inline fixed width/height (e.g. style=\"width:1380px\")
-  # set by Plotly at export time, in addition to a fixed layout.width. autosize/relayout
-  # alone resizes against that fixed div, so the div's own inline size must be cleared
-  # to 100% first, then relayout({autosize:true}) + Plots.resize() recomputes against
-  # the now-flexible container (i.e. the iframe).
+  # Clear Plotly's inline fixed div size before relayout({autosize:true}) + Plots.resize()
   resize_script = "
 <script>
 window.addEventListener('load', function () {
@@ -521,19 +417,13 @@ window.addEventListener('load', function () {
 embed_html_iframe = function(path, height = "780px") {
   if (is.null(path) || !file.exists(path)) return(NULL)
   htmltools::tags$iframe(
+    class = "report-figure__frame",
     src   = wakhan_plot_datauri(path),
     style = paste0("width:100%; height:", height, "; border:none;")
   )
 }
 
-# Render Wakhan's ranked copy-number plots as a self-contained tab widget (not a
-# Quarto .panel-tabset): Quarto's panel-tabset relies on Pandoc parsing `####`
-# ATX headings out of a results='asis' stream, which breaks when raw iframe HTML
-# for one rank is emitted immediately before the next rank's heading (Pandoc
-# absorbs the heading into the preceding raw-HTML block, so only the first tab
-# ever registers). This widget also defers loading: only the first pane's
-# iframe gets a real `src`; the rest carry `data-src` and are populated on
-# first click, so hidden ranks' plotly.js payloads aren't parsed at page load.
+# Wakhan ranked CN plots as a self-contained tab widget (Quarto's panel-tabset breaks on raw iframe HTML before a heading); panes after the first load lazily via data-src
 render_wakhan_cn_tabs = function(plots) {
   if (length(plots) == 0) return(NULL)
 
@@ -552,9 +442,11 @@ render_wakhan_cn_tabs = function(plots) {
     p = plots[[i]]
     uri = wakhan_plot_datauri(p$plot)
     iframe = if (i == 1) {
-      htmltools::tags$iframe(src = uri, style = "width:100%; height:780px; border:none;")
+      htmltools::tags$iframe(class = "report-figure__frame", src = uri,
+                             style = "width:100%; height:780px; border:none;")
     } else {
-      htmltools::tags$iframe(`data-src` = uri, style = "width:100%; height:780px; border:none;")
+      htmltools::tags$iframe(class = "report-figure__frame", `data-src` = uri,
+                             style = "width:100%; height:780px; border:none;")
     }
     htmltools::tags$div(
       class = if (i == 1) "wakhan-cn-pane active" else "wakhan-cn-pane",
@@ -563,17 +455,8 @@ render_wakhan_cn_tabs = function(plots) {
     )
   })
 
+  # Styled by the .wakhan-cn-tab* rules in report.scss
   htmltools::tagList(
-    htmltools::tags$style("
-      .wakhan-cn-tabs__nav { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-      .wakhan-cn-tab {
-        border:1px solid var(--color-border, #ccc); background:var(--color-bg, #fff);
-        border-radius:5px; padding:5px 10px; font-size:0.85rem; cursor:pointer;
-      }
-      .wakhan-cn-tab.active { background:var(--color-primary, #333); color:#fff; }
-      .wakhan-cn-pane { display:none; }
-      .wakhan-cn-pane.active { display:block; }
-    "),
     htmltools::tags$div(class = "wakhan-cn-tabs__nav", buttons),
     htmltools::tags$div(class = "wakhan-cn-tabs__panes", panes),
     htmltools::tags$script(htmltools::HTML("
@@ -598,9 +481,7 @@ render_wakhan_cn_tabs = function(plots) {
   )
 }
 
-# Compute coding TMB from a variant_table produced by build_variant_table().
-# consequence column may be comma-joined (e.g. "frameshift_variant,splice_region_variant").
-# denominator_mb: coding Mb used as divisor (default 30 Mb — canonical clinical denominator).
+# Coding TMB from a variant_table; consequence may be comma-joined; denominator_mb defaults to 30
 compute_tmb = function(variant_table, denominator_mb = 30) {
   nonsyn_terms = c(
     "missense_variant", "frameshift_variant", "stop_gained", "stop_lost",

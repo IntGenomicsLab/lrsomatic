@@ -1,23 +1,18 @@
 ## Structural variants
 
 ```{r sv-info}
-# The table is built from the caller VCF, not from the annotation, so it survives a
-# missing VEP SV VCF — an empty table here means no SV records were found at all.
+# Built from the caller VCF, so it survives a missing VEP SV VCF
 if (is.null(sv_table) || nrow(sv_table) == 0) {
   section_notice("No somatic structural variants detected.")
 }
 ```
 
 ```{r sv-bnd-circos}
-# Breakend circos: the same rearrangements as the table below, drawn as arcs over just
-# the chromosomes they touch. R only selects and serialises the data — the plot itself is
-# built by assets/js/bnd_circos.js, so that it can re-lay-out to the chromosomes that
-# survive the current filter instead of dimming a fixed set. See R/circos_bnd.R.
+# Breakend circos: R selects and serialises the data, assets/js/bnd_circos.js draws it so it re-lays-out per filter (see R/circos_bnd.R)
 bnd_res = NULL
 if (!is.null(sv_table) && nrow(sv_table) > 0) {
   bnd_res = tryCatch({
-    # One filtered set feeds both calls, so the gene track cannot label an arc that was
-    # never drawn.
+    # One filtered set feeds both calls
     bnd_drawn = bnd_links(sv_table, chromosomes)
     bnd_circos_data(bnd_drawn,
                     bnd_panel_genes(bnd_drawn, params$all_panels),
@@ -57,9 +52,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
 ```
 
 ```{r sv-bnd-circos-data, results='asis'}
-# The payload, then the drawing code. bnd_circos.js is inlined from its own file rather
-# than pasted into an R string so it stays lintable and editable as JavaScript; the
-# report is self-contained, so it cannot be linked.
+# Payload, then the drawing code inlined from bnd_circos.js (lintable JS, self-contained report)
 if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
   cat(bnd_circos_script(bnd_res), "\n")
   cat("<script>\n")
@@ -69,18 +62,12 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
 ```
 
 ```{r sv-prepare, results='asis'}
-# Column positions are published from R rather than scraped from the rendered header:
-# see the panel-filter script in per_sample.qmd.
+# Column positions published from R, not scraped from the header
 if (!is.null(sv_table) && nrow(sv_table) > 0) {
   sv_display = copy(sv_table)
-  # Populated client-side by the panel filter, so switching panels updates it on the
-  # existing redraw. The load-time panel's hits are already in sv_panel_hit (same
-  # function, same windows) and drive the "Panel SVs" card.
+  # Populated client-side by the panel filter; load-time hits are already in sv_panel_hit
   sv_display[, panel_hit := ""]
-  # Readable location/size/gene columns. The bedpe-shaped raw columns stay in the frame
-  # — hidden below, but still read by every by-name lookup in the JS layer and still
-  # exported — so this is presentation only: see sv_display_columns() in
-  # R/parse_severus.R for why svclass, not the contig, decides what a row means.
+  # Readable locus/size/gene columns; the raw bedpe columns stay (hidden, exported, read by the JS). See sv_display_columns()
   sv_display = cbind(sv_display, sv_display_columns(sv_display, chromosomes))
   setcolorder(sv_display, c("id", "panel_hit", "svclass", "svtype",
                             "locus", "size", "genes",
@@ -88,10 +75,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
   cat("<script>window.SV_COLS = ", js_col_index_map(names(sv_display)), ";</script>\n",
       sep = "")
 
-  # Values present in each tickbox-filtered column, for the checkbox dropdowns in the
-  # filter row (assets/js/facet_filter.js). Emitted after setcolorder so the names are
-  # final. `caller` is a single value today, so js_facet_defs() omits it and it keeps its
-  # text box — see R/utils.R.
+  # Tickbox facet values (facet_filter.js), emitted after setcolorder; `caller` has one value and is omitted
   sv_facet_cols = c("svclass", "svtype", "impact", "consequence", "caller")
   cat("<script>window.SV_FACET_COLS = ", js_vec(sv_facet_cols), ";</script>\n", sep = "")
   cat("<script>window.SV_FACETS = ",
@@ -107,9 +91,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
 if (!is.null(sv_table) && nrow(sv_table) > 0) {
   idx0 = function(nm) which(names(sv_display) == nm) - 1L
 
-  # A breakend annotated as truncating a whole span can carry a hundred-odd symbols.
-  # Truncate the *display* only — sorting, searching and the CSV/copy buttons below ask
-  # for other renderings, all of which return the full list.
+  # Truncate the display only; sort/search/export renderings return the full list
   gene_render = JS(
     "function(data, type) {",
     "  if (type !== 'display' || !data) return data;",
@@ -125,11 +107,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
     "  return window.svPanelHitLabel ? window.svPanelHitLabel(row, window.SV_COLS) : '';",
     "}")
 
-  # `locus` and `size` are formatted strings, so they sort lexically — "chr2:…" after
-  # "chr13:…", "613 kb" after "1.2 Mb". Sort them on the hidden numeric column built
-  # alongside each. Only the sort types are redirected: display, filter and export all
-  # fall through to the readable string, which is what lets a per-column search for
-  # "chr8" match a translocation on *either* side — something the chrom_a box could not.
+  # Sort `locus`/`size` on their hidden numeric keys; display/filter/export keep the readable string
   orthogonal_render = function(key) JS(
     "function(data, type, row) {",
     "  if (type !== 'sort' && type !== 'type') return data;",
@@ -138,10 +116,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
     "  return k === undefined ? data : row[k];",
     "}")
 
-  # Kept in the frame, out of the view: every by-name lookup in the JS layer reads these
-  # (svPanelHits() in per_sample.qmd, rowId() below), and the export selector below keeps
-  # them in the CSV. DataTables hands render and search callbacks the whole row array,
-  # invisible columns included, so hiding them costs nothing downstream.
+  # Hidden, not dropped: the JS by-name lookups and the CSV export read these columns
   hidden = c("chrom_a", "pos_a", "chrom_b", "pos_b", "gene_a", "gene_b",
              "sv_len", "size_bp", "locus_sort")
 
@@ -153,20 +128,12 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
     rownames   = FALSE,
     filter     = "top",
     elementId  = "sv-table",
-    # A static DT widget carries no selection config, and the binding then defaults
-    # data.selection.mode to "none" and does no row selection at all
-    # (DT/htmlwidgets/datatables.js:230). Saying so explicitly keeps that true if this
-    # table ever gains a server/Shiny mode, so the breakend circos's own selection below
-    # stays the only one and cannot end up fighting DT's `.selected` styling.
+    # Explicit selection: none. The breakend circos owns row selection below
     selection  = "none",
     extensions = c("Buttons", "Scroller"),
     options    = list(
       dom       = "Bfrtip",
-      # "export" rather than "sort": the sort rendering of `locus` is now a zero-padded
-      # key, and of `size` a bare number. Neither renderer recognises "export", so both
-      # fall through to the full readable string — untruncated, since only "display"
-      # truncates. The explicit column list keeps the hidden raw coordinate columns in
-      # the download, which Buttons' ":visible" default would drop.
+      # "export" falls through to the full readable string; the explicit column list keeps the hidden raw columns in the download
       buttons   = list(list(extend = "copy", exportOptions = exp_opts),
                        list(extend = "csv",  exportOptions = exp_opts)),
       scrollX   = TRUE,
@@ -198,16 +165,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
 ```
 
 ```{r sv-bnd-circos-js, results='asis'}
-# Cross-link the table to the circos. This owns the row selection outright — see the
-# `selection` note above. Row identity comes from the DataTables API rather than from a
-# DOM id, because Scroller plus deferRender recycle the <tr> nodes, which is also why the
-# selected class is re-applied on every draw.
-#
-# Every filter change redraws the plot from window.BND_DATA rather than restyling what is
-# already there, so the sector layout follows the filtered link set. The old viewBox
-# repair is gone with the inlined markup it existed for: Quarto's HTML pipeline lowercases
-# attribute names on markup it processes, but nodes built by createElementNS() never pass
-# through it.
+# Cross-link table and circos: this owns row selection; row identity comes from the DataTables API (Scroller recycles <tr>s), so the class is re-applied per draw; every filter change redraws from window.BND_DATA
 if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
   cat("<script>\n")
   cat(r"----(
@@ -225,10 +183,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
     return cols["id"] === undefined ? null : String(row[cols["id"]]);
   }
 
-  // The panel genes a row hits, from the very predicate that fills its panel_hit cell —
-  // so a gene is labelled on the plot exactly when it is named in the table. Labels
-  // arrive as "MYC (A, direct), BCL2 (B, 188.5 kb)"; everything from " (" on describes
-  // the match, and is not part of the gene name.
+  // Panel genes per row from the same predicate as the panel_hit cell; labels are "GENE (side, how)", the gene name ends at " ("
   function rowGenes(row) {
     if (!window.svPanelHits) return [];
     return window.svPanelHits(row, window.SV_COLS)
@@ -239,9 +194,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
       .filter((g) => g.length > 0);
   }
 
-  // Redraw the plot for the current filter and selection. The sector set is recomputed
-  // from the visible links, so chromosomes nothing touches leave the plot entirely rather
-  // than sitting there dimmed.
+  // Redraw for the current filter and selection; untouched chromosomes leave the plot
   function apply() {
     if (!window.bndCircos) return;
     const stats = window.bndCircos.render(host(), visibleIds, visibleGenes, SELECTED);
@@ -264,8 +217,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
     el.textContent = parts.join(" · ");
   }
 
-  // Re-apply the selected class to the rows currently rendered. Scroller destroys and
-  // rebuilds <tr> nodes, so this has to run on every draw, not just on click.
+  // Re-apply the selected class on every draw (Scroller rebuilds <tr> nodes)
   function paintRows() {
     const t = table();
     if (!t) return;
@@ -310,9 +262,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
     if (e.target === window.svTableElem) window.bndSyncFilter();
   });
 
-  // The host starts empty, so draw once immediately with no filter applied. Waiting for
-  // the table's first draw.dt would leave a blank gap where the plot should be, and would
-  // leave the plot missing entirely if the table failed to initialise.
+  // Draw once immediately rather than waiting for the table's first draw.dt
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", apply);
   } else {
@@ -325,10 +275,7 @@ if (!is.null(bnd_res) && !is.null(bnd_res$data)) {
 ```
 
 ```{r sv-footnote}
-# Provenance footnote, following the vaf_provenance() pattern in _smallvariants.qmd:
-# say where the breakend symbols came from, and — because it is the difference between
-# a filter that works on every sample and one that works on some — which panel matching
-# mode is active, against which reference, with which windows.
+# Provenance footnote: where the breakend symbols came from, and which panel matching mode, reference and windows are active
 if (!is.null(sv_table) && nrow(sv_table) > 0) {
   rel = function(p) {
     if (is.null(p)) return(NULL)
@@ -337,15 +284,10 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
     if (startsWith(full, paste0(root, "/"))) substring(full, nchar(root) + 2L) else p
   }
 
-  # Built as one HTML string rather than a tagList: htmltools puts each child on its
-  # own line, which HTML collapses to a space — leaving " ," after every <code>.
+  # One HTML string, not a tagList (htmltools' newlines would render as " ,")
   code = function(x) paste0("<code>", htmltools::htmlEscape(x), "</code>")
 
-  # One note per *registered* panel, not just the ones ticked on load, all but the
-  # active ones hidden. The reader can retick at will, and a note written once from the
-  # load-time selection went stale the moment they did. updatePanelNotes() below shows
-  # the matching ones; `hidden` rather than inline display, so the print stylesheet
-  # isn't fought over it.
+  # One note per registered panel, hidden unless ticked (updatePanelNotes() toggles `hidden`)
   panel_body = function(p) {
     if (isTRUE(p$has_coords)) {
       sprintf(paste("Panel %s matches on <strong>breakend coordinates</strong> (%s intervals,",
@@ -406,9 +348,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
   else
     "No SV annotation file was found, so the gene column is empty."
 
-  # The point of the locus/size convention, said where the columns are: a contiguous type
-  # is one span, a breakend is two joined loci, and conflating them is exactly what the
-  # old chrom_a/pos_a/chrom_b/pos_b columns invited.
+  # The locus/size convention: a contiguous type is one span, a breakend two joined loci
   locus_note = sprintf(paste("%s reads as a span (%s) for a contiguous type and as two",
                              "joined loci (%s or %s) for a breakend, which is also why %s",
                              "is blank for a breakend: its two loci bound no interval, so",
@@ -424,8 +364,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
                              code("pos_b"), sep = ", "),
                        code("genes"), code("A:"), code("B:"))
 
-  # What the circos above is showing, said once, next to the numbers it shares with the
-  # table. Only mentioned when there is a plot to explain.
+  # What the circos shows, only when there is a plot
   circos_note = if (!is.null(bnd_res) && !is.null(bnd_res$data))
     sprintf(paste("The circos above draws one arc per breakend with both loci mapped, and",
                   "is redrawn whenever the filter changes — it shows only the chromosomes",
@@ -454,9 +393,7 @@ if (!is.null(sv_table) && nrow(sv_table) > 0) {
 ```
 
 ```{r sv-panel-notes-js, results='asis'}
-# Show the notes for the ticked panels. Defined here rather than in per_sample.qmd's
-# handler block because the spans it drives are written above; the handler calls it
-# through a guard, so the ordering between the two is not load-bearing.
+# Show the notes for the ticked panels; defined here because the spans are written above
 cat(r"----(<script>
 window.updatePanelNotes = function () {
   var active = (window.svPanelState && window.svPanelState.panels) || [];

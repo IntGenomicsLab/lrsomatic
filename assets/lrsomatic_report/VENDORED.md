@@ -6,8 +6,8 @@ Do not edit it here — fix upstream, tag a release, and re-sync.
 | | |
 |---|---|
 | Upstream | <https://github.com/ljwharbers/lrsomatic_report> |
-| Release | `v1.3.0` (`236ab35d5d7c018df1c6b477ecc867c60efd2ff9`) |
-| Vendored commit | `236ab35d5d7c018df1c6b477ecc867c60efd2ff9` (the tag itself) |
+| Release | `v1.3.2` (`75c65b2b68968f3d742dbfd1ca7ef780dbdaf770`) |
+| Vendored commit | `75c65b2b68968f3d742dbfd1ca7ef780dbdaf770` (the tag itself) |
 | License | MIT (see `LICENSE`) |
 
 ## Why vendored rather than a submodule

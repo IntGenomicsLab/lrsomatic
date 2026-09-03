@@ -3,7 +3,6 @@ suppressPackageStartupMessages({
 })
 
 # Parse ASCAT raw segments (segments_raw.txt)
-# Columns: sample, chr, startpos, endpos, nMajor, nMinor, nAraw, nBraw
 parse_ascat_segments = function(segments_file) {
   if (is.null(segments_file) || !file.exists(segments_file)) return(NULL)
   dt = fread(segments_file, sep = "\t", header = TRUE)
@@ -23,7 +22,6 @@ parse_ascat_segments = function(segments_file) {
 }
 
 # Parse ASCAT purity/ploidy file
-# Columns: AberrantCellFraction, Ploidy
 parse_ascat_purityploidy = function(pp_file) {
   if (is.null(pp_file) || !file.exists(pp_file)) return(list(purity = NA_real_, ploidy = NA_real_))
   dt = fread(pp_file, sep = "\t", header = TRUE)
@@ -34,8 +32,7 @@ parse_ascat_purityploidy = function(pp_file) {
   )
 }
 
-# Parse Wakhan's ranked purity/ploidy solutions table (wakhan/solutions_ranks.tsv).
-# Columns: repository_name, dna_purity, cell_purity, ploidy, confidence, solution_rank
+# Parse Wakhan's ranked purity/ploidy solutions table (wakhan/solutions_ranks.tsv)
 parse_wakhan_solutions = function(tsv_file) {
   if (is.null(tsv_file) || !file.exists(tsv_file)) return(NULL)
   dt = fread(tsv_file, sep = "\t", header = TRUE)
@@ -44,11 +41,7 @@ parse_wakhan_solutions = function(tsv_file) {
   dt
 }
 
-# Locate each solution's whole-genome copy-number + breakpoints plot
-# (wakhan/solution_<rank>/..._genome_copynumbers_breakpoints.html). Solution
-# directories are aliased two ways (solution_<rank>/ and a duplicate
-# <ploidy>_<purity>_<confidence>/ directory) — solution_<rank>/ is tried
-# first to avoid picking up the duplicate.
+# Locate each solution's genome copy-number plot; try solution_<rank>/ first to avoid the aliased duplicate directory
 locate_wakhan_cn_plots = function(wakhan_dir, solutions_dt) {
   if (is.null(wakhan_dir) || is.null(solutions_dt) || nrow(solutions_dt) == 0) return(list())
   out = lapply(seq_len(nrow(solutions_dt)), function(i) {

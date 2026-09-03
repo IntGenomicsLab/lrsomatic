@@ -21,10 +21,7 @@ load_chrom_lengths = function(reference, assets_dir) {
   setNames(as.integer(dt$length), dt$chrom)
 }
 
-# Auto-detect reference genome from VCF/VEP header lines.
-# Checks: ##contig length (VCF), ## assembly version (VEP text), ## genome_build.
-# T2T CHM13v2: chr1 = 248387328
-# GRCh38:      chr1 = 248956422
+# Auto-detect reference from VCF/VEP headers (chr1 length: CHM13v2 248387328, GRCh38 248956422; assembly/genome_build lines)
 detect_reference = function(vcf_file) {
   if (!file.exists(vcf_file)) {
     message("Cannot auto-detect reference: file not found, defaulting to t2t")

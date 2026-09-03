@@ -18,7 +18,7 @@ process LRSOMATICREPORT {
     output:
     tuple val(meta), path("*_report.html"), emit: report
     // WARN: Manually update to match the vendored release in assets/lrsomatic_report/VENDORED.md
-    tuple val("${task.process}"), val('lrsomatic_report'), val('1.3.0'), topic: versions, emit: versions_lrsomaticreport
+    tuple val("${task.process}"), val('lrsomatic_report'), val('1.3.2'), topic: versions, emit: versions_lrsomaticreport
 
     when:
     task.ext.when == null || task.ext.when
