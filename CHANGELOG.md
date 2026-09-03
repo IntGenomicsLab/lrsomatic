@@ -5,13 +5,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.2.0dev
 
+### `Added`
+
+- [#188](https://github.com/IntGenomicsLab/lrsomatic/pull/188) - Added `modkit_args` (default `--cpg --modified-bases 5mC`) to control the arguments passed to `modkit pileup`, and `modkit_phased` to run the pileup with `--phased` on the Longphase-haplotagged BAMs, producing `_hp1`, `_hp2` and `_combined` bedMethyl files per sample (@ljwharbers).
+
 ### `Changed`
 
 - [#184](https://github.com/IntGenomicsLab/lrsomatic/pull/184) - Replaced the CHM13 Severus panel of normals with the merged 1000 Genomes + ASAP panel (@AmberVerhasselt).
 
 ### `Fixed`
 
-- [#188](https://github.com/IntGenomicsLab/lrsomatic/pull/188) - `MODKIT_PILEUP` now runs a patched modkit 0.6.4 (`ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b`, built from [ljwharbers/modkit@pacbio-conflict-fix](https://github.com/ljwharbers/modkit/tree/pacbio-conflict-fix)) that keeps reads whose 5mC and 5hmC probabilities sum above 1 and fixes pileup on PacBio-style MM tags. Stock modkit 0.4.3-0.6.4 silently dropped 32-65 % of reads from recent PacBio HiFi BAMs (Jasmine >= 26.1.3) and returned empty `--cpg` pileups ([nanoporetech/modkit#612](https://github.com/nanoporetech/modkit/issues/612); fix proposed upstream in [nanoporetech/modkit#720](https://github.com/nanoporetech/modkit/pull/720)). The module should return to the nf-core biocontainer once a modkit release includes the fix (@ljwharbers).
+- [#188](https://github.com/IntGenomicsLab/lrsomatic/pull/188) - `MODKIT_PILEUP` now runs a patched modkit 0.6.4 (`ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b`, built from [ljwharbers/modkit@pacbio-conflict-fix](https://github.com/ljwharbers/modkit/tree/pacbio-conflict-fix)) that keeps reads whose 5mC and 5hmC probabilities sum above 1 and fixes pileup on PacBio-style MM tags. Stock modkit 0.4.3-0.6.4 silently dropped 32-65 % of reads from recent PacBio HiFi BAMs (Jasmine >= 26.1.3) and returned empty `--cpg` pileups ([nanoporetech/modkit#612](https://github.com/nanoporetech/modkit/issues/612); fix proposed upstream in [nanoporetech/modkit#720](https://github.com/nanoporetech/modkit/pull/720)). The module should return to the nf-core biocontainer once a modkit release includes the fix. `MODKIT_PILEUP` now also defaults to `--cpg --modified-bases 5mC`; the previous unfiltered pileup (all modification codes, all contexts) produced 30-45 GB per sample (@ljwharbers).
 - [#182](https://github.com/IntGenomicsLab/lrsomatic/pull/182) - Added `--vcf` to the default `vep_args` so VEP writes VCF output rather than its default tab-delimited format (@AmberVerhasselt).
 
 ## v1.1.0 - [2026-04-28]
