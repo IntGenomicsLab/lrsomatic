@@ -244,8 +244,7 @@ def validateInputParameters() {
 }
 
 //
-// Split --report_gene_panel into its individual panel tokens
-// (conf/modules.config mirrors this, as a config file cannot include a function from here)
+// Split --report_gene_panel into panel tokens (mirrored in conf/modules.config)
 //
 def reportGenePanelTokens(panel_spec) {
     if (!panel_spec) {
@@ -255,17 +254,14 @@ def reportGenePanelTokens(panel_spec) {
 }
 
 //
-// Does a --report_gene_panel entry name a panel file rather than a builtin panel?
-// Textual on purpose: conf/modules.config makes the same call when it builds the
-// --gene-panel flags, and `file()` is not in scope inside an ext.args closure.
+// Does a --report_gene_panel entry name a file rather than a builtin? Textual because conf/modules.config makes the same call without file()
 //
 def reportGenePanelIsFile(tok) {
     return tok.contains('/') || tok.toLowerCase().endsWith('.tsv')
 }
 
 //
-// Names of the panels bundled with the report tool, with the reference suffix dropped:
-// "lymphoid.hg38.tsv" and "lymphoid.t2t.tsv" are both the builtin "lymphoid".
+// Builtin panel names bundled with the report tool, reference suffix dropped
 //
 def reportBuiltinGenePanels() {
     def gene_lists_dir = file("${params.report_src}/assets/gene_lists")
@@ -281,8 +277,7 @@ def reportBuiltinGenePanels() {
 }
 
 //
-// Check --report_gene_panel at launch, so a typo fails immediately rather than inside the
-// report task after alignment, calling and annotation have already run
+// Validate --report_gene_panel at launch so a typo fails before alignment and calling run
 //
 def validateReportGenePanels() {
     if (params.skip_report) {

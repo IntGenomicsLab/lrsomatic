@@ -1004,13 +1004,7 @@ workflow LRSOMATIC {
     }
 
     //
-    // MODULE: LRSOMATICREPORT (label: process_medium)
-    // Final step: render a per-sample HTML report from the key analytical outputs
-    // (VEP-annotated somatic SNVs, Severus somatic SVs with their VEP annotation,
-    // ASCAT and Wakhan copy number, QC).
-    // Every input is optional -- a missing section renders as "not available" -- so the
-    // joins below use `remainder: true` and key on the tumor sample id rather than the
-    // full meta map.
+    // MODULE: LRSOMATICREPORT (final per-sample HTML report; every input is optional, so the joins use `remainder: true` keyed on the tumor sample id)
     //
 
     if (!params.skip_report) {

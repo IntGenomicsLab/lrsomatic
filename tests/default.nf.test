@@ -10,9 +10,7 @@ nextflow_pipeline {
         when {
             params {
                 outdir = "$outputDir"
-                // A builtin and a panel file at once, to cover the comma-separated form of
-                // --report_gene_panel end to end -- validation, staging and the repeated
-                // --gene-panel flags built in the real conf/modules.config
+                // A builtin plus a panel file, covering the comma-separated form end to end
                 report_gene_panel = "lymphoid,$projectDir/modules/local/lrsomaticreport/tests/test_panel.tsv"
             }
         }
