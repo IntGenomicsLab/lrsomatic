@@ -4,7 +4,9 @@ process MODKIT_PILEUP {
 
     conda "${moduleDir}/environment.yml"
     // Patched modkit 0.6.4 (nanoporetech/modkit#720) that keeps PacBio reads with 5mC+5hmC > 1 and honours --phased/--modified-bases in the general workers; revert to the biocontainer once released
-    container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2'
+    container "${workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer'
+        ? 'oras://ghcr.io/ljwharbers/modkit-sif:0.6.4-pacbiofix-6e0afa2'
+        : 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2'}"
 
     input:
     tuple val(meta), path(bam), path(bai)
