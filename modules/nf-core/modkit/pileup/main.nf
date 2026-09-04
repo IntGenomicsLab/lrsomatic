@@ -3,8 +3,8 @@ process MODKIT_PILEUP {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
-    // Patched modkit 0.6.4 (nanoporetech/modkit#720) that keeps PacBio reads with 5mC+5hmC > 1; revert to the biocontainer once released
-    container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-697de7b'
+    // Patched modkit 0.6.4 (nanoporetech/modkit#720) that keeps PacBio reads with 5mC+5hmC > 1 and honours --phased/--modified-bases in the general workers; revert to the biocontainer once released
+    container 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2'
 
     input:
     tuple val(meta), path(bam), path(bai)
