@@ -49,9 +49,15 @@ workflow PREPARE_REFERENCE_FILES {
         // Priority: explicit meta.clair3_model param > auto-detected from BAM header via modelMap
         // PacBio models from HKU mirror; ONT models from Oxford Nanopore CDN
         basecall_meta.map { meta, basecall_model_meta, _kinetics_meta ->
-            def id_new = basecall_model_meta ? clair3_modelMap.get(basecall_model_meta) : basecall_model_meta
-            def meta_new = [id: id_new]
+            // model resolves to the samplesheet's explicit override first, falling back to the
+            // modelMap lookup from the auto-detected basecall model. meta_new.id reuses this same
+            // value (rather than recomputing it from basecall_model_meta alone) so the WGET/UNTAR
+            // staging directory name never diverges from the model actually being downloaded --
+            // previously it could resolve to null (and UNTAR would fail with "mkdir: missing
+            // operand") whenever basecall_model_meta didn't match the modelMap, even if an
+            // explicit clair3_model override was given.
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
+            def meta_new = [id: model]
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
             def url = "${download_prefix}/${model}.tar.gz"
             return [ meta_new, url ]
