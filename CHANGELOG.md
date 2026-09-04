@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.2.0dev
 
+### `Added`
+
+- [#190](https://github.com/IntGenomicsLab/lrsomatic/pull/190) - Added mutational signature analysis: SigProfilerMatrixGenerator matrices (SBS/DBS/ID) and per-sample COSMIC signature fitting with SigProfilerAssignment on the phased somatic VCF, with CHM13-T2T support via a purpose-built image (`ghcr.io/ljwharbers/sigprofiler`) and CHM13-renormalised COSMIC signatures; new `--sigprofiler_*` / `--download_sigprofiler_genome` / `--skip_signatures` parameters (@ljwharbers).
+
 ### `Changed`
 
 - [#184](https://github.com/IntGenomicsLab/lrsomatic/pull/184) - Replaced the CHM13 Severus panel of normals with the merged 1000 Genomes + ASAP panel (@AmberVerhasselt).
