@@ -60,7 +60,10 @@ process SIGPROFILER_ASSIGNMENT {
         awk -F'\\t' 'NR > 1 { for (i = 2; i <= NF; i++) s += \$i } END { printf "%d\\n", s }' "\$1"
     }
 
-    mkdir -p ${prefix}
+    # sigProfilerPlotting caches plot templates in its (read-only) package directory unless
+    # this variable points elsewhere; SigProfilerAssignment does not forward --volume to it.
+    mkdir -p ${prefix} spa_volume
+    export SIGPROFILERPLOTTING_VOLUME="\$PWD/spa_volume"
     ${fits}
     """
 

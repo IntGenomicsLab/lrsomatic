@@ -463,10 +463,10 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │   │   │   │   └── ...
 │   │   │   ├── plots
 │   │   │   │   └── *.pdf
-│   │   │   └── vcf_files
-│   │   └── logs
-│   │       ├── SigProfilerMatrixGenerator_sample_<genome>.out
-│   │       └── SigProfilerMatrixGenerator_sample_<genome>.err
+│   │   │   ├── vcf_files
+│   │   │   └── logs
+│   │   │       ├── SigProfilerMatrixGenerator_sample_<genome>.out
+│   │   │       └── SigProfilerMatrixGenerator_sample_<genome>.err
 │   └── assignment
 │       └── COSMIC_v3.6
 │           ├── SBS96
@@ -496,7 +496,7 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 | `matrices/output/ID/sample.ID83.all`                                                     | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                   |
 | `matrices/output/plots/*.pdf`                                                            | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                |
 | `matrices/output/vcf_files/`                                                             | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                            |
-| `matrices/logs/*`                                                                        | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                 |
+| `matrices/output/logs/*`                                                                 | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                 |
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt` | Number of mutations attributed to every COSMIC signature                                                                                           |
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`            | Activity bar plots and tumour mutational burden plot                                                                                               |
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                 | The reference signatures used for the fit and their spectra                                                                                        |

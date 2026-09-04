@@ -20,7 +20,7 @@ process SIGPROFILER_MATRIXGENERATOR {
     tuple val(meta), path("output/DBS/*.DBS78.all")  , emit: dbs78    , optional: true
     tuple val(meta), path("output/ID/*.ID83.all")    , emit: id83     , optional: true
     tuple val(meta), path("output")                  , emit: output_dir
-    tuple val(meta), path("logs/*")                  , emit: logs     , optional: true
+    tuple val(meta), path("output/logs/*")           , emit: logs     , optional: true
     tuple val("${task.process}"), val('sigprofilermatrixgenerator'), eval("python -c 'import importlib.metadata as m; print(m.version(\"SigProfilerMatrixGenerator\"))'"), topic: versions, emit: versions_sigprofilermatrixgenerator
 
     when:
@@ -39,8 +39,10 @@ process SIGPROFILER_MATRIXGENERATOR {
     """
     # Stage only a symlink to the genome payload in a local volume so the tool never writes
     # into the shared reference directory.
-    mkdir -p input volume/tsb
+    mkdir -p input volume/tsb plot_templates
     ln -s "\$(readlink -f ${volume})/tsb/${genome}" volume/tsb/${genome}
+    # sigProfilerPlotting caches plot templates in its (read-only) package directory unless told otherwise
+    export SIGPROFILERPLOTTING_VOLUME="\$PWD/plot_templates"
 
     ${decompress}
 
@@ -51,14 +53,14 @@ process SIGPROFILER_MATRIXGENERATOR {
         --volume volume \\
         ${args}
 
+    # SigProfilerMatrixGenerator writes everything (matrices, plots, logs, sorted VCF) under input/output
     mv input/output output
-    if [ -d input/logs ]; then mv input/logs logs; fi
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir -p output/SBS output/DBS output/ID logs
-    touch output/SBS/${prefix}.SBS96.all output/DBS/${prefix}.DBS78.all output/ID/${prefix}.ID83.all logs/${prefix}.out
+    mkdir -p output/SBS output/DBS output/ID output/logs
+    touch output/SBS/${prefix}.SBS96.all output/DBS/${prefix}.DBS78.all output/ID/${prefix}.ID83.all output/logs/${prefix}.out
     """
 }

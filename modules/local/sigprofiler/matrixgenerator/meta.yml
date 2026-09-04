@@ -76,10 +76,10 @@ output:
     - meta:
         type: map
         description: Groovy Map containing sample information
-    - "logs/*":
+    - "output/logs/*":
         type: file
         description: SigProfilerMatrixGenerator log files
-        pattern: "logs/*"
+        pattern: "output/logs/*"
   versions_sigprofilermatrixgenerator:
     - - ${task.process}:
           type: string
