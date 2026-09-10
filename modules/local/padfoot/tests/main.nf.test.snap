@@ -1,0 +1,144 @@
+{
+    "savana + savana - tumour only - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "annotated_svs.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "by_gene.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "padfoot.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "versions.yml:md5,a39dd9bafbb792d343dd3d5f7b148606"
+                ],
+                "annotated_svs": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "annotated_svs.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "by_gene": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "by_gene.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null
+                        },
+                        "padfoot.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,a39dd9bafbb792d343dd3d5f7b148606"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-03T11:06:52.264251811"
+    },
+    "severus + wakhan - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "annotated_svs.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "by_gene.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "padfoot.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    "versions.yml:md5,a39dd9bafbb792d343dd3d5f7b148606"
+                ],
+                "annotated_svs": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "annotated_svs.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "by_gene": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "by_gene.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": "test"
+                        },
+                        "padfoot.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,a39dd9bafbb792d343dd3d5f7b148606"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-03T11:06:46.571491429"
+    }
+}
