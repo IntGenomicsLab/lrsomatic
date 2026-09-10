@@ -1112,7 +1112,11 @@ workflow LRSOMATIC {
     // SV_VEP below, alongside Severus's SVs.
     //
 
-    savana_somatic_vcf = channel.empty()
+    savana_somatic_vcf          = channel.empty()
+    savana_cna                  = channel.empty()
+    savana_somatic_bedpe        = channel.empty()
+    savana_fitted_purity_ploidy = channel.empty()
+    savana_allele_counts        = channel.empty()
 
     if (!params.skip_savana) {
         // SAVANA reads the HP (haplotype) tag per read and its README recommends phased BAMs,
@@ -1196,6 +1200,15 @@ workflow LRSOMATIC {
             .mix(PAIRED_SAVANA.out.somatic_vcf)
             .set { savana_somatic_vcf }
         // savana_somatic_vcf: [meta, vcf]
+
+        // Copy-number products consumed by Padfoot / ReConPlot below. All optional: absent without
+        // an SNP source, and cna/fitted_purity_ploidy absent when SAVANA finds no acceptable fit.
+        TUMORONLY_SAVANA.out.cn_calls.mix(PAIRED_SAVANA.out.cn_calls).set { savana_cna }
+        TUMORONLY_SAVANA.out.somatic_bedpe.mix(PAIRED_SAVANA.out.somatic_bedpe).set { savana_somatic_bedpe }
+        TUMORONLY_SAVANA.out.fitted_purity_ploidy.mix(PAIRED_SAVANA.out.fitted_purity_ploidy).set { savana_fitted_purity_ploidy }
+        TUMORONLY_SAVANA.out.allele_counts.mix(PAIRED_SAVANA.out.allele_counts).set { savana_allele_counts }
+        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_somatic_bedpe: [meta, classified.somatic.bedpe]
+        // savana_fitted_purity_ploidy: [meta, tsv]              savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
 
         if (!params.skip_vep) {
             //
