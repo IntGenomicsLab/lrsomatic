@@ -50,6 +50,10 @@
 
   > De Coster W. cramino: A fast and simple tool for quality control of long read sequencing data [Software]. GitHub. https://github.com/wdecoster/cramino
 
+- [Dfam](https://pubmed.ncbi.nlm.nih.gov/33436076/)
+
+  > Storer J, Hubley R, Rosen J, Wheeler TJ, Smit AF. The Dfam community resource of transposable element families, sequence models, and genome annotations. Mob DNA. 2021 Jan 11;12(1):2. doi: 10.1186/s13100-020-00230-y. PubMed PMID: 33436076; PubMed Central PMCID: PMC7805199.
+
 - [Ensembl VEP](https://pubmed.ncbi.nlm.nih.gov/27268795/)
 
   > McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GR, Thormann A, Flicek P, Cunningham F. The Ensembl Variant Effect Predictor. Genome Biol. 2016 Jun 6;17(1):122. doi: 10.1186/s13059-016-0974-4. PubMed PMID: 27268795; PubMed Central PMCID: PMC4893825.
@@ -61,6 +65,10 @@
 - [fibertools-rs](https://doi.org/10.1101/gr.279095.124)
 
   > Jha, A., Bohaczuk, S. C., Mao, Y., Ranchalis, J., Mallory, B. J., Min, A. T., Hamm, M. O., Swanson, E., Dubocanin, D., Finkbeiner, C., Li, T., Whittington, D., Noble, W. S., Stergachis, A. B., & Vollger, M. R. (2024). DNA-m6A calling and integrated long-read epigenetic and genetic analysis with fibertools. Genome Research.
+
+- [ggplot2](https://ggplot2.tidyverse.org)
+
+  > Wickham H. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016. ISBN 978-3-319-24277-4. https://ggplot2.tidyverse.org
 
 - [LongPhase](https://pubmed.ncbi.nlm.nih.gov/35104333/)
 
@@ -90,9 +98,25 @@
 
   > De Coster W, Rademakers R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics. 2023 May 4;39(5):btad311. doi: 10.1093/bioinformatics/btad311. PubMed PMID: 37171891; PubMed Central PMCID: PMC10196664.
 
+- [Padfoot](https://github.com/KolmogorovLab/Padfoot)
+
+  > Functional annotation of somatic structural variants and copy number alterations from long-read cancer genomes [Software]. GitHub. https://github.com/KolmogorovLab/Padfoot
+
 - [PolyPhen-2](https://doi.org/10.1038/nmeth0410-248)
 
   > Adzhubei IA, Schmidt S, Peshkin L, Ramensky VE, Gerasimova A, Bork P, Kondrashov AS, Sunyaev SR. A method and server for predicting damaging missense mutations. Nat Methods. 2010 Apr;7(4):248-9. doi: 10.1038/nmeth0410-248.
+
+- [R](https://www.R-project.org/)
+
+  > R Core Team. R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna, Austria. https://www.R-project.org/
+
+- [ReConPlot](https://pubmed.ncbi.nlm.nih.gov/38058190/)
+
+  > Espejo Valle-Inclán J, Cortés-Ciriano I. ReConPlot: an R package for the visualization and interpretation of genomic rearrangements. Bioinformatics. 2023 Dec 1;39(12):btad719. doi: 10.1093/bioinformatics/btad719. PubMed PMID: 38058190; PubMed Central PMCID: PMC10710371.
+
+- [RepeatMasker](https://www.repeatmasker.org/)
+
+  > Smit AFA, Hubley R, Green P. RepeatMasker Open-4.0 [Software]. https://www.repeatmasker.org/
 
 - [REVEL](https://doi.org/10.1016/j.ajhg.2016.08.016)
 
