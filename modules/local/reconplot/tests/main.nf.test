@@ -1,0 +1,72 @@
+nextflow_process {
+
+    name "Test Process RECONPLOT"
+    script "../main.nf"
+    process "RECONPLOT"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "reconplot"
+
+    // Real ASCAT/Wakhan/Severus/SAVANA outputs are not available as public test data; only the I/O contract is
+    // tested here. The three combinations were run end to end on real data through the pipeline.
+
+    test("ascat + severus - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true) ],
+                    'severus',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ],     file("${projectDir}/modules/local/reconplot", checkIfExists: true) ]
+                input[2] = [ [ id:'reconplot_pkg' ], file("${projectDir}/modules/local/padfoot", checkIfExists: true) ]
+                input[3] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("savana single source - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ],     file("${projectDir}/modules/local/reconplot", checkIfExists: true) ]
+                input[2] = [ [ id:'reconplot_pkg' ], file("${projectDir}/modules/local/padfoot", checkIfExists: true) ]
+                input[3] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}
