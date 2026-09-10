@@ -1,0 +1,103 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "reconplot"
+description: Publication-style rearrangement + copy-number figures with ReConPlot, via the Tim-Yu/ReConPlot wrapper that reshapes ASCAT/Wakhan/Severus/SAVANA output into ReConPlot's input tables.
+keywords:
+  - structural-variation
+  - copy-number
+  - visualisation
+  - somatic
+  - long-read
+tools:
+  - "reconplot":
+      description: "ReConPlot: R package for visualising complex genome rearrangements together with copy number"
+      homepage: "https://github.com/cortes-ciriano-lab/ReConPlot"
+      documentation: "https://github.com/Tim-Yu/ReConPlot"
+      tool_dev_url: "https://github.com/cortes-ciriano-lab/ReConPlot"
+      doi: "10.1093/bioinformatics/btad719"
+      licence: ["MIT"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - cn_source:
+        type: string
+        description: CN parser name understood by the wrapper (`ascat`, `wakhan`, `savana`)
+    - cn_files:
+        type: file
+        description: Caller output files the CN parser discovers by name (staged into `cn_input/`). For `wakhan`, the two `*_copynumbers_segments_HP_[12].bed` plus `solutions_ranks.tsv`. When `cn_source == sv_source`, also holds the SV files.
+    - sv_source:
+        type: string
+        description: SV parser name understood by the wrapper (`severus`, `savana`)
+    - sv_files:
+        type: file
+        description: SV caller output files (staged into `sv_input/`); empty list when `cn_source == sv_source`
+  - - meta2:
+        type: map
+        description: Groovy Map for the wrapper source
+    - reconplot_src:
+        type: directory
+        description: Tim-Yu/ReConPlot wrapper checkout (contains `run_reconplot.R` and `R/`)
+  - - meta3:
+        type: map
+        description: Groovy Map for the R package source
+    - reconplot_pkg:
+        type: directory
+        description: cortes-ciriano-lab/ReConPlot R package source; installed at run time only if the environment lacks it (containers ship it pre-installed)
+  - - genome:
+        type: string
+        description: ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`)
+
+output:
+  - per_chromosome:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/per_chromosome/*.{pdf,png}":
+          type: file
+          description: One figure per chromosome
+          pattern: "*.{pdf,png}"
+  - genome_wide:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/genome_wide/*.{pdf,png}":
+          type: file
+          description: Genome-wide strip with all chromosomes side by side
+          pattern: "*.{pdf,png}"
+  - focus:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/focus/*.{pdf,png}":
+          type: file
+          description: Optional multi-panel figure for `--reconplot_regions` (with gene labels / BAF track)
+          pattern: "*.{pdf,png}"
+  - tables:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/*.reconplot_{cn,sv}.tsv":
+          type: file
+          description: Harmonised CN and SV tables as passed to ReConPlot
+          pattern: "*.reconplot_{cn,sv}.tsv"
+  - log:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/reconplot.log":
+          type: file
+          description: Wrapper log
+          pattern: "reconplot.log"
+  - versions:
+      - versions.yml:
+          type: file
+          description: File containing software versions
+          pattern: "versions.yml"
+
+authors:
+  - "@Tim-Yu"
+maintainers:
+  - "@Tim-Yu"

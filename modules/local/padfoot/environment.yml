@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# Runtime dependencies for Padfoot (https://github.com/KolmogorovLab/Padfoot); Padfoot itself is not on
+# bioconda and is staged as source (see params.padfoot_url / params.padfoot_dir).
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - "conda-forge::python=3.12"
+  - "conda-forge::numpy=2.2.6"
+  - "conda-forge::pandas=2.3.1"
+  - "bioconda::pysam=0.23.3"
+  - "conda-forge::biopython=1.85"
+  - "bioconda::samtools=1.22.1"
+  - "bioconda::minimap2=2.30"
+  - "bioconda::bedtools=2.31.1"
+  - "bioconda::repeatmasker=4.2.4"
+  - "conda-forge::procps-ng" # `ps` required by Nextflow task metrics

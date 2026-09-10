@@ -239,6 +239,7 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateSvAnnotationParams()
 }
 
 //
@@ -313,6 +314,28 @@ def validateReportGenePanels() {
         .keySet()
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
+//
+def validateSvAnnotationParams() {
+    if (!params.skip_padfoot) {
+        def padfoot_genome = params.padfoot_genome ?:
+            (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+        // Must mirror `padfoot_annot_ok` in workflows/lrsomatic.nf: a null genome disables
+        // Padfoot even when --padfoot_gff/--padfoot_rm are supplied.
+        def padfoot_annot_ok = padfoot_genome && ((padfoot_genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))
+        if (!padfoot_annot_ok) {
+            log.warn "Padfoot will be skipped: no annotations for genome '${params.genome}' (padfoot_genome=${padfoot_genome}). " +
+                "Set --padfoot_genome hg38|mm10, or set --padfoot_genome together with --padfoot_gff and --padfoot_rm."
+        }
+    }
+
+    if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "ReConPlot: genome could not be inferred from '${params.genome}'; falling back to hg38 gene/chromosome annotations. " +
+            "Set --reconplot_genome (hg38, hg19, T2T, mm10, mm39) to override."
     }
 }
 
