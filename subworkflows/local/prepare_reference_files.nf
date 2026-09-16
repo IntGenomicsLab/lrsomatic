@@ -18,6 +18,9 @@ workflow PREPARE_REFERENCE_FILES {
         ascat_loci      // str: path to ASCAT loci files (directory or .zip), or null
         ascat_loci_gc   // str: path to ASCAT GC correction file (.zip or direct), or null
         ascat_loci_rt   // str: path to ASCAT RT correction file (.zip or direct), or null
+        prepare_ascat_refs // bool: resolve the ASCAT reference files below. Not the same as
+        //                    !params.skip_ascat: the ClairS-TO Verdict resource set is built from
+        //                    these same files, so they are still needed when ASCAT itself is skipped.
         basecall_meta   // [meta, basecall_model_str, kinetics_str]  -- from METAEXTRACT per sample
         clair3_modelMap // Map<basecall_model_str, clair3_model_name>  -- used to resolve download URLs
 
@@ -101,7 +104,7 @@ workflow PREPARE_REFERENCE_FILES {
         // Each file set can be provided as a .zip archive or a plain directory/file path
         // All ASCAT outputs are flat file collections (no meta tuple) for use with ASCAT module
         //
-        if ( !params.skip_ascat ) {
+        if ( prepare_ascat_refs ) {
             // Allele files: per-chromosome SNP allele frequency files (used for LogR/BAF calculation)
             if (!ascat_alleles) allele_files = channel.empty()
             else if (ascat_alleles.endsWith(".zip")) {

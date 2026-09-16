@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "clairsto_cna_resources"
+description: Assemble a ClairS-TO Verdict resource directory (--cna_resource_dir) for a non-GRCh38 reference
+keywords:
+  - clairs-to
+  - verdict
+  - copy number
+  - ascat
+  - CHM13
+tools:
+  - "gawk":
+      description: "GNU implementation of the AWK programming language"
+      homepage: "https://www.gnu.org/software/gawk/"
+      documentation: "https://www.gnu.org/software/gawk/manual/"
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - - loci_files:
+        type: file
+        description: |
+          Per-chromosome 1000 Genomes loci files for the reference in use, named
+          `*_loci_*_chr<N>.txt`
+        pattern: "*.txt"
+  - - allele_files:
+        type: file
+        description: |
+          Per-chromosome 1000 Genomes allele files for the reference in use, named
+          `*_alleles_*_chr<N>.txt`
+        pattern: "*.txt"
+  - - gc_file:
+        type: file
+        description: |
+          GC content per locus, matching the loci files. May carry chr-prefixed contig names;
+          the prefix is stripped because Verdict's correct_logr.py adds it back itself.
+        pattern: "*.txt"
+  - - rt_file:
+        type: file
+        description: |
+          Replication timing per locus, matching the loci files, with bare contig names
+        pattern: "*.txt"
+  - - genome_name:
+        type: string
+        description: Reference build name, used for the process tag only
+
+output:
+  cna_resources:
+    - "clairsto_cna_resources":
+        type: directory
+        description: |
+          Resource directory in the layout ClairS-TO hard-codes: `loci_files/G1000_loci_hg38_chr<N>.txt`,
+          `allele_files/G1000_alleles_hg38_chr<N>.txt`, `GC_G1000_hg38.txt`, `RT_G1000_hg38.txt`.
+          The `hg38` in those names is ClairS-TO's hard-coded naming, not the build of the contents.
+        pattern: "clairsto_cna_resources"
+  versions:
+    - versions.yml:
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

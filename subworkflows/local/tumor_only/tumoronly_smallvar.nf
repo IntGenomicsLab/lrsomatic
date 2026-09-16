@@ -19,6 +19,8 @@ workflow TUMORONLY_SMALLVAR {
     //                       used by ClairS-TO to filter germline variants with population allele databases
     ds_pon_channel       // [ [pon_vcf_path, ...] ] or [ [] ]
     //                       user-supplied DeepSomatic PON VCFs; empty list => container defaults
+    cna_resources        // path to the ClairS-TO Verdict resource directory, or []
+    //                       [] means use the GRCh38 resources bundled in the ClairS-TO image
 
     main:
 
@@ -55,7 +57,8 @@ workflow TUMORONLY_SMALLVAR {
         CLAIRSTO (
             clairsto_input_ch,
             fasta,
-            fai
+            fai,
+            cna_resources
         )
 
         // SPLIT CLAIRSTO GERMLINE AND SOMATIC VARIATION

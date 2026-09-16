@@ -47,6 +47,7 @@ include { SIGPROFILER_ASSIGNMENT            } from '../modules/local/sigprofiler
 //
 include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
 include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
+include { PREPARE_CLAIRSTO_CNA            } from '../subworkflows/local/prepare_clairsto_cna'
 include { PREPARE_SIGNATURES              } from '../subworkflows/local/prepare_signatures'
 include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
 include { TUMORONLY_SMALLVAR              } from '../subworkflows/local/tumor_only/tumoronly_smallvar'
@@ -106,6 +107,7 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
+    params.clairsto_cna_rt_file = getGenomeAttribute('clairsto_cna_rt')
 
     // Convert comma-separated caller strings to lists for internal use
     params.germline_var_keep = params.germline_var_keep instanceof List
@@ -242,12 +244,20 @@ workflow LRSOMATIC {
     //         .allele_files / .loci_files / .gc_file / .rt_file  -- flat file collections
     //
 
+    // ClairS-TO's Verdict germline tagger needs a resource set matching the reference build, and it is
+    // assembled from the same ASCAT loci/allele/GC files as the ASCAT step. So those files must be
+    // resolved whenever Verdict is going to run, even under --skip_ascat.
+    def clair_requested = params.somatic_var_keep.contains('clair') || params.germline_var_keep.contains('clair')
+    def needs_verdict_resources = clair_requested && !params.clairsto_disable_verdict &&
+        !params.clairsto_cna_resources && params.clairsto_cna_rt_file
+
     PREPARE_REFERENCE_FILES (
         params.fasta,
         params.ascat_allele_files,
         params.ascat_loci_files,
         params.ascat_gc_file,
         params.ascat_rt_file,
+        !params.skip_ascat || needs_verdict_resources,
         basecall_meta,
         clair3_modelMap
     )
@@ -320,6 +330,25 @@ workflow LRSOMATIC {
     loci_files   = PREPARE_REFERENCE_FILES.out.loci_files    // [path, ...]  -- per-chromosome loci files
     gc_file      = PREPARE_REFERENCE_FILES.out.gc_file       // [path, ...]  -- GC correction ([] if skipped)
     rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
+
+    //
+    // SUBWORKFLOW: PREPARE_CLAIRSTO_CNA
+    // Assembles the ClairS-TO Verdict resource directory for this reference build. GRCh38 needs
+    // nothing (the in-image resources are correct) and emits [].
+    // Input:  params.clairsto_cna_resources / params.clairsto_cna_rt_file + the ASCAT file channels
+    // Output: .cna_resources -- path to the resource directory, or []
+    //
+    PREPARE_CLAIRSTO_CNA (
+        params.clairsto_cna_resources,
+        needs_verdict_resources ? params.clairsto_cna_rt_file : null,
+        loci_files,
+        allele_files,
+        gc_file,
+        params.genome_name
+    )
+
+    clairsto_cna_resources = PREPARE_CLAIRSTO_CNA.out.cna_resources
+    ch_versions = ch_versions.mix(PREPARE_CLAIRSTO_CNA.out.versions)
 
     //
     // MODULE: FIBERTOOLSRS_PREDICTM6A
@@ -561,7 +590,8 @@ workflow LRSOMATIC {
         ch_fasta,
         ch_fai,
         clairsto_pon_channel,
-        ds_pon_channel
+        ds_pon_channel,
+        clairsto_cna_resources
     )
 
     branched_minimap.paired

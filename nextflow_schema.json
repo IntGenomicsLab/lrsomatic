@@ -103,6 +103,21 @@
                 },
                 "generate_gvcf": {
                     "type": "boolean"
+                },
+                "clairsto_disable_verdict": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Disable ClairS-TO's Verdict module, which tags germline variants in tumor-only mode from a copy-number and purity model.",
+                    "help_text": "Verdict is what removes high-VAF germline variants from a tumor-only somatic call set. Disabling it leaves them PASS, which inflates the somatic call count and contaminates downstream mutational-signature fits. It only makes sense for samples whose tumour purity is too low for the model to fit.",
+                    "fa_icon": "fas fa-ban"
+                },
+                "clairsto_verdict_check": {
+                    "type": "string",
+                    "default": "error",
+                    "enum": ["error", "warn", "off"],
+                    "description": "What to do when ClairS-TO's Verdict module produces no germline tags: fail the task, warn, or skip the check.",
+                    "help_text": "Verdict fails silently: every failure path inside it exits 0, and on a non-GRCh38 reference it runs its GRCh38 resources against the wrong coordinates and tags nothing without complaining. This check catches that. Use `warn` for small test datasets, where the copy-number model legitimately cannot fit.",
+                    "fa_icon": "fas fa-triangle-exclamation"
                 }
             }
         },
@@ -162,6 +177,18 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
+                },
+                "clairsto_cna_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Pre-built ClairS-TO Verdict resource directory (--cna_resource_dir), matching the reference build in use.",
+                    "help_text": "Only needed for non-GRCh38 references; GRCh38 uses the resources bundled in the ClairS-TO image. With --genome CHM13 the pipeline builds this automatically and publishes it to <outdir>/cache/clairsto, so later runs can point here instead of rebuilding. Expected layout (the 'hg38' in the file names is ClairS-TO's hard-coded naming, not the build of the contents): loci_files/G1000_loci_hg38_chr{1..22,X}.txt, allele_files/G1000_alleles_hg38_chr{1..22,X}.txt, GC_G1000_hg38.txt, RT_G1000_hg38.txt.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "clairsto_cna_rt_file": {
+                    "type": "string",
+                    "description": "Replication timing file used to build the ClairS-TO Verdict resource set. Auto-populated from --genome.",
+                    "hidden": true
                 }
             }
         },

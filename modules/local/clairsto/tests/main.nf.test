@@ -1,0 +1,91 @@
+nextflow_process {
+
+    name "Test Process CLAIRSTO"
+    script "../main.nf"
+    process "CLAIRSTO"
+
+    tag "modules"
+    tag "modules_local"
+    tag "clairsto"
+
+    // Stub-only: ClairS-TO needs a multi-GB image, a model bundle and a real BAM. These cases pin the
+    // input arity, so a future refactor cannot silently drop the Verdict resource channel.
+
+    test("tumor-only - no Verdict resources (GRCh38 path)") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file('test.bam'),
+                    file('test.bam.bai'),
+                    'hifi_revio_ssrs',
+                    [ file('pon.vcf.gz') ],
+                    [ 'True' ]
+                ]
+                input[1] = [ [:], file('genome.fasta') ]
+                input[2] = [ [:], file('genome.fasta.fai') ]
+                input[3] = []
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // versions_clairsto is excluded: eval() does not run in stub mode, so it records
+                // whatever the host shell said about a missing run_clairs_to
+                { assert snapshot(
+                    process.out.snv_vcf,
+                    process.out.snv_tbi,
+                    process.out.indel_vcf,
+                    process.out.indel_tbi,
+                    process.out.verdict_log,
+                    process.out.verdict_purity
+                ).match() }
+            )
+        }
+    }
+
+    test("tumor-only - with a Verdict resource directory (CHM13 path)") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file('test.bam'),
+                    file('test.bam.bai'),
+                    'hifi_revio_ssrs',
+                    [ file('pon.vcf.gz') ],
+                    [ 'True' ]
+                ]
+                input[1] = [ [:], file('genome.fasta') ]
+                input[2] = [ [:], file('genome.fasta.fai') ]
+                input[3] = file('clairsto_cna_resources')
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // versions_clairsto is excluded: eval() does not run in stub mode, so it records
+                // whatever the host shell said about a missing run_clairs_to
+                { assert snapshot(
+                    process.out.snv_vcf,
+                    process.out.snv_tbi,
+                    process.out.indel_vcf,
+                    process.out.indel_tbi,
+                    process.out.verdict_log,
+                    process.out.verdict_purity
+                ).match() }
+            )
+        }
+    }
+}

@@ -129,6 +129,27 @@ For mutational signatures, `--genome CHM13` selects the `CHM13-T2T` SigProfilerM
 
 For structural variants, the CHM13 panel of normals is a merged panel combining the 1000 Genomes CHM13 panel shipped with SEVERUS and the ASAP cohort, with median confidence intervals per breakpoint. The pipeline exposes it as `--pon_file` and hands it to SEVERUS via that tool's own `--PON` flag; it is downloaded automatically with `--genome CHM13`. GRCh38 continues to use the 1000 Genomes panel shipped with SEVERUS.
 
+#### Germline tagging on CHM13 (ClairS-TO Verdict)
+
+In tumor-only mode ClairS-TO separates germline from somatic calls with two independent filters: the panel of normals, and **Verdict** — a module that fits an ASCAT-like tumour purity and copy-number model and uses it to tag high-VAF variants as germline (`INFO/Verdict_Germline`, `FILTER=LowQual`). The pipeline's `VCFSPLIT` step routes those tags into the germline VCF, so Verdict is what keeps germline SNPs out of the somatic call set.
+
+Verdict ships GRCh38 loci, allele, GC and replication-timing resources and has no reference-build option. Its only guard is a check that the reference contains `chr1..chr22,chrX` contig names — which CHM13 satisfies. On a CHM13 alignment it therefore runs the GRCh38 resources against T2T coordinates, matches nothing, and tags nothing, and because every failure path inside it exits 0 the run still reports success. On one tumor-only PacBio Revio sample this left roughly 8,200 germline SNVs with a PASS status (42,931 PASS SNVs on CHM13 versus 31,942 on GRCh38) and added a spurious SBS40a component to the mutational-signature fit.
+
+With `--genome CHM13` the pipeline now builds a matching resource set automatically from the CHM13 ASCAT loci, allele and GC files it already downloads, plus a CHM13 replication-timing track, and passes it to ClairS-TO. The assembled directory is published to `<outdir>/cache/clairsto`, so later runs can skip the rebuild:
+
+```bash
+--clairsto_cna_resources /path/to/results/cache/clairsto/clairsto_cna_resources
+```
+
+GRCh38 runs are unaffected — the resources inside the ClairS-TO image are already correct, and the pipeline leaves the flag off.
+
+Two related controls:
+
+- `--clairsto_verdict_check` (`error`, the default, `warn`, or `off`) decides what happens when Verdict produces no germline tags. Because the failure is silent, this check is the only thing that surfaces it. Small single-chromosome test datasets legitimately trip it — the copy-number model cannot fit — so the `test` profile sets `warn`.
+- `--clairsto_disable_verdict` turns Verdict off outright. Only sensible for samples whose tumour purity is too low for the model to fit; it leaves germline variants in the somatic call set.
+
+Two limitations remain on CHM13. Verdict covers chr1-22 and chrX only, so chrY germline variants are never tagged (~818 chrY PASS SNVs on CHM13 versus 266 on GRCh38). And the lifted CHM13 panels of normals flag noticeably fewer sites as `NonSomatic` than their GRCh38 counterparts, which leaves a smaller residue of germline calls that Verdict does not catch either.
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -336,6 +357,16 @@ These options control how variants from multiple callers are filtered and merged
 | `--clairsto_pon_vcfs`    | Full path to one or more Panel of Normals VCF files for ClairS-TO small variant filtering. Default = `null`                                                                                                                                  |
 | `--clairsto_pon_flags`   | Population allele matching flags for ClairS-TO PON VCFs (one per VCF, comma-separated). Default = `null`                                                                                                                                     |
 | `--deepsomatic_pon_vcfs` | Full path to one or more bgzipped, tabix-indexed PON VCF files (for example, `.vcf.gz`) passed to DeepSomatic `--population_vcfs`. If not set, uses container-bundled defaults in tumor-only mode or no PON in paired mode. Default = `null` |
+
+#### ClairS-TO Verdict Options
+
+Verdict is ClairS-TO's copy-number-based germline tagger for tumor-only samples. See [CHM13 Support](#germline-tagging-on-chm13-clairs-to-verdict) for why it needs build-specific resources.
+
+| Parameter                    | Description                                                                                                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--clairsto_cna_resources`   | Pre-built Verdict resource directory (ClairS-TO `--cna_resource_dir`). Only needed for non-GRCh38 references; with `--genome CHM13` it is built and cached automatically. Default = `null` |
+| `--clairsto_disable_verdict` | Skip Verdict entirely. Leaves high-VAF germline variants in the somatic call set. Default = `false`                                                                                        |
+| `--clairsto_verdict_check`   | What to do when Verdict produces no germline tags: `error`, `warn` or `off`. Verdict fails silently, so this check is what surfaces it. Default = `error`                                  |
 
 #### Advanced Options
 

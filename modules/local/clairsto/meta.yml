@@ -37,6 +37,16 @@ input:
         type: string
         description: |
           Name for ClairS-TO model (platform: ont or hifi)
+    - pon_vcfs:
+        type: file
+        description: |
+          Panel of normals / population allele database VCF files
+        pattern: "*.vcf.gz"
+    - pon_flags:
+        type: string
+        description: |
+          One allele-matching flag per PON VCF ("True" for a population allele database,
+          "False" for an artefact panel)
   - - meta2:
         type: map
         description: |
@@ -55,26 +65,12 @@ input:
         description: |
           Reference genome fasta index file
         pattern: "*.fai"
-  - - dbSNP:
-        type: file
+  - - cna_resources:
+        type: directory
         description: |
-          dbSNP VCF file for panel of normals
-        pattern: "*.vcf.gz"
-  - - colors:
-        type: file
-        description: |
-          COLORS panel of normals VCF file
-        pattern: "*.vcf.gz"
-  - - onekgenomes:
-        type: file
-        description: |
-          1000 Genomes panel of normals VCF file
-        pattern: "*.vcf.gz"
-  - - gnomad:
-        type: file
-        description: |
-          gnomAD panel of normals VCF file
-        pattern: "*.vcf.gz"
+          Resource directory for ClairS-TO's Verdict module (--cna_resource_dir), matching the
+          reference build in use. Empty ([]) uses the GRCh38 resources bundled in the image.
+        pattern: "clairsto_cna_resources"
 
 output:
   indel_vcf:
@@ -117,6 +113,24 @@ output:
         type: file
         description: SNV VCF index file
         pattern: "*.vcf.gz.tbi"
+  verdict_log:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+    - "*_verdict.log":
+        type: file
+        description: ClairS-TO Verdict (copy-number germline tagging) log, kept as QC
+        pattern: "*_verdict.log"
+  verdict_purity:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+    - "*_verdict_purity_ploidy.txt":
+        type: file
+        description: Tumor purity and ploidy estimated by Verdict, kept as QC
+        pattern: "*_verdict_purity_ploidy.txt"
   versions_clairsto:
     - - ${task.process}:
           type: string
