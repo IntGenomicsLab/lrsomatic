@@ -1,10 +1,11 @@
 // IMPORT MODULES
 include { CLAIR3                    } from '../../../modules/local/clair3/main.nf'
-include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                     } from '../../../subworkflows/nf-core/deepvariant/main.nf'
 include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { VCF_PASS_FILTER as CLAIR3_PASS_FILTER           } from '../../../subworkflows/local/vcf_pass_filter.nf'
+include { VCF_PASS_FILTER as DEEPVARIANT_PASS_FILTER      } from '../../../subworkflows/local/vcf_pass_filter.nf'
 
 workflow PAIRED_SMALLVAR_GERMLINE {
 
@@ -74,8 +75,14 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             fai
         )
 
-        CLAIR3.out.vcf
-            .join(CLAIR3.out.tbi)
+        // Clair3's merge_output.vcf.gz keeps LowQual and RefCall records; restrict them the
+        // same way DeepVariant's output is restricted so both callers enter the union on
+        // equal terms. The VCF published under variants/clair3/ is unaffected.
+        CLAIR3_PASS_FILTER (
+            CLAIR3.out.vcf.join(CLAIR3.out.tbi)
+        )
+
+        CLAIR3_PASS_FILTER.out.vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clair3']
                 return [new_meta, vcf, tbi]
@@ -120,26 +127,14 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             [[:],[]]   // GFF annotation (not used)
         )
 
-        DEEPVARIANT.out.vcf
-            .join(DEEPVARIANT.out.vcf_index)
-            .set{deepvariant_raw_ch}
+        // DeepVariant emits a record for every site it evaluates, not just its calls, so
+        // most records are RefCall. Without this the union is "every site DeepVariant
+        // looked at". The VCF published under variants/deepvariant/ is unaffected.
+        DEEPVARIANT_PASS_FILTER (
+            DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
+        )
 
-        // DeepVariant emits every evaluated site, not just calls, so most records are
-        // RefCall. Clair3 is already PASS-filtered downstream, so without this the
-        // union is "PASS Clair3 + every site DeepVariant evaluated".
-        // The raw VCF published under variants/deepvariant/ is unaffected.
-        if (params.deepvariant_filter_pass) {
-            DEEPVARIANT_PASS_FILTER ( deepvariant_raw_ch, [], [], [] )
-            DEEPVARIANT_PASS_FILTER.out.vcf
-                .join(DEEPVARIANT_PASS_FILTER.out.index)
-                .set{deepvariant_pass_ch}
-        }
-        else {
-            deepvariant_raw_ch
-                .set{deepvariant_pass_ch}
-        }
-
-        deepvariant_pass_ch
+        DEEPVARIANT_PASS_FILTER.out.vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepvariant']
                 return [new_meta, vcf, tbi]

@@ -2,11 +2,12 @@
 include { CLAIRS                    } from '../../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/sort'
-include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 
 // IMPORT SUBWORKFLOWS
 include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic.nf'
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { VCF_PASS_FILTER as CLAIRS_PASS_FILTER          } from '../../../subworkflows/local/vcf_pass_filter.nf'
+include { VCF_PASS_FILTER as DEEPSOMATIC_PASS_FILTER     } from '../../../subworkflows/local/vcf_pass_filter.nf'
 
 workflow PAIRED_SMALLVAR_SOMATIC {
 
@@ -72,8 +73,14 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             BCFTOOLS_CONCAT.out.vcf
         )
 
-        BCFTOOLS_SORT.out.vcf
-            .join(BCFTOOLS_SORT.out.tbi)
+        // The concatenated ClairS VCF still carries its LowQual and NonSomatic calls;
+        // restrict them the same way DeepSomatic's output is restricted so both callers
+        // enter the union on equal terms. variants/clairs/ is unaffected.
+        CLAIRS_PASS_FILTER (
+            BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.tbi)
+        )
+
+        CLAIRS_PASS_FILTER.out.vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clairs']
                 return [new_meta, vcf, tbi]
@@ -110,26 +117,14 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             ds_pon_channel
         )
 
-        DEEPSOMATIC.out.vcf
-            .join(DEEPSOMATIC.out.vcf_index)
-            .set{deepsomatic_raw_ch}
+        // DeepSomatic emits a record for every site it evaluates (RefCall/GERMLINE/PON),
+        // not just its calls. Without this the union is "every site DeepSomatic looked
+        // at". The VCF published under variants/deepsomatic/ is unaffected.
+        DEEPSOMATIC_PASS_FILTER (
+            DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
+        )
 
-        // DeepSomatic emits every evaluated site (RefCall/GERMLINE/PON), not just calls.
-        // ClairS is already PASS-filtered downstream, so without this the union is
-        // "PASS ClairS + every site DeepSomatic evaluated".
-        // The raw VCF published under variants/deepsomatic/ is unaffected.
-        if (params.deepsomatic_filter_pass) {
-            DEEPSOMATIC_PASS_FILTER ( deepsomatic_raw_ch, [], [], [] )
-            DEEPSOMATIC_PASS_FILTER.out.vcf
-                .join(DEEPSOMATIC_PASS_FILTER.out.index)
-                .set{deepsomatic_pass_ch}
-        }
-        else {
-            deepsomatic_raw_ch
-                .set{deepsomatic_pass_ch}
-        }
-
-        deepsomatic_pass_ch
+        DEEPSOMATIC_PASS_FILTER.out.vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]

@@ -23,9 +23,6 @@
                 "DEEPSOMATIC_MAKEEXAMPLES": {
                     "deepsomatic": "1.7.0"
                 },
-                "DEEPSOMATIC_PASS_FILTER": {
-                    "bcftools": "1.23.1"
-                },
                 "DEEPSOMATIC_POSTPROCESSVARIANTS": {
                     "deepsomatic": "1.7.0"
                 },
@@ -34,9 +31,6 @@
                 },
                 "DEEPVARIANT_MAKEEXAMPLES": {
                     "deepvariant": "1.9.0"
-                },
-                "DEEPVARIANT_PASS_FILTER": {
-                    "bcftools": "1.23.1"
                 },
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.9.0"
@@ -78,6 +72,9 @@
                 },
                 "NANOPLOT_PRE": {
                     "nanoplot": "1.46.1"
+                },
+                "PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
@@ -584,6 +581,6 @@
             "nf-test": "0.9.3",
             "nextflow": "26.04.1"
         },
-        "timestamp": "2026-09-18T11:19:11.135286604"
+        "timestamp": "2026-09-18T17:36:01.066378821"
     }
 }

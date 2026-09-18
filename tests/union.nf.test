@@ -115,4 +115,46 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("-profile test, union combine mode, smallvar_filter_pass=false") {
+
+        when {
+            params {
+                outdir                = "$outputDir"
+                germline_var_combine  = 'all'
+                somatic_var_combine   = 'all'
+                germline_var_keep     = 'clair, deepvariant'
+                somatic_var_keep      = 'clair, deepsomatic'
+                smallvar_filter_pass  = false
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+
+                // ── No PASS filter process may run ───────────────────────────
+                // VCF_PASS_FILTER passes its input straight through when the param is
+                // false, so PASS_FILTER never executes and never reports a version.
+                {
+                    def versions = file("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml")
+                    assert versions.exists()
+                    assert !versions.text.contains('PASS_FILTER')
+                },
+
+                // ── Phased VCFs still exist and have data ────────────────────
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert germline.exists()
+                        assert somatic.exists()
+                        assert germline.size() > 0
+                        assert somatic.size() > 0
+                    }
+                }
+            )
+        }
+    }
+
 }
