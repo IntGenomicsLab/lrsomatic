@@ -101,6 +101,20 @@
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
                 },
+                "deepvariant_filter_pass": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep only PASS records from DeepVariant for downstream use.",
+                    "help_text": "DeepVariant emits every evaluated site, so most records are RefCall rather than calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume the unfiltered DeepVariant output. The raw VCF published to `<outdir>/<sample>/variants/deepvariant` is unaffected either way.",
+                    "fa_icon": "fas fa-filter"
+                },
+                "deepsomatic_filter_pass": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep only PASS records from DeepSomatic for downstream use.",
+                    "help_text": "DeepSomatic emits every evaluated site, so most records are RefCall, GERMLINE or PON rather than somatic calls. Those records otherwise flow into the caller consensus, phasing, VEP, signature fitting and the report. Set to false to consume the unfiltered DeepSomatic output. The raw VCF published to `<outdir>/<sample>/variants/deepsomatic` is unaffected either way.",
+                    "fa_icon": "fas fa-filter"
+                },
                 "generate_gvcf": {
                     "type": "boolean"
                 }

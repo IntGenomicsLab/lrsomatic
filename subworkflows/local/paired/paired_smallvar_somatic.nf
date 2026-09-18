@@ -2,6 +2,7 @@
 include { CLAIRS                    } from '../../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/sort'
+include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 
 // IMPORT SUBWORKFLOWS
 include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic.nf'
@@ -111,6 +112,24 @@ workflow PAIRED_SMALLVAR_SOMATIC {
 
         DEEPSOMATIC.out.vcf
             .join(DEEPSOMATIC.out.vcf_index)
+            .set{deepsomatic_raw_ch}
+
+        // DeepSomatic emits every evaluated site (RefCall/GERMLINE/PON), not just calls.
+        // ClairS is already PASS-filtered downstream, so without this the union is
+        // "PASS ClairS + every site DeepSomatic evaluated".
+        // The raw VCF published under variants/deepsomatic/ is unaffected.
+        if (params.deepsomatic_filter_pass) {
+            DEEPSOMATIC_PASS_FILTER ( deepsomatic_raw_ch, [], [], [] )
+            DEEPSOMATIC_PASS_FILTER.out.vcf
+                .join(DEEPSOMATIC_PASS_FILTER.out.index)
+                .set{deepsomatic_pass_ch}
+        }
+        else {
+            deepsomatic_raw_ch
+                .set{deepsomatic_pass_ch}
+        }
+
+        deepsomatic_pass_ch
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]

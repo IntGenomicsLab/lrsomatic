@@ -1,6 +1,8 @@
 // IMPORT MODULES
 include { CLAIRSTO                  } from '../../../modules/local/clairsto/main.nf'
 include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main.nf'
+include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                   } from '../../../subworkflows/nf-core/deepvariant/main.nf'
@@ -126,6 +128,24 @@ workflow TUMORONLY_SMALLVAR {
 
         DEEPVARIANT.out.vcf
             .join(DEEPVARIANT.out.vcf_index)
+            .set{deepvariant_raw_ch}
+
+        // DeepVariant emits every evaluated site, not just calls, so most records are
+        // RefCall. ClairS-TO is already PASS-filtered downstream by VCFSPLIT, so without
+        // this the union is "PASS ClairS-TO + every site DeepVariant evaluated".
+        // The raw VCF published under variants/deepvariant/ is unaffected.
+        if (params.deepvariant_filter_pass) {
+            DEEPVARIANT_PASS_FILTER ( deepvariant_raw_ch, [], [], [] )
+            DEEPVARIANT_PASS_FILTER.out.vcf
+                .join(DEEPVARIANT_PASS_FILTER.out.index)
+                .set{deepvariant_pass_ch}
+        }
+        else {
+            deepvariant_raw_ch
+                .set{deepvariant_pass_ch}
+        }
+
+        deepvariant_pass_ch
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepvariant']
                 return [new_meta, vcf, tbi]
@@ -194,6 +214,24 @@ workflow TUMORONLY_SMALLVAR {
         )
         DEEPSOMATIC.out.vcf
             .join(DEEPSOMATIC.out.vcf_index)
+            .set{deepsomatic_raw_ch}
+
+        // DeepSomatic emits every evaluated site (RefCall/GERMLINE/PON), not just calls.
+        // ClairS-TO is already PASS-filtered downstream by VCFSPLIT, so without this the
+        // union is "PASS ClairS-TO + every site DeepSomatic evaluated".
+        // The raw VCF published under variants/deepsomatic/ is unaffected.
+        if (params.deepsomatic_filter_pass) {
+            DEEPSOMATIC_PASS_FILTER ( deepsomatic_raw_ch, [], [], [] )
+            DEEPSOMATIC_PASS_FILTER.out.vcf
+                .join(DEEPSOMATIC_PASS_FILTER.out.index)
+                .set{deepsomatic_pass_ch}
+        }
+        else {
+            deepsomatic_raw_ch
+                .set{deepsomatic_pass_ch}
+        }
+
+        deepsomatic_pass_ch
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]

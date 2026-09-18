@@ -361,6 +361,24 @@ These options control how variants from multiple callers are filtered and merged
 | `--somatic_var_combine`        | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`  |
 | `--prioritize_caller_germline` | Comma-separated caller priority order used when combining germline calls. Default = `null`          |
 | `--prioritize_caller_somatic`  | Comma-separated caller priority order used when combining somatic calls. Default = `null`           |
+| `--deepvariant_filter_pass`    | Keep only PASS records from DeepVariant for downstream use. Default = `true`                        |
+| `--deepsomatic_filter_pass`    | Keep only PASS records from DeepSomatic for downstream use. Default = `true`                        |
+
+DeepVariant and DeepSomatic emit a record for every site they evaluate, not only
+for the variants they call: on a 30x PacBio tumour sample a DeepSomatic VCF holds
+around 13.7 M records of which roughly 50 k are `PASS`, the rest being `RefCall`,
+`GERMLINE` or `PON`. ClairS/ClairS-TO output is already restricted to `PASS`
+before it is used downstream, so with `*_var_combine = 'all'` the union would
+otherwise be "PASS Clair calls plus every site DeepVariant/DeepSomatic looked at",
+which inflates the phased VCFs by three orders of magnitude and produces a
+meaningless mutation burden.
+
+`--deepvariant_filter_pass` and `--deepsomatic_filter_pass` (both `true` by
+default) restrict the copy handed to the caller consensus, phasing, VEP, signature
+fitting and the report. Set either to `false` to restore the previous unfiltered
+behaviour. The raw per-caller VCFs published under
+`<outdir>/<sample>/variants/deepvariant` and `<outdir>/<sample>/variants/deepsomatic`
+are never filtered, so no calls are lost from the results directory.
 
 #### PON Options
 
