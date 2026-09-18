@@ -37,6 +37,17 @@ input:
         type: string
         description: |
           Name for ClairS-TO model (platform: ont or hifi)
+    - pon_vcfs:
+        type: file
+        description: |
+          One or more panel of normals VCF files, passed to --panel_of_normals. Supplying these
+          replaces the assembly-specific default list inside the image rather than adding to it.
+        pattern: "*.vcf.gz"
+    - pon_flags:
+        type: list
+        description: |
+          Population allele matching flag ("True"/"False") for each panel of normals VCF, in the
+          same order. Must have exactly one entry per VCF.
   - - meta2:
         type: map
         description: |
@@ -55,26 +66,18 @@ input:
         description: |
           Reference genome fasta index file
         pattern: "*.fai"
-  - - dbSNP:
-        type: file
+  - - meta4:
+        type: map
         description: |
-          dbSNP VCF file for panel of normals
-        pattern: "*.vcf.gz"
-  - - colors:
-        type: file
+          Groovy Map containing CNA resource information
+    - cna_resources:
+        type: directory
         description: |
-          COLORS panel of normals VCF file
-        pattern: "*.vcf.gz"
-  - - onekgenomes:
-        type: file
-        description: |
-          1000 Genomes panel of normals VCF file
-        pattern: "*.vcf.gz"
-  - - gnomad:
-        type: file
-        description: |
-          gnomAD panel of normals VCF file
-        pattern: "*.vcf.gz"
+          Verdict CNA resource directory for the assembly the tumour BAM was aligned to, holding
+          loci_files/, allele_files/ and a single GC_*.txt, and optionally an RT_*.txt. Passed as
+          --cna_resource_dir. Supply [] to fall back to the GRCh38 set shipped inside the image.
+          A set whose loci cannot belong to the reference given with --ref_fn makes ClairS-TO
+          disable Verdict with a warning rather than apply the wrong coordinates.
 
 output:
   indel_vcf:
@@ -117,6 +120,30 @@ output:
         type: file
         description: SNV VCF index file
         pattern: "*.vcf.gz.tbi"
+  purity_ploidy:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "*_Tumor_Purity_Ploidy.txt":
+        type: file
+        description: |
+          Tumour purity and ploidy Verdict estimated and tagged from, lifted out of ClairS-TO's
+          work directory. Only written when Verdict ran inside ClairS-TO and reached a solution.
+        pattern: "*_Tumor_Purity_Ploidy.txt"
+  cna:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1' ]`
+    - "*_Tumor_CNA.txt":
+        type: file
+        description: |
+          Allele-specific copy number segments Verdict tagged from, lifted out of ClairS-TO's
+          work directory. Only written when Verdict ran inside ClairS-TO and reached a solution.
+        pattern: "*_Tumor_CNA.txt"
   versions_clairsto:
     - - ${task.process}:
           type: string
@@ -124,7 +151,7 @@ output:
       - clairsto:
           type: string
           description: The tool name
-      - "/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'":
+      - "run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'":
           type: string
           description: The command used to generate the version of the tool
 
@@ -136,7 +163,7 @@ topics:
       - clairsto:
           type: string
           description: The tool name
-      - "/opt/bin/run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'":
+      - "run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'":
           type: string
           description: The command used to generate the version of the tool
 

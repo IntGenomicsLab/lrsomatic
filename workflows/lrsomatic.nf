@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
 //
@@ -29,6 +30,7 @@ include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/
 include { ASCAT                             } from '../modules/nf-core/ascat/main'
 include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT                       } from '../modules/local/metaextract/main'
+include { CLAIRSTO_CNA_RESOURCES            } from '../modules/local/clairsto/cna_resources/main'
 include { WAKHAN                            } from '../modules/local/wakhan/main'
 include { LRSOMATICREPORT                   } from '../modules/local/lrsomaticreport/main'
 include { FIBERTOOLSRS_PREDICTM6A           } from '../modules/local/fibertoolsrs/predictm6a'
@@ -109,10 +111,8 @@ workflow LRSOMATIC {
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
 
-    // Resolved once and handed to PREPARE_VEP_PLUGINS below, rather than resolved again there:
-    // staging a plugin file checks it exists, which for the default resources is a HEAD request
-    // per URL. vep_plugins.args is passed straight to the VEP tasks -- it cannot travel through
-    // params, because conf/modules.config closures do not see a param assigned here.
+    // Resolved once here to avoid a HEAD request per default plugin URL, and passed straight to
+    // the VEP tasks: conf/modules.config closures do not see a param assigned here.
     validateVepPluginParams()
     vep_plugins = resolveVepPlugins()
 
@@ -179,6 +179,32 @@ workflow LRSOMATIC {
     //   -- single tuple of parallel lists; each flag indicates whether the corresponding VCF
     //      is a population allele database (True) vs. a panel-of-normals artefact file (False)
 
+    // Verdict resolves its ASCAT loci/allele/GC set from --cna_resource_dir. The image ships the
+    // GRCh38 set, so resources are only needed for another assembly.
+    //
+    // Only ClairS-TO's own Verdict estimate reads them. With ASCAT in the run, CLAIRSTO is called
+    // with --disable_verdict and CLAIRSTO_VERDICT_TAG tags from ASCAT's tables instead, so the
+    // resources are neither built nor passed.
+    clairsto_cna_dir = params.skip_ascat && params.clairsto_cna_resources
+        ? validateClairstoCnaResources(params.clairsto_cna_resources)
+        : null
+    if (params.clairsto_cna_resources && !params.skip_ascat) {
+        log.warn("--clairsto_cna_resources is ignored without --skip_ascat: Verdict's germline tagging comes from ASCAT's purity and copy number, not from ClairS-TO's own estimate of them.")
+    }
+    // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
+    build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
+
+    // An absent loci or allele set would leave the join below waiting forever and CLAIRSTO would
+    // silently never run, taking every tumour-only output with it
+    if (build_clairsto_cna) {
+        def missing_ascat = ['ascat_alleles': params.ascat_allele_files,
+                             'ascat_loci': params.ascat_loci_files,
+                             'ascat_loci_gc': params.ascat_gc_file].findAll { _attr, value -> !value }.keySet()
+        if (missing_ascat) {
+            error("ClairS-TO's Verdict module needs the ASCAT loci, allele and GC content files for ${params.genome}, but ${missing_ascat.join(', ')} ${missing_ascat.size() == 1 ? 'is' : 'are'} not set. Add ${missing_ascat.size() == 1 ? 'it' : 'them'} to the genome config, or pass a prepared directory with --clairsto_cna_resources.")
+        }
+    }
+
     // DeepSomatic PON channel: user-supplied VCF paths, or empty list (process falls back to container defaults)
     ds_pon_files = params.deepsomatic_pon_vcfs != null
         ? params.deepsomatic_pon_vcfs.split(',').collect { f -> file(f.trim()) }
@@ -191,10 +217,8 @@ workflow LRSOMATIC {
                 getGenomeAttribute('asap')
               ]
             : []
-    // DeepSomatic requires no chromosome overlap across population VCFs.
-    // When multiple databases are provided (e.g., CHM13 gnomad + 1kgenomes + colors + dbsnp + asap),
-    // the merge is done inline inside DEEPSOMATIC_MAKEEXAMPLES and DEEPSOMATIC_POSTPROCESSVARIANTS
-    // so that both callers can start in parallel as soon as BAMs are ready.
+    // DeepSomatic requires no chromosome overlap across population VCFs; several databases are
+    // merged inline inside DEEPSOMATIC_MAKEEXAMPLES/POSTPROCESSVARIANTS so callers start in parallel.
     channel.value( [[:], ds_pon_files] ).set { ds_pon_channel }
     // ds_pon_channel: [[:], [vcf_path, ...]] or [[:], []]
     //   -- raw unmerged PON VCF paths (no .tbi required); merging happens inline in each DeepSomatic process
@@ -260,9 +284,32 @@ workflow LRSOMATIC {
         params.ascat_loci_files,
         params.ascat_gc_file,
         params.ascat_rt_file,
+        build_clairsto_cna,
         basecall_meta,
         clair3_modelMap
     )
+
+    //
+    // MODULE: CLAIRSTO_CNA_RESOURCES (label: process_single)
+    // Lays the ASCAT loci/allele/GC set out as the directory Verdict expects
+    //
+    if (build_clairsto_cna) {
+        // Each emits one list of paths: merge()/combine() would flatten the three into a single
+        // run of files, so key them on a shared meta and join.
+        cna_key = [ id: params.genome ]
+        CLAIRSTO_CNA_RESOURCES(
+            PREPARE_REFERENCE_FILES.out.loci_files.map { files -> [ cna_key, files ] }
+                .join( PREPARE_REFERENCE_FILES.out.allele_files.map { files -> [ cna_key, files ] } )
+                .join( PREPARE_REFERENCE_FILES.out.gc_file.map { files -> [ cna_key, files ] } )
+        )
+        // .first(): a process output is a queue channel, so CLAIRSTO would run once in total
+        clairsto_cna_channel = CLAIRSTO_CNA_RESOURCES.out.cna_resources.first()
+        ch_versions = ch_versions.mix(CLAIRSTO_CNA_RESOURCES.out.versions)
+    }
+    else {
+        clairsto_cna_channel = channel.value( [ [:], clairsto_cna_dir ?: [] ] )
+    }
+    // clairsto_cna_channel: [meta, cna_resource_dir] or [[:], []]  -- [] uses the image's own set
 
     downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
     // downloaded_clair3_models: [meta(id=clair3_model_name), model_dir]
@@ -295,10 +342,8 @@ workflow LRSOMATIC {
 
     }
 
-    // Each replicate is aligned separately so that minimap2 can tag its reads with a
-    // unique @RG (sample + type + replicate).  Replicates are merged after alignment.
-    // ch_samplesheet is [meta_with_replicate, [bam]] -- one item per replicate per sample.
-    // ch_ubams defaults to ch_samplesheet; the fiber-seq block below may override it.
+    // Each replicate is aligned separately so minimap2 can tag its reads with a unique @RG, then
+    // merged. ch_ubams defaults to ch_samplesheet; the fiber-seq block below may override it.
     ch_ubams = ch_samplesheet
 
     vep_cache = channel.empty()
@@ -564,18 +609,6 @@ workflow LRSOMATIC {
     //                                                    each item is a single sample, joined downstream
     // branched_minimap.tumor_only: [meta, bam, bai]  -- tumor-only samples (no matched normal)
 
-    // SUBWORKFLOW: TUMORONLY_SMALLVAR
-    // Input:  branched_minimap.tumor_only -- [meta, bam, bai]
-    // Output: .somatic_vcf  -- [meta, vcf, tbi]  -- somatic SNVs/indels
-    //         .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (ClairS-TO germline output)
-    TUMORONLY_SMALLVAR(
-        branched_minimap.tumor_only,
-        ch_fasta,
-        ch_fai,
-        clairsto_pon_channel,
-        ds_pon_channel
-    )
-
     branched_minimap.paired
         .set{paired_ch}
 
@@ -624,6 +657,88 @@ workflow LRSOMATIC {
         .join(paired_normal_bams)
         .set { somatic_smallvar_input }
     // somatic_smallvar_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+
+    //
+    // MODULE: ASCAT (label: process_high)
+    // Runs before small variant calling: the tumor-only germline tagging (CLAIRSTO_VERDICT_TAG)
+    // takes ASCAT's purity and segments, and ASCAT itself needs only the BAMs.
+    // Input:  [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
+    //         normal_bam/bai are [] for tumor-only samples
+    //         allele_files, loci_files, gc_file, rt_file  -- ASCAT reference files
+    // Output: .png plots, .segments, .purity_ploidy  -- copy number results
+    //
+
+    ch_ascat_files = channel.empty()
+    ascat_tumoronly_ch = channel.empty()
+
+    if (!params.skip_ascat) {
+        branched_minimap.tumor_only
+            .map { meta, bam, bai ->
+                def new_meta = meta.subMap('id',
+                            'paired_data',
+                            'platform',
+                            'sex',
+                            'fiber',
+                            'clair3_model',
+                            'clairS_model',
+                            'clairSTO_model',
+                            'kinetics')
+                def normal_bam = []
+                def normal_bai = []
+                return [new_meta, normal_bam, normal_bai, bam, bai]
+            }
+            .mix(
+                somatic_smallvar_input
+                    .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai ->
+                        return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
+                    }
+            )
+            .set { ascat_ch }
+        // ascat_ch: [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
+
+        ASCAT (
+            ascat_ch,
+            params.genome_name,
+            allele_files,
+            loci_files,
+            [],
+            [],
+            gc_file,
+            rt_file
+        )
+
+        ch_versions = ch_versions.mix(ASCAT.out.versions)
+
+        // Purity/ploidy and segments of each tumor-only sample, for Verdict's germline tagging
+        ASCAT.out.purityploidy
+            .join(ASCAT.out.segments)
+            .filter { meta, _purityploidy, _segments -> !meta.paired_data }
+            .set { ascat_tumoronly_ch }
+        // ascat_tumoronly_ch: [meta, purityploidy, segments]
+
+        // Collect all ASCAT copy-number files (segments_raw, purityploidy, diagnostic PNGs) per sample
+        // for the final report module -- it globs by suffix, so exact grouping doesn't matter.
+        ch_ascat_files = ASCAT.out.segments_raw
+            .mix(ASCAT.out.purityploidy, ASCAT.out.png)
+            .groupTuple()
+            .map { meta, files -> [meta, files.flatten()] }
+        // ch_ascat_files: [meta, [file, file, ...]]
+    }
+
+    // SUBWORKFLOW: TUMORONLY_SMALLVAR
+    // Input:  branched_minimap.tumor_only -- [meta, bam, bai]
+    //         ascat_tumoronly_ch          -- [meta, purityploidy, segments], empty with --skip_ascat
+    // Output: .somatic_vcf  -- [meta, vcf, tbi]  -- somatic SNVs/indels
+    //         .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (ClairS-TO germline output)
+    TUMORONLY_SMALLVAR(
+        branched_minimap.tumor_only,
+        ch_fasta,
+        ch_fai,
+        clairsto_pon_channel,
+        clairsto_cna_channel,
+        ds_pon_channel,
+        ascat_tumoronly_ch
+    )
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_SOMATIC
     // Input:  somatic_smallvar_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
@@ -1019,46 +1134,6 @@ workflow LRSOMATIC {
     }
 
     //
-    // MODULE: ASCAT (label: process_high)
-    // Input:  [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]  -- NOTE: normal before tumor (ASCAT convention)
-    //         allele_files, loci_files, gc_file, rt_file  -- ASCAT reference files
-    // Output: .png plots, .segments, .purity_ploidy  -- copy number results
-    //
-
-    ch_ascat_files = channel.empty()
-
-    if (!params.skip_ascat) {
-        // ASCAT expects [normal, tumor] order; rearrange from severus_input [tumor, normal] order
-        severus_input
-            .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, _vcf, _tbi ->
-                return [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
-            }
-            .set { ascat_ch }
-        // ascat_ch: [meta, normal_bam, normal_bai, tumor_bam, tumor_bai]
-
-        ASCAT (
-            ascat_ch,
-            params.genome_name,
-            allele_files,
-            loci_files,
-            [],
-            [],
-            gc_file,
-            rt_file
-        )
-
-        ch_versions = ch_versions.mix(ASCAT.out.versions)
-
-        // Collect all ASCAT copy-number files (segments_raw, purityploidy, diagnostic PNGs) per sample
-        // for the final report module -- it globs by suffix, so exact grouping doesn't matter.
-        ch_ascat_files = ASCAT.out.segments_raw
-            .mix(ASCAT.out.purityploidy, ASCAT.out.png)
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }
-        // ch_ascat_files: [meta, [file, file, ...]]
-    }
-
-    //
     // MODULE: WAKHAN (label: process_medium)
     // Haplotype-aware genome assembly and variant phasing visualisation
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
@@ -1191,10 +1266,8 @@ workflow LRSOMATIC {
     }
 
     //
-    // Collate software versions from two sources:
-    //   1. ch_versions (classic path): version YAML files emitted by modules
-    //   2. channel.topic("versions") (topic channel path): version tuples [process, tool, version]
-    //      emitted directly by modules that use the topic-channel pattern
+    // Collate software versions from ch_versions (YAML files) and channel.topic("versions")
+    // (tuples emitted directly by modules using the topic-channel pattern)
     //
     def topic_versions = channel.topic("versions")
         .distinct()  // deduplicate identical version entries across samples

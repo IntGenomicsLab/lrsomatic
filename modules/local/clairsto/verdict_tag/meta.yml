@@ -1,0 +1,119 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "clairsto_verdict_tag"
+description: |
+  Tag ClairS-TO's tumour-only calls as germline, somatic or subclonal somatic with ClairS-TO's own
+  Verdict tagging step, but from the purity, ploidy and copy number segments R ASCAT estimated for
+  the sample instead of the estimate Verdict makes for itself.
+keywords:
+  - clairs-to
+  - verdict
+  - ascat
+  - germline
+  - somatic
+  - tumor-only
+tools:
+  - "clairsto":
+      description: "ClairS-TO is a deep-learning method for long-read tumor-only somatic small variant calling"
+      homepage: "https://github.com/HKU-BAL/ClairS-TO"
+      documentation: "https://github.com/HKU-BAL/ClairS-TO/blob/main/docs/verdict.md"
+      tool_dev_url: "https://github.com/HKU-BAL/ClairS-TO"
+      doi: "10.1038/s41467-025-64547-z"
+      licence: ["BSD-3-clause"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+    - snv_vcf:
+        type: file
+        description: |
+          ClairS-TO SNV calls without Verdict tags (called with --disable_verdict), bgzipped
+        pattern: "*.vcf.gz"
+    - indel_vcf:
+        type: file
+        description: |
+          ClairS-TO indel calls without Verdict tags (called with --disable_verdict), bgzipped
+        pattern: "*.vcf.gz"
+    - purityploidy:
+        type: file
+        description: |
+          ASCAT purity/ploidy table for the same sample (AberrantCellFraction, Ploidy). ASCAT writes
+          0 and 0 when it found no solution; the calls are then passed through untagged.
+        pattern: "*purityploidy.txt"
+    - segments:
+        type: file
+        description: |
+          ASCAT allele-specific copy number segments for the same sample (sample, chr, startpos,
+          endpos, nMajor, nMinor). Contig names are respelled to match the VCF (chr1 or 1).
+        pattern: "*segments.txt"
+
+output:
+  snv_vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "snv.vcf.gz":
+          type: file
+          description: |
+            The SNV calls with Verdict_Germline / Verdict_Somatic / Verdict_SubclonalSomatic INFO
+            flags; variants tagged germline have FILTER set to LowQual, as ClairS-TO does. Unchanged
+            when ASCAT's purity is above 0.6 or ASCAT found no solution.
+          pattern: "snv.vcf.gz"
+  snv_tbi:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "snv.vcf.gz.tbi":
+          type: file
+          description: Index of the tagged SNV calls
+          pattern: "snv.vcf.gz.tbi"
+  indel_vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "indel.vcf.gz":
+          type: file
+          description: The indel calls, tagged the same way
+          pattern: "indel.vcf.gz"
+  indel_tbi:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "indel.vcf.gz.tbi":
+          type: file
+          description: Index of the tagged indel calls
+          pattern: "indel.vcf.gz.tbi"
+  purity_ploidy:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*_Tumor_Purity_Ploidy.txt":
+          type: file
+          description: |
+            ASCAT's purity and ploidy in the layout Verdict reads; the values the tags were computed
+            from. Absent when ASCAT found no solution.
+          pattern: "*_Tumor_Purity_Ploidy.txt"
+  cna:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*_Tumor_CNA.txt":
+          type: file
+          description: ASCAT's segments in the layout Verdict reads, contigs spelled as in the VCF
+          pattern: "*_Tumor_CNA.txt"
+  versions_clairsto:
+    - - "${task.process}":
+          type: string
+          description: Process name
+      - "clairsto":
+          type: string
+          description: Tool name
+      - "run_clairs_to --version":
+          type: string
+          description: ClairS-TO version, from the versions topic
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

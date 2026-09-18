@@ -162,6 +162,13 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
+                },
+                "clairsto_cna_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Verdict CNA resource directory for ClairS-TO, holding loci_files/, allele_files/ and one GC_*.txt. Read only with --skip_ascat.",
+                    "help_text": "ClairS-TO's Verdict module tags tumour-only calls as germline or somatic using ASCAT loci, allele and GC content files built on the assembly the BAM was aligned to. Only ClairS-TO's built-in estimate reads them, so this applies to `--skip_ascat` runs; otherwise the tagging is computed from the pipeline's own ASCAT run and this parameter is ignored. The image ships the GRCh38 set, and with `--genome CHM13 --skip_ascat` the pipeline builds a CHM13 set from the ASCAT files it already downloads, so this is only needed for another assembly or to override either. The directory must be self-contained: it is staged into the task on its own, so links reaching outside it would be missing inside the container. Add an `RT_<name>.txt` to correct LogR for replication timing as well as GC content; without one, correction is GC-only, as ASCAT does and as ClairS-TO recommends for CHM13.",
+                    "fa_icon": "fas fa-folder-open"
                 }
             }
         },
@@ -507,7 +514,7 @@
                 },
                 "skip_ascat": {
                     "type": "boolean",
-                    "description": "Skip ASCAT"
+                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's."
                 },
                 "skip_m6a": {
                     "type": "boolean",

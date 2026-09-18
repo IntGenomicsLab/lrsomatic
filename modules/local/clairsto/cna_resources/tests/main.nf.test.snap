@@ -1,0 +1,151 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "CHM13"
+                        },
+                        [
+                            "GC_CHM13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            [
+                                "G1000_alleles_CHM13_chr1.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr10.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr11.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr12.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr14.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr15.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr16.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr17.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr18.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr19.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr2.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr20.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr21.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr22.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr3.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr4.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr5.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr6.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr7.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr8.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr9.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chrX.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ],
+                            [
+                                "G1000_loci_CHM13_chr1.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr10.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr11.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr12.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr14.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr15.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr16.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr17.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr18.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr19.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr2.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr20.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr21.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr22.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr3.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr4.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr5.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr6.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr7.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr8.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr9.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chrX.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ]
+                        ]
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,ba48f6fcb2653d9ac70de54f63565db2"
+                ],
+                "cna_resources": [
+                    [
+                        {
+                            "id": "CHM13"
+                        },
+                        [
+                            "GC_CHM13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            [
+                                "G1000_alleles_CHM13_chr1.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr10.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr11.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr12.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr14.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr15.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr16.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr17.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr18.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr19.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr2.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr20.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr21.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr22.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr3.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr4.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr5.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr6.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr7.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr8.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chr9.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_alleles_CHM13_chrX.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ],
+                            [
+                                "G1000_loci_CHM13_chr1.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr10.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr11.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr12.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr13.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr14.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr15.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr16.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr17.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr18.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr19.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr2.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr20.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr21.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr22.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr3.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr4.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr5.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr6.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr7.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr8.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chr9.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "G1000_loci_CHM13_chrX.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ]
+                        ]
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,ba48f6fcb2653d9ac70de54f63565db2"
+                ]
+            }
+        ],
+        "timestamp": "2026-09-17T14:17:35.412514203",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "CHM13 ASCAT set - builds the resource directory": {
+        "content": [
+            [
+                "versions.yml:md5,ba48f6fcb2653d9ac70de54f63565db2"
+            ]
+        ],
+        "timestamp": "2026-09-17T14:17:23.848536401",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

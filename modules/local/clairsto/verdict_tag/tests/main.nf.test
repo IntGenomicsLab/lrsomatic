@@ -1,0 +1,159 @@
+nextflow_process {
+
+    name "Test Process CLAIRSTO_VERDICT_TAG"
+    script "../main.nf"
+    process "CLAIRSTO_VERDICT_TAG"
+
+    tag "modules"
+    tag "modules_local"
+    tag "clairsto_verdict_tag"
+    tag "small"
+
+    // Fixtures (tests/fixtures): ClairS-TO-shaped SNV and indel VCFs on chr1/chr2 and ASCAT tables that call the
+    // contigs "1" and "2", with chr1:1-1M and chr2:1-1M at 1/1 and chr1:1M-2M at 2/1.
+    test("purity 0.5 - tags from ASCAT's purity and segments") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample3', paired_data:false, sex:'XX' ],
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.purity_0.5.purityploidy.txt", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.segments.txt", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def snv   = path(process.out.snv_vcf[0][1]).linesGzip.findAll { line -> !line.startsWith('#') }
+            def indel = path(process.out.indel_vcf[0][1]).linesGzip.findAll { line -> !line.startsWith('#') }
+            def byPos = { lines, chrom, pos -> lines.find { line -> line.startsWith("${chrom}\t${pos}\t") } }
+
+            assertAll(
+                { assert process.success },
+                { assert snv.size() == 8 },
+                { assert indel.size() == 2 },
+
+                // A het at AF 0.5 in a 1/1 region is germline at purity 0.5: LowQual + flag, as ClairS-TO does
+                { assert byPos(snv, 'chr1', 1000).split('\t')[6] == 'LowQual' },
+                { assert byPos(snv, 'chr1', 1000).contains('Verdict_Germline') },
+                // A het at AF 0.25 is a clonal somatic variant at purity 0.5
+                { assert byPos(snv, 'chr1', 2000).split('\t')[6] == 'PASS' },
+                { assert byPos(snv, 'chr1', 2000).contains('Verdict_Somatic') },
+                // AF above 0.95 is germline outright
+                { assert byPos(snv, 'chr1', 3000).contains('Verdict_Germline') },
+                // AF below 0.05 at 0.2 < purity < 0.6 is subclonal somatic
+                { assert byPos(snv, 'chr1', 4000).contains('Verdict_SubclonalSomatic') },
+                // Not PASS: Verdict does not look at it
+                { assert !byPos(snv, 'chr1', 5000).contains('Verdict_') },
+                { assert byPos(snv, 'chr1', 5000).split('\t')[6] == 'NonSomatic' },
+                // ASCAT's "2" was respelled to the VCF's "chr2", so this one is reached
+                { assert byPos(snv, 'chr2', 500).contains('Verdict_Germline') },
+                // Beyond the last segment on chr2: no copy number state, so no tag
+                { assert !byPos(snv, 'chr2', 3000000).contains('Verdict_') },
+                // Indels go through the same step
+                { assert byPos(indel, 'chr1', 6000).contains('Verdict_Germline') },
+                { assert byPos(indel, 'chr1', 7000).contains('Verdict_Somatic') },
+
+                // The tables Verdict read, for the record
+                { assert path(process.out.purity_ploidy[0][1]).text == 'Sample\tPurity\tPloidy\tGoodnessOfFit\nsample3\t0.5\t2.0123\tNA\n' },
+                { assert path(process.out.cna[0][1]).readLines()[1] == 'sample3\tchr1\t1\t1000000\t1\t1' },
+                { assert path(process.out.cna[0][1]).readLines()[3] == 'sample3\tchr2\t1\t1000000\t1\t1' },
+
+                { assert snapshot(
+                    snv,
+                    indel,
+                    process.out.purity_ploidy,
+                    process.out.cna,
+                    process.out.versions_clairsto
+                ).match() }
+            )
+        }
+    }
+
+    test("purity 0.7 - above Verdict's cutoff, calls pass through untouched") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample3', paired_data:false, sex:'XX' ],
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.purity_0.7.purityploidy.txt", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.segments.txt", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.snv_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz").linesGzip },
+                { assert path(process.out.indel_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz").linesGzip },
+                { assert path(process.out.snv_tbi[0][1]).exists() },
+                { assert path(process.out.indel_tbi[0][1]).exists() },
+                // The purity is recorded even though nothing was tagged
+                { assert path(process.out.purity_ploidy[0][1]).readLines()[1] == 'sample3\t0.7\t1.98\tNA' }
+            )
+        }
+    }
+
+    test("no ASCAT solution - calls pass through, no purity written") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample3', paired_data:false, sex:'XX' ],
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.no_solution.purityploidy.txt", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.segments.txt", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.snv_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz").linesGzip },
+                { assert path(process.out.indel_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz").linesGzip },
+                // A purity of 0 must not reach Verdict, which would take it literally
+                { assert process.out.purity_ploidy == [] },
+                { assert path(process.out.cna[0][1]).readLines().size() == 4 }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample3', paired_data:false, sex:'XX' ],
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.purity_0.5.purityploidy.txt", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.segments.txt", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

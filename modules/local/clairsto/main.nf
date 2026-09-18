@@ -1,22 +1,28 @@
-
 process CLAIRSTO {
     tag "$meta.id"
     label 'process_very_high'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/hkubal/clairs-to:v0.4.2':
-        'docker.io/hkubal/clairs-to:v0.4.2' }"
+    // Fork of ClairS-TO 0.5.1 that resolves Verdict's CNA resources from --cna_resource_dir
+    // instead of hardcoded GRCh38 names. No conda build; revert once upstream carries it.
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://ghcr.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8'
+        : 'ghcr.io/ljwharbers/clairs-to:0.5.1-verdict-chm13-c0687e8'}"
 
     input:
     tuple val(meta), path(tumor_bam), path(tumor_bai), val(model), path(pon_vcfs), val(pon_flags)
     tuple val(meta2), path(reference)
     tuple val(meta3), path(index)
+    // Verdict's ASCAT set for this assembly, from CLAIRSTO_CNA_RESOURCES; [] uses the image's own
+    tuple val(meta4), path(cna_resources)
 
     output:
     tuple val(meta), path("indel.vcf.gz"),      emit: indel_vcf
     tuple val(meta), path("indel.vcf.gz.tbi"),  emit: indel_tbi
     tuple val(meta), path("snv.vcf.gz"),        emit: snv_vcf
     tuple val(meta), path("snv.vcf.gz.tbi"),    emit: snv_tbi
+    // What Verdict tagged from, when it ran inside ClairS-TO (--skip_ascat); absent otherwise
+    tuple val(meta), path("*_Tumor_Purity_Ploidy.txt"), emit: purity_ploidy, optional: true
+    tuple val(meta), path("*_Tumor_CNA.txt"),           emit: cna,           optional: true
     tuple val("${task.process}"), val('clairsto'), eval("run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'"), topic: versions, emit: versions_clairsto
 
     when:
@@ -25,7 +31,10 @@ process CLAIRSTO {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def conda_prefix = workflow.containerEngine == 'singularity' ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
+    // The launcher cannot locate its own conda environment inside a read-only image
+    def conda_prefix = (workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
+    // Omitted for GRCh38; a set that cannot belong to --ref_fn disables Verdict with a warning
+    def cna_resource_dir = cna_resources ? "--cna_resource_dir ${cna_resources}" : ''
     def pon_string   = pon_vcfs.join(',')
     def flags_string = pon_flags.join(',')
 
@@ -37,10 +46,30 @@ process CLAIRSTO {
         --threads $task.cpus \\
         --output_dir . \\
         --sample_name ${prefix} \\
+        --snv_output_prefix snv_out \\
+        --indel_output_prefix indel_out \\
         --panel_of_normals ${pon_string} \\
         --panel_of_normals_require_allele_matching ${flags_string} \\
         $conda_prefix \\
-        $args \\
+        $cna_resource_dir \\
+        $args
+
+    # 0.5.1 renames its outputs after --sample_name, but only while the prefixes still hold their
+    # defaults, so the explicit ones above are passed through untouched and these names are fixed.
+    mv snv_out.vcf.gz snv.vcf.gz
+    mv snv_out.vcf.gz.tbi snv.vcf.gz.tbi
+    mv indel_out.vcf.gz indel.vcf.gz
+    mv indel_out.vcf.gz.tbi indel.vcf.gz.tbi
+
+    # Verdict's own purity/ploidy and copy number, when it ran here rather than in
+    # CLAIRSTO_VERDICT_TAG. They are written inside ClairS-TO's work directory under the tool's
+    # default sample name, so lift them out under the same names that step publishes.
+    for table in Purity_Ploidy CNA; do
+        src=\$(find . -path "*/cna_output/*_Tumor_\${table}.txt" -print -quit)
+        if [ -n "\$src" ]; then
+            cp -- "\$src" "${prefix}_Tumor_\${table}.txt"
+        fi
+    done
     """
 
     stub:
