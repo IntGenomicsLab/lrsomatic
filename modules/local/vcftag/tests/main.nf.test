@@ -1,0 +1,68 @@
+nextflow_process {
+
+    name "Test Process VCFTAG"
+    script "../main.nf"
+    process "VCFTAG"
+
+    tag "modules"
+    tag "modules_local"
+    tag "vcftag"
+
+    // Runs for real (no -stub): the tagging is an awk program embedded in the Nextflow script
+    // block, so the escaping only holds if it is actually executed.
+    test("stamps the flag, declares its header and normalises FILTER") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = 'SOMATIC'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def lines = path(process.out.vcf[0][1]).vcf.variantsAsStrings
+            def header = path(process.out.vcf[0][1]).vcf.header.getMetaDataInSortedOrder().join('\n')
+
+            assertAll(
+                // every input record survives -- tagging must not filter
+                { assert lines.size() == 4 },
+                // the flag is declared, so bcftools can query it downstream
+                { assert header.contains('ID=SOMATIC') },
+                // every record carries the flag, including the one whose INFO was '.'
+                { assert lines.every { it.contains('SOMATIC') } },
+                // FILTER is normalised to PASS on all records, including NonSomatic and RefCall
+                { assert lines.every { it.split('\t')[6] == 'PASS' } },
+                // a pre-existing INFO field is preserved rather than overwritten
+                { assert lines.any { it.contains('EXISTING') && it.contains('CALLER=clairs-to') } },
+                // the record whose INFO was '.' gets the bare flag, not '.;SOMATIC'
+                { assert lines.any { it.split('\t')[7] == 'SOMATIC' } }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [] ]
+                input[1] = 'GERMLINE'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

@@ -22,12 +22,13 @@ workflow VCF_PASS_FILTER {
 
     main:
     if (params.smallvar_filter_pass) {
-        // --write-index is set in conf/modules.config because the module's index output is
-        // optional, and the join() below would otherwise drop every sample.
+        // The module declares `emit: index, optional: true`, so the index only exists because
+        // conf/modules.config puts --write-index=tbi in ext.args for every alias. failOnMismatch
+        // turns a missing index into an immediate error instead of silently dropping the sample.
         PASS_FILTER ( vcfs, [], [], [] )
 
         PASS_FILTER.out.vcf
-            .join(PASS_FILTER.out.index)
+            .join(PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
             .set{ filtered }
     }
     else {

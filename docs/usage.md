@@ -353,15 +353,15 @@ The tools run from a purpose-built image (`ghcr.io/ljwharbers/sigprofiler`) beca
 
 These options control how variants from multiple callers are filtered and merged.
 
-| Parameter                      | Description                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`             |
-| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`              |
-| `--germline_var_combine`       | Strategy for combining germline variant caller outputs (e.g. union, intersection). Default = `null` |
-| `--somatic_var_combine`        | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`  |
-| `--prioritize_caller_germline` | Comma-separated caller priority order used when combining germline calls. Default = `null`          |
-| `--prioritize_caller_somatic`  | Comma-separated caller priority order used when combining somatic calls. Default = `null`           |
-| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                  |
+| Parameter                      | Description                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`                       |
+| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`                        |
+| `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`     |
+| `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`      |
+| `--prioritize_caller_germline` | Whose record to use for variants called by both germline callers: `deepvariant` or `clair`. Default = `clair` |
+| `--prioritize_caller_somatic`  | Whose record to use for variants called by both somatic callers: `deepsomatic` or `clair`. Default = `clair`  |
+| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                            |
 
 DeepVariant and DeepSomatic emit a record for every site they evaluate, not only
 for the variants they call: on a 30x PacBio tumour sample a DeepSomatic VCF holds
@@ -374,9 +374,39 @@ by three orders of magnitude and produces a meaningless mutation burden.
 `--smallvar_filter_pass` (`true` by default) restricts the copy of each caller's
 VCF that is handed to the caller consensus, phasing, VEP and the report. Set it to
 `false` to restore the previous unfiltered behaviour. In tumor-only mode ClairS-TO
-is unaffected by the setting: `VCFSPLIT` already restricts it to `PASS`. The
-per-caller VCFs published under `<outdir>/<sample>/variants/<caller>` are never
-filtered, so no calls are lost from the results directory.
+is unaffected by the setting: `VCFSPLIT` already restricts its somatic split to
+`PASS`. The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>`
+are never filtered, so no calls are lost from the results directory.
+
+`consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
+every variant called by either. In both modes `--prioritize_caller_*` chooses only
+whose record represents a variant that both callers found -- it never decides which
+variants are kept.
+
+#### Germline and somatic provenance
+
+Germline and somatic small variants are merged into one VCF for somatic phasing,
+because Longphase needs all variant sites in a single file to produce consistent
+phase blocks. The somatic arm is then recovered from the phased result.
+
+That recovery selects on an `INFO/SOMATIC` flag stamped on each arm before the merge,
+not on position. A positional restriction cannot separate the two populations: a
+germline record at the same coordinate as a somatic call is indistinguishable from
+it, and `FILTER` is no help either, since `VCFSPLIT` normalises the ClairS-TO
+germline split to `PASS` so that downstream tools which filter on `PASS` still see
+every record.
+
+Three INFO fields carry this provenance:
+
+| Field | Meaning |
+| ----- | ------- |
+| `SOMATIC` | Record came from the somatic call set |
+| `GERMLINE` | Record came from the germline call set |
+| `ORIG_FILTER` | The `FILTER` value in the ClairS-TO output, before normalisation to `PASS` |
+
+Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
+lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
+`vep/germline/`, and in the unfiltered per-caller VCFs under `variants/<caller>/`.
 
 #### PON Options
 

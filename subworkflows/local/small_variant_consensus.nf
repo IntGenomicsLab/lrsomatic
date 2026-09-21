@@ -17,7 +17,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     fasta            // [[:], fasta]
     _fai             // [[:], fai]
     prioritize_caller // str: which caller's calls take priority ('deepvariant'/'deepsomatic' or 'clair')
-    combine_method   // str: 'consensus' (intersection only) or 'all' (intersection + private calls from priority caller)
+    combine_method   // str: 'consensus' (shared calls only) or 'all' (union of both callers' calls)
 
     main:
 
@@ -205,6 +205,9 @@ workflow SMALL_VARIANT_CONSENSUS {
             BCFTOOLS_ISEC.out.clair_consensus_vcf
                 .set{isec_consensus_vcf}
         }
+        else {
+            error("prioritize_caller must be one of [deepvariant, deepsomatic, clair], got '${prioritize_caller}'")
+        }
         // BCFTOOLS_ISEC outputs hardcoded names (0002.vcf.gz) inside a prefix directory.
         // Nextflow stages files using basename only, so both germline and somatic consensus
         // VCFs would collide as "0002.vcf.gz" in downstream PHASING_HAPLOTYPING:BCFTOOLS_CONCAT.
@@ -216,45 +219,56 @@ workflow SMALL_VARIANT_CONSENSUS {
     }
 
     else if (combine_method == 'all') {
-        // Take the intersection PLUS the private calls from the prioritized caller
-        // (private calls from the non-priority caller are discarded)
+        // Union: every variant called by either caller. Variants called by both contribute a
+        // single record, taken from the prioritized caller; the private calls of BOTH callers
+        // are kept. This matches `*_var_combine = 'all'` in nextflow_schema.json ("keeps all
+        // variants from both callers"); `prioritize_caller` only selects whose record is used
+        // for the shared variants, never which calls are kept.
+        // The three isec sets are disjoint by construction, so BCFTOOLS_CONCAT needs no -d.
         if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
-            // consensus (DeepVariant record) + DeepVariant-private variants
+            // shared (DeepVariant record) + DeepVariant-private + Clair-private
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_consensus_tbi)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_vcf)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_private_vcf)
                 .join(BCFTOOLS_ISEC.out.clair_private_tbi)
-                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
-                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                .map{ meta, shared_vcf, shared_tbi, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [shared_vcf, deepvar_vcf, clair_vcf], [shared_tbi, deepvar_tbi, clair_tbi]]
                 }
                 .set{concat_input}
-            // concat_input: [meta, [consensus_vcf, private_vcf], [consensus_tbi, private_tbi]]
-            BCFTOOLS_CONCAT(concat_input)
-            BCFTOOLS_CONCAT.out.vcf
-                .set{concat_out}
         }
         else if (prioritize_caller == 'clair') {
-            // consensus (Clair record) + Clair-private variants
-            BCFTOOLS_ISEC.out.deepvar_private_vcf
-                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
-                .join(BCFTOOLS_ISEC.out.clair_consensus_vcf)
+            // shared (Clair record) + DeepVariant-private + Clair-private
+            BCFTOOLS_ISEC.out.clair_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.clair_consensus_tbi)
-                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
-                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                .join(BCFTOOLS_ISEC.out.deepvar_private_vcf)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
+                .join(BCFTOOLS_ISEC.out.clair_private_vcf)
+                .join(BCFTOOLS_ISEC.out.clair_private_tbi)
+                .map{ meta, shared_vcf, shared_tbi, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [shared_vcf, deepvar_vcf, clair_vcf], [shared_tbi, deepvar_tbi, clair_tbi]]
                 }
                 .set{concat_input}
-            // concat_input: [meta, [private_vcf, consensus_vcf], [private_tbi, consensus_tbi]]
-            BCFTOOLS_CONCAT(concat_input)
-            BCFTOOLS_CONCAT.out.vcf
-                .set{concat_out}
         }
-        // concat_out: [meta, vcf]  -- unsorted concatenated VCF (consensus + priority-caller-private)
+        else {
+            error("prioritize_caller must be one of [deepvariant, deepsomatic, clair], got '${prioritize_caller}'")
+        }
+        // concat_input: [meta, [shared_vcf, deepvar_private_vcf, clair_private_vcf], [tbis...]]
+        BCFTOOLS_CONCAT(concat_input)
+        BCFTOOLS_CONCAT.out.vcf
+            .set{concat_out}
+        // concat_out: [meta, vcf]  -- unsorted union of both callers' calls
         BCFTOOLS_SORT(concat_out)
         BCFTOOLS_SORT.out.vcf
             .set{vcf}
         BCFTOOLS_SORT.out.tbi
             .set{tbi}
-        // vcf/tbi: [meta, vcf/tbi]  -- sorted combined VCF
+        // vcf/tbi: [meta, vcf/tbi]  -- sorted union VCF
+    }
+
+    else {
+        error("combine_method must be 'consensus' or 'all', got '${combine_method}'")
     }
 
     emit:

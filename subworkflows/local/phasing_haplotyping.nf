@@ -8,6 +8,8 @@ include { SAMTOOLS_INDEX                                    } from '../../module
 include { BCFTOOLS_CONCAT                                   } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                     } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_VIEW                                     } from '../../modules/local/bcftools/view/main.nf'
+include { VCFTAG as TAG_SOMATIC                             } from '../../modules/local/vcftag/main.nf'
+include { VCFTAG as TAG_GERMLINE                            } from '../../modules/local/vcftag/main.nf'
 
 
 workflow PHASING_HAPLOTYPING {
@@ -139,10 +141,30 @@ workflow PHASING_HAPLOTYPING {
 
     }
 
+    //
+    // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
+    // Stamp each arm with an INFO provenance flag before they are merged. This is the only
+    // point where germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS
+    // can emit records that never passed through VCFSPLIT, so tagging further upstream would
+    // leave holes. After the merge the two populations are otherwise indistinguishable -- both
+    // carry FILTER=PASS, and VCFSPLIT rewrites the ClairS-TO germline FILTER to PASS as well.
+    // LongPhase preserves custom INFO keys, so the flags survive phasing (verified on v2.0.1).
+    //
+    TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
+    TAG_GERMLINE( germline_vcf, 'GERMLINE' )
+
+    TAG_SOMATIC.out.vcf
+        .join(TAG_SOMATIC.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .set{ tagged_somatic_vcf }
+    TAG_GERMLINE.out.vcf
+        .join(TAG_GERMLINE.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .set{ tagged_germline_vcf }
+    // tagged_*_vcf: [meta, vcf, tbi]
+
     // Merge germline and somatic VCFs into a single file for somatic phasing
     // Longphase requires all variant sites in one VCF to produce a consistent phase block
-    germline_vcf
-        .join(somatic_vcf)
+    tagged_germline_vcf
+        .join(tagged_somatic_vcf)
         .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
                 def vcfs = [som_vcf, germ_vcf]  // somatic first (higher priority in phasing)
                 def tbis = [som_tbi, germ_tbi]
@@ -178,7 +200,7 @@ workflow PHASING_HAPLOTYPING {
     if (!params.skip_modcall) {
         // With modcall: include base-modification VCF as additional phasing evidence
         normal_bams_w_tumoronly_ch
-            .join(germline_vcf)
+            .join(tagged_germline_vcf)
             .join(LONGPHASE_MODCALL_GERMLINE.out.mod_vcf)
             .map { meta, bam, bai, vcf, _tbi, mods->
                 def svs = []  // SVs for phasing are not used here
@@ -200,7 +222,7 @@ workflow PHASING_HAPLOTYPING {
     else {
         // Without modcall: empty lists for SVs and mods
         normal_bams_w_tumoronly_ch
-            .join(germline_vcf)
+            .join(tagged_germline_vcf)
             .map { meta, bam, bai, vcf, _tbi ->
                 def svs = []
                 def mods = []
@@ -258,23 +280,17 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: BCFTOOLS_VIEW (label: process_medium)
-    // Filter the phased somatic+germline VCF to somatic-only positions.
-    // Uses the original somatic VCF as a targets (-T) file so only positions
-    // called as somatic are retained.  Phase tags (PS/HP) on somatic variants
-    // are preserved; germline records are dropped.
-    // Input:  [meta, phased_combined_vcf, phased_combined_tbi, somatic_vcf, somatic_tbi]
+    // Reduce the phased somatic+germline VCF to the somatic arm, selecting on the INFO/SOMATIC
+    // flag stamped before the merge. This selects by provenance rather than by position: the
+    // previous `-T <somatic vcf>` targets file matched CHROM/POS only, so every germline record
+    // co-located with a somatic call was retained and became indistinguishable from a somatic
+    // one downstream. Phase tags (PS/HP) on somatic variants are preserved; germline records
+    // are dropped here but remain published in full under variants/phased/ and vep/germline/.
+    // Input:  [meta, phased_combined_vcf, phased_combined_tbi]
     // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
     //         .tbi -- [meta, tbi]
     //
-    phased_somatic_germline_vcf
-        .join(somatic_vcf)
-        .map { meta, phased_vcf, phased_tbi, som_vcf, som_tbi ->
-            return [ meta, phased_vcf, phased_tbi, som_vcf, som_tbi ]
-        }
-        .set { bcftools_view_input_ch }
-    // bcftools_view_input_ch: [meta, phased_combined_vcf, tbi, somatic_vcf, somatic_tbi]
-
-    BCFTOOLS_VIEW ( bcftools_view_input_ch )
+    BCFTOOLS_VIEW ( phased_somatic_germline_vcf )
 
     BCFTOOLS_VIEW.out.vcf
         .join(BCFTOOLS_VIEW.out.tbi)

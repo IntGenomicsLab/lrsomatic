@@ -128,7 +128,9 @@ workflow TUMORONLY_SMALLVAR {
 
         // DeepVariant emits a record for every site it evaluates, not just its calls, so
         // most records are RefCall. ClairS-TO needs no equivalent step here because
-        // VCFSPLIT already restricts it to PASS. The VCF published under
+        // VCFSPLIT already restricts its SOMATIC split to PASS -- note that its GERMLINE split
+        // is not PASS-filtered but PASS-rewritten, so a PASS filter would not reduce it and
+        // germline/somatic origin is carried in INFO by VCFTAG instead. The VCF published under
         // variants/deepvariant/ is unaffected.
         DEEPVARIANT_PASS_FILTER (
             DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)

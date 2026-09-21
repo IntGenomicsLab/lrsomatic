@@ -8,7 +8,7 @@ process BCFTOOLS_VIEW {
         : 'community.wave.seqera.io/library/bcftools_htslib:0a3fa2654b52006f'}"
 
     input:
-    tuple val(meta), path(vcf), path(tbi), path(targets), path(targets_tbi)
+    tuple val(meta), path(vcf), path(tbi)
 
     output:
     tuple val(meta), path("*.vcf.gz"),  emit: vcf
@@ -23,7 +23,7 @@ process BCFTOOLS_VIEW {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     bcftools view \\
-        -T ${targets} \\
+        -i 'INFO/SOMATIC=1' \\
         -Oz \\
         -W=tbi \\
         ${args} \\
