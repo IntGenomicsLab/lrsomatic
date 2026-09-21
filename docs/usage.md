@@ -398,11 +398,11 @@ every record.
 
 Three INFO fields carry this provenance:
 
-| Field | Meaning |
-| ----- | ------- |
-| `SOMATIC` | Record came from the somatic call set |
-| `GERMLINE` | Record came from the germline call set |
-| `ORIG_FILTER` | The `FILTER` value in the ClairS-TO output, before normalisation to `PASS` |
+| Field         | Meaning                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `SOMATIC`     | Record came from the somatic call set                                                                            |
+| `GERMLINE`    | Record came from the germline call set                                                                           |
+| `ORIG_FILTER` | The `FILTER` value in the ClairS-TO output, before normalisation to `PASS`. Multiple filters are joined with `,` |
 
 Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
 lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in

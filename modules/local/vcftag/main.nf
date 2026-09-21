@@ -27,10 +27,10 @@ process VCFTAG {
     # to PASS. Provenance has to live in INFO rather than FILTER: downstream steps rewrite and
     # filter on FILTER, so a FILTER-based label does not survive to where it is needed.
     # bcftools annotate cannot set a constant INFO field without an annotation file, hence awk.
-    bcftools view ${vcf} | awk -v flag="${flag}" 'BEGIN{FS=OFS="\\t"}
+    bcftools view ${vcf} | awk -v flag="${flag}" -v q='"' 'BEGIN{FS=OFS="\t"}
         /^##/ { print; next }
         /^#CHROM/ {
-            print "##INFO=<ID=" flag ",Number=0,Type=Flag,Description=\\"Record originates from the " tolower(flag) " call set\\">"
+            print "##INFO=<ID=" flag ",Number=0,Type=Flag,Description=" q "Record originates from the " tolower(flag) " call set" q ">"
             print
             next
         }

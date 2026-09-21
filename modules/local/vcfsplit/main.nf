@@ -33,10 +33,15 @@ process VCFSPLIT {
 
     # Record the caller's original FILTER in INFO. These records are already PASS, but stamping
     # both splits keeps them symmetric and self-describing alongside the germline arm below.
-    bcftools view somatic_tmp.vcf.gz | awk 'BEGIN{FS=OFS="\t"}
+    # The header line's double quotes arrive via -v q. Escaped quotes inside a Nextflow script
+    # block are fragile, and losing the escape silently produces an unparseable VCF header.
+    # FILTER is ";"-delimited but ";" separates INFO fields, so it is stored as ",".
+    bcftools view somatic_tmp.vcf.gz | awk -v q='"' 'BEGIN{FS=OFS="\t"}
         /^##/ { print; next }
-        /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=1,Type=String,Description=\"FILTER value in the ClairS-TO output\">"; print; next }
-        { \$8 = (\$8 == "." || \$8 == "") ? "ORIG_FILTER=" \$7 : \$8 ";ORIG_FILTER=" \$7; print }
+        /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description=" q "FILTER value in the ClairS-TO output" q ">"; print; next }
+        { of = \$7; gsub(/;/, ",", of)
+          \$8 = (\$8 == "." || \$8 == "") ? "ORIG_FILTER=" of : \$8 ";ORIG_FILTER=" of
+          print }
     ' | bgzip -c > somatic.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
@@ -53,12 +58,21 @@ process VCFSPLIT {
     # indistinguishable from somatic ones once the two sets were merged for phasing; it is kept in
     # INFO/ORIG_FILTER instead. Germline/somatic provenance itself is stamped later, by
     # PHASING_HAPLOTYPING:TAG_GERMLINE / TAG_SOMATIC, which covers callers that bypass VCFSPLIT.
-    bcftools view germline_tmp.vcf.gz | awk 'BEGIN{FS=OFS="\t"}
+    bcftools view germline_tmp.vcf.gz | awk -v q='"' 'BEGIN{FS=OFS="\t"}
         /^##/ { print; next }
-        /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=1,Type=String,Description=\"FILTER value in the ClairS-TO output\">"; print; next }
-        { \$8 = (\$8 == "." || \$8 == "") ? "ORIG_FILTER=" \$7 : \$8 ";ORIG_FILTER=" \$7; \$7 = "PASS"; print }
+        /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description=" q "FILTER value in the ClairS-TO output" q ">"; print; next }
+        { of = \$7; gsub(/;/, ",", of)
+          \$8 = (\$8 == "." || \$8 == "") ? "ORIG_FILTER=" of : \$8 ";ORIG_FILTER=" of
+          \$7 = "PASS"
+          print }
     ' | bgzip -c > germline.vcf.gz
     tabix -p vcf germline.vcf.gz
+
+    # Read both headers back. tabix will happily index a VCF whose header htslib cannot parse, so
+    # without this a malformed header surfaces as a confusing failure in a later process instead
+    # of here. set -e is in effect, so a bad header fails this task.
+    bcftools view -h somatic.vcf.gz > /dev/null
+    bcftools view -h germline.vcf.gz > /dev/null
 
     # Cleanup intermediate files
     rm indels_pass.vcf.gz snv_pass.vcf.gz somatic_tmp.vcf.gz
