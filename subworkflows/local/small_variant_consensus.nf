@@ -45,6 +45,16 @@ workflow SMALL_VARIANT_CONSENSUS {
     // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low) -- rename the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
+    // This guarantees the merged VCF exposes allele frequency under a single FORMAT key, which is
+    // what WAKHAN consumes. Every caller currently emits FORMAT/AF and none emits VAF (verified
+    // against Clair3, ClairS-TO, DeepVariant and DeepSomatic output), so under the default
+    // prioritize_caller='clair' it is a no-op; it is kept as the guarantee, not the mechanism.
+    //
+    // The callers do disagree on the AF *declaration*: ClairS-TO says Number=1, DeepVariant and
+    // DeepSomatic say Number=A. bcftools concat only warns and keeps the first file's definition.
+    // Renaming cannot fix that and `annotate -h` cannot override an existing FORMAT definition,
+    // but it is harmless because BCFTOOLS_NORM now splits multi-allelics (-m -any): every record
+    // reaching here carries one ALT and one AF value, making the two declarations equivalent.
     //
     if (combine_method == 'all') {
         normalized_vcfs
@@ -105,12 +115,20 @@ workflow SMALL_VARIANT_CONSENSUS {
     // annotated_vcfs: [meta(+caller), vcf, tbi]  -- VCF with CALLER INFO tag
 
     // Branch annotated VCFs by caller family for the intersection step
+    // An unrecognised meta.caller would silently vanish without the `other` arm, taking the whole
+    // sample out of the results with a successful exit.
     annotated_vcfs
         .branch { meta, _vcfs, _tbi ->
             deepvariant: meta.caller in [ 'deepvariant', 'deepsomatic' ]
             clair: meta.caller in ['clair3','clairs-to','clairs']
+            other: true
         }
         .set{annotated_vcfs_branched}
+
+    annotated_vcfs_branched.other
+        .map { meta, _vcfs, _tbi ->
+            error("SMALL_VARIANT_CONSENSUS: unrecognised meta.caller '${meta.caller}' for sample '${meta.id}'; expected one of [deepvariant, deepsomatic, clair3, clairs-to, clairs]")
+        }
     // annotated_vcfs_branched.deepvariant: [meta(caller=deepvariant/deepsomatic), vcf, tbi]
     // annotated_vcfs_branched.clair:       [meta(caller=clair3/clairs-to/clairs), vcf, tbi]
 
@@ -153,8 +171,10 @@ workflow SMALL_VARIANT_CONSENSUS {
     // deepvariant_ch: [meta (no caller), vcf, tbi]
 
     // Join DeepVariant and Clair VCFs per sample into a single tuple for BCFTOOLS_ISEC
+    // failOnMismatch: a sample present for one caller but not the other would otherwise be dropped
+    // from every downstream result while the run still reported success.
     deepvariant_ch
-        .join(clair_ch)
+        .join(clair_ch, failOnMismatch: true, failOnDuplicate: true)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
             def vcfs = [deepvar_vcf, clair_vcf]
             def tbis = [deepvar_tbi, clair_tbi]
