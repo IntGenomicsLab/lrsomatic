@@ -2,7 +2,6 @@ include { BCFTOOLS_NORM                                      } from '../../modul
 include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
 include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
-include { BCFTOOLS_ANNOTATE as STANDARDIZE_AF                } from '../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../modules/nf-core/bcftools/sort/main'
@@ -42,7 +41,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     // normalized_vcfs: [meta(+caller), vcf.gz, tbi]  -- normalised, sorted per-caller VCF
 
     //
-    // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low) -- rename the AF FORMAT field to the priority caller's:
+    // ALLELE FREQUENCY KEY -- BCFTOOLS_ANNOTATE below renames the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
     // This guarantees the merged VCF exposes allele frequency under a single FORMAT key, which is
@@ -56,27 +55,10 @@ workflow SMALL_VARIANT_CONSENSUS {
     // but it is harmless because BCFTOOLS_NORM now splits multi-allelics (-m -any): every record
     // reaching here carries one ALT and one AF value, making the two declarations equivalent.
     //
-    if (combine_method == 'all') {
-        normalized_vcfs
-            .map { meta, vcf, tbi ->
-                def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
-                def new_meta = meta + [rename_to: rename_to]
-                return [new_meta, vcf, tbi, [], [], [], [], []]
-            }
-            .set { standardize_input }
-
-        STANDARDIZE_AF(standardize_input)
-
-        STANDARDIZE_AF.out.vcf
-            .join(STANDARDIZE_AF.out.tbi)
-            .map { meta, vcf, tbi ->
-                def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
-                return [clean_meta, vcf, tbi]
-            }
-            .set { normalized_vcfs }
-        // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised, AF-standardized per-caller VCF
-    }
-    // In 'consensus' mode, normalized_vcfs comes from SORT_POST_NORM (post-BCFTOOLS_NORM re-sorting)
+    // The rename is carried out by BCFTOOLS_ANNOTATE below rather than by a second annotate call:
+    // meta.rename_to selects the --rename-annots file in conf/modules.config. Only 'all' mode needs
+    // it, since in 'consensus' mode every surviving record comes from one caller. BCFTOOLS_QUERY
+    // reads only CHROM/POS/REF/ALT, so it does not care whether the rename has happened yet.
 
     //
     // MODULE: BCFTOOLS_QUERY (label: process_single)
@@ -89,13 +71,18 @@ workflow SMALL_VARIANT_CONSENSUS {
 
     // Prepare BCFTOOLS_ANNOTATE input: VCF + caller-name annotation file
     normalized_vcfs
-        .join(BCFTOOLS_QUERY.out.output)
-        .join(BCFTOOLS_QUERY.out.index)
+        .join(BCFTOOLS_QUERY.out.output, failOnMismatch: true, failOnDuplicate: true)
+        .join(BCFTOOLS_QUERY.out.index, failOnMismatch: true, failOnDuplicate: true)
         .map{ meta, vcf, tbi, annotations, annotations_index ->
                     def columns = []       // no extra column specs
                     def header_lines = []  // no extra header lines
                     def rename_chrs = []   // no chromosome renaming
-                return [ meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
+                    // 'all' mode merges records from both callers into one VCF, so the allele
+                    // frequency key is unified here; 'consensus' mode needs no rename.
+                    def new_meta = combine_method == 'all'
+                        ? meta + [rename_to: (prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF')]
+                        : meta
+                return [ new_meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
              }
              .set{annotate_input}
     // annotate_input: [meta, vcf, tbi, annotations_tsv, annotations_tbi, [], [], []]
@@ -110,7 +97,11 @@ workflow SMALL_VARIANT_CONSENSUS {
     BCFTOOLS_ANNOTATE(annotate_input)
 
     BCFTOOLS_ANNOTATE.out.vcf
-        .join(BCFTOOLS_ANNOTATE.out.tbi)
+        .join(BCFTOOLS_ANNOTATE.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .map { meta, vcf, tbi ->
+            def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
+            return [clean_meta, vcf, tbi]
+        }
         .set{annotated_vcfs}
     // annotated_vcfs: [meta(+caller), vcf, tbi]  -- VCF with CALLER INFO tag
 
