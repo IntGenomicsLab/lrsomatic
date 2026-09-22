@@ -163,7 +163,10 @@ workflow PHASING_HAPLOTYPING {
     tagged_germline_vcf
         .join(tagged_somatic_vcf)
         .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
-                def vcfs = [som_vcf, germ_vcf]  // somatic first (higher priority in phasing)
+                // Order here is cosmetic: BCFTOOLS_CONCAT sorts its input file list alphabetically
+                // (modules/nf-core/bcftools/concat/main.nf), so the germline file is passed first
+                // regardless. With -a the output is coordinate-ordered either way.
+                def vcfs = [som_vcf, germ_vcf]
                 def tbis = [som_tbi, germ_tbi]
                 return [ meta, vcfs, tbis]
         }
