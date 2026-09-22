@@ -39,7 +39,7 @@ input:
         description: Groovy Map for the wrapper source
     - reconplot_src:
         type: directory
-        description: Tim-Yu/ReConPlot wrapper checkout (contains `run_reconplot.R` and `R/`)
+        description: ReConPlot wrapper directory (`assets/reconplot`, contains `run_reconplot.R`, `R/` and `VERSION`)
   - - meta3:
         type: map
         description: Groovy Map for the R package source
