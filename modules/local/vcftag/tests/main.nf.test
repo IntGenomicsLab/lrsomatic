@@ -28,8 +28,11 @@ nextflow_process {
         then {
             assert process.success
 
-            def lines = path(process.out.vcf[0][1]).vcf.variantsAsStrings
-            def header = path(process.out.vcf[0][1]).vcf.header.getMetaDataInSortedOrder().join('\n')
+            // linesGzip is built into nf-test; the .vcf accessor needs an nft-vcf plugin that
+            // nf-test.config does not load, so this reads the records directly.
+            def all    = path(process.out.vcf[0][1]).linesGzip
+            def lines  = all.findAll { line -> !line.startsWith('#') }
+            def header = all.findAll { line -> line.startsWith('##') }.join('\n')
 
             assertAll(
                 // every input record survives -- tagging must not filter
