@@ -56,7 +56,9 @@ b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://g
 
 a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
 
-b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
+b. Somatic structural variant and copy-number calling ([`SAVANA`](https://github.com/cortes-ciriano-lab/savana))
+
+c. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
 
 **4) Annotation:**
 
@@ -106,7 +108,7 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `ascat`) write to their own folders; see the [output documentation](/docs/output.md).
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; see the [output documentation](/docs/output.md).
 
 Example output directory structure:
 
@@ -124,6 +126,7 @@ Example output directory structure:
 │    ├── variants
 │    │   ├──clairS-TO
 │    │   ├──severus
+│    │   ├──savana
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic
@@ -150,6 +153,7 @@ Example output directory structure:
 │    │   ├── clair3
 │    │   ├── clairS
 │    │   ├── severus
+│    │   ├── savana
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic

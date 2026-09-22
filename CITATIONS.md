@@ -106,6 +106,10 @@
 
   > Keskus, A.G., Bryant, A., Ahmad, T. et al. Severus detects somatic structural variation and complex rearrangements in cancer genomes using long-read sequencing. Nat Biotechnol (2025). https://doi.org/10.1038/s41587-025-02618-8
 
+- [SAVANA](https://www.nature.com/articles/s41592-025-02708-0)
+
+  > Elrick, H. et al. SAVANA: reliable analysis of somatic structural variants and copy number aberrations using long-read sequencing. Nat Methods (2025). https://doi.org/10.1038/s41592-025-02708-0
+
 - [SIFT](https://doi.org/10.1093/nar/gkg509)
 
   > Ng PC, Henikoff S. SIFT: Predicting amino acid changes that affect protein function. Nucleic Acids Res. 2003 Jul 1;31(13):3812-4. doi: 10.1093/nar/gkg509.

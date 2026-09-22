@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added the [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) tool to the pipeline, first vendored as source at `assets/lrsomatic_report`, now shipped as a container (see the entry below) (@ljwharbers).
 - [#176](https://github.com/IntGenomicsLab/lrsomatic/pull/176) - Added a `solution_dirs` output to the WAKHAN module so its per-solution copy-number plots can be staged downstream (@ljwharbers).
 - [#193](https://github.com/IntGenomicsLab/lrsomatic/pull/193) - Added VEP plugins: AlphaMissense, SIFT/PolyPhen, ClinVar and REVEL on GRCh38, and AlphaMissense plus SIFT/PolyPhen on CHM13 via protein-space lookup. Enabled by default with `--genome GRCh38` or `--genome CHM13` (a first GRCh38 run downloads around 1.4 GB); any `--vep_*` path overrides its default and `--skip_vep_plugins` turns the set off. CADD and EVE are opt-in behind `--vep_cadd_snv`/`--vep_cadd_indel` and `--vep_eve` because of their size (81 GB and 9.6 GB); prepared REVEL and EVE files are published to `<outdir>/vep_plugins/` for reuse. Two lab-hosted AlphaMissense files are CC BY 4.0 with attribution in `CITATIONS.md` (@AmberVerhasselt).
+- [#189](https://github.com/IntGenomicsLab/lrsomatic/pull/189) - Added SAVANA structural variant and copy-number calling, running alongside Severus/ASCAT (@yannvrb).
 
 ### `Changed`
 

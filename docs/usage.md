@@ -185,6 +185,7 @@ If the loci cannot belong to the reference, ClairS-TO disables Verdict with a wa
 | `--skip_cramino`       | A boolean to skip `cramino`. Default = `false`                                                                                                                                                                                                                          |
 | `--skip_mosdepth`      | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_ascat`         | A boolean to skip `ascat`. ClairS-TO's Verdict germline tagging then falls back to Verdict's own purity and copy number estimate, which is still up to 0.14 from ASCAT's on the samples it was measured on — see [Verdict tags](output.md#clairs-to). Default = `false` |
+| `--skip_savana`        | A boolean to skip `savana` (SV + copy-number calling). Default = `false`                                                                                                                                                                                                |
 | `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                                                                                                           |
 | `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                                                                                                              |
@@ -287,6 +288,19 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | Parameter              | Description                                                                          |
 | ---------------------- | ------------------------------------------------------------------------------------ |
 | `--severus_minsupport` | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3` |
+
+#### SAVANA Options
+
+SAVANA reuses the haplotagged BAMs from `PHASING_HAPLOTYPING` and the same reference FASTA/index as
+every other caller. Matched tumor/normal samples run `savana run` + `savana classify` + `savana cna`,
+using the phased germline VCF as the SNP allele-frequency source for copy-number fitting; tumor-only
+samples run `savana to` instead (which chains the equivalent steps internally), using SAVANA's bundled
+1000 Genomes population SNP set rather than the tumour's own calls. Both modes are restricted to
+canonical chromosomes via a genome-specific `--contigs` file.
+
+| Parameter                | Description                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `--savana_pb_minsupport` | Minimum supporting reads for SAVANA to call a variant on PacBio samples (`--min_support` with `--pb`). Default = `10` |
 
 #### Report Options
 
