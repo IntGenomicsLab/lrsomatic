@@ -396,7 +396,8 @@
                 "padfoot_genome": {
                     "type": "string",
                     "enum": ["hg38", "chm13", "mm10"],
-                    "description": "Padfoot genome preset. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> chm13). Padfoot only bundles hg38/mm10 annotations; chm13 requires --padfoot_gff and --padfoot_rm."
+                    "description": "Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default: inferred from `--genome`.",
+                    "help_text": "GRCh38 -> hg38, CHM13 -> chm13. Padfoot bundles gene and repeat annotations for hg38 and mm10 only; chm13 and other presets need `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning."
                 },
                 "padfoot_gff": {
                     "type": "string",
