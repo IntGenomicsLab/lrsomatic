@@ -411,12 +411,13 @@ rather than `PASS`-filtered. The per-caller VCFs published under
 `<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
 from the results directory.
 
-Setting `--smallvar_filter_pass false` does **not** fully restore the pre-filter
-behaviour. `VCFTAG` normalises `FILTER` to `PASS` on both arms before phasing, so
-the later `--apply-filters PASS` on the signature input no longer removes
-anything: with the filter off, non-`PASS` records reach SigProfiler that
-previously could not. Use it to inspect the unfiltered call set, not to reproduce
-older results.
+Set it to `false` to restore the previous unfiltered behaviour. `VCFTAG`
+normalises `FILTER` to `PASS` on both arms before phasing, so the caller's own
+verdict is preserved in `INFO/ORIG_FILTER` and the signature input is filtered on
+that field rather than on `FILTER`; without this the `PASS` filter in front of
+SigProfiler could never remove anything once `FILTER` had been rewritten. Every
+published VCF downstream of phasing therefore reads `FILTER=PASS`, with the
+original value available in `INFO/ORIG_FILTER`.
 
 `consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
 every variant called by either. In both modes `--prioritize_caller_*` chooses only

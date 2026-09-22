@@ -42,8 +42,18 @@ nextflow_process {
                 { assert lines.every { it.split('\t')[6] == 'PASS' } },
                 // a pre-existing INFO field is preserved rather than overwritten
                 { assert lines.any { it.contains('EXISTING') && it.contains('CALLER=clairs-to') } },
-                // the record whose INFO was '.' gets the bare flag, not '.;SOMATIC'
-                { assert lines.any { it.split('\t')[7] == 'SOMATIC' } }
+                // the record whose INFO was '.' gets no leading '.', just the stamped fields
+                { assert lines.any { it.split('\t')[7] == 'ORIG_FILTER=RefCall;SOMATIC' } },
+                // the caller's FILTER is preserved before being normalised away
+                { assert header.contains('ID=ORIG_FILTER') },
+                { assert lines.every { it.contains('ORIG_FILTER=') } },
+                { assert lines.any { it.contains('ORIG_FILTER=PASS') } },
+                { assert lines.any { it.contains('ORIG_FILTER=NonSomatic') } },
+                { assert lines.any { it.contains('ORIG_FILTER=RefCall') } },
+                // a record whose FILTER was '.' records '.' rather than being skipped
+                { assert lines.any { it.contains('ORIG_FILTER=.') } },
+                // ORIG_FILTER is stamped exactly once per record
+                { assert lines.every { it.split('\t')[7].count('ORIG_FILTER=') == 1 } }
             )
         }
     }
