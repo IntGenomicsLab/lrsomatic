@@ -46,17 +46,6 @@ include { MODKIT_PILEUP                     } from '../modules/nf-core/modkit/pi
 include { BCFTOOLS_VIEW as SIGNATURES_BCFTOOLS_VIEW } from '../modules/nf-core/bcftools/view/main'
 include { SIGPROFILER_MATRIXGENERATOR       } from '../modules/local/sigprofiler/matrixgenerator/main'
 include { SIGPROFILER_ASSIGNMENT            } from '../modules/local/sigprofiler/assignment/main'
-include { PADFOOT as PADFOOT_SEVERUS_WAKHAN } from '../modules/local/padfoot/main'
-include { PADFOOT as PADFOOT_SAVANA         } from '../modules/local/padfoot/main'
-include { WGET as PADFOOT_WGET              } from '../modules/nf-core/wget/main'
-include { UNTAR as PADFOOT_UNTAR            } from '../modules/nf-core/untar/main'
-include { RECONPLOT as RECONPLOT_ASCAT_SEVERUS  } from '../modules/local/reconplot/main'
-include { RECONPLOT as RECONPLOT_WAKHAN_SEVERUS } from '../modules/local/reconplot/main'
-include { RECONPLOT as RECONPLOT_SAVANA         } from '../modules/local/reconplot/main'
-include { WGET as RECONPLOT_WGET                } from '../modules/nf-core/wget/main'
-include { UNTAR as RECONPLOT_UNTAR              } from '../modules/nf-core/untar/main'
-include { WGET as RECONPLOT_PKG_WGET            } from '../modules/nf-core/wget/main'
-include { UNTAR as RECONPLOT_PKG_UNTAR          } from '../modules/nf-core/untar/main'
 
 //
 // IMPORT SUBWORKFLOWS
@@ -71,6 +60,8 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
+include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 
 
 
@@ -1287,186 +1278,47 @@ workflow LRSOMATIC {
     }
 
     //
-    // MODULE: PADFOOT (label: process_medium)
-    // Functional annotation of somatic SVs + CNAs. Run once per available SV/CNA caller pair:
-    //   PADFOOT_SEVERUS_WAKHAN -- Severus somatic SVs + Wakhan best-solution integer CNA VCF
-    //   PADFOOT_SAVANA         -- SAVANA classified somatic SVs + SAVANA segmented absolute CN TSV
-    // Both paired and tumour-only samples are annotated. SAVANA CNA only exists when an SNP source was
-    // available (phased germline VCF for paired; 1000G panel for tumour-only on GRCh38/CHM13), so the
-    // join silently drops samples without CNA.
-    // SAVANA products come from PAIRED_SAVANA/TUMORONLY_SAVANA (nf-core savana modules, plain VCF).
-    // Padfoot is not on bioconda: the source tree is downloaded (params.padfoot_url) or taken from a
-    // local checkout (params.padfoot_dir); the container/conda env provide only its dependencies.
-    // Unsupported genomes (no bundled or user-supplied annotations) skip Padfoot with a warning.
+    // SUBWORKFLOW: PADFOOT_ANNOTATION -- Padfoot SV/CNA annotation per caller pair (Severus + Wakhan, SAVANA)
+    // Padfoot bundles annotations for hg38 and mm10 only; other genomes need --padfoot_gff and --padfoot_rm
+    // (validateInputParameters() warns when this gate is not met).
     //
-
     def padfoot_genome = params.padfoot_genome ?:
         (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
-    // Padfoot only bundles hg38/mm10 annotations; unsupported genomes are reported by validateInputParameters()
     def padfoot_annot_ok = padfoot_genome && ((padfoot_genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))
 
     if (!params.skip_padfoot && padfoot_annot_ok) {
-
-        padfoot_annot = [
-            [:],
-            padfoot_genome,
-            params.padfoot_gff ? file(params.padfoot_gff, checkIfExists: true) : [],
-            params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []
-        ]
-
-        if (params.padfoot_dir) {
-            padfoot_src = channel.value([[id: 'padfoot'], file(params.padfoot_dir, type: 'dir', checkIfExists: true)])
-        }
-        else {
-            // MODULE: PADFOOT_WGET + PADFOOT_UNTAR -- fetch Padfoot source tarball (GitHub archive)
-            PADFOOT_WGET( channel.value([[id: 'padfoot'], params.padfoot_url]) )
-            PADFOOT_UNTAR( PADFOOT_WGET.out.outfile )
-            padfoot_src = PADFOOT_UNTAR.out.untar
-            ch_versions = ch_versions.mix(PADFOOT_WGET.out.versions)
-        }
-        // padfoot_src: [meta, dir]  -- directory containing padfoot.py and beds/
-
-        if (!params.skip_wakhan) {
-            // Wakhan writes every fitted solution; solution_1/ holds the top-ranked one
-            WAKHAN.out.vcf_files
-                .map { meta, vcfs ->
-                    def files = [vcfs].flatten()
-                    def integers = files.findAll { vcf -> vcf.name.endsWith('_wakhan_cna_integers.vcf') }
-                    def best = integers.find { vcf -> vcf.toString().contains('/solution_1/') } ?: integers[0]
-                    return [meta, best]
-                }
-                .filter { _meta, vcf -> vcf != null }
-                .set { wakhan_best_cna }
-            // wakhan_best_cna: [meta, wakhan_cna_integers.vcf]
-
-            SEVERUS.out.somatic_vcf
-                .join(wakhan_best_cna)
-                .map { meta, sv, cna -> [meta, sv, 'severus', cna, 'wakhan'] }
-                .set { padfoot_severus_wakhan_input }
-            // padfoot_severus_wakhan_input: [meta, severus_somatic.vcf.gz, 'severus', wakhan_cna_integers.vcf, 'wakhan']
-
-            PADFOOT_SEVERUS_WAKHAN (
-                padfoot_severus_wakhan_input,
-                ch_fasta,
-                ch_fai,
-                padfoot_src,
-                padfoot_annot
-            )
-            ch_versions = ch_versions.mix(PADFOOT_SEVERUS_WAKHAN.out.versions)
-        }
-
-        if (!params.skip_savana) {
-            savana_somatic_vcf
-                .join(savana_cna)
-                .map { meta, sv, cna -> [meta, sv, 'savana', cna, 'savana'] }
-                .set { padfoot_savana_input }
-            // padfoot_savana_input: [meta, classified.somatic.vcf.gz, 'savana', segmented_absolute_copy_number.tsv, 'savana']
-
-            PADFOOT_SAVANA (
-                padfoot_savana_input,
-                ch_fasta,
-                ch_fai,
-                padfoot_src,
-                padfoot_annot
-            )
-            ch_versions = ch_versions.mix(PADFOOT_SAVANA.out.versions)
-        }
+        PADFOOT_ANNOTATION (
+            SEVERUS.out.somatic_vcf,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.vcf_files,
+            savana_somatic_vcf,
+            savana_cna,
+            ch_fasta,
+            ch_fai,
+            [[:], padfoot_genome,
+             params.padfoot_gff ? file(params.padfoot_gff, checkIfExists: true) : [],
+             params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []]
+        )
+        ch_versions = ch_versions.mix(PADFOOT_ANNOTATION.out.versions)
     }
 
     //
-    // MODULE: RECONPLOT (label: process_low)
-    // Rearrangement + copy-number figures (ReConPlot) for each available CN/SV caller pair, written to
-    // {outdir}/{sample}/reconplot/{ascat_severus,wakhan_severus,savana}/ with per-chromosome figures, a
-    // genome-wide strip and the harmonised CN/SV tables. Paired and tumour-only samples alike; a pair is
-    // only produced when both callers emitted output for the sample (join semantics).
-    // The wrapper (Tim-Yu/ReConPlot) and the ReConPlot R package are staged as source (WGET+UNTAR or
-    // local dirs); the container ships the package pre-installed, conda installs it at run time.
+    // SUBWORKFLOW: RECONPLOT_FIGURES -- ReConPlot figures per CN/SV caller pair (ASCAT + Severus, Wakhan + Severus, SAVANA)
     //
-
     if (!params.skip_reconplot) {
-
-        def reconplot_genome = params.reconplot_genome ?:
-            (params.genome == 'CHM13' ? 'T2T' : 'hg38')
-
-        if (params.reconplot_dir) {
-            reconplot_src = channel.value([[id: 'reconplot'], file(params.reconplot_dir, type: 'dir', checkIfExists: true)])
-        }
-        else {
-            RECONPLOT_WGET( channel.value([[id: 'reconplot'], params.reconplot_url]) )
-            RECONPLOT_UNTAR( RECONPLOT_WGET.out.outfile )
-            reconplot_src = RECONPLOT_UNTAR.out.untar
-            ch_versions = ch_versions.mix(RECONPLOT_WGET.out.versions)
-        }
-        if (params.reconplot_pkg_dir) {
-            reconplot_pkg = channel.value([[id: 'reconplot_pkg'], file(params.reconplot_pkg_dir, type: 'dir', checkIfExists: true)])
-        }
-        else {
-            RECONPLOT_PKG_WGET( channel.value([[id: 'reconplot_pkg'], params.reconplot_pkg_url]) )
-            RECONPLOT_PKG_UNTAR( RECONPLOT_PKG_WGET.out.outfile )
-            reconplot_pkg = RECONPLOT_PKG_UNTAR.out.untar
-            ch_versions = ch_versions.mix(RECONPLOT_PKG_WGET.out.versions)
-        }
-        // reconplot_src: [meta, dir]  -- wrapper (run_reconplot.R + R/)
-        // reconplot_pkg: [meta, dir]  -- ReConPlot R package source
-
-        // Severus somatic SVs are the SV component for the two lrsomatic CN callers
-        severus_sv_files = SEVERUS.out.somatic_vcf.map { meta, vcf -> [meta, [vcf]] }
-        // severus_sv_files: [meta, [severus_somatic.vcf.gz]]
-
-        if (!params.skip_ascat) {
-            ASCAT.out.segments
-                .join(ASCAT.out.purityploidy)
-                .join(ASCAT.out.bafs)
-                // segments = fitted segments.txt (segments_raw.txt is a separate emit); bafs = every *BAF.txt,
-                // the wrapper picks <sample>.tumour_tumourBAF.txt by name
-                .map { meta, seg, pp, bafs -> [meta, [seg, pp, bafs].flatten()] }
-                .join(severus_sv_files)
-                .map { meta, cn, sv -> [meta, 'ascat', cn, 'severus', sv] }
-                .set { reconplot_ascat_input }
-            // reconplot_ascat_input: [meta, 'ascat', [segments.txt, purityploidy.txt, *BAF.txt], 'severus', [vcf]]
-
-            RECONPLOT_ASCAT_SEVERUS( reconplot_ascat_input, reconplot_src, reconplot_pkg, reconplot_genome )
-            ch_versions = ch_versions.mix(RECONPLOT_ASCAT_SEVERUS.out.versions)
-        }
-
-        if (!params.skip_wakhan) {
-            // Top-ranked Wakhan solution: allele-specific segment BEDs (HP1 + HP2) plus the ranking table
-            WAKHAN.out.bed_files
-                .map { meta, beds ->
-                    def files = [beds].flatten()
-                    def hp = files.findAll { bed -> bed.name ==~ /.*_copynumbers_segments_HP_[12]\.bed/ }
-                    def best = hp.findAll { bed -> bed.toString().contains('/solution_1/') } ?: hp
-                    return [meta, best.unique { bed -> bed.name }]
-                }
-                .filter { _meta, beds -> beds.size() == 2 }
-                .join(WAKHAN.out.solutions_ranks)
-                .map { meta, beds, ranks -> [meta, beds + [ranks]] }
-                .join(severus_sv_files)
-                .map { meta, cn, sv -> [meta, 'wakhan', cn, 'severus', sv] }
-                .set { reconplot_wakhan_input }
-            // reconplot_wakhan_input: [meta, 'wakhan', [HP_1.bed, HP_2.bed, solutions_ranks.tsv], 'severus', [vcf]]
-
-            RECONPLOT_WAKHAN_SEVERUS( reconplot_wakhan_input, reconplot_src, reconplot_pkg, reconplot_genome )
-            ch_versions = ch_versions.mix(RECONPLOT_WAKHAN_SEVERUS.out.versions)
-        }
-
-        if (!params.skip_savana) {
-            // Single-source mode: all SAVANA files in cn_files, sv_files empty.
-            // allele_counts is optional (absent without an SNP source), so join with remainder and drop nulls.
-            // A sample with allele counts but no CN fit (SAVANA "No_fit_found") only exists on the right-hand
-            // side and surfaces as [meta, null, bed]; there is nothing to plot for it, so drop it before the map.
-            savana_cna
-                .join(savana_somatic_bedpe)
-                .join(savana_fitted_purity_ploidy)
-                .join(savana_allele_counts, remainder: true)
-                .filter { row -> row[1] != null }
-                .map { meta, cna, bedpe, pp, hetsnp -> [meta, 'savana', [cna, bedpe, pp, hetsnp].findAll { f -> f != null }, 'savana', []] }
-                .set { reconplot_savana_input }
-            // reconplot_savana_input: [meta, 'savana', [segmented_absolute_copy_number.tsv, classified.somatic.bedpe, fitted_purity_ploidy.tsv, allele_counts_hetSNPs.bed], 'savana', []]
-
-            RECONPLOT_SAVANA( reconplot_savana_input, reconplot_src, reconplot_pkg, reconplot_genome )
-            ch_versions = ch_versions.mix(RECONPLOT_SAVANA.out.versions)
-        }
+        RECONPLOT_FIGURES (
+            SEVERUS.out.somatic_vcf,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.purityploidy,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.bafs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.bed_files,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_cna,
+            savana_somatic_bedpe,
+            savana_fitted_purity_ploidy,
+            savana_allele_counts,
+            params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
+        )
+        ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
     }
 
     //
