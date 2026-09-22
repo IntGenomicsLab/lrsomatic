@@ -1,0 +1,98 @@
+nextflow_workflow {
+
+    name "Test Workflow RECONPLOT_FIGURES"
+    script "../reconplot_figures.nf"
+    workflow "RECONPLOT_FIGURES"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "reconplot_figures"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // ReConPlot needs whole-genome caller output, so the pipeline tests skip it. Under -stub what is
+    // tested is the pairing: ASCAT + Severus, the top-ranked Wakhan solution + Severus, SAVANA alone
+    // (with or without allele counts), and that a SAVANA sample with allele counts but no fit is dropped.
+
+    test("each CN/SV caller pair forms per sample, no-fit SAVANA samples are dropped") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+            workflow {
+                """
+                // Empty stand-ins carrying the real callers' file names; ReConPlot's stub does not read them
+                def mk = { String rel -> def f = file("\${launchDir}/fixtures/\${rel}"); f.parent.mkdirs(); f.text = ''; return f }
+                def s1 = [ id:'sample1', paired_data:true,  platform:'ont' ]
+                def s2 = [ id:'sample2', paired_data:true,  platform:'pb'  ]
+                def s3 = [ id:'sample3', paired_data:false, platform:'ont' ]
+                def s4 = [ id:'sample4', paired_data:false, platform:'ont' ]
+
+                // Severus somatic SVs for both paired samples
+                input[0] = channel.of(
+                    [ s1, mk('severus/sample1/severus_somatic.vcf.gz') ],
+                    [ s2, mk('severus/sample2/severus_somatic.vcf.gz') ]
+                )
+                // ASCAT for sample1 only
+                input[1] = channel.of([ s1, mk('ascat/sample1.segments.txt') ])
+                input[2] = channel.of([ s1, mk('ascat/sample1.purityploidy.txt') ])
+                input[3] = channel.of([ s1, [ mk('ascat/sample1.tumour_tumourBAF.txt'), mk('ascat/sample1.tumour_normalBAF.txt') ] ])
+                // Wakhan: sample1 has two solutions (solution_1's two HP beds must be picked); sample2 has one HP bed only
+                input[4] = channel.of(
+                    [ s1, [ mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_segments_HP_1.bed'),
+                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_segments_HP_2.bed'),
+                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_subclonal_segments_HP_1.bed'),
+                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_copynumbers_segments_HP_1.bed'),
+                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_copynumbers_segments_HP_2.bed') ] ],
+                    [ s2, [ mk('wakhan/sample2/solution_1/sample2_2.0_1.0_copynumbers_segments_HP_1.bed') ] ]
+                )
+                input[5] = channel.of(
+                    [ s1, mk('wakhan/sample1/solutions_ranks.tsv') ],
+                    [ s2, mk('wakhan/sample2/solutions_ranks.tsv') ]
+                )
+                // SAVANA: fits for sample1 and sample3; sample4 has allele counts but no fit
+                input[6] = channel.of(
+                    [ s1, mk('savana/sample1/sample1_segmented_absolute_copy_number.tsv') ],
+                    [ s3, mk('savana/sample3/sample3_segmented_absolute_copy_number.tsv') ]
+                )
+                input[7] = channel.of(
+                    [ s1, mk('savana/sample1/sample1.classified.somatic.bedpe') ],
+                    [ s3, mk('savana/sample3/sample3.classified.somatic.bedpe') ]
+                )
+                input[8] = channel.of(
+                    [ s1, mk('savana/sample1/sample1_fitted_purity_ploidy.tsv') ],
+                    [ s3, mk('savana/sample3/sample3_fitted_purity_ploidy.tsv') ]
+                )
+                input[9] = channel.of(
+                    [ s1, mk('savana/sample1/sample1_allele_counts_hetSNPs.bed') ],
+                    [ s4, mk('savana/sample4/sample4_allele_counts_hetSNPs.bed') ]
+                )
+                input[10] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                // ASCAT + Severus: sample1 only
+                { assert tasks.count { name -> name.contains('RECONPLOT_SEVERUS_ASCAT') } == 1 },
+                { assert tasks.any { name -> name.contains('RECONPLOT_SEVERUS_ASCAT (sample1:') } },
+                // Wakhan + Severus: sample1 only, sample2 lacks the second HP bed
+                { assert tasks.count { name -> name.contains('RECONPLOT_SEVERUS_WAKHAN') } == 1 },
+                { assert tasks.any { name -> name.contains('RECONPLOT_SEVERUS_WAKHAN (sample1:') } },
+                // SAVANA: sample1 (with allele counts) and sample3 (without); sample4 has no fit and is dropped
+                { assert tasks.count { name -> name.contains('RECONPLOT_SAVANA') } == 2 },
+                { assert tasks.any { name -> name.contains('RECONPLOT_SAVANA (sample1:') } },
+                { assert tasks.any { name -> name.contains('RECONPLOT_SAVANA (sample3:') } },
+                { assert !tasks.any { name -> name.contains('(sample4:') } },
+                { assert workflow.out.versions.size() >= 1 }
+            )
+        }
+    }
+}
