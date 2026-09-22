@@ -14,7 +14,7 @@ docker push "$RECONPLOT_IMAGE"
 ```
 
 Pin the pushed digest in the `container` directive of `modules/local/reconplot/main.nf` (or override per site via
-`process { withName: '.*:RECONPLOT_(ASCAT_SEVERUS|WAKHAN_SEVERUS|SAVANA)' { container = ... } }`). The module currently pins
+`process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`). The module currently pins
 `ghcr.io/tim-yu/reconplot@sha256:1145fc5aebe0227bec371f4c59b08b9a09871498e403c01b83f83973149ae9e7`.
 
 Under `-profile conda` the module builds `modules/local/reconplot/environment.yml` and installs
