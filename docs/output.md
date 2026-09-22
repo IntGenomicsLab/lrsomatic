@@ -33,7 +33,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── samtools
 │    │    └── whatshap_stats
 │    ├── reconplot
-│    │   ├── wakhan_severus
+│    │   ├── severus_wakhan
 │    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
@@ -85,8 +85,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── samtools
 │    │    └── whatshap_stats
 │    ├── reconplot
-│    │   ├── ascat_severus
-│    │   ├── wakhan_severus
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
 │    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
@@ -109,7 +109,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 └── multiqc
 ```
 
-The `padfoot` and `reconplot` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan`/`wakhan_severus` need `--skip_wakhan false`, `ascat_severus` needs `--skip_ascat false` and a matched normal (ASCAT is not run for tumour-only samples), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
+The `padfoot` and `reconplot` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan`/`severus_wakhan` need `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` and a matched normal (ASCAT is not run for tumour-only samples), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
 
 ### `ascat`
 
@@ -645,14 +645,14 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 
 ```
 ├── reconplot
-│   ├── ascat_severus
+│   ├── severus_ascat
 │   │   ├── per_chromosome/sample_chr{1..22,X,Y}.{pdf,png}
 │   │   ├── genome_wide/sample_genome_wide.{pdf,png}
 │   │   ├── focus/sample_<regions>.{pdf,png}
 │   │   ├── sample.reconplot_cn.tsv
 │   │   ├── sample.reconplot_sv.tsv
 │   │   └── reconplot.log
-│   ├── wakhan_severus
+│   ├── severus_wakhan
 │   │   └── (same layout)
 │   └── savana
 │       └── (same layout)
@@ -667,7 +667,7 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 | `sample.reconplot_sv.tsv` | Harmonised SV table (`chr1,pos1,chr2,pos2,strands`) as passed to ReConPlot                            |
 | `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied)                                     |
 
-`ascat_severus/` and `wakhan_severus/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
+`severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
 
 </details>
 

@@ -4,7 +4,7 @@ process RECONPLOT {
 
     conda "${moduleDir}/environment.yml"
     // Built from containers/reconplot/Dockerfile: R deps + ReConPlot package (not on conda; the wrapper is staged as source).
-    // Override per site with `process { withName: '.*:RECONPLOT_(ASCAT_SEVERUS|WAKHAN_SEVERUS|SAVANA)' { container = ... } }`.
+    // Override per site with `process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
     container "ghcr.io/tim-yu/reconplot@sha256:1145fc5aebe0227bec371f4c59b08b9a09871498e403c01b83f83973149ae9e7"
 
     input:
@@ -30,7 +30,7 @@ process RECONPLOT {
     def args   = task.ext.args  ?: ''   // shared filters (e.g. --min-svlen, --max-cn)
     def args2  = task.ext.args2 ?: ''   // genome-wide strip extras
     def args3  = task.ext.args3 ?: ''   // focus panel extras (--regions/--genes/--baf-track); focus skipped if empty
-    prefix     = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${cn_source}_${sv_source}")
+    prefix     = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")
     def sample = meta.id
     def source_args = cn_source == sv_source
         ? "--source ${cn_source} --input cn_input"
@@ -77,7 +77,7 @@ process RECONPLOT {
     """
 
     stub:
-    prefix = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${cn_source}_${sv_source}")
+    prefix = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")
     """
     mkdir -p ${prefix}/per_chromosome ${prefix}/genome_wide
     touch ${prefix}/per_chromosome/${meta.id}_chr1.pdf ${prefix}/per_chromosome/${meta.id}_chr1.png

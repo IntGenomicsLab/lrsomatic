@@ -406,8 +406,8 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 
 [ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`:
 
-- `ascat_severus/` -- ASCAT allele-specific CN + Severus somatic SVs
-- `wakhan_severus/` -- Wakhan top-ranked solution CN + Severus somatic SVs
+- `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
+- `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
 - `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs
 
 Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track. Both the wrapper and the ReConPlot R package (neither on conda) are staged as source from GitHub (or local checkouts for offline systems); the default container ships the package pre-installed, while `-profile conda` installs it at run time.
@@ -432,7 +432,7 @@ Both images are pinned by digest directly in the module `container` directives, 
 ```groovy
 process {
     withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' }
-    withName: '.*:RECONPLOT_(ASCAT_SEVERUS|WAKHAN_SEVERUS|SAVANA)' { container = '/path/to/reconplot.sif' }
+    withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/reconplot.sif' }
 }
 ```
 
