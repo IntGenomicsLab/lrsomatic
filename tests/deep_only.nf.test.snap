@@ -35,6 +35,15 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.9.0"
                 },
+                "DS_GERMLINE_SELECT": {
+                    "bcftools": "1.23.1"
+                },
+                "DS_VERDICT_ANNOTATE": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_QUERY": {
+                    "bcftools": 1.22
+                },
                 "GERMLINE_VEP": {
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
@@ -103,6 +112,12 @@
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
                 },
                 "UNTAR": {
                     "untar": 1.34
@@ -561,14 +576,14 @@
                 "read_qual.txt:md5,8b92ff7dc4536188be159b95525511cd",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample3_tumor.bam:md5,965264ef8436cb887ad02c92d40fb50e",
-                "sample3_tumor.bam.bai:md5,cfc6329667a3c6c66e3c0ca0ace4c6e9",
+                "sample3_tumor.bam:md5,9449340acf09825767e1f5b4a3f0e5c2",
+                "sample3_tumor.bam.bai:md5,3be46bae7402c3865f27881457b7a466",
                 "sample3_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample3_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample3_tumor.stats:md5,ecd5ea4fee37379dd5c5ae3e89dfddda",
-                "sample3_whatshap_stats.gtf:md5,f47156e18c490ff9a4e6efd04d43acc5",
-                "sample3_whatshap_stats.log:md5,061ecb622d83678229f5d0a7b0e95d75",
-                "sample3_whatshap_stats.tsv:md5,7c7453a5eed17e9ccc405844f3bd511a",
+                "sample3_whatshap_stats.gtf:md5,5a9b20b6ed25ef2ede4271156a83ce88",
+                "sample3_whatshap_stats.log:md5,a62c149286176f863d4293d0748a6dec",
+                "sample3_whatshap_stats.tsv:md5,90c20ce05eef472d9f5bb77754636d31",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,56e899f85876cee082788927d0f89c5f",
@@ -581,6 +596,6 @@
             "nf-test": "0.9.3",
             "nextflow": "26.04.1"
         },
-        "timestamp": "2026-09-18T17:36:01.066378821"
+        "timestamp": "2026-09-22T17:50:37.140724409"
     }
 }

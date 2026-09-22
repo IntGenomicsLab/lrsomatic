@@ -28,7 +28,7 @@
                     "clairs": "0.4.4"
                 },
                 "CLAIRSTO": {
-                    "clairsto": "0.4.2"
+                    "clairsto": "0.5.1"
                 },
                 "CRAMINO_POST": {
                     "cramino": "1.3.0"
@@ -57,7 +57,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "1.3.2"
+                    "lrsomatic_report": "1.6.0"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.21
@@ -110,6 +110,12 @@
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
                 },
                 "UNTAR": {
                     "untar": 1.34
@@ -804,6 +810,6 @@
             "nf-test": "0.9.3",
             "nextflow": "26.04.1"
         },
-        "timestamp": "2026-09-18T16:39:52.362456747"
+        "timestamp": "2026-09-22T17:07:33.562660027"
     }
 }
