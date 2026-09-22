@@ -423,17 +423,6 @@
             "description": "Options for ReConPlot rearrangement/copy-number figures",
             "default": "",
             "properties": {
-                "reconplot_url": {
-                    "type": "string",
-                    "default": "https://github.com/Tim-Yu/ReConPlot/archive/2672ccb22fc979909e136f6d2614b5fb763d1de2.tar.gz",
-                    "description": "URL of the ReConPlot wrapper source tarball (GitHub archive of Tim-Yu/ReConPlot)."
-                },
-                "reconplot_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Local checkout of the ReConPlot wrapper (contains run_reconplot.R). Overrides --reconplot_url."
-                },
                 "reconplot_pkg_url": {
                     "type": "string",
                     "default": "https://github.com/cortes-ciriano-lab/ReConPlot/archive/88bb76011703d7908aaa2e5bdecfe18ba5737db8.tar.gz",

@@ -404,7 +404,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 
 #### ReConPlot Options
 
-[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot) wrapper for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`:
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`:
 
 - `ascat_severus/` -- ASCAT allele-specific CN + Severus somatic SVs
 - `wakhan_severus/` -- Wakhan top-ranked solution CN + Severus somatic SVs
@@ -414,8 +414,6 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 
 | Parameter                  | Description                                                                                                   |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--reconplot_url`          | Wrapper source tarball (GitHub archive). Default = pinned commit of `Tim-Yu/ReConPlot`                        |
-| `--reconplot_dir`          | Local wrapper checkout (contains `run_reconplot.R`); overrides `--reconplot_url`. Default = `null`            |
 | `--reconplot_pkg_url`      | ReConPlot R package source tarball. Default = pinned commit of `cortes-ciriano-lab/ReConPlot`                 |
 | `--reconplot_pkg_dir`      | Local ReConPlot package checkout; overrides `--reconplot_pkg_url`. Default = `null`                           |
 | `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)  |
@@ -438,7 +436,7 @@ process {
 }
 ```
 
-The Padfoot and ReConPlot **source trees** are downloaded from GitHub at run time; use `--padfoot_dir`, `--reconplot_dir` and `--reconplot_pkg_dir` to point at local checkouts instead.
+The Padfoot source tree and the ReConPlot R package are downloaded from GitHub at run time; use `--padfoot_dir` and `--reconplot_pkg_dir` to point at local checkouts instead.
 
 #### Variant Filtering and Combining Options
 

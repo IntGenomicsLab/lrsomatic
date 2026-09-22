@@ -2,16 +2,14 @@
 include { RECONPLOT as RECONPLOT_ASCAT_SEVERUS  } from '../../modules/local/reconplot/main'
 include { RECONPLOT as RECONPLOT_WAKHAN_SEVERUS } from '../../modules/local/reconplot/main'
 include { RECONPLOT as RECONPLOT_SAVANA         } from '../../modules/local/reconplot/main'
-include { WGET as RECONPLOT_WGET                } from '../../modules/nf-core/wget/main'
-include { UNTAR as RECONPLOT_UNTAR              } from '../../modules/nf-core/untar/main'
 include { WGET as RECONPLOT_PKG_WGET            } from '../../modules/nf-core/wget/main'
 include { UNTAR as RECONPLOT_PKG_UNTAR          } from '../../modules/nf-core/untar/main'
 
 //
 // ReConPlot rearrangement + copy-number figures for every CN/SV caller pair that produced output for
 // a sample: ASCAT + Severus, Wakhan + Severus, and SAVANA on its own. Pass channel.empty() for a
-// caller that did not run. The wrapper (run_reconplot.R + R/) and the ReConPlot R package are staged
-// as source from params.reconplot_url / params.reconplot_pkg_url, or local checkouts via the *_dir params.
+// caller that did not run. The wrapper (assets/reconplot) is shipped with the pipeline; the ReConPlot R
+// package is staged as source from params.reconplot_pkg_url or a local checkout in params.reconplot_pkg_dir.
 //
 workflow RECONPLOT_FIGURES {
 
@@ -31,15 +29,7 @@ workflow RECONPLOT_FIGURES {
     main:
     ch_versions = channel.empty()
 
-    if (params.reconplot_dir) {
-        reconplot_src = channel.value([[id: 'reconplot'], file(params.reconplot_dir, type: 'dir', checkIfExists: true)])
-    }
-    else {
-        RECONPLOT_WGET( channel.value([[id: 'reconplot'], params.reconplot_url]) )
-        RECONPLOT_UNTAR( RECONPLOT_WGET.out.outfile )
-        reconplot_src = RECONPLOT_UNTAR.out.untar
-        ch_versions = ch_versions.mix(RECONPLOT_WGET.out.versions)
-    }
+    reconplot_src = channel.value([[id: 'reconplot'], file("${projectDir}/assets/reconplot", type: 'dir', checkIfExists: true)])
     if (params.reconplot_pkg_dir) {
         reconplot_pkg = channel.value([[id: 'reconplot_pkg'], file(params.reconplot_pkg_dir, type: 'dir', checkIfExists: true)])
     }

@@ -2,8 +2,8 @@
 
 R runtime for the [ReConPlot wrapper](https://github.com/Tim-Yu/ReConPlot) used by the
 `RECONPLOT` module, with the upstream [ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot)
-R package (not distributed on conda) installed from a pinned commit. The wrapper scripts are not
-baked in; the pipeline stages them from `--reconplot_url` / `--reconplot_dir`.
+R package (not distributed on conda) installed from a pinned commit. The wrapper scripts live in
+`assets/reconplot/` and are staged by the pipeline.
 
 Build and publish from the pipeline root:
 

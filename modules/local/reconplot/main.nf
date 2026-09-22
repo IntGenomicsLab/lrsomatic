@@ -70,7 +70,7 @@ process RECONPLOT {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         reconplot: \$(Rscript -e 'cat(as.character(packageVersion("ReConPlot")))' 2>/dev/null)
-        reconplot_wrapper: ${params.reconplot_dir ? 'local checkout' : params.reconplot_url}
+        reconplot_wrapper: \$(cat ${reconplot_src}/VERSION 2>/dev/null || echo unknown)
         r-base: \$(Rscript -e 'cat(R.version\$major, R.version\$minor, sep=".")' 2>/dev/null)
         ggplot2: \$(Rscript -e 'cat(as.character(packageVersion("ggplot2")))' 2>/dev/null)
     END_VERSIONS
