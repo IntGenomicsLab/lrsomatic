@@ -1,6 +1,6 @@
 // IMPORT MODULES
-include { RECONPLOT as RECONPLOT_ASCAT_SEVERUS  } from '../../modules/local/reconplot/main'
-include { RECONPLOT as RECONPLOT_WAKHAN_SEVERUS } from '../../modules/local/reconplot/main'
+include { RECONPLOT as RECONPLOT_SEVERUS_ASCAT  } from '../../modules/local/reconplot/main'
+include { RECONPLOT as RECONPLOT_SEVERUS_WAKHAN } from '../../modules/local/reconplot/main'
 include { RECONPLOT as RECONPLOT_SAVANA         } from '../../modules/local/reconplot/main'
 include { WGET as RECONPLOT_PKG_WGET            } from '../../modules/nf-core/wget/main'
 include { UNTAR as RECONPLOT_PKG_UNTAR          } from '../../modules/nf-core/untar/main'
@@ -45,7 +45,7 @@ workflow RECONPLOT_FIGURES {
     // severus_sv_files: [meta, [severus_somatic.vcf.gz]]
 
     //
-    // MODULE: RECONPLOT_ASCAT_SEVERUS (label: process_low)
+    // MODULE: RECONPLOT_SEVERUS_ASCAT (label: process_low)
     // Input:  [meta, 'ascat', [segments.txt, purityploidy.txt, *BAF.txt], 'severus', [vcf]]
     //         the wrapper picks <sample>.tumour_tumourBAF.txt from the BAF tables by name
     //
@@ -57,11 +57,11 @@ workflow RECONPLOT_FIGURES {
         .map { meta, cn, sv -> [meta, 'ascat', cn, 'severus', sv] }
         .set { ascat_input }
 
-    RECONPLOT_ASCAT_SEVERUS( ascat_input, reconplot_src, reconplot_pkg, genome )
-    ch_versions = ch_versions.mix(RECONPLOT_ASCAT_SEVERUS.out.versions)
+    RECONPLOT_SEVERUS_ASCAT( ascat_input, reconplot_src, reconplot_pkg, genome )
+    ch_versions = ch_versions.mix(RECONPLOT_SEVERUS_ASCAT.out.versions)
 
     //
-    // MODULE: RECONPLOT_WAKHAN_SEVERUS (label: process_low)
+    // MODULE: RECONPLOT_SEVERUS_WAKHAN (label: process_low)
     // Input:  [meta, 'wakhan', [HP_1.bed, HP_2.bed, solutions_ranks.tsv], 'severus', [vcf]]
     //         the two allele-specific segment BEDs of the top-ranked solution (solution_1/)
     //
@@ -78,8 +78,8 @@ workflow RECONPLOT_FIGURES {
         .map { meta, cn, sv -> [meta, 'wakhan', cn, 'severus', sv] }
         .set { wakhan_input }
 
-    RECONPLOT_WAKHAN_SEVERUS( wakhan_input, reconplot_src, reconplot_pkg, genome )
-    ch_versions = ch_versions.mix(RECONPLOT_WAKHAN_SEVERUS.out.versions)
+    RECONPLOT_SEVERUS_WAKHAN( wakhan_input, reconplot_src, reconplot_pkg, genome )
+    ch_versions = ch_versions.mix(RECONPLOT_SEVERUS_WAKHAN.out.versions)
 
     //
     // MODULE: RECONPLOT_SAVANA (label: process_low)
