@@ -135,6 +135,23 @@ For structural variants, the CHM13 panel of normals is a merged panel combining 
 
 For tumour-only small variants, ClairS-TO separates germline from somatic calls with a panel of normals and with its Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. `--genome CHM13` supplies five CHM13 PON VCFs (gnomAD, dbSNP, 1000 Genomes, CoLoRSdb and ASAP), which **replace** the GRCh38 databases inside the container. Unless `--skip_ascat` is set, purity and copy number come from the pipeline's own ASCAT run (`CLAIRSTO_VERDICT_TAG`); only with `--skip_ascat` does ClairS-TO estimate them itself, from assembly-specific loci, allele and GC content files. A GRCh38 resource set on a CHM13 run leaves germline variants untagged.
 
+When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
+runs DeepVariant on the **tumour** BAM. DeepVariant is a germline caller with no
+somatic discrimination, so on its own those calls mix germline and clonal somatic
+variants. The pipeline therefore transfers DeepSomatic's verdict onto them:
+DeepSomatic evaluates the same sites and labels each `GERMLINE`, `PON`, `RefCall`
+or `PASS`, and that label is recorded in `INFO/DS_VERDICT`. Only positively
+adjudicated germline sites (`GERMLINE` or `PON`) are kept in the germline arm;
+`RefCall` and sites DeepSomatic never evaluated are dropped rather than assumed
+germline. On a 30x tumour-only sample this keeps about 83% of DeepVariant's
+`PASS` calls and removes roughly 1% that DeepSomatic positively calls somatic.
+
+Because of this, `deepvariant` and `deepsomatic` must be enabled together:
+`--germline_var_keep deepvariant` without `deepsomatic` in `--somatic_var_keep` is
+rejected at launch. Note that even after adjudication the tumour-only germline arm
+is a tumour-derived proxy, not a call set from normal tissue, and should not be
+used for secondary findings without that caveat.
+
 With `--genome CHM13 --skip_ascat` the pipeline builds a CHM13 resource set from the ASCAT files it already downloads, so no extra setup is needed. LogR correction is GC-only, as ClairS-TO recommends for CHM13: no replication timing file is published for the assembly. Without `--skip_ascat` nothing is built, because the tagging comes from ASCAT's own tables.
 
 To use a resource set of your own — another assembly, or a CHM13 set carrying an `RT_<name>.txt` for replication timing correction — pass `--clairsto_cna_resources` together with `--skip_ascat`. Without `--skip_ascat` it is ignored, with a warning. Expected layout:
@@ -387,11 +404,19 @@ otherwise be "every site every caller looked at", which inflates the phased VCFs
 by three orders of magnitude and produces a meaningless mutation burden.
 
 `--smallvar_filter_pass` (`true` by default) restricts the copy of each caller's
-VCF that is handed to the caller consensus, phasing, VEP and the report. Set it to
-`false` to restore the previous unfiltered behaviour. In tumor-only mode ClairS-TO
-is unaffected by the setting: `VCFSPLIT` already restricts its somatic split to
-`PASS`. The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>`
-are never filtered, so no calls are lost from the results directory.
+VCF that is handed to the caller consensus, phasing, VEP and the report. In
+tumor-only mode ClairS-TO is unaffected by the setting: `VCFSPLIT` already
+restricts its somatic split to `PASS`, and its germline split is `PASS`-rewritten
+rather than `PASS`-filtered. The per-caller VCFs published under
+`<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
+from the results directory.
+
+Setting `--smallvar_filter_pass false` does **not** fully restore the pre-filter
+behaviour. `VCFTAG` normalises `FILTER` to `PASS` on both arms before phasing, so
+the later `--apply-filters PASS` on the signature input no longer removes
+anything: with the filter off, non-`PASS` records reach SigProfiler that
+previously could not. Use it to inspect the unfiltered call set, not to reproduce
+older results.
 
 `consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
 every variant called by either. In both modes `--prioritize_caller_*` chooses only
