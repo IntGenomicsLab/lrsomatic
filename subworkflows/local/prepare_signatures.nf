@@ -19,9 +19,7 @@ workflow PREPARE_SIGNATURES {
 
         if (download_genome) {
             //
-            // MODULE: SIGPROFILER_INSTALL (label: process_single, process_long)
-            // Downloads and verifies the per-genome TSB payload (~3 GB) into a volume directory.
-            // Published to ${params.outdir}/cache/ so later runs can pass it as --sigprofiler_genome_dir.
+            // MODULE: SIGPROFILER_INSTALL (label: process_single, process_long) -- ~3 GB payload, published to outdir/cache/ for --sigprofiler_genome_dir
             //
             SIGPROFILER_INSTALL (
                 genome,
@@ -31,10 +29,7 @@ workflow PREPARE_SIGNATURES {
         }
         else {
             if (!genome_dir) {
-                error("Mutational signature analysis needs the SigProfilerMatrixGenerator payload for ${genome}.\n" +
-                      "Either pass --sigprofiler_genome_dir <volume> (a directory containing tsb/${genome}/) " +
-                      "or add --download_sigprofiler_genome to install it into ${params.outdir}/cache/ on this run, " +
-                      "or disable the step with --skip_signatures.")
+                error("No SigProfilerMatrixGenerator payload for ${genome}: pass --sigprofiler_genome_dir <dir containing tsb/${genome}/>, add --download_sigprofiler_genome, or use --skip_signatures.")
             }
             def tsb_dir = file("${genome_dir}/tsb/${genome}", type: 'dir')
             if (!tsb_dir.exists() || !tsb_dir.isDirectory()) {
@@ -42,7 +37,7 @@ workflow PREPARE_SIGNATURES {
             }
             def n_chrom = tsb_dir.listFiles().count { f -> f.name.endsWith('.txt') }
             if (n_chrom < 24) {
-                error("${tsb_dir} holds ${n_chrom} chromosome files; a complete SigProfilerMatrixGenerator install of ${genome} has 24 (1-22, X, Y).")
+                error("${tsb_dir} holds ${n_chrom} of the 24 chromosome files of a complete ${genome} install.")
             }
             sigprofiler_volume = channel.value(file(genome_dir, type: 'dir', checkIfExists: true))
         }

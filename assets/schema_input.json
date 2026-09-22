@@ -40,7 +40,7 @@
             "fiber": {
                 "type": "string",
                 "enum": ["y", "n"],
-                "errorMessage": "Specifiy (y/n) if sample has had fiberseq performed"
+                "errorMessage": "Specify (y/n) if sample has had fiberseq performed"
             },
             "clair3_model": {
                 "type": "string"

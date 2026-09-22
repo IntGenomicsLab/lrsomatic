@@ -2,23 +2,16 @@ nextflow_function {
 
     name "Test VEP plugin resolution functions"
     script "../main.nf"
-    // "small" is what .github/workflows/nf-test.yml selects on for pull_request; without it
-    // the shard step finds no tests here and none of this runs in CI. ~90 s for the file.
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
     tag "small"
     tag "subworkflows"
     tag "subworkflows_local"
     tag "utils_nfcore_lrsomatic_pipeline"
     tag "vep_plugins"
 
-    //
-    // These exercise the launch-time resolution only. Every case below either leaves
-    // params.genome unset or uses a release zip, so no plugin file is ever staged and
-    // nothing here touches the network.
-    //
+    // Launch-time resolution only: nothing is staged and nothing touches the network.
 
-    ////////////////////////////////////////////////////////////////////////
-    // vepPluginResource: an explicit --vep_* wins over the igenomes default
-    ////////////////////////////////////////////////////////////////////////
+    // --- vepPluginResource: an explicit --vep_* wins over the igenomes default
 
     test("vepPluginResource falls back to the per-assembly default") {
 
@@ -92,9 +85,7 @@ nextflow_function {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    // vepPluginIndex: overriding a data file drops the inherited index
-    ////////////////////////////////////////////////////////////////////////
+    // --- vepPluginIndex: overriding a data file drops the inherited index
 
     test("vepPluginIndex takes the default index when the data file is the default") {
 
@@ -192,9 +183,7 @@ nextflow_function {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    // vepPluginNeedsPrep / vepPluginPreparedName: the release-zip split
-    ////////////////////////////////////////////////////////////////////////
+    // --- vepPluginNeedsPrep / vepPluginPreparedName: the release-zip split
 
     test("vepPluginNeedsPrep is true for a REVEL release zip") {
 
@@ -337,9 +326,7 @@ nextflow_function {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    // resolveVepPlugins
-    ////////////////////////////////////////////////////////////////////////
+    // --- resolveVepPlugins
 
     test("resolveVepPlugins returns nothing when plugins are skipped") {
 
@@ -426,9 +413,7 @@ nextflow_function {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    // validateVepPluginParams: the error paths
-    ////////////////////////////////////////////////////////////////////////
+    // --- validateVepPluginParams: the error paths
 
     test("validateVepPluginParams passes when plugins are skipped") {
 

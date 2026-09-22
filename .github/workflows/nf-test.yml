@@ -67,13 +67,13 @@ jobs:
       fail-fast: false
       matrix:
         shard: ${{ fromJson(needs.nf-test-changes.outputs.shard) }}
-        profile: [conda, docker, singularity]
+        # conda is absent while LRSOMATICREPORT is container-only (no bioconda package for
+        # the report tool yet); restore it together with the module's conda directive
+        profile: [docker, singularity]
         isMain:
           - ${{ github.base_ref == 'master' || github.base_ref == 'main' }}
-        # Exclude conda and singularity on dev
+        # Exclude singularity on dev
         exclude:
-          - isMain: false
-            profile: "conda"
           - isMain: false
             profile: "singularity"
         NXF_VER:

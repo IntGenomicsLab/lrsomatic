@@ -18,6 +18,7 @@ workflow PREPARE_REFERENCE_FILES {
         ascat_loci      // str: path to ASCAT loci files (directory or .zip), or null
         ascat_loci_gc   // str: path to ASCAT GC correction file (.zip or direct), or null
         ascat_loci_rt   // str: path to ASCAT RT correction file (.zip or direct), or null
+        clairsto_cna    // bool: also unzip the loci/allele/GC set for ClairS-TO's Verdict module
         basecall_meta   // [meta, basecall_model_str, kinetics_str]  -- from METAEXTRACT per sample
         clair3_modelMap // Map<basecall_model_str, clair3_model_name>  -- used to resolve download URLs
 
@@ -45,19 +46,10 @@ workflow PREPARE_REFERENCE_FILES {
         }
         // ch_prepared_fasta: [[:], fasta_path]  -- empty meta; uncompressed FASTA
 
-        // Build Clair3 model download URLs from basecall metadata
-        // Priority: explicit meta.clair3_model param > auto-detected from BAM header via modelMap
-        // PacBio models from HKU mirror; ONT models from Oxford Nanopore CDN
+        // Clair3 model URLs: explicit clair3_model beats the BAM-header model; PacBio from HKU, ONT from the Nanopore CDN
         basecall_meta.map { meta, basecall_model_meta, _kinetics_meta ->
             def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
-            // Key the entry on the model that is actually downloaded. Keying on the header-derived
-            // name instead made a sample with an explicit clair3_model produce a second entry under
-            // the wrong name: .unique() kept both, UNTAR extracted two different models into
-            // directories with the same name, and the by-name combine in PAIRED_SMALLVAR_GERMLINE
-            // ran Clair3 twice per normal BAM (once with the wrong model), with the downstream join
-            // taking whichever finished first. The same divergence also broke the opposite case: a
-            // basecall model absent from clair3_modelMap made the header-derived name null, so UNTAR
-            // failed with "mkdir: missing operand" even though the explicit override downloaded fine.
+            // Key on the downloaded model; keying on the header name let an explicit clair3_model add a duplicate
             def meta_new = [id: model]
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
             def url = "${download_prefix}/${model}.tar.gz"
@@ -104,17 +96,15 @@ workflow PREPARE_REFERENCE_FILES {
         // ch_prepared_fai: [[:], fai_path]  -- empty meta
 
         //
-        // Prepare ASCAT reference files
-        // Each file set can be provided as a .zip archive or a plain directory/file path
-        // All ASCAT outputs are flat file collections (no meta tuple) for use with ASCAT module
-        //
-        if ( !params.skip_ascat ) {
+        // ASCAT references: .zip or plain path each, emitted as flat file lists.
+        // Loci/allele/GC are shared with Verdict; the RT file is ASCAT's alone (Verdict runs GC-only).
+        if ( !params.skip_ascat || clairsto_cna ) {
             // Allele files: per-chromosome SNP allele frequency files (used for LogR/BAF calculation)
             if (!ascat_alleles) allele_files = channel.empty()
             else if (ascat_alleles.endsWith(".zip")) {
                 // MODULE: UNZIP_ALLELES (UNZIP alias; label: process_single)
                 // Input:  [meta(id=basename), [zip_file]]  -- collected zip
-                // Output: .unzipped_archive -- [meta, dir]  -- extracted directory; flatMap lists individual files
+                // Output: .unzipped_archive -- [meta, dir]  -- flatMap lists the files inside
                 UNZIP_ALLELES(channel.fromPath(file(ascat_alleles)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 allele_files = UNZIP_ALLELES.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // allele_files: [path, path, ...]  -- all per-chromosome allele files collected
@@ -140,7 +130,9 @@ workflow PREPARE_REFERENCE_FILES {
                 // gc_file: [path, ...]  -- GC correction file(s) collected
                 ch_versions = ch_versions.mix(UNZIP_GC.out.versions)
             } else gc_file = channel.fromPath(ascat_loci_gc).collect()
+        }
 
+        if ( !params.skip_ascat ) {
             // Replication timing correction file: RT correction per locus (optional)
             if (!ascat_loci_rt) rt_file = channel.value([])
             else if (ascat_loci_rt.endsWith(".zip")) {
@@ -156,8 +148,7 @@ workflow PREPARE_REFERENCE_FILES {
         prepped_fasta = ch_prepared_fasta  // [[:], fasta_path]  -- uncompressed reference FASTA
         prepped_fai   = ch_prepared_fai    // [[:], fai_path]    -- samtools FAI index
 
-        // ASCAT reference files -- flat file collections (no meta tuple wrapper)
-        // Each is a list of paths collected into a single channel value
+        // ASCAT reference files -- one flat list of paths each, no meta
         allele_files  // [path, ...]  -- per-chromosome allele frequency files
         loci_files    // [path, ...]  -- per-chromosome loci position files
         gc_file       // [path, ...]  -- GC correction file ([] if not provided)

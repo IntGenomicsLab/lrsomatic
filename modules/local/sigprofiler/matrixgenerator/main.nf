@@ -2,18 +2,14 @@ process SIGPROFILER_MATRIXGENERATOR {
     tag "$meta.id"
     label 'process_medium'
 
-    // Conda is not supported: the image installs SigProfilerMatrixGenerator from the fork
-    // that adds the CHM13-T2T genome (SigProfilerSuite/SigProfilerMatrixGenerator#250) and
-    // SigProfilerAssignment from the fork that adds CHM13-T2T COSMIC signatures. Return to
-    // the bioconda/biocontainers releases once both are merged and released upstream.
+    // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
         ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-28a9ce8'
         : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-28a9ce8'}"
 
     input:
     tuple val(meta), path(vcf)          // somatic small-variant VCF (plain or bgzipped)
-    // Staged under a fixed name: the script builds its own local `volume/`, and the directory
-    // produced by SIGPROFILER_INSTALL (and the published cache) is itself called `volume`.
+    // Fixed stage name: the script builds a local `volume/`, and SIGPROFILER_INSTALL's output is itself called `volume`
     tuple val(meta2), path(volume, stageAs: 'genome_volume')      // SigProfilerMatrixGenerator volume containing tsb/<genome>/
     val(genome)                         // SigProfilerMatrixGenerator genome name, e.g. GRCh38 or CHM13-T2T
 
@@ -34,13 +30,11 @@ process SIGPROFILER_MATRIXGENERATOR {
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // SigProfilerMatrixGenerator names the sample after the input file name up to the first '.',
-    // and dispatches on the extension of the (single) file in the input directory.
+    // SigProfilerMatrixGenerator names the sample from the file name up to the first '.' and dispatches on the extension
     def sample = prefix.replaceAll(/[^A-Za-z0-9_-]/, '_')
     def decompress = vcf.name.endsWith('.gz') ? "gzip -cd ${vcf} > input/${sample}.vcf" : "cp ${vcf} input/${sample}.vcf"
     """
-    # Stage only a symlink to the genome payload in a local volume so the tool never writes
-    # into the shared reference directory.
+    # Symlink the genome payload into a local volume so the tool never writes into the shared reference dir
     mkdir -p input volume/tsb plot_templates
     ln -s "\$(readlink -f ${volume})/tsb/${genome}" volume/tsb/${genome}
     # sigProfilerPlotting caches plot templates in its (read-only) package directory unless told otherwise

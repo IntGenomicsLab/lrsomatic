@@ -154,13 +154,11 @@
   theoretical modelling only, and not a substitute for professional medical advice, diagnosis or
   treatment.
 
-  On GRCh38 the score file comes from the bucket unchanged, with a tabix index we host because the
-  release ships without one. On CHM13 the pipeline distributes **an adaptation** of this data: the
-  protein-space release re-keyed from UniProt accession to gene symbol using the UniProt ID mapping,
-  split into reference/position/alternate amino-acid columns, deduplicated where several accessions
-  share a symbol, and tabix-indexed. Rows whose accession has no gene symbol are dropped. **No score
-  is altered.** CC BY 4.0 permits this adaptation and its redistribution with attribution and, as
-  given here, an indication of the changes made.
+  On GRCh38 the score file is used unchanged, with a tabix index we host. On CHM13 the pipeline
+  distributes **an adaptation**: the protein-space release re-keyed from UniProt accession to gene
+  symbol, split into reference/position/alternate amino-acid columns, deduplicated and
+  tabix-indexed; rows without a gene symbol are dropped and **no score is altered**. CC BY 4.0
+  permits this with attribution and this indication of the changes made.
 
 - [Ensembl pangenome PolyPhen/SIFT database](https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/)
 

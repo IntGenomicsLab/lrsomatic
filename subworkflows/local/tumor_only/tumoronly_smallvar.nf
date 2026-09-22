@@ -1,5 +1,6 @@
 // IMPORT MODULES
 include { CLAIRSTO                  } from '../../../modules/local/clairsto/main.nf'
+include { CLAIRSTO_VERDICT_TAG      } from '../../../modules/local/clairsto/verdict_tag/main.nf'
 include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main.nf'
 
 // IMPORT SUBWORKFLOWS
@@ -19,8 +20,12 @@ workflow TUMORONLY_SMALLVAR {
     fai                  // [[:], fai]
     clairsto_pon_channel // [ [pon_vcf_path, ...], [is_population_allele_flag, ...] ]
     //                       used by ClairS-TO to filter germline variants with population allele databases
+    clairsto_cna_channel // [meta, cna_resource_dir] or [[:], []]
+    //                       Verdict's ASCAT set; [] uses the one inside the ClairS-TO image
     ds_pon_channel       // [ [pon_vcf_path, ...] ] or [ [] ]
     //                       user-supplied DeepSomatic PON VCFs; empty list => container defaults
+    ascat_cna_channel    // [meta, purityploidy, segments] per tumor-only sample from ASCAT, or empty
+    //                       with --skip_ascat; Verdict then tags from its own purity/CNA estimate
 
     main:
 
@@ -33,9 +38,7 @@ workflow TUMORONLY_SMALLVAR {
     deepvariant_ch = channel.empty()
     deepsomatic_ch = channel.empty()
 
-    // CLAIRS-TO: somatic AND germline variant calling from tumor-only BAM
-    // ClairS-TO uses a panel-of-normals / population allele database to separate somatic from germline
-    // Runs if either somatic or germline clair calling is requested (produces both jointly)
+    // CLAIRS-TO: somatic and germline calling from a tumor-only BAM, split with a panel of normals
 
     if(somatic_var_keep.contains('clair') || germline_var_keep.contains('clair')) {
         // Append model name and PoN info to build the full CLAIRSTO input
@@ -50,24 +53,53 @@ workflow TUMORONLY_SMALLVAR {
         //
         // MODULE: CLAIRSTO (label: process_high)
         // Input:  [meta, bam, bai, model_str, [pon_vcfs], [pon_flags]]
-        //         fasta / fai
+        //         fasta / fai / Verdict CNA resource directory
         // Output: .snv_vcf   -- [meta, vcf]  -- SNV calls (germline + somatic, unsplit)
         //         .indel_vcf -- [meta, vcf]  -- indel calls (germline + somatic, unsplit)
         //
         CLAIRSTO (
             clairsto_input_ch,
             fasta,
-            fai
+            fai,
+            clairsto_cna_channel
         )
 
-        // SPLIT CLAIRSTO GERMLINE AND SOMATIC VARIATION
-        // ClairS-TO outputs a combined VCF with FILTER tags indicating somatic/germline status;
-        // VCFSPLIT separates these into two VCFs
+        if (!params.skip_ascat) {
+            // CLAIRSTO ran with --disable_verdict, so tag here from R ASCAT's purity and segments instead of
+            // Verdict's own estimate. Joined on the sample id because ASCAT carries the stripped meta.
+            CLAIRSTO.out.snv_vcf
+                .join(CLAIRSTO.out.indel_vcf)
+                .map { meta, snv_vcf, indel_vcf -> [meta.id, meta, snv_vcf, indel_vcf] }
+                .join(
+                    ascat_cna_channel.map { meta, purityploidy, segments -> [meta.id, purityploidy, segments] },
+                    failOnMismatch: true, failOnDuplicate: true
+                )
+                .map { _id, meta, snv_vcf, indel_vcf, purityploidy, segments ->
+                    return [meta, snv_vcf, indel_vcf, purityploidy, segments]
+                }
+                .set { verdict_tag_input }
+            // verdict_tag_input: [meta, snv_vcf, indel_vcf, purityploidy, segments]
 
-        CLAIRSTO.out.indel_vcf
-                    .join(CLAIRSTO.out.snv_vcf)
-                    .set{ clairsto_combined_vcf }
+            //
+            // MODULE: CLAIRSTO_VERDICT_TAG (label: process_low)
+            // Input:  [meta, snv_vcf, indel_vcf, purityploidy, segments]
+            // Output: .snv_vcf / .indel_vcf -- [meta, vcf]  -- the same calls, Verdict-tagged
+            //
+            CLAIRSTO_VERDICT_TAG ( verdict_tag_input )
+
+            CLAIRSTO_VERDICT_TAG.out.indel_vcf
+                .join(CLAIRSTO_VERDICT_TAG.out.snv_vcf)
+                .set { clairsto_combined_vcf }
+        }
+        else {
+            CLAIRSTO.out.indel_vcf
+                .join(CLAIRSTO.out.snv_vcf)
+                .set { clairsto_combined_vcf }
+        }
         // clairsto_combined_vcf: [meta, indel_vcf, snv_vcf]
+
+        // SPLIT CLAIRSTO GERMLINE AND SOMATIC VARIATION
+        // ClairS-TO tags somatic/germline status in FILTER; VCFSPLIT splits on it
 
         //
         // MODULE: VCFSPLIT (label: process_single)
@@ -175,8 +207,7 @@ workflow TUMORONLY_SMALLVAR {
             .set{germline_vcf}
     }
 
-    // DEEPSOMATIC: somatic variant calling in tumor-only mode (no matched normal)
-    // Normal BAM/BAI are passed as empty lists; DeepSomatic uses the model's internal normal baseline
+    // DEEPSOMATIC in tumor-only mode: normal BAM/BAI are empty lists
     if(somatic_var_keep.contains('deepsomatic')) {
         tumor_bams
             .map { meta, tumor_bam, tumor_bai ->

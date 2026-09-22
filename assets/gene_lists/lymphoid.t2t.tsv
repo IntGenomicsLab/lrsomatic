@@ -1,0 +1,240 @@
+# reference: t2t
+# SV genes (applies_to blank or 'sv'): gene spans from NHL_Genes_T2T.bed
+# small-variant genes (applies_to blank or 'snv'): symbols from twist_genes.tsv
+# blank applies_to = the gene filters both tables; coordinates are required only for blank/'sv' rows
+# coordinates are 1-based inclusive gene spans; only valid for the reference declared above
+gene	chrom	start	end	applies_to	panel	notes
+SKI	chr1	1662797	1746139	sv	lymphoid
+ARID1A	chr1	26531180	26620059		lymphoid	TSG
+RCC1	chr1	28347899	28381260	sv	lymphoid
+YTHDF2	chr1	28578612	28611771	sv	lymphoid
+LCK	chr1	32109148	32144081	sv	lymphoid
+BCL10	chr1	85106896	85117748	sv	lymphoid
+CD58	chr1	116524958	116581487		lymphoid	TSG
+TPM3	chr1	153292536	153331881	sv	lymphoid
+MUC1	chr1	154325440	154331479	sv	lymphoid
+FCRL4	chr1	156710808	156735121	sv	lymphoid
+FCGR2B	chr1	160991589	161022983	sv	lymphoid
+CD247	chr1	166776368	166870091	sv	lymphoid
+DNMT3A	chr2	25263203	25377928		lymphoid	OG
+ALK	chr2	29236229	29965553	sv	lymphoid
+BCL11A	chr2	60456325	60560305	sv	lymphoid
+REL	chr2	60887337	60937448		lymphoid	OG
+IGK	chr2	88866370	90790947	sv	lymphoid
+CD28	chr2	204188394	204220837		lymphoid	OG
+CTLA4	chr2	204335773	204355847	sv	lymphoid
+ICOS	chr2	204418652	204443466	sv	lymphoid
+IKZF2	chr2	213480525	213633302	sv	lymphoid
+PDCD1	chr2	242354814	242360440	sv	lymphoid
+RHOA	chr3	49388512	49442377		lymphoid	TSG/OG; TSG in BL, OG DLBCL/ATLL, both in AITL
+FOXP1	chr3	70991193	71623253	sv	lymphoid
+CBLB	chr3	108373636	108587854	sv	lymphoid
+SKIL	chr3	173141994	173181517	sv	lymphoid
+BCL6	chr3	190538887	190563234	sv	lymphoid
+TP63	chr3	192413470	192713713	sv	lymphoid
+RHOH	chr4	40161112	40217041	sv	lymphoid
+BANK1	chr4	104726001	105389016	sv	lymphoid
+TET2	chr4	108456807	108590759		lymphoid	TSG
+FER	chr5	109250458	109700301	sv	lymphoid
+ITK	chr5	157661876	157774113	sv	lymphoid
+NPM1	chr5	171927442	171952138	sv	lymphoid
+DUSP22	chr6	146566	206310	sv	lymphoid
+IRF4	chr6	250123	269771		lymphoid	TSG/OG; TSG in immature, OG in mature lymphomas
+HLA-A	chr6	29805190	29813504	sv	lymphoid
+HLA-B	chr6	31209764	31222948	sv	lymphoid
+CCND3	chr6	41763493	41878616		lymphoid	OG
+IBTK	chr6	83379382	83457149	sv	lymphoid
+BACH2	chr6	91138217	91508429	sv	lymphoid
+MAP3K7	chr6	91725177	91798338	sv	lymphoid
+PRDM1	chr6	107168603	107285802		lymphoid	TSG
+TRAF3IP2	chr6	112738381	112789912	sv	lymphoid
+FYN	chr6	112843350	113056537		lymphoid	OG
+ROS1	chr6	118471267	118609847	sv	lymphoid
+MYB	chr6	136369551	136407419	sv	lymphoid
+TNFAIP3	chr6	139054770	139071727		lymphoid	TSG
+ZC3H12D	chr6	150646494	150684730	sv	lymphoid
+LATS1	chr6	150857942	150917882	sv	lymphoid
+CARD11	chr7	3019747	3157777		lymphoid	OG
+TRG	chr7	38380942	38524936	sv	lymphoid
+IKZF1	chr7	50464666	50566317		lymphoid	TSG/OG; TSG in B-ALL, ? in mature lymphomas
+CDK6	chr7	93846868	94078562	sv	lymphoid
+KMT2E	chr7	106255771	106429704	sv	lymphoid
+TRB	chr7	143614080	144169005	sv	lymphoid
+EZH2	chr7	149989031	150066100		lymphoid	OG
+KMT2C	chr7	153307812	153609541	sv	lymphoid
+MYC	chr8	128863685	128870405		lymphoid	OG
+JAK2	chr9	4989498	5135022		lymphoid	OG
+CD274	chr9	5455630	5475686		lymphoid	OG
+PDCD1LG2	chr9	5515648	5576398		lymphoid	OG
+KDM4C	chr9	6715554	7172114	sv	lymphoid
+CDKN2A	chr9	21982052	22009697		lymphoid	TSG
+CDKN2B	chr9	22017276	22023690		lymphoid	TSG
+PAX5	chr9	36856832	37057981		lymphoid	TSG/OG; TSG in B-ALL/PEL/MCL, OG in B-NHL and T-NHL
+SYK	chr9	102966952	103064392	sv	lymphoid
+LHX2	chr9	136199572	136231219	sv	lymphoid
+GATA3	chr10	8046213	8076094	sv	lymphoid
+PTEN	chr10	88746541	88855830		lymphoid	TSG
+NFKB2	chr10	103279058	103287478	sv	lymphoid
+CD44	chr11	35276945	35370499	sv	lymphoid
+CD5	chr11	61045145	61079346	sv	lymphoid
+KDM2A	chr11	67110939	67252047	sv	lymphoid
+CCND1	chr11	69658031	69671351		lymphoid	OG
+BIRC3	chr11	102319569	102341520		lymphoid	TSG
+ATM	chr11	108230586	108376596		lymphoid	TSG
+SIK3	chr11	116858511	117113708	sv	lymphoid
+PAFAH1B2	chr11	117159592	117193468	sv	lymphoid
+CD3E	chr11	118321077	118332499	sv	lymphoid
+CD3D	chr11	118355312	118359063	sv	lymphoid
+CD3G	chr11	118360702	118371513	sv	lymphoid
+KMT2A	chr11	118455758	118546121	sv	lymphoid
+DDX6	chr11	118766827	118810815	sv	lymphoid
+CBL	chr11	119226671	119334559	sv	lymphoid
+CCND2	chr12	4276533	4312135		lymphoid	OG
+ARID2	chr12	45688334	45867624	sv	lymphoid
+KMT2D	chr12	48981147	49022967		lymphoid	TSG
+KDM2B	chr12	121399894	121575445	sv	lymphoid
+SETD1B	chr12	121786826	121829318	sv	lymphoid
+BCL7A	chr12	122015226	122057841	sv	lymphoid
+NCOR2	chr12	124326823	124572903	sv	lymphoid
+FOXO1	chr13	39774673	39885620		lymphoid	TSG/OG; TSG in PMBCL, OG in BL/MCL/FL, both in DLBCL
+RB1	chr13	47524078	47819718		lymphoid	TSG
+DLEU2	chr13	49133333	49346302	sv	lymphoid
+DLEU1	chr13	49302749	50121808	sv	lymphoid
+LAMP1	chr13	112550907	112577228	sv	lymphoid
+TRA/D	chr14	15819498	16749884	sv	lymphoid
+ZFP36L1	chr14	62994521	63003117	sv	lymphoid
+TCL1A	chr14	89941532	89945781	sv	lymphoid
+BCL11B	chr14	93400844	93503767		lymphoid	TSG/OG; TSG in T-ALL, OG in ATLL
+IGH	chr14	99978557	101155136	sv	lymphoid
+NBEAP1	chr15	18569489	18585034	sv	lymphoid
+SIN3A	chr15	73239476	73325928	sv	lymphoid
+IDH2	chr15	87839072	87858509		lymphoid	OG
+FES	chr15	88643292	88655365	sv	lymphoid
+CREBBP	chr16	3752324	3907918		lymphoid	TSG
+CIITA	chr16	10902174	10978998		lymphoid	TSG
+IL4R	chr16	27592413	27643525		lymphoid	OG
+IRF8	chr16	91965615	91989108		lymphoid	TSG
+CBFA2T3	chr16	94945216	95054578	sv	lymphoid
+TP53	chr17	7565929	7591642		lymphoid	TSG
+KDM6B	chr17	7738322	7760122	sv	lymphoid
+NCOR1	chr17	15931277	16120496	sv	lymphoid
+STAT3	chr17	43169811	43244778		lymphoid	OG
+TBX21	chr17	48595046	48607933	sv	lymphoid
+MALT1	chr18	58872604	58955588	sv	lymphoid
+BCL2	chr18	63326497	63525189		lymphoid	OG
+VAV1	chr19	6762101	6846689		lymphoid	OG
+MYO1F	chr19	8508359	8564804	sv	lymphoid
+CCNE1	chr19	32337722	32350035	sv	lymphoid
+BCL3	chr19	47572454	47584794	sv	lymphoid
+SPIB	chr19	53506494	53518875	sv	lymphoid
+IGL	chr22	22439629	23345823	sv	lymphoid
+EWSR1	chr22	29731500	29763945	sv	lymphoid
+SH3KBP1	chrX	19116856	19470507	sv	lymphoid
+GPR34	chrX	41093901	41102205		lymphoid	OG
+KDM6A	chrX	44280009	44519820		lymphoid	TSG
+ACTG1				snv	lymphoid	TSG
+ANKRD26				snv	lymphoid	OG
+ARID1B				snv	lymphoid	TSG
+B2M				snv	lymphoid	TSG
+BCOR				snv	lymphoid	TSG
+BCORL1				snv	lymphoid	TSG
+BIRC6				snv	lymphoid	OG
+BRAF				snv	lymphoid	OG
+BTK				snv	lymphoid	OG
+CCR6				snv	lymphoid	OG
+CCR7				snv	lymphoid	OG
+CD79A				snv	lymphoid	OG
+CD79B				snv	lymphoid	OG
+CDKN1B				snv	lymphoid	TSG
+CRLF2				snv	lymphoid	OG
+CXCR4				snv	lymphoid	OG
+CYLD				snv	lymphoid	TSG
+DDX3X				snv	lymphoid	TSG
+DDX41				snv	lymphoid	TSG
+DIS3				snv	lymphoid	TSG
+EBF1				snv	lymphoid	TSG
+EED				snv	lymphoid	TSG
+EGR1				snv	lymphoid	TSG
+ELANE				snv	lymphoid	OG
+EP300				snv	lymphoid	TSG
+ETV6				snv	lymphoid	TSG/OG; TSG in T-ALL/PCNSL, OG in DLBCL/B-LBL
+FAS				snv	lymphoid	TSG
+FBXW7				snv	lymphoid	TSG
+FGFR3				snv	lymphoid	OG
+FLT3				snv	lymphoid	OG
+GATA2				snv	lymphoid	OG
+GFI1				snv	lymphoid	OG
+GNA13				snv	lymphoid	TSG
+GNAI2				snv	lymphoid	OG
+HAVCR2				snv	lymphoid	TSG
+HRAS				snv	lymphoid	OG
+ID3				snv	lymphoid	TSG
+IDH1				snv	lymphoid	OG
+IL7R				snv	lymphoid	OG
+INO80				snv	lymphoid	OG
+ITPKB				snv	lymphoid	OG
+JAK1				snv	lymphoid	OG
+JAK3				snv	lymphoid	OG
+KDM1A				snv	lymphoid	OG
+KLF2				snv	lymphoid	TSG
+KRAS				snv	lymphoid	OG
+MAP2K1				snv	lymphoid	OG
+MEF2B				snv	lymphoid	OG
+MFHAS1				snv	lymphoid	OG
+MGA				snv	lymphoid	TSG
+MSH2				snv	lymphoid	TSG
+MYD88				snv	lymphoid	OG
+NFKBIE				snv	lymphoid	TSG
+NOTCH1				snv	lymphoid	OG
+NOTCH2				snv	lymphoid	OG
+NR3C1				snv	lymphoid	TSG
+NRAS				snv	lymphoid	OG
+NSD2				snv	lymphoid	OG
+PDGFRB				snv	lymphoid	OG
+PHF6				snv	lymphoid	TSG
+PIK3CA				snv	lymphoid	OG
+PIK3CD				snv	lymphoid	OG
+PIK3R1				snv	lymphoid	TSG
+PIM1				snv	lymphoid	OG
+PLCG1				snv	lymphoid	OG
+PLCG2				snv	lymphoid	OG
+POT1				snv	lymphoid	TSG
+PPM1D				snv	lymphoid	OG
+PRKCB				snv	lymphoid	OG
+PRKD2				snv	lymphoid	OG
+PTPN11				snv	lymphoid	OG
+PTPRD				snv	lymphoid	TSG
+RAD21				snv	lymphoid	TSG
+RUNX1				snv	lymphoid	TSG/OG; dualistic behavior
+SAMD9				snv	lymphoid	TSG
+SAMD9L				snv	lymphoid	TSG
+SETD2				snv	lymphoid	TSG
+SF3B1				snv	lymphoid	OG
+SGK1				snv	lymphoid	OG
+SLAMF1				snv	lymphoid	OG
+SMARCA2				snv	lymphoid	TSG
+SMARCA4				snv	lymphoid	TSG
+SMC1A				snv	lymphoid	TSG
+SMC3				snv	lymphoid	TSG
+SOCS1				snv	lymphoid	TSG
+SOCS3				snv	lymphoid	TSG
+SP140				snv	lymphoid	TSG
+SRP72				snv	lymphoid	OG
+STAG1				snv	lymphoid	TSG
+STAG2				snv	lymphoid	TSG
+STAT5B				snv	lymphoid	OG
+STAT6				snv	lymphoid	OG
+SUZ12				snv	lymphoid	TSG/OG; TSG in NHL, OG in MCL
+TBL1XR1				snv	lymphoid	OG
+TCF3				snv	lymphoid	TSG/OG; TSG in TCL, OG in BL/DLBCL
+TENT5C				snv	lymphoid	TSG
+TET3				snv	lymphoid	TSG
+TNFRSF14				snv	lymphoid	TSG
+TRAF2				snv	lymphoid	OG
+TRAF3				snv	lymphoid	TSG
+U2AF1				snv	lymphoid	OG
+UBR5				snv	lymphoid	OG
+USP45				snv	lymphoid	OG
+WAS				snv	lymphoid	TSG
+WT1				snv	lymphoid	TSG
+XPO1				snv	lymphoid	OG

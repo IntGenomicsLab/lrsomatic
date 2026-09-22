@@ -20,9 +20,7 @@ process VEPPLUGIN_EVE {
     script:
     def args = task.ext.args ?: ''
     """
-    # Merging thousands of per-protein VCFs needs scratch space rather than /tmp. The task
-    # directory is already on scratch, and an inherited TMPDIR need not be bound inside
-    # the container, so point at it unconditionally rather than deferring to the host.
+    # TMPDIR into the task dir: it is on scratch, and an inherited host TMPDIR need not be bound in the container
     export TMPDIR=\$PWD
 
     prepare_vep_plugin_data.sh eve ${eve_dir} . ${args}

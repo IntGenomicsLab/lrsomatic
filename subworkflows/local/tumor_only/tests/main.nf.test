@@ -1,0 +1,110 @@
+nextflow_workflow {
+
+    name "Test Workflow TUMORONLY_SMALLVAR"
+    script "../tumoronly_smallvar.nf"
+    workflow "TUMORONLY_SMALLVAR"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "tumoronly_smallvar"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // The only coverage of the ASCAT tagging path (pipeline tests all set skip_ascat). Run under
+    // -stub: what is tested is that the join pairs each sample's calls with its own ASCAT tables.
+
+    test("ASCAT in the run - the calls are tagged from ASCAT's tables") {
+
+        options "-stub"
+
+        when {
+            params {
+                skip_ascat = false
+            }
+            workflow {
+                """
+                def fixtures = "\${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures"
+                def stand_ins = "\${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures"
+                // Distinct files only because Nextflow refuses two staged inputs of the same name
+                def bam   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true)
+                def bai   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr2.txt", checkIfExists: true)
+                def fasta = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true)
+                def fai   = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr2.txt", checkIfExists: true)
+                def pon   = file("\${stand_ins}/gc/GC_G1000_hg38.txt", checkIfExists: true)
+                def meta = [ id:'sample3', paired_data:false, type:'tumor', clairSTO_model:'hifi' ]
+
+                input[0] = channel.of([ meta, bam, bai ])
+                input[1] = channel.value([ [:], fasta ])
+                input[2] = channel.value([ [:], fai ])
+                input[3] = channel.value([ [ pon ], [ 'True' ] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], [] ])
+                input[6] = channel.of([
+                    meta,
+                    file("\${fixtures}/sample3.purity_0.5.purityploidy.txt", checkIfExists: true),
+                    file("\${fixtures}/sample3.segments.txt", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                // The tagging step ran, so the join found ASCAT's tables for this sample
+                { assert processes.any { name -> name.contains('CLAIRSTO_VERDICT_TAG') } },
+                // and VCFSPLIT was fed from it
+                { assert processes.any { name -> name.contains('VCFSPLIT') } },
+                { assert workflow.out.somatic_vcf.size() == 1 },
+                { assert workflow.out.germline_vcf.size() == 1 }
+            )
+        }
+    }
+
+    test("--skip_ascat - ClairS-TO's own Verdict tags are kept") {
+
+        options "-stub"
+
+        when {
+            params {
+                skip_ascat = true
+            }
+            workflow {
+                """
+                def fixtures = "\${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures"
+                def stand_ins = "\${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures"
+                // Distinct files only because Nextflow refuses two staged inputs of the same name
+                def bam   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true)
+                def bai   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr2.txt", checkIfExists: true)
+                def fasta = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true)
+                def fai   = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr2.txt", checkIfExists: true)
+                def pon   = file("\${stand_ins}/gc/GC_G1000_hg38.txt", checkIfExists: true)
+                def meta = [ id:'sample3', paired_data:false, type:'tumor', clairSTO_model:'hifi' ]
+
+                input[0] = channel.of([ meta, bam, bai ])
+                input[1] = channel.value([ [:], fasta ])
+                input[2] = channel.value([ [:], fai ])
+                input[3] = channel.value([ [ pon ], [ 'True' ] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], [] ])
+                input[6] = channel.empty()
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                // No re-tagging: ClairS-TO's own VCFs go straight to VCFSPLIT
+                { assert !processes.any { name -> name.contains('CLAIRSTO_VERDICT_TAG') } },
+                { assert processes.any { name -> name.contains('VCFSPLIT') } },
+                { assert workflow.out.somatic_vcf.size() == 1 },
+                { assert workflow.out.germline_vcf.size() == 1 }
+            )
+        }
+    }
+}

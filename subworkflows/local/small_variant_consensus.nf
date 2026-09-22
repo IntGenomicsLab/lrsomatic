@@ -22,19 +22,14 @@ workflow SMALL_VARIANT_CONSENSUS {
     main:
 
     //
-    // MODULE: BCFTOOLS_NORM (label: process_medium)
-    // Left-align and normalise each per-caller VCF. bcftools norm does not require
-    // sorted input, and left-alignment can itself shift positions and create
-    // out-of-order records, so we sort AFTER normalisation rather than before.
+    // MODULE: BCFTOOLS_NORM (label: process_medium) -- left-align and normalise; sorted after, since left-alignment can reorder records
     // Input:  [meta, vcf, tbi]  -- per-caller VCF
     // Output: .vcf -- [meta, vcf]  -- left-aligned, normalised VCF (unsorted)
     //
     BCFTOOLS_NORM(mixed_vcfs, fasta)
 
     //
-    // MODULE: SORT_POST_NORM (BCFTOOLS_SORT alias, label: process_medium)
-    // Re-sort after normalisation to fix any coordinate disorder introduced by
-    // left-alignment, and write the tabix index inline.
+    // MODULE: SORT_POST_NORM (BCFTOOLS_SORT alias, label: process_medium) -- re-sort and index after normalisation
     // Input:  [meta, vcf]
     // Output: .vcf -- [meta, vcf.gz]
     //         .tbi -- [meta, tbi]
@@ -47,11 +42,9 @@ workflow SMALL_VARIANT_CONSENSUS {
     // normalized_vcfs: [meta(+caller), vcf.gz, tbi]  -- normalised, sorted per-caller VCF
 
     //
-    // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low)
-    // Renames the allele frequency FORMAT field to match the priority caller's convention:
+    // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low) -- rename the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
-    // This is a no-op for VCFs that already use the target field name.
     //
     if (combine_method == 'all') {
         normalized_vcfs
@@ -182,15 +175,10 @@ workflow SMALL_VARIANT_CONSENSUS {
     // isec_input: [meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi], [], [], []]
 
     //
-    // MODULE: BCFTOOLS_ISEC (label: process_medium)
-    // Computes the intersection and private sets for the two callers
+    // MODULE: BCFTOOLS_ISEC (label: process_medium) -- shared and private sets of the two callers
     // Input:  [meta, [vcf1, vcf2], [tbi1, tbi2], [], [], []]
-    // Output (custom nf-core module outputs):
-    //   .deepvar_consensus_vcf  -- [meta, vcf]  -- variants called by both callers (DeepVariant record)
-    //   .clair_consensus_vcf    -- [meta, vcf]  -- variants called by both callers (Clair record)
-    //   .deepvar_private_vcf    -- [meta, vcf]  -- variants unique to DeepVariant
-    //   .clair_private_vcf      -- [meta, vcf]  -- variants unique to Clair
-    //   (+ corresponding .tbi outputs for each)
+    // Output: .deepvar_consensus_vcf / .clair_consensus_vcf -- [meta, vcf]  -- shared calls, DeepVariant or Clair record
+    //         .deepvar_private_vcf / .clair_private_vcf     -- [meta, vcf]  -- caller-private calls (+ .tbi for each)
     //
     BCFTOOLS_ISEC(isec_input)
 
@@ -208,10 +196,8 @@ workflow SMALL_VARIANT_CONSENSUS {
         else {
             error("prioritize_caller must be one of [deepvariant, deepsomatic, clair], got '${prioritize_caller}'")
         }
-        // BCFTOOLS_ISEC outputs hardcoded names (0002.vcf.gz) inside a prefix directory.
-        // Nextflow stages files using basename only, so both germline and somatic consensus
-        // VCFs would collide as "0002.vcf.gz" in downstream PHASING_HAPLOTYPING:BCFTOOLS_CONCAT.
-        // BCFTOOLS_SORT_CONSENSUS renames the file to a unique sample-specific name via modules.config.
+        // ISEC always writes 0002.vcf.gz, so germline and somatic would collide by basename in BCFTOOLS_CONCAT;
+        // BCFTOOLS_SORT_CONSENSUS renames it per sample (conf/modules.config)
         BCFTOOLS_SORT_CONSENSUS(isec_consensus_vcf)
         BCFTOOLS_SORT_CONSENSUS.out.vcf.set{vcf}
         BCFTOOLS_SORT_CONSENSUS.out.tbi.set{tbi}
@@ -219,11 +205,9 @@ workflow SMALL_VARIANT_CONSENSUS {
     }
 
     else if (combine_method == 'all') {
-        // Union: every variant called by either caller. Variants called by both contribute a
-        // single record, taken from the prioritized caller; the private calls of BOTH callers
-        // are kept. This matches `*_var_combine = 'all'` in nextflow_schema.json ("keeps all
-        // variants from both callers"); `prioritize_caller` only selects whose record is used
-        // for the shared variants, never which calls are kept.
+        // Union: all variants from both callers. Shared variants contribute a single record, taken
+        // from the prioritized caller; both callers' private calls are kept. prioritize_caller only
+        // selects whose record is used for shared variants, never which calls are kept.
         // The three isec sets are disjoint by construction, so BCFTOOLS_CONCAT needs no -d.
         if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
             // shared (DeepVariant record) + DeepVariant-private + Clair-private

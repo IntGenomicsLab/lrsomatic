@@ -37,17 +37,10 @@ limitations under the License.
 
 =head1 DESCRIPTION
 
- Annotates amino-acid-changing variants with AlphaMissense pathogenicity values
- looked up in PROTEIN space rather than genomic space, which is what makes them
- reachable on T2T-CHM13. AlphaMissense is published in GRCh37/GRCh38 coordinates
- only, but the score is a function of (protein sequence, amino-acid
- substitution), so keyed on gene symbol and substitution it is
- assembly-independent and needs no liftover.
-
- The table is that release re-keyed from UniProt accession onto gene symbol,
- indexed with `tabix -s 1 -b 2 -e 2` -- tabix's "sequence" column is just a
- string, which is what lets a protein-space table be range-queried at all. See
- CITATIONS.md for how it was derived.
+ Annotates missense variants with AlphaMissense values looked up in protein
+ space (gene symbol + amino-acid substitution) rather than genomic space, which
+ makes them reachable on T2T-CHM13 without liftover. The table is the release
+ re-keyed onto gene symbol and tabix-indexed; see CITATIONS.md.
 
  A row is used only when both its reference and its alternate amino acid equal
  what VEP computed for the transcript at hand, so where the CHM13 protein
@@ -207,10 +200,8 @@ sub run {
   my $tv = $tva->transcript_variation;
   return {} unless $tv;
 
-  # AlphaMissense scores missense substitutions only. Stop-gain, start-lost and stop-lost
-  # are single-residue changes too ('A/*', 'M/L' at position 1), so without this they would
-  # reach the aa_mismatch return below and be reported as protein divergence -- which they
-  # are not. The stock REVEL plugin filters the same way.
+  # Missense only: stop-gain/start-lost/stop-lost are single-residue changes too and would
+  # otherwise be reported as aa_mismatch.
   return {} unless grep { $_->SO_term eq 'missense_variant' } @{$tva->get_all_OverlapConsequences};
 
   # A single-residue amino-acid substitution is the only thing this table keys on.
@@ -230,10 +221,8 @@ sub run {
   return { AlphaMissenseProtein_match => 'no_gene' }
     unless defined $symbol && $symbol ne '';
 
-  # Query a small window and filter exactly. get_data() is 1-based on the
-  # Bio::DB::HTS path and 0-based on the Tabix.pm path, so padding then
-  # exact-matching aapos is correct on either backend; it also avoids passing a
-  # start of 0 for the initiator methionine, which get_data() rejects.
+  # get_data() is 1-based on Bio::DB::HTS and 0-based on Tabix.pm, so pad the window and
+  # match aapos exactly; padding also avoids a start of 0 at the initiator Met.
   my $qs = $pos > 2 ? $pos - 2 : 1;
   my $rows = $self->get_data($symbol, $qs, $pos + 1);
 

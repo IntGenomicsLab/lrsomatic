@@ -25,8 +25,7 @@ workflow PREPARE_VEP_PLUGINS {
     // MODULES: WGET_REVEL -> UNZIP_REVEL -> VEPPLUGIN_REVEL (labels: process_single, process_single, process_medium)
     // Input:  the REVEL release, as a URL or as a local zip
     // Output: .files -- revel_grch38.tsv.gz and its index
-    // A remote release goes through wget: REVEL's host answers 403 to a request carrying no
-    // User-Agent and EVE's redirects HTTPS to HTTP, so neither can be staged as a path input
+    // Remote releases go through wget: REVEL 403s a request without a User-Agent and EVE redirects HTTPS to HTTP
     //
     if (prepare.containsKey('vep_revel')) {
         if (prepare['vep_revel'].toString().contains('://')) {
@@ -83,8 +82,7 @@ workflow PREPARE_VEP_PLUGINS {
         ch_versions = ch_versions.mix(UNZIP_EVE.out.versions)
     }
 
-    // A value channel, since both the germline and the somatic VEP task read it. collect() emits
-    // nothing on an empty upstream, so ifEmpty is what carries the no-plugins case.
+    // Value channel read by both VEP tasks; ifEmpty carries the no-plugins case, since collect() emits nothing then
     ch_extra_files = staged
         .inject(channel.empty()) { acc, ch -> acc.mix(ch) }
         .flatten()

@@ -23,7 +23,6 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     task.ext.when == null || task.ext.when
 
     script:
-    // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPSOMATIC module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
@@ -44,11 +43,9 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def nPonFiles = ponFiles.size()
     def ponArrayLiteral = ponFiles.collect { f -> "${f}" }.join(' ')
 
-    // Shell block to prepare the PON VCF (merge if multiple, copy if single, skip if none)
-    // Runs before make_examples_somatic so the result is available as merged_pon.vcf.gz
+    // Prepare the PON VCF before make_examples_somatic: merge several, copy one, skip none
     def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
-    # Prepare PON VCF for --population_vcfs: merge multiple databases into one sorted+indexed file,
-    # or copy a single VCF. DeepSomatic requires no chromosome overlap across population VCFs.
+    # --population_vcfs takes one sorted, indexed VCF with no chromosome overlap: merge several or copy one
     _PON_VCFS=( ${ponArrayLiteral} )
     if [ \${#_PON_VCFS[@]} -gt 1 ]; then
         gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt

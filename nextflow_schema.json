@@ -20,7 +20,7 @@
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "help_text": "Path to a comma-separated samplesheet with a header row; see the [usage documentation](https://github.com/IntGenomicsLab/lrsomatic/blob/main/docs/usage.md#samplesheet-input) for the columns.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -132,13 +132,14 @@
             "properties": {
                 "modkit_args": {
                     "type": "string",
-                    "description": "Command line arguments passed to `modkit pileup`. The value replaces the default rather than extending it, so repeat `--cpg --modified-bases 5mC` when adding flags (e.g. `--cpg --modified-bases 5mC --combine-strands`); an empty value gives the unfiltered pileup of every modification code at every position (use the `=` form on the command line, `--modkit_args=''`, or an empty `modkit_args` entry in a params file; `--modkit_args ''` reaches the pipeline as `true`, which parameter validation rejects on Nextflow 25 and which the pipeline has to discard on Nextflow 26). The default restricts the bedMethyl output to 5mC calls at CpG sites. Note that `--modified-bases` only filters the output: on PacBio data, positions (not reads) where the 5mC and 5hmC probabilities sum above 1 are still dropped, and non-conflicting 5hmC calls are counted in the `N_other` column.",
+                    "description": "Command line arguments passed to `modkit pileup`. The value replaces the default rather than extending it; the default restricts the bedMethyl output to 5mC calls at CpG sites.",
+                    "help_text": "Repeat `--cpg --modified-bases 5mC` when adding flags (e.g. `--cpg --modified-bases 5mC --combine-strands`). An empty value gives the unfiltered pileup of every modification code at every position: use `--modkit_args=''` (the `=` form) or an empty `modkit_args` entry in a params file, since `--modkit_args ''` reaches the pipeline as `true`. `--modified-bases` only filters the output: on PacBio data, positions where the 5mC and 5hmC probabilities sum above 1 are still dropped and non-conflicting 5hmC calls are counted in `N_other`.",
                     "fa_icon": "fas fa-terminal",
                     "default": "--cpg --modified-bases 5mC"
                 },
                 "modkit_phased": {
                     "type": "boolean",
-                    "description": "Run `modkit pileup --phased` on the Longphase-haplotagged BAMs (HP tag) instead of the unphased aligned BAMs, producing `<sample>_hp1.bed.gz`, `<sample>_hp2.bed.gz` and `<sample>_combined.bed.gz`. The pileup then depends on small-variant calling, phasing and haplotagging having completed for the sample: a failure in any of those steps means no bedMethyl output for that sample, whereas the default pileup only needs the aligned BAM.",
+                    "description": "Run `modkit pileup --phased` on the Longphase-haplotagged BAMs, producing `<sample>_hp1.bed.gz`, `<sample>_hp2.bed.gz` and `<sample>_combined.bed.gz`. The pileup then requires small-variant calling, phasing and haplotagging to have succeeded for the sample.",
                     "default": false
                 }
             }
@@ -169,6 +170,13 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
+                },
+                "clairsto_cna_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Verdict CNA resource directory for ClairS-TO, holding loci_files/, allele_files/ and one GC_*.txt. Read only with --skip_ascat.",
+                    "help_text": "Read only on `--skip_ascat` runs; otherwise Verdict's germline tagging comes from the pipeline's ASCAT run and this is ignored. The image ships the GRCh38 set and `--genome CHM13 --skip_ascat` builds a CHM13 one, so this is only needed for another assembly or as an override. The directory must be self-contained, with no links reaching outside it. Add an `RT_<name>.txt` to correct LogR for replication timing as well; without it, correction is GC-only.",
+                    "fa_icon": "fas fa-folder-open"
                 }
             }
         },
@@ -256,7 +264,7 @@
                     "type": "string",
                     "description": "Path or URL to a protein-space AlphaMissense table for the AlphaMissenseProtein plugin (CHM13).",
                     "fa_icon": "fas fa-file",
-                    "help_text": "Defaults on --genome CHM13 to a table we host (1.1 GB, indexed), built from the AlphaMissense protein-space release by re-keying UniProt accessions onto gene symbols -- see CITATIONS.md. Keyed on gene symbol and amino-acid substitution, so it is assembly-independent, which is what makes AlphaMissense reachable on CHM13. Supply this with --vep_alphamissense_aa_tbi to use a table of your own."
+                    "help_text": "Defaults on --genome CHM13 to a table we host (1.1 GB, indexed), built from the AlphaMissense protein-space release -- see CITATIONS.md. Keyed on gene symbol and amino-acid substitution, so it is assembly-independent, which is what makes AlphaMissense reachable on CHM13. Supply this with --vep_alphamissense_aa_tbi to use a table of your own."
                 },
                 "vep_alphamissense_aa_tbi": {
                     "type": "string",
@@ -268,13 +276,13 @@
                     "type": "string",
                     "description": "Path or URL to the Ensembl pangenome PolyPhen/SIFT SQLite database for the PolyPhen_SIFT plugin (CHM13).",
                     "fa_icon": "fas fa-database",
-                    "help_text": "Defaults to homo_sapiens_pangenome_PolyPhen_SIFT_20240502.db (13 GB) from https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/ on --genome CHM13, pinned to a release rather than current_variation/, which moves at every Ensembl release. Keyed on the MD5 of the peptide sequence, which is why it works on CHM13. On GRCh38 SIFT and PolyPhen come from the VEP cache instead and this is unused. Worth pointing at a local copy: it is large and needs no preparation."
+                    "help_text": "Defaults to homo_sapiens_pangenome_PolyPhen_SIFT_20240502.db (13 GB) from https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/ on --genome CHM13. Keyed on the MD5 of the peptide sequence, which is why it works on CHM13; on GRCh38 SIFT and PolyPhen come from the VEP cache and this is unused. It needs no preparation, so point at a local copy."
                 },
                 "vep_clinvar": {
                     "type": "string",
                     "description": "Path or URL to a ClinVar VCF, added as a VEP --custom annotation.",
                     "fa_icon": "fas fa-file",
-                    "help_text": "Defaults to the NCBI GRCh38 VCF on --genome GRCh38 and the CHM13-lifted Ensembl VCF on --genome CHM13, both with their published .tbi. Check that contig naming matches your reference: NCBI names contigs 1, 2, 3 while the GATK GRCh38 reference uses chr1, chr2, chr3. VEP does try to reconcile the two for --custom files, via assembly synonyms and then by adding or stripping a chr prefix, so this usually resolves itself -- but it is not guaranteed for every contig, and a name it cannot map annotates nothing rather than raising an error. Confirm CLNSIG values actually appear before trusting them."
+                    "help_text": "Defaults to the NCBI GRCh38 VCF on --genome GRCh38 and the CHM13-lifted Ensembl VCF on --genome CHM13, both with their published .tbi. Contig naming differs between NCBI (1, 2, 3) and the GATK GRCh38 reference (chr1, chr2, chr3); VEP usually reconciles this for --custom files, but a name it cannot map annotates nothing, so confirm CLNSIG values appear before trusting them."
                 },
                 "vep_clinvar_tbi": {
                     "type": "string",
@@ -292,7 +300,7 @@
                     "type": "string",
                     "description": "Path or URL to the CADD SNV score file for the CADD plugin.",
                     "fa_icon": "fas fa-file",
-                    "help_text": "Off by default, like --vep_eve and unlike the other GRCh38 resources: whole_genome_SNVs.tsv.gz from https://krishna.gs.washington.edu/download/CADD/v1.7/GRCh38/ is 81 GB, and Nextflow's foreign-file cache is keyed per session, so every run that is not a -resume would re-stage it through the head job with no resumable download. Set this (with --vep_cadd_snv_tbi) to enable it, ideally pointing at a local copy rather than the URL. GRCh38 only: CADD scores non-coding positions and so has no protein-space form usable on CHM13. Free for non-commercial use only."
+                    "help_text": "Off by default: whole_genome_SNVs.tsv.gz from https://krishna.gs.washington.edu/download/CADD/v1.7/GRCh38/ is 81 GB and is re-staged on every run that is not a -resume. Set this with --vep_cadd_snv_tbi to enable it, ideally pointing at a local copy. GRCh38 only: CADD scores non-coding positions and has no protein-space form for CHM13. Free for non-commercial use only."
                 },
                 "vep_cadd_snv_tbi": {
                     "type": "string",
@@ -316,7 +324,7 @@
                     "type": "string",
                     "description": "Path or URL to the REVEL release zip, or to a prepared score file, for the REVEL plugin.",
                     "fa_icon": "fas fa-file",
-                    "help_text": "Defaults to revel-v1.3_all_chromosomes.zip from https://rothsj06.dmz.hpc.mssm.edu on --genome GRCh38, which the pipeline downloads (667 MB), reshapes and re-indexes on the GRCh38 column -- the release ships comma-separated and sorted on its GRCh37 column. Anything that is not already a bgzipped .tsv.gz -- the release zip, a URL serving it, or an unpacked directory -- is prepared for you; pass a prepared .tsv.gz together with --vep_revel_tbi to use it directly instead. GRCh38 only. Free for non-commercial use only."
+                    "help_text": "Defaults to revel-v1.3_all_chromosomes.zip (667 MB) from https://rothsj06.dmz.hpc.mssm.edu on --genome GRCh38. Anything that is not already a bgzipped .tsv.gz (the release zip, a URL serving it, or an unpacked directory) is prepared for you; pass a prepared .tsv.gz with --vep_revel_tbi to use it directly. GRCh38 only. Free for non-commercial use only."
                 },
                 "vep_revel_tbi": {
                     "type": "string",
@@ -328,7 +336,7 @@
                     "type": "string",
                     "description": "Path or URL to the EVE release zip, or to a merged EVE VCF, for the EVE plugin.",
                     "fa_icon": "fas fa-file",
-                    "help_text": "Off by default, unlike the other GRCh38 resources: the release is a 9.6 GB zip of per-protein VCFs from https://evemodel.org/api/proteins/bulk/download/ that then has to be merged, so it is enabled only by setting this explicitly. Anything that is not already a bgzipped .vcf.gz -- including that download URL, which carries no file extension -- is prepared for you; pass a merged .vcf.gz together with --vep_eve_tbi to use it directly instead. GRCh38 only. Free for non-commercial use only."
+                    "help_text": "Off by default: the release is a 9.6 GB zip of per-protein VCFs from https://evemodel.org/api/proteins/bulk/download/ that has to be merged. Anything that is not already a bgzipped .vcf.gz, including that URL, is prepared for you; pass a merged .vcf.gz with --vep_eve_tbi to use it directly. GRCh38 only. Free for non-commercial use only."
                 },
                 "vep_eve_tbi": {
                     "type": "string",
@@ -472,13 +480,10 @@
             "description": "Options for the final per-sample HTML report",
             "default": "",
             "properties": {
-                "report_src": {
-                    "type": "string",
-                    "description": "Override the report tool source tree (bin/, R/, templates/, assets/). Defaults to the copy vendored in this repository; point it at a local checkout of lrsomatic_report to render with an unreleased version of the tool."
-                },
                 "report_gene_panel": {
                     "type": "string",
-                    "description": "Gene panel(s) applied when the report opens, as a comma-separated list: 'none' for no filtering, builtin panel names (e.g. 'lymphoid'), and/or paths to TSVs with a 'gene' column. Several panels are applied at once and unioned -- a variant or SV is kept if it hits any of them. Every builtin panel is always embedded in the report and panels are checkboxes there, so the reader can retick them without re-rendering; this only sets the initial selection. An entry is read as a panel file if it contains a '/' or ends in '.tsv', and as a builtin panel name otherwise. 'none' cannot be combined with a real panel, and two panel files sharing a base name cannot be combined. Default (unset) is unfiltered."
+                    "description": "Gene panel(s) applied when the report opens, as a comma-separated list: 'none' for no filtering, builtin panel names (e.g. 'lymphoid'), and/or paths to TSVs with a 'gene' column. Several panels are unioned; default (unset) is unfiltered.",
+                    "help_text": "Every builtin panel is embedded in the report as a checkbox, so this only sets the initial selection. An entry is read as a panel file if it contains a '/' or ends in '.tsv', and as a builtin panel name otherwise. 'none' cannot be combined with a real panel, and two panel files sharing a base name cannot be combined."
                 }
             }
         },
@@ -518,7 +523,7 @@
                 },
                 "skip_ascat": {
                     "type": "boolean",
-                    "description": "Skip ASCAT"
+                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's."
                 },
                 "skip_m6a": {
                     "type": "boolean",
@@ -531,7 +536,7 @@
                 "skip_vep_plugins": {
                     "type": "boolean",
                     "description": "Skip the VEP plugin annotation, keeping the rest of VEP",
-                    "help_text": "The plugin data files are enabled by default on --genome GRCh38 and --genome CHM13, which means a first run downloads about 1.4 GB on GRCh38 and about 14 GB on CHM13 -- the latter almost entirely the pangenome PolyPhen/SIFT database. CADD and EVE are opt-in and add nothing unless set. Set this to annotate with VEP alone. --igenomes_ignore and a non-human --genome also leave the plugins off, since neither resolves any plugin default."
+                    "help_text": "Annotate with VEP alone, downloading no plugin data. Plugins are on by default on --genome GRCh38 (about 1.4 GB on a first run) and --genome CHM13 (about 14 GB, mostly the pangenome PolyPhen/SIFT database); CADD and EVE are opt-in. --igenomes_ignore and a non-human --genome also leave the plugins off."
                 },
                 "skip_normalfiber": {
                     "type": "boolean",

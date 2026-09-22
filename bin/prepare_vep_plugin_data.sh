@@ -35,9 +35,8 @@ prep_revel() {
     mkdir -p "$outdir"
     local work
     work=$(mktemp -d "${TMPDIR:-/tmp}/revel.XXXXXX")
-    # EXIT rather than RETURN: a RETURN trap does not fire when set -e aborts mid-function.
-    # The path is expanded now, not when the trap fires -- by then this function has returned
-    # and its local $work is gone, which under set -u is a fatal "unbound variable".
+    # EXIT, not RETURN: a RETURN trap does not fire when set -e aborts mid-function.
+    # $work is expanded now because the local is gone by the time the trap runs.
     trap "rm -rf '$work'" EXIT
 
     # Either the release zip or a directory it has already been unpacked into
@@ -51,12 +50,8 @@ prep_revel() {
         die "$src is neither a zip file nor a directory"
     fi
 
-    # -L because the pipeline passes a Nextflow-staged directory, which is a symlink;
-    # plain find reports it and never descends.
-    #
-    # Collected with mapfile rather than piped to `head -n1`: under `set -o pipefail` an
-    # early-exiting reader leaves the producer with SIGPIPE, and the pipeline then returns
-    # 141, which `set -e` turns into an abort. See prep_eve, where that is not merely a risk.
+    # -L: the staged input dir is a symlink. mapfile, not `| head -n1`: head's early exit
+    # SIGPIPEs sort, and pipefail turns the 141 into an abort.
     local raw
     mapfile -t revel_candidates < <(find -L "$searchdir" \( -name 'revel_with_transcript_ids' -o -name 'revel_all_chromosomes.csv' \) | sort)
     raw=${revel_candidates[0]:-}
@@ -91,9 +86,7 @@ prep_eve() {
     mkdir -p "$outdir"
     local work
     work=$(mktemp -d "${TMPDIR:-/tmp}/eve.XXXXXX")
-    # EXIT rather than RETURN: a RETURN trap does not fire when set -e aborts mid-function.
-    # The path is expanded now, not when the trap fires -- by then this function has returned
-    # and its local $work is gone, which under set -u is a fatal "unbound variable".
+    # EXIT trap with $work expanded now; see prep_revel.
     trap "rm -rf '$work'" EXIT
 
     # The bulk zip nests the per-protein files under vcf_files_missense_mutations.
@@ -102,13 +95,8 @@ prep_eve() {
         src="$vcfdir/vcf_files_missense_mutations"
     fi
 
-    # -L throughout because the pipeline passes a Nextflow-staged directory, which is a
-    # symlink; plain find reports it and never descends.
-    #
-    # Collected once with mapfile rather than piped to `head -n1`. With thousands of files
-    # `head` exits long before `sort` has finished writing, `sort` takes SIGPIPE, and under
-    # `set -o pipefail` the pipeline returns 141 -- which `set -e` turns into an abort. The
-    # release has ~3000 VCFs, so that fired every time.
+    # -L: the staged input dir is a symlink. mapfile, not `| head -n1`: with ~3000 VCFs
+    # head exits first, sort takes SIGPIPE and pipefail returns 141.
     local vcfs count first
     mapfile -t vcfs < <(find -L "$src" -name '*.vcf' | sort)
     count=${#vcfs[@]}

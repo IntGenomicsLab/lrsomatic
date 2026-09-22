@@ -2,10 +2,7 @@ process SIGPROFILER_ASSIGNMENT {
     tag "$meta.id"
     label 'process_low'
 
-    // Conda is not supported: the image installs SigProfilerMatrixGenerator from the fork
-    // that adds the CHM13-T2T genome (SigProfilerSuite/SigProfilerMatrixGenerator#250) and
-    // SigProfilerAssignment from the fork that adds CHM13-T2T COSMIC signatures. Return to
-    // the bioconda/biocontainers releases once both are merged and released upstream.
+    // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
         ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-28a9ce8'
         : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-28a9ce8'}"
@@ -60,8 +57,7 @@ process SIGPROFILER_ASSIGNMENT {
         awk -F'\\t' 'NR > 1 { for (i = 2; i <= NF; i++) s += \$i } END { printf "%d\\n", s }' "\$1"
     }
 
-    # sigProfilerPlotting caches plot templates in its (read-only) package directory unless
-    # this variable points elsewhere; SigProfilerAssignment does not forward --volume to it.
+    # sigProfilerPlotting caches templates in its read-only package dir unless this points elsewhere
     mkdir -p ${prefix} spa_volume
     export SIGPROFILERPLOTTING_VOLUME="\$PWD/spa_volume"
     ${fits}

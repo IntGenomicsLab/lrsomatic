@@ -1,0 +1,197 @@
+{
+    "purity 0.5 - tags from ASCAT's purity and segments": {
+        "content": [
+            [
+                "chr1\t1000\t.\tA\tG\t20.0\tLowQual\tSB=1.0;Verdict_Germline\tGT:GQ:DP:AF:AD\t0/1:20:60:0.5000:30,30",
+                "chr1\t2000\t.\tC\tT\t20.0\tPASS\tSB=1.0;Verdict_Somatic\tGT:GQ:DP:AF:AD\t0/1:20:60:0.2500:45,15",
+                "chr1\t3000\t.\tG\tA\t20.0\tLowQual\tSB=1.0;Verdict_Germline\tGT:GQ:DP:AF:AD\t1/1:20:40:0.9750:1,39",
+                "chr1\t4000\t.\tT\tC\t20.0\tPASS\tSB=1.0;Verdict_SubclonalSomatic\tGT:GQ:DP:AF:AD\t0/1:20:60:0.0333:58,2",
+                "chr1\t5000\t.\tA\tT\t20.0\tNonSomatic\tPoN_1;SB=1.0\tGT:GQ:DP:AF:AD\t0/1:20:60:0.5000:30,30",
+                "chr1\t1500000\t.\tA\tC\t20.0\tLowQual\tSB=1.0;Verdict_Germline\tGT:GQ:DP:AF:AD\t0/1:20:60:0.6000:24,36",
+                "chr2\t500\t.\tA\tT\t20.0\tLowQual\tSB=1.0;Verdict_Germline\tGT:GQ:DP:AF:AD\t0/1:20:60:0.5000:30,30",
+                "chr2\t3000000\t.\tG\tC\t20.0\tPASS\tSB=1.0\tGT:GQ:DP:AF:AD\t0/1:20:60:0.5000:30,30"
+            ],
+            [
+                "chr1\t6000\t.\tA\tAT\t20.0\tLowQual\tSB=1.0;Verdict_Germline\tGT:GQ:DP:AF:AD\t0/1:20:60:0.5000:30,30",
+                "chr1\t7000\t.\tGT\tG\t20.0\tPASS\tSB=1.0;Verdict_Somatic\tGT:GQ:DP:AF:AD\t0/1:20:60:0.2500:45,15"
+            ],
+            [
+                [
+                    {
+                        "id": "sample3",
+                        "paired_data": false,
+                        "sex": "XX"
+                    },
+                    "sample3_Tumor_Purity_Ploidy.txt:md5,7afe134ce6a0506263be38ba649f176a"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "sample3",
+                        "paired_data": false,
+                        "sex": "XX"
+                    },
+                    "sample3_Tumor_CNA.txt:md5,02eef4b546176f781d32c2938cf8a783"
+                ]
+            ],
+            [
+                [
+                    "CLAIRSTO_VERDICT_TAG",
+                    "clairsto",
+                    "0.5.1"
+                ]
+            ]
+        ],
+        "timestamp": "2026-09-18T11:32:43.737422544",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "snv.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "snv.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "indel.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "indel.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3_Tumor_Purity_Ploidy.txt:md5,0ce0bf84b7da8c910ab3212d1a3e6754"
+                    ]
+                ],
+                "5": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3_Tumor_CNA.txt:md5,4b07130cde66c77890048b470d7e7b41"
+                    ]
+                ],
+                "6": [
+                    [
+                        "CLAIRSTO_VERDICT_TAG",
+                        "clairsto",
+                        "0.5.1"
+                    ]
+                ],
+                "cna": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3_Tumor_CNA.txt:md5,4b07130cde66c77890048b470d7e7b41"
+                    ]
+                ],
+                "indel_tbi": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "indel.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "indel_vcf": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "indel.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "purity_ploidy": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3_Tumor_Purity_Ploidy.txt:md5,0ce0bf84b7da8c910ab3212d1a3e6754"
+                    ]
+                ],
+                "snv_tbi": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "snv.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "snv_vcf": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "snv.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "versions_clairsto": [
+                    [
+                        "CLAIRSTO_VERDICT_TAG",
+                        "clairsto",
+                        "0.5.1"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-09-18T11:32:59.564452108",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

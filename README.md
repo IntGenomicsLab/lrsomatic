@@ -82,7 +82,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No.
+Each row is a sample. BAMs must be unaligned, all fields except `bam_normal` are required, and an empty `bam_normal` runs the sample in tumour-only mode. `platform` is `ont` or `pb`, `sex` is `female` or `male`, and `fiber` is `y` or `n` for Fiber-seq; see the [usage documentation](/docs/usage.md#full-description-of-samplesheet-columns).
 
 Now, you can run the pipeline using:
 
@@ -104,9 +104,9 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 ## Pipeline output
 
-This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report that combines the output from `mosdepth` and `samtools` into one HTML report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`) covering small variants, structural variants, copy number and QC in one place — disable it with `--skip_report`.
+The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Besides QC and the aligned and phased bam file, we have output from (structural) variant and copy number callers, of which some are optional. The output from these variant callers can be found in their respective folders. For small and structural variant callers (`clairS`, `clairS-TO`, and `severus`) these will contain, among others, `vcf` files with called variants. For `ascat` these contain files with final copy number information and plots of the copy number profiles.
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `ascat`) write to their own folders; see the [output documentation](/docs/output.md).
 
 Example output directory structure:
 

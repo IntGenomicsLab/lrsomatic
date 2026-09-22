@@ -116,9 +116,8 @@ nextflow_pipeline {
 
                 // ── sample5: custom model override verification ──────────────
                 {
-                    // ClairSTO for sample5 should use the samplesheet-specified model
-                    // 'ont_r10_dorado_sup_4khz' instead of the auto-detected model from BAM header.
-                    // The ClairSTO VCF header contains a ##cmdline line with --platform <model>.
+                    // sample5 pins 'ont_r10_dorado_sup_4khz' in the samplesheet; ClairSTO's
+                    // ##cmdline header should name it, not the BAM-header model.
                     def snvVcf = file("$launchDir/output/sample5/variants/clairsto/snv.vcf.gz")
                     assert snvVcf.exists()
                     // Read VCF header and check for the expected model string

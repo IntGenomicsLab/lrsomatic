@@ -297,20 +297,26 @@ Present in **tumor-only** samples (no matched normal).
 │   ├── indel.vcf.gz.tbi
 │   ├── snv.vcf.gz
 │   ├── snv.vcf.gz.tbi
+│   ├── {sample}_Tumor_Purity_Ploidy.txt
+│   ├── {sample}_Tumor_CNA.txt
 │   ├── somatic.vcf.gz
 │   ├── somatic.vcf.gz.tbi
 ```
 
-| File                  | Description                                                           |
-| --------------------- | --------------------------------------------------------------------- |
-| `germline.vcf.gz`     | SNV and indel calls marked as germline (will not include variants QC) |
-| `germline.vcf.gz.tbi` | Index file for germline small variant calls                           |
-| `indel.vcf.gz`        | Raw indel calls in vcf format                                         |
-| `indel.vcf.gz.tbi`    | Index for somatic indel calls                                         |
-| `snv.vcf.gz`          | Raw SNV calls in vcf format                                           |
-| `snv.vcf.gz.tbi`      | Index for SNV calls                                                   |
-| `somatic.vcf.gz`      | SNV and indel calls marked as PASS and without a germline tag         |
-| `somatic.vcf.gz.tbi`  | Index for somatic small variant calls                                 |
+| File                               | Description                                                                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `germline.vcf.gz`                  | SNV and indel calls marked as germline (will not include variants QC)                                                                   |
+| `germline.vcf.gz.tbi`              | Index file for germline small variant calls                                                                                             |
+| `indel.vcf.gz`                     | Raw indel calls in vcf format                                                                                                           |
+| `indel.vcf.gz.tbi`                 | Index for somatic indel calls                                                                                                           |
+| `snv.vcf.gz`                       | Raw SNV calls in vcf format                                                                                                             |
+| `snv.vcf.gz.tbi`                   | Index for SNV calls                                                                                                                     |
+| `{sample}_Tumor_Purity_Ploidy.txt` | Purity and ploidy the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`. Absent when no solution was found |
+| `{sample}_Tumor_CNA.txt`           | Allele-specific copy number segments the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`                 |
+| `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                           |
+| `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                   |
+
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -449,9 +455,8 @@ Phased variant calls produced by Longphase. Present in all samples.
 #### Plugin fields in the `CSQ` annotation
 
 The germline and somatic VCFs carry these extra subfields inside VEP's `CSQ` INFO annotation, on
-top of what `--everything` already produces. They are absent from the SV VCF, which is annotated
-without plugins. Read them out with `bcftools +split-vep`. Which appear depends on the assembly and
-on which resources were enabled — see [VEP plugins](usage.md#vep-plugins).
+top of what `--everything` already produces; the SV VCF is annotated without plugins. Read them
+out with `bcftools +split-vep`.
 
 | Field                                                   | Source                 | Appears on                                              |
 | ------------------------------------------------------- | ---------------------- | ------------------------------------------------------- |
@@ -480,7 +485,7 @@ field rather than a match value.
 
 ### `signatures`
 
-Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) builds the mutational matrices and [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment) fits COSMIC reference signatures to them. For `--genome CHM13` the matrices use the `CHM13-T2T` genome and the SBS/DBS fits use COSMIC signatures renormalised to CHM13; ID83 signatures are not genome-normalised by COSMIC and always use the GRCh37 set. The `DBS78` and `ID83` directories are absent when a sample has no doublet substitutions or indels.
+Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) builds the mutational matrices and [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment) fits COSMIC reference signatures to them. The `DBS78` and `ID83` directories are absent when a sample has no doublet substitutions or indels. See [Mutational Signature Options](usage.md#mutational-signature-options) for the CHM13 handling.
 
 <details markdown="1">
 <summary>Output files</summary>
@@ -637,9 +642,9 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │   ├── {sample}_report.html
 ```
 
-| File                   | Description                                                                                                                                                                                                                                                                                         |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report)): circos plot, small/structural variant tables, copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+| File                   | Description                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report), run from `ghcr.io/ljwharbers/lrsomatic-report`): circos plot, small/structural variant tables, copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
 
 </details>
 
@@ -647,14 +652,15 @@ This is the final step of the pipeline, run after SNV/SV calling, ASCAT, WAKHAN 
 
 Sections:
 
-- **Small variants** — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set taken from the phased somatic VCF that VEP annotated. A footnote under the table names the file those VAF columns came from and how many rows they joined to; after a consensus run it also flags that the VAF of a multi-caller variant comes from whichever caller won the merge, so it need not match the `callers` column beside it. Unfiltered by default; see `--report_gene_panel` in [usage](usage.md#report-options) for panel filtering.
+- **Small variants** — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set from the phased somatic VCF; a footnote names the file those columns came from and, after a consensus run, notes that a multi-caller variant's VAF comes from whichever caller won the merge. Unfiltered by default; see `--report_gene_panel` in [usage](usage.md#report-options).
+  - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
 - **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. Phasing statistics (WhatsHap) are a collapsible block within this section.
 
 Filtering in the browser:
 
-- **Gene panels** are checkboxes in the panel bar. Tick any number and a row is kept if it hits any of them (a union); with none ticked the tables are unfiltered. `--report_gene_panel` only sets which are ticked on load — see [usage](usage.md#applying-several-panels-at-once). With two or more ticked, each `panel_hit` entry names the panel it matched in square brackets.
+- **Gene panels** are checkboxes in the panel bar; ticked panels are unioned, and `--report_gene_panel` only sets which are ticked on load — see [usage](usage.md#applying-several-panels-at-once). With two or more ticked, each `panel_hit` entry names the panel it matched in square brackets.
 - **Categorical columns** filter by tickbox dropdown rather than a text box: `consequence`, `impact` and `callers` on the small-variant table, and `svclass`, `svtype`, `impact`, `consequence` and `caller` on the SV table. Each dropdown lists the values actually present in that sample with a row count. Ticking several values in one column is OR; ticking values in two columns is AND. A column with fewer than two distinct values keeps a plain text box. Every other column keeps its text box, and the table's own search box still does substring across all columns.
 
 The report is one self-contained file — plots and tables are embedded, so it can be copied or emailed on its own.

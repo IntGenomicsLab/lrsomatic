@@ -2,28 +2,33 @@ process LRSOMATICREPORT {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "${moduleDir}/environment.yml"
-    // Dependencies only (the tool is vendored at assets/lrsomatic_report); when environment.yml changes rebuild both images with `wave --conda-file modules/local/lrsomaticreport/environment.yml --freeze --await [--singularity]`
-    container "${workflow.containerEngine == 'singularity'
-        ? 'oras://community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:dc62d809aa6fd497'
-        : 'community.wave.seqera.io/library/r-base_quarto_r-base64enc_r-data.table_pruned:c1049dbaf31bf178'}"
+    // No conda: the image ships render_report.R itself, not just its dependencies (guard in `script:`).
+    // TODO: switch to bioconda `lrsomatic-report` once the recipe in ljwharbers/lrsomatic_report is merged. Version bump = these two tags.
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:1.6.0'
+        : 'ghcr.io/ljwharbers/lrsomatic-report:1.6.0'}"
 
     input:
-    // Every path input is optional (`[]` when skipped); tumor/normal QC stage into separate dirs because a matched pair shares meta.id
+    // Every path input is optional (`[]` when skipped); tumor/normal QC stage apart because a pair shares meta.id
     tuple val(meta), path(vep_somatic), path(sv_vep), path(severus_vcf), path(somatic_vcf), path(ascat_files), path(qc_tumor_files, stageAs: 'qc_tumor/*'), path(qc_normal_files, stageAs: 'qc_normal/*'), path(wakhan_files, stageAs: 'wakhan/*')
-    path(report_src) // lrsomatic_report source tree (bin/, R/, templates/, assets/)
-    // User-supplied gene panel TSVs (`[]` for builtins); the matching `--gene-panel gene_panels/<base>` args are built in conf/modules.config
+    // Builtin gene panel TSVs, owned by the pipeline; reach the tool as --gene-lists-dir
+    path(gene_lists, stageAs: 'gene_lists')
+    // User-supplied gene panel TSVs (`[]` for builtins); the `--gene-panel` args are built in conf/modules.config
     path(gene_panels, stageAs: 'gene_panels/*')
 
     output:
     tuple val(meta), path("*_report.html"), emit: report
-    // WARN: Manually update to match the vendored release in assets/lrsomatic_report/VENDORED.md
-    tuple val("${task.process}"), val('lrsomatic_report'), val('1.3.2'), topic: versions, emit: versions_lrsomaticreport
+    // `env -u R_HOME`: Apptainer forwards the host env, and R's R_HOME warning goes to stdout, polluting the version string
+    tuple val("${task.process}"), val('lrsomatic_report'), eval('env -u R_HOME render_report.R --version'), topic: versions, emit: versions_lrsomaticreport
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
+    // Exit if running this module with -profile conda / -profile mamba
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error "LRSOMATICREPORT does not support Conda: the report tool ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_report."
+    }
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
@@ -41,16 +46,10 @@ process LRSOMATICREPORT {
     """ : ''
 
     """
-    # Quarto/Deno write under \$HOME and \$TMPDIR, which clusters may mount read-only
+    # Quarto/Deno caches must live in the task dir: an inherited HOME/TMPDIR/XDG_CACHE_HOME is read-only inside the container
     export HOME=\$PWD
-    export TMPDIR=\$PWD/tmp TMP=\$PWD/tmp TEMP=\$PWD/tmp
+    export TMPDIR=\$PWD/tmp TMP=\$PWD/tmp TEMP=\$PWD/tmp XDG_CACHE_HOME=\$PWD/.cache
     mkdir -p "\$TMPDIR"
-
-    # The Wave container doesn't source conda's activation hooks (quarto needs QUARTO_SHARE_PATH); -profile conda may already set CONDA_PREFIX
-    export CONDA_PREFIX="\${CONDA_PREFIX:-/opt/conda}"
-    for f in "\$CONDA_PREFIX"/etc/conda/activate.d/*.sh; do
-        [ -f "\$f" ] && source "\$f"
-    done
 
     mkdir -p sample_dir
     ${link_flat}
@@ -66,17 +65,18 @@ process LRSOMATICREPORT {
         for f in qc_normal/*; do ln -s "\$PWD/\$f" "sample_dir/qc/normal/\$(basename "\$f")"; done
     fi
 
-    # Wakhan is addressed by fixed path: sample_dir/wakhan must hold solutions_ranks.tsv, the heatmap and solution_<rank>/
+    # Wakhan is read from a fixed path: sample_dir/wakhan with solutions_ranks.tsv, the heatmap and solution_<rank>/
     if [ -d wakhan ]; then
         mkdir -p sample_dir/wakhan
         for f in wakhan/*; do ln -s "\$PWD/\$f" "sample_dir/wakhan/\$(basename "\$f")"; done
     fi
 
-    Rscript "${report_src}/bin/render_report.R" \\
+    render_report.R \\
         --sample-dir sample_dir \\
         --sample-id "${prefix}" \\
         --sex "${sex}" \\
         --reference auto \\
+        --gene-lists-dir gene_lists \\
         --output "${prefix}_report.html" \\
         ${args}
     """

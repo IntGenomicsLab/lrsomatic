@@ -109,8 +109,7 @@ workflow PHASING_HAPLOTYPING {
         .set{ tumor_bams_ch}
     // tumor_bams_ch: [meta, bam, bai]  -- tumor BAMs from T/N pairs + tumor-only BAMs
 
-    // MODCALL: detect base modifications (e.g. 5mC) from aligned BAMs using Longphase
-    // Results are used as additional evidence during phasing
+    // MODCALL: Longphase base-modification calls, used as extra phasing evidence
 
     if (!params.skip_modcall) {
 
@@ -143,11 +142,10 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
-    // Stamp each arm with an INFO provenance flag before they are merged. This is the only
-    // point where germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS
-    // can emit records that never passed through VCFSPLIT, so tagging further upstream would
-    // leave holes. After the merge the two populations are otherwise indistinguishable -- both
-    // carry FILTER=PASS, and VCFSPLIT rewrites the ClairS-TO germline FILTER to PASS as well.
+    // Stamp each arm with an INFO provenance flag before the merge. This is the only point where
+    // germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS can emit
+    // records that never passed through VCFSPLIT, so tagging earlier would leave holes. After the
+    // merge the two populations are otherwise indistinguishable -- both carry FILTER=PASS.
     // LongPhase preserves custom INFO keys, so the flags survive phasing (verified on v2.0.1).
     //
     TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
@@ -161,8 +159,7 @@ workflow PHASING_HAPLOTYPING {
         .set{ tagged_germline_vcf }
     // tagged_*_vcf: [meta, vcf, tbi]
 
-    // Merge germline and somatic VCFs into a single file for somatic phasing
-    // Longphase requires all variant sites in one VCF to produce a consistent phase block
+    // Somatic phasing needs germline and somatic sites in one VCF for consistent phase blocks
     tagged_germline_vcf
         .join(tagged_somatic_vcf)
         .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
@@ -194,9 +191,7 @@ workflow PHASING_HAPLOTYPING {
             .set{germline_somatic_vcfs}
     // germline_somatic_vcfs (final): [meta, vcf]  -- sorted combined somatic+germline VCF for somatic phasing
 
-    // PHASING: assign variants to haplotypes using Longphase
-    // - Germline phasing: uses normal BAMs + germline-only VCF (produces the phase blocks)
-    // - Somatic phasing:  uses tumor BAMs + merged somatic+germline VCF (transfers germline phase to somatic sites)
+    // PHASING: germline (normal BAMs + germline VCF) builds the phase blocks; somatic (tumor BAMs + merged VCF) transfers them
     if (!params.skip_modcall) {
         // With modcall: include base-modification VCF as additional phasing evidence
         normal_bams_w_tumoronly_ch
@@ -280,12 +275,11 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: BCFTOOLS_VIEW (label: process_medium)
-    // Reduce the phased somatic+germline VCF to the somatic arm, selecting on the INFO/SOMATIC
-    // flag stamped before the merge. This selects by provenance rather than by position: the
-    // previous `-T <somatic vcf>` targets file matched CHROM/POS only, so every germline record
-    // co-located with a somatic call was retained and became indistinguishable from a somatic
-    // one downstream. Phase tags (PS/HP) on somatic variants are preserved; germline records
-    // are dropped here but remain published in full under variants/phased/ and vep/germline/.
+    // Reduce the phased somatic+germline VCF to the somatic arm, selecting on the INFO/SOMATIC flag
+    // stamped before the merge -- by provenance, not position. The previous `-T <somatic vcf>`
+    // targets file matched CHROM/POS only, so germline records co-located with a somatic call were
+    // retained and became indistinguishable downstream. PS/HP tags on somatic variants survive;
+    // germline records are dropped here but stay published under variants/phased/ and vep/germline/.
     // Input:  [meta, phased_combined_vcf, phased_combined_tbi]
     // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
     //         .tbi -- [meta, tbi]
@@ -297,12 +291,10 @@ workflow PHASING_HAPLOTYPING {
         .set{ phased_somatic_vcf }
     // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- phased somatic-only VCF (germline removed)
 
-    // HAPLOTAGGING: tag each read in the BAM with its haplotype (HP tag) using the phased germline VCF
-    // All sample types (tumor, normal, tumor-only) are haplotagged using the germline phase blocks
-    // 'type' is re-added to meta here so downstream tools can distinguish tumor from normal in the output
+    // HAPLOTAGGING: every sample is tagged from the germline phase blocks; 'type' goes back into meta for output naming
 
     if(!params.skip_modcall) {
-        // Strip 'type' from modcall output meta to allow joining with other channels (which have no 'type')
+        // Strip 'type' so modcall output joins the type-less channels
         LONGPHASE_MODCALL_GERMLINE.out.mod_vcf
             .map { meta, mods ->
                 def new_meta = meta.subMap('id',

@@ -36,8 +36,7 @@ workflow PREPARE_ANNOTATION {
 
 		}
 		else {
-			// Validate that the local cache directory exists and resolve the correct subdirectory
-			// The annotation-cache S3 bucket uses a version-prefixed path; local paths do not
+			// Resolve the cache subdirectory: annotation-cache's S3 bucket is version-prefixed, local paths are not
 			def vep_annotation_cache_key = (vep_cache == "s3://annotation-cache/vep_cache/") ? "${vep_cache_version}_${vep_genome}/" : ""
 			def vep_species_suffix = vep_args.contains("--merged") ? '_merged' : (vep_args.contains("--refseq") ? '_refseq' : '')
 			def vep_cache_dir = "${vep_annotation_cache_key}${vep_species}${vep_species_suffix}/${vep_cache_version}_${vep_genome}"
@@ -46,7 +45,7 @@ workflow PREPARE_ANNOTATION {
 				if (vep_cache == "s3://annotation-cache/vep_cache/") {
 					error("This path is not available within annotation-cache.\nPlease check https://annotation-cache.github.io/ to create a request for it.")
 				} else {
-					error("Path provided with VEP cache is invalid.\nMake sure there is a directory named ${vep_cache_dir} in ${vep_cache}./n")
+					error("Path provided with VEP cache is invalid.\nMake sure there is a directory named ${vep_cache_dir} in ${vep_cache}.")
 				}
 			}
 
