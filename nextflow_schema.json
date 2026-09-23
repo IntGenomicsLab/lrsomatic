@@ -547,6 +547,10 @@
                     "type": "boolean",
                     "description": "Skip SAVANA (SV + copy-number calling)"
                 },
+                "skip_dmr": {
+                    "type": "boolean",
+                    "description": "Skip differential methylation region (DMR) calling between haplotypes. Only takes effect when --modkit_phased is also set; has no effect otherwise."
+                },
                 "skip_m6a": {
                     "type": "boolean",
                     "description": "Skip m6a calling by Fibertools"

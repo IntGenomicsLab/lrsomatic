@@ -111,6 +111,8 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.savana_contigs = getGenomeAttribute('savana_contigs')
     params.savana_g1000_vcf = getGenomeAttribute('savana_g1000_vcf')
+    params.dmr_cpg_islands_bed = getGenomeAttribute('dmr_cpg_islands_bed')
+    params.dmr_gencode_gene_bed = getGenomeAttribute('dmr_gencode_gene_bed')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
