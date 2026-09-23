@@ -249,6 +249,17 @@
                     }
                 }
             }
+        },
+        "https://github.com/YannVRB/modules.git": {
+            "modules": {
+                "nf-core": {
+                    "modkit/dmr": {
+                        "branch": "add-modkit-dmr",
+                        "git_sha": "9d93dfaa3dbe224588d2f7c10dce082528854dec",
+                        "installed_by": ["modules"]
+                    }
+                }
+            }
         }
     }
 }
