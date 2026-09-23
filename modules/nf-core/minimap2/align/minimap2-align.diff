@@ -1,4 +1,5 @@
 Changes in component 'nf-core/minimap2/align'
+'modules/nf-core/minimap2/align/environment.yml' is unchanged
 'modules/nf-core/minimap2/align/meta.yml' is unchanged
 Changes in 'minimap2/align/main.nf':
 --- modules/nf-core/minimap2/align/main.nf
@@ -11,8 +12,43 @@ Changes in 'minimap2/align/main.nf':
  
      // Note: the versions here need to match the versions used in the mulled container below and minimap2/index
      conda "${moduleDir}/environment.yml"
+@@ -19,7 +19,8 @@
+     output:
+     tuple val(meta), path("*.paf")                       , optional: true, emit: paf
+     tuple val(meta), path("*.bam")                       , optional: true, emit: bam
+-    tuple val(meta), path("*.bam.${bam_index_extension}"), optional: true, emit: index
++    tuple val(meta), path("*.cram")                      , optional: true, emit: cram
++    tuple val(meta), path("*.{bam,cram}.${bam_index_extension}"), optional: true, emit: index
+     tuple val("${task.process}"), val("minimap2"), eval("minimap2 --version"), topic: versions, emit: versions_minimap2
+ 
+     when:
+@@ -31,8 +32,11 @@
+     def args3 = task.ext.args3 ?: ''
+     def args4 = task.ext.args4 ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def bam_index = bam_index_extension ? "${prefix}.bam##idx##${prefix}.bam.${bam_index_extension} --write-index" : "${prefix}.bam"
+-    def bam_output = bam_format ? "-a | samtools sort -@ ${task.cpus-1} -o ${bam_index} ${args2}" : "-o ${prefix}.paf"
++    // bam_format 'cram' writes a reference-compressed CRAM instead of a BAM
++    def out_ext = bam_format == 'cram' ? 'cram' : 'bam'
++    def cram_opts = bam_format == 'cram' ? "-O cram --reference ${reference}" : ''
++    def bam_index = bam_index_extension ? "${prefix}.${out_ext}##idx##${prefix}.${out_ext}.${bam_index_extension} --write-index" : "${prefix}.${out_ext}"
++    def bam_output = bam_format ? "-a | samtools sort -@ ${task.cpus-1} ${cram_opts} -o ${bam_index} ${args2}" : "-o ${prefix}.paf"
+     def cigar_paf = cigar_paf_format && !bam_format ? "-c" : ''
+     def set_cigar_bam = cigar_bam && bam_format ? "-L" : ''
+     def bam_input = "${reads.extension}".matches('sam|bam|cram')
+@@ -53,8 +57,9 @@
+ 
+     stub:
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def output_file = bam_format ? "${prefix}.bam" : "${prefix}.paf"
+-    def bam_index = bam_index_extension ? "touch ${prefix}.bam.${bam_index_extension}" : ""
++    def out_ext = bam_format == 'cram' ? 'cram' : 'bam'
++    def output_file = bam_format ? "${prefix}.${out_ext}" : "${prefix}.paf"
++    def bam_index = bam_index_extension ? "touch ${prefix}.${out_ext}.${bam_index_extension}" : ""
+     def bam_input = "${reads.extension}".matches('sam|bam|cram')
+     if(bam_input && !reference) {
+         error("Error: minimap2/align BAM input mode requires reference!")
 
-'modules/nf-core/minimap2/align/environment.yml' is unchanged
 'modules/nf-core/minimap2/align/tests/main.nf.test' is unchanged
 'modules/nf-core/minimap2/align/tests/main.nf.test.snap' is unchanged
 ************************************************************

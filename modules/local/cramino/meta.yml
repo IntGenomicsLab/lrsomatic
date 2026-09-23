@@ -33,6 +33,15 @@ input:
           - edam: "http://edamontology.org/format_25722"
           - edam: "http://edamontology.org/format_2573"
           - edam: "http://edamontology.org/format_3462"
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing reference information
+          e.g. `[ id:'genome' ]`
+    - fasta:
+        type: file
+        description: Reference FASTA to decode CRAM input; empty for BAM/uBAM
+        pattern: "*.{fa,fasta,fna}"
 
 output:
   txt:
