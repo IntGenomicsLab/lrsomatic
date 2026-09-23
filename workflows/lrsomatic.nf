@@ -1285,12 +1285,12 @@ workflow LRSOMATIC {
         def report_empty_slot = { -> report_id_meta.map { id, _meta -> [id, []] } }
 
         def report_vep_ch = params.skip_vep
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : ch_somatic_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
         // report_vep_ch: [id, vcf]
 
         def report_sv_vep_ch = params.skip_vep
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : ch_sv_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
         // report_sv_vep_ch: [id, vcf]
 
@@ -1303,12 +1303,12 @@ workflow LRSOMATIC {
             .set { report_somatic_ch }
 
         def report_ascat_ch = params.skip_ascat
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : ch_ascat_files.map { meta, files -> [meta.id, files] }
         // report_ascat_ch: [id, [files]]
 
         def report_wakhan_ch = params.skip_wakhan
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : ch_wakhan_files.map { meta, files -> [meta.id, files] }
         // report_wakhan_ch: [id, [files]]
 
@@ -1340,7 +1340,7 @@ workflow LRSOMATIC {
         // report_qc_normal_grouped: [id, [qc_file, ...]]  -- paired samples only
 
         def report_qc_tumor_ch = qc_files_per_sample == 0
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : report_qc_tumor_grouped
 
         // Normal-side QC covers paired samples only; meta.paired_data gives the tumor-only arm
@@ -1353,7 +1353,7 @@ workflow LRSOMATIC {
             .set { report_roster }
 
         def report_qc_normal_ch = qc_files_per_sample == 0
-            ? report_empty_slot()
+            ? report_empty_slot.call()
             : report_roster.paired
                 .join(report_qc_normal_grouped)
                 .map { id, _meta, files -> [id, files] }
