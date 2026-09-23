@@ -152,18 +152,21 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 
 ```
 ├── bamfiles
-│   ├── sample_normal.bam
-│   ├── sample_normal.bam.bai
-│   ├── sample_tumor.bam
-│   ├── sample_tumor.bam.bai
+│   ├── sample_normal.cram
+│   ├── sample_normal.cram.crai
+│   ├── sample_tumor.cram
+│   ├── sample_tumor.cram.crai
 ```
 
-| File                    | Description                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| `sample_normal.bam`     | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the normal sample |
-| `sample_normal.bam.bai` | index file for the normal bam file                                                                   |
-| ` sample_tumor.bam`     | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the tumor sample  |
-| `sample_tumor.bam.bai`  | index file for the tumor bam file                                                                    |
+| File                      | Description                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `sample_normal.cram`      | Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the normal sample |
+| `sample_normal.cram.crai` | index file for the normal CRAM file                                                                   |
+| `sample_tumor.cram`       | Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the tumor sample  |
+| `sample_tumor.cram.crai`  | index file for the tumor CRAM file                                                                    |
+
+The CRAM files are version 3.0 with the reference embedded, so they can be read without the reference FASTA
+(`samtools view sample_tumor.cram`); `samtools view -b` turns one back into a BAM.
 
 </details>
 
