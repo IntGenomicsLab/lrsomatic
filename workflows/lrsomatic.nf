@@ -60,6 +60,7 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { DMR                             } from '../subworkflows/local/dmr'
 
 
 
@@ -778,6 +779,23 @@ workflow LRSOMATIC {
             : ch_index_minimap
         // ch_modkit_input: [meta, bam, bai]  -- BAM to pile up; meta.type selects the publish directory
         MODKIT_PILEUP(ch_modkit_input, ch_fasta, ch_fai, [[:],[]])
+
+        //
+        // SUBWORKFLOW: DMR (label: process_medium)
+        // Differential methylation between a sample's two haplotypes. Only possible when
+        // --modkit_phased produced hp1/hp2 bedMethyl in the first place; --skip_dmr additionally
+        // turns it off on top of that.
+        //
+        if (params.modkit_phased && !params.skip_dmr) {
+            DMR (
+                MODKIT_PILEUP.out.bedgz,
+                ch_fasta,
+                ch_fai,
+                file(params.dmr_cpg_islands_bed, checkIfExists: true),
+                file(params.dmr_gencode_gene_bed, checkIfExists: true)
+            )
+            ch_versions = ch_versions.mix(DMR.out.versions)
+        }
     }
 
     // Prepare phased VCFs for VEP: add empty 'extra' list required by ENSEMBLVEP_VEP

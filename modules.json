@@ -55,6 +55,16 @@
                         "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
                         "installed_by": ["modules"]
                     },
+                    "bedtools/closest": {
+                        "branch": "master",
+                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
+                        "installed_by": ["modules"]
+                    },
+                    "bedtools/intersect": {
+                        "branch": "master",
+                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
+                        "installed_by": ["modules"]
+                    },
                     "deepvariant/callvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
@@ -83,6 +93,11 @@
                         "git_sha": "890fdcff71928fc1470d3e669d4c430c8c770297",
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/ensemblvep/vep/ensemblvep-vep.diff"
+                    },
+                    "htslib/bgziptabix": {
+                        "branch": "master",
+                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
+                        "installed_by": ["modules"]
                     },
                     "longphase/haplotag": {
                         "branch": "master",
