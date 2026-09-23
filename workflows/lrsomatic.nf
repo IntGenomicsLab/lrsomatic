@@ -696,8 +696,10 @@ workflow LRSOMATIC {
         // ascat_tumoronly_ch: [meta, purityploidy, segments]
 
         // All ASCAT files per sample for the report module, which globs by suffix
+        // groupKey: release each sample on its own three emissions, not when ASCAT finishes for all
         ch_ascat_files = ASCAT.out.segments_raw
             .mix(ASCAT.out.purityploidy, ASCAT.out.png)
+            .map { meta, files -> [groupKey(meta, 3), files] }
             .groupTuple()
             .map { meta, files -> [meta, files.flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
@@ -1255,8 +1257,10 @@ workflow LRSOMATIC {
         )
 
         // The WAKHAN outputs the report renders: ranked solutions, heatmap, per-solution plots
+        // groupKey: release each sample on its own three emissions
         ch_wakhan_files = WAKHAN.out.solutions_ranks
             .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
+            .map { meta, files -> [groupKey(meta, 3), files] }
             .groupTuple()
             .map { meta, files -> [meta, files.flatten()] }  // solution_dirs contributes a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
@@ -1276,13 +1280,19 @@ workflow LRSOMATIC {
             .set { report_id_meta }
         // report_id_meta: [id, meta]
 
-        ch_somatic_vep_vcf
-            .map { meta, vcf -> [meta.id, vcf] }
-            .set { report_vep_ch }
+        // A skipped module leaves an empty leg, and remainder: true then defers every sample to
+        // channel close. One [] per sample keeps each leg matched so samples report independently.
+        def report_empty_slot = { -> report_id_meta.map { id, _meta -> [id, []] } }
 
-        ch_sv_vep_vcf
-            .map { meta, vcf -> [meta.id, vcf] }
-            .set { report_sv_vep_ch }
+        def report_vep_ch = params.skip_vep
+            ? report_empty_slot()
+            : ch_somatic_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
+        // report_vep_ch: [id, vcf]
+
+        def report_sv_vep_ch = params.skip_vep
+            ? report_empty_slot()
+            : ch_sv_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
+        // report_sv_vep_ch: [id, vcf]
 
         SEVERUS.out.somatic_vcf
             .map { meta, vcf -> [meta.id, vcf] }
@@ -1292,29 +1302,63 @@ workflow LRSOMATIC {
             .map { meta, vcf, _tbi -> [meta.id, vcf] }
             .set { report_somatic_ch }
 
-        ch_ascat_files
-            .map { meta, files -> [meta.id, files] }
-            .set { report_ascat_ch }
+        def report_ascat_ch = params.skip_ascat
+            ? report_empty_slot()
+            : ch_ascat_files.map { meta, files -> [meta.id, files] }
+        // report_ascat_ch: [id, [files]]
 
-        ch_wakhan_files
-            .map { meta, files -> [meta.id, files] }
-            .set { report_wakhan_ch }
+        def report_wakhan_ch = params.skip_wakhan
+            ? report_empty_slot()
+            : ch_wakhan_files.map { meta, files -> [meta.id, files] }
+        // report_wakhan_ch: [id, [files]]
+
+        // One emission per sample per tool, none optional: mosdepth 2, cramino 1, samtools 2.
+        // Adding another per-sample emission to either mix below must bump this count.
+        def qc_files_per_sample = params.skip_qc
+            ? 0
+            : (params.skip_mosdepth ? 0 : 2) + (params.skip_cramino ? 0 : 1) + (params.skip_bamstats ? 0 : 2)
 
         // Tumor-side QC, keyed by the sample id (= report id)
+        // groupKey: emit a sample's bundle on its own files; toString() restores a plain String key
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'tumor' }
-            .map { meta, f -> [meta.id, f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
             .groupTuple()
-            .set { report_qc_tumor_ch }
+            .map { key, files -> [key.toString(), files] }
+            .set { report_qc_tumor_grouped }
+        // report_qc_tumor_grouped: [id, [qc_file, ...]]
 
         // Normal-side QC (matched mode): a pair shares meta.id, so already keyed by the report id
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
-            .map { meta, f -> [meta.id, f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
             .groupTuple()
-            .set { report_qc_normal_ch }
+            .map { key, files -> [key.toString(), files] }
+            .set { report_qc_normal_grouped }
+        // report_qc_normal_grouped: [id, [qc_file, ...]]  -- paired samples only
+
+        def report_qc_tumor_ch = qc_files_per_sample == 0
+            ? report_empty_slot()
+            : report_qc_tumor_grouped
+
+        // Normal-side QC covers paired samples only; meta.paired_data gives the tumor-only arm
+        // its [] up front instead of waiting out channel close for a match that never arrives.
+        report_id_meta
+            .branch { _id, meta ->
+                paired:     meta.paired_data
+                tumor_only: true
+            }
+            .set { report_roster }
+
+        def report_qc_normal_ch = qc_files_per_sample == 0
+            ? report_empty_slot()
+            : report_roster.paired
+                .join(report_qc_normal_grouped)
+                .map { id, _meta, files -> [id, files] }
+                .mix(report_roster.tumor_only.map { id, _meta -> [id, []] })
+        // report_qc_normal_ch: [id, [files] | []]  -- full roster
 
         report_id_meta
             .join(report_vep_ch,        remainder: true)
