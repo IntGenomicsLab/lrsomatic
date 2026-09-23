@@ -1,0 +1,57 @@
+Changes in component 'nf-core/longphase/haplotag'
+'modules/nf-core/longphase/haplotag/environment.yml' is unchanged
+'modules/nf-core/longphase/haplotag/meta.yml' is unchanged
+Changes in 'longphase/haplotag/main.nf':
+--- modules/nf-core/longphase/haplotag/main.nf
++++ modules/nf-core/longphase/haplotag/main.nf
+@@ -23,11 +23,27 @@
+ 
+     script:
+     def args = task.ext.args ?: ''
++    def args2 = task.ext.args2 ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     def sv_file = svs ? "--sv-file ${svs}" : ""
+     def mod_file = mods ? "--mod-file ${mods}" : ""
++    // ext.cram: longphase writes its BAM into a FIFO that samtools encodes as CRAM (options from ext.args2,
++    // e.g. embed_ref=1, which longphase's own --cram cannot set); no intermediate BAM touches the disk
++    def cram_out = task.ext.cram ?: false
++    def cram_start = cram_out ? """
++    mkfifo ${prefix}.bam
++    samtools view --threads ${task.cpus} -C -T ${fasta} ${args2} -o ${prefix}.cram ${prefix}.bam &
++    conv=\$!
++    trap 'kill \$conv 2>/dev/null || true' EXIT
++    """ : ''
++    def cram_end = cram_out ? """
++    wait \$conv
++    trap - EXIT
++    rm ${prefix}.bam
++    """ : ''
+ 
+     """
++    ${cram_start}
+     longphase \\
+         haplotag \\
+         $args \\
+@@ -38,7 +54,7 @@
+         --bam ${bam} \\
+         ${sv_file} \\
+         ${mod_file}
+-
++    ${cram_end}
+     if [ -f "${prefix}.out" ]; then
+         mv ${prefix}.out ${prefix}.log
+     fi
+@@ -47,7 +63,7 @@
+     stub:
+     def args = task.ext.args ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+-    def suffix = args.contains('--cram') ? "cram" : "bam"
++    def suffix = args.contains('--cram') || task.ext.cram ? "cram" : "bam"
+     def log = args.contains('--log') ? "touch ${prefix}.log" : ''
+     """
+     touch ${prefix}.${suffix}
+
+'modules/nf-core/longphase/haplotag/tests/nextflow.config' is unchanged
+'modules/nf-core/longphase/haplotag/tests/main.nf.test' is unchanged
+'modules/nf-core/longphase/haplotag/tests/main.nf.test.snap' is unchanged
+************************************************************
