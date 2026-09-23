@@ -4,9 +4,13 @@ process CLAIRSTO {
 
     // Fork of ClairS-TO 0.5.1 that resolves Verdict's CNA resources from --cna_resource_dir
     // instead of hardcoded GRCh38 names. No conda build; revert once upstream carries it.
+    // Hosted on Docker Hub, not ghcr: ghcr redirects blob downloads to an Azure URL that expires at the
+    // next 5-minute mark and resets a stream still open then, and Apptainer resumes neither an oras://
+    // nor a docker:// download, so this 3.3 GB SIF failed on any link slower than ~10 MB/s. Docker Hub's
+    // CloudFront URL is valid for 50 minutes and is only checked when the request starts.
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8-cpu'
-        : 'ghcr.io/ljwharbers/clairs-to:0.5.1-verdict-chm13-c0687e8-cpu'}"
+        ? 'oras://docker.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8-flat'
+        : 'docker.io/ljwharbers/clairs-to:0.5.1-verdict-chm13-c0687e8-flat'}"
 
     input:
     tuple val(meta), path(tumor_bam), path(tumor_bai), val(model), path(pon_vcfs), val(pon_flags)
