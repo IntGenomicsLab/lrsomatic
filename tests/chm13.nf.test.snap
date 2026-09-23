@@ -67,6 +67,9 @@
                 "NANOPLOT_PRE": {
                     "nanoplot": "1.46.1"
                 },
+                "PASS_FILTER": {
+                    "bcftools": "1.23.1"
+                },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
                 },
@@ -100,6 +103,12 @@
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
                 },
                 "UNTAR": {
                     "untar": 1.34
@@ -136,9 +145,9 @@
             }
         ],
         "meta": {
-            "nf-test": "0.9.0",
-            "nextflow": "26.04.6"
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-21T11:19:37.348390574"
+        "timestamp": "2026-09-23T10:46:28.14524359"
     }
 }

@@ -2,7 +2,6 @@ include { BCFTOOLS_NORM                                      } from '../../modul
 include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
 include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
-include { BCFTOOLS_ANNOTATE as STANDARDIZE_AF                } from '../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../modules/nf-core/bcftools/sort/main'
@@ -17,7 +16,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     fasta            // [[:], fasta]
     _fai             // [[:], fai]
     prioritize_caller // str: which caller's calls take priority ('deepvariant'/'deepsomatic' or 'clair')
-    combine_method   // str: 'consensus' (intersection only) or 'all' (intersection + private calls from priority caller)
+    combine_method   // str: 'consensus' (shared calls only) or 'all' (union of both callers' calls)
 
     main:
 
@@ -42,31 +41,24 @@ workflow SMALL_VARIANT_CONSENSUS {
     // normalized_vcfs: [meta(+caller), vcf.gz, tbi]  -- normalised, sorted per-caller VCF
 
     //
-    // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low) -- rename the AF FORMAT field to the priority caller's:
+    // ALLELE FREQUENCY KEY -- BCFTOOLS_ANNOTATE below renames the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
+    // This guarantees the merged VCF exposes allele frequency under a single FORMAT key, which is
+    // what WAKHAN consumes. Every caller currently emits FORMAT/AF and none emits VAF (verified
+    // against Clair3, ClairS-TO, DeepVariant and DeepSomatic output), so under the default
+    // prioritize_caller='clair' it is a no-op; it is kept as the guarantee, not the mechanism.
     //
-    if (combine_method == 'all') {
-        normalized_vcfs
-            .map { meta, vcf, tbi ->
-                def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
-                def new_meta = meta + [rename_to: rename_to]
-                return [new_meta, vcf, tbi, [], [], [], [], []]
-            }
-            .set { standardize_input }
-
-        STANDARDIZE_AF(standardize_input)
-
-        STANDARDIZE_AF.out.vcf
-            .join(STANDARDIZE_AF.out.tbi)
-            .map { meta, vcf, tbi ->
-                def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
-                return [clean_meta, vcf, tbi]
-            }
-            .set { normalized_vcfs }
-        // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised, AF-standardized per-caller VCF
-    }
-    // In 'consensus' mode, normalized_vcfs comes from SORT_POST_NORM (post-BCFTOOLS_NORM re-sorting)
+    // The callers do disagree on the AF *declaration*: ClairS-TO says Number=1, DeepVariant and
+    // DeepSomatic say Number=A. bcftools concat only warns and keeps the first file's definition.
+    // Renaming cannot fix that and `annotate -h` cannot override an existing FORMAT definition,
+    // but it is harmless because BCFTOOLS_NORM now splits multi-allelics (-m -any): every record
+    // reaching here carries one ALT and one AF value, making the two declarations equivalent.
+    //
+    // The rename is carried out by BCFTOOLS_ANNOTATE below rather than by a second annotate call:
+    // meta.rename_to selects the --rename-annots file in conf/modules.config. Only 'all' mode needs
+    // it, since in 'consensus' mode every surviving record comes from one caller. BCFTOOLS_QUERY
+    // reads only CHROM/POS/REF/ALT, so it does not care whether the rename has happened yet.
 
     //
     // MODULE: BCFTOOLS_QUERY (label: process_single)
@@ -79,13 +71,18 @@ workflow SMALL_VARIANT_CONSENSUS {
 
     // Prepare BCFTOOLS_ANNOTATE input: VCF + caller-name annotation file
     normalized_vcfs
-        .join(BCFTOOLS_QUERY.out.output)
-        .join(BCFTOOLS_QUERY.out.index)
+        .join(BCFTOOLS_QUERY.out.output, failOnMismatch: true, failOnDuplicate: true)
+        .join(BCFTOOLS_QUERY.out.index, failOnMismatch: true, failOnDuplicate: true)
         .map{ meta, vcf, tbi, annotations, annotations_index ->
                     def columns = []       // no extra column specs
                     def header_lines = []  // no extra header lines
                     def rename_chrs = []   // no chromosome renaming
-                return [ meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
+                    // 'all' mode merges records from both callers into one VCF, so the allele
+                    // frequency key is unified here; 'consensus' mode needs no rename.
+                    def new_meta = combine_method == 'all'
+                        ? meta + [rename_to: (prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF')]
+                        : meta
+                return [ new_meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
              }
              .set{annotate_input}
     // annotate_input: [meta, vcf, tbi, annotations_tsv, annotations_tbi, [], [], []]
@@ -100,17 +97,29 @@ workflow SMALL_VARIANT_CONSENSUS {
     BCFTOOLS_ANNOTATE(annotate_input)
 
     BCFTOOLS_ANNOTATE.out.vcf
-        .join(BCFTOOLS_ANNOTATE.out.tbi)
+        .join(BCFTOOLS_ANNOTATE.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .map { meta, vcf, tbi ->
+            def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
+            return [clean_meta, vcf, tbi]
+        }
         .set{annotated_vcfs}
     // annotated_vcfs: [meta(+caller), vcf, tbi]  -- VCF with CALLER INFO tag
 
     // Branch annotated VCFs by caller family for the intersection step
+    // An unrecognised meta.caller would silently vanish without the `other` arm, taking the whole
+    // sample out of the results with a successful exit.
     annotated_vcfs
         .branch { meta, _vcfs, _tbi ->
             deepvariant: meta.caller in [ 'deepvariant', 'deepsomatic' ]
             clair: meta.caller in ['clair3','clairs-to','clairs']
+            other: true
         }
         .set{annotated_vcfs_branched}
+
+    annotated_vcfs_branched.other
+        .map { meta, _vcfs, _tbi ->
+            error("SMALL_VARIANT_CONSENSUS: unrecognised meta.caller '${meta.caller}' for sample '${meta.id}'; expected one of [deepvariant, deepsomatic, clair3, clairs-to, clairs]")
+        }
     // annotated_vcfs_branched.deepvariant: [meta(caller=deepvariant/deepsomatic), vcf, tbi]
     // annotated_vcfs_branched.clair:       [meta(caller=clair3/clairs-to/clairs), vcf, tbi]
 
@@ -153,8 +162,10 @@ workflow SMALL_VARIANT_CONSENSUS {
     // deepvariant_ch: [meta (no caller), vcf, tbi]
 
     // Join DeepVariant and Clair VCFs per sample into a single tuple for BCFTOOLS_ISEC
+    // failOnMismatch: a sample present for one caller but not the other would otherwise be dropped
+    // from every downstream result while the run still reported success.
     deepvariant_ch
-        .join(clair_ch)
+        .join(clair_ch, failOnMismatch: true, failOnDuplicate: true)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
             def vcfs = [deepvar_vcf, clair_vcf]
             def tbis = [deepvar_tbi, clair_tbi]
@@ -193,6 +204,9 @@ workflow SMALL_VARIANT_CONSENSUS {
             BCFTOOLS_ISEC.out.clair_consensus_vcf
                 .set{isec_consensus_vcf}
         }
+        else {
+            error("prioritize_caller must be one of [deepvariant, deepsomatic, clair], got '${prioritize_caller}'")
+        }
         // ISEC always writes 0002.vcf.gz, so germline and somatic would collide by basename in BCFTOOLS_CONCAT;
         // BCFTOOLS_SORT_CONSENSUS renames it per sample (conf/modules.config)
         BCFTOOLS_SORT_CONSENSUS(isec_consensus_vcf)
@@ -202,44 +216,54 @@ workflow SMALL_VARIANT_CONSENSUS {
     }
 
     else if (combine_method == 'all') {
-        // Intersection plus the priority caller's private calls
+        // Union: all variants from both callers. Shared variants contribute a single record, taken
+        // from the prioritized caller; both callers' private calls are kept. prioritize_caller only
+        // selects whose record is used for shared variants, never which calls are kept.
+        // The three isec sets are disjoint by construction, so BCFTOOLS_CONCAT needs no -d.
         if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
-            // consensus (DeepVariant record) + DeepVariant-private variants
+            // shared (DeepVariant record) + DeepVariant-private + Clair-private
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.deepvar_consensus_tbi)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_vcf)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
                 .join(BCFTOOLS_ISEC.out.clair_private_vcf)
                 .join(BCFTOOLS_ISEC.out.clair_private_tbi)
-                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
-                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                .map{ meta, shared_vcf, shared_tbi, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [shared_vcf, deepvar_vcf, clair_vcf], [shared_tbi, deepvar_tbi, clair_tbi]]
                 }
                 .set{concat_input}
-            // concat_input: [meta, [consensus_vcf, private_vcf], [consensus_tbi, private_tbi]]
-            BCFTOOLS_CONCAT(concat_input)
-            BCFTOOLS_CONCAT.out.vcf
-                .set{concat_out}
         }
         else if (prioritize_caller == 'clair') {
-            // consensus (Clair record) + Clair-private variants
-            BCFTOOLS_ISEC.out.deepvar_private_vcf
-                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
-                .join(BCFTOOLS_ISEC.out.clair_consensus_vcf)
+            // shared (Clair record) + DeepVariant-private + Clair-private
+            BCFTOOLS_ISEC.out.clair_consensus_vcf
                 .join(BCFTOOLS_ISEC.out.clair_consensus_tbi)
-                .map{ meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
-                        return[meta, [deepvar_vcf, clair_vcf], [deepvar_tbi, clair_tbi]]
+                .join(BCFTOOLS_ISEC.out.deepvar_private_vcf)
+                .join(BCFTOOLS_ISEC.out.deepvar_private_tbi)
+                .join(BCFTOOLS_ISEC.out.clair_private_vcf)
+                .join(BCFTOOLS_ISEC.out.clair_private_tbi)
+                .map{ meta, shared_vcf, shared_tbi, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
+                        return[meta, [shared_vcf, deepvar_vcf, clair_vcf], [shared_tbi, deepvar_tbi, clair_tbi]]
                 }
                 .set{concat_input}
-            // concat_input: [meta, [private_vcf, consensus_vcf], [private_tbi, consensus_tbi]]
-            BCFTOOLS_CONCAT(concat_input)
-            BCFTOOLS_CONCAT.out.vcf
-                .set{concat_out}
         }
-        // concat_out: [meta, vcf]  -- unsorted concatenated VCF (consensus + priority-caller-private)
+        else {
+            error("prioritize_caller must be one of [deepvariant, deepsomatic, clair], got '${prioritize_caller}'")
+        }
+        // concat_input: [meta, [shared_vcf, deepvar_private_vcf, clair_private_vcf], [tbis...]]
+        BCFTOOLS_CONCAT(concat_input)
+        BCFTOOLS_CONCAT.out.vcf
+            .set{concat_out}
+        // concat_out: [meta, vcf]  -- unsorted union of both callers' calls
         BCFTOOLS_SORT(concat_out)
         BCFTOOLS_SORT.out.vcf
             .set{vcf}
         BCFTOOLS_SORT.out.tbi
             .set{tbi}
-        // vcf/tbi: [meta, vcf/tbi]  -- sorted combined VCF
+        // vcf/tbi: [meta, vcf/tbi]  -- sorted union VCF
+    }
+
+    else {
+        error("combine_method must be 'consensus' or 'all', got '${combine_method}'")
     }
 
     emit:

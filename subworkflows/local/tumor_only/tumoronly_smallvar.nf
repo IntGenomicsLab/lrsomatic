@@ -8,6 +8,14 @@ include { DEEPVARIANT                                   } from '../../../subwork
 include { DEEPSOMATIC                                   } from '../../../subworkflows/local/deepsomatic.nf'
 include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subworkflows/local/small_variant_consensus.nf'
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { VCF_PASS_FILTER as DEEPVARIANT_PASS_FILTER    } from '../../../subworkflows/local/vcf_pass_filter.nf'
+include { VCF_PASS_FILTER as DEEPSOMATIC_PASS_FILTER    } from '../../../subworkflows/local/vcf_pass_filter.nf'
+
+// Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
+// Three independent bcftools invocations, so three aliased instances of the upstream modules.
+include { BCFTOOLS_QUERY    as DS_VERDICT_QUERY         } from '../../../modules/nf-core/bcftools/query/main'
+include { BCFTOOLS_ANNOTATE as DS_VERDICT_ANNOTATE      } from '../../../modules/nf-core/bcftools/annotate/main'
+include { BCFTOOLS_VIEW     as DS_GERMLINE_SELECT       } from '../../../modules/nf-core/bcftools/view/main'
 
 
 workflow TUMORONLY_SMALLVAR {
@@ -130,6 +138,50 @@ workflow TUMORONLY_SMALLVAR {
         // clairsto_somatic_ch: [meta(+caller:'clairs-to'), vcf, tbi]  -- somatic variants
     }
 
+    // DEEPSOMATIC in tumor-only mode: normal BAM/BAI are empty lists
+    if(somatic_var_keep.contains('deepsomatic')) {
+        tumor_bams
+            .map { meta, tumor_bam, tumor_bai ->
+                def normal_bam = []
+                def normal_bai = []
+                return [meta,normal_bam,normal_bai,tumor_bam,tumor_bai]
+            }
+            .set{deepsomatic_input_ch}
+        // deepsomatic_input_ch: [meta, [], [], tumor_bam, tumor_bai]
+        //   empty normal_bam/bai signals tumor-only mode to DEEPSOMATIC subworkflow
+
+        //
+        // SUBWORKFLOW: DEEPSOMATIC (local)
+        // Input:  [meta, [], [], tumor_bam, tumor_bai]  -- tumor-only (no normal)
+        //         [[:],[]] / fasta / fai / [[:],[]]
+        // Output: .vcf       -- [meta, vcf]
+        //         .vcf_index -- [meta, tbi]
+        //
+        DEEPSOMATIC (
+            deepsomatic_input_ch,
+            [[:],[]],  // intervals (empty = genome-wide)
+            fasta,
+            fai,
+            [[:],[]],  // GZI (empty if FASTA is uncompressed)
+            ds_pon_channel
+        )
+        // DeepSomatic emits a record for every site it evaluates (RefCall/GERMLINE/PON),
+        // not just its calls. ClairS-TO needs no equivalent step here because VCFSPLIT
+        // already restricts it to PASS. The VCF published under variants/deepsomatic/ is
+        // unaffected.
+        DEEPSOMATIC_PASS_FILTER (
+            DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
+        )
+
+        DEEPSOMATIC_PASS_FILTER.out.vcf
+            .map{ meta, vcf, tbi ->
+                def new_meta = meta + [caller:'deepsomatic']
+                return [new_meta, vcf, tbi]
+            }
+            .set{deepsomatic_ch}
+        // deepsomatic_ch: [meta(+caller:'deepsomatic'), vcf, tbi]
+    }
+
     // DEEPVARIANT: germline-only variant calling (no somatic mode for tumor-only)
     if(germline_var_keep.contains('deepvariant')) {
 
@@ -156,14 +208,76 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]]   // GFF annotation (not used)
         )
 
-        DEEPVARIANT.out.vcf
-            .join(DEEPVARIANT.out.vcf_index)
+        // DeepVariant emits a record for every site it evaluates, not just its calls, so
+        // most records are RefCall. ClairS-TO needs no equivalent step here because
+        // VCFSPLIT already restricts its SOMATIC split to PASS -- note that its GERMLINE split
+        // is not PASS-filtered but PASS-rewritten, so a PASS filter would not reduce it and
+        // germline/somatic origin is carried in INFO by VCFTAG instead. The VCF published under
+        // variants/deepvariant/ is unaffected.
+        DEEPVARIANT_PASS_FILTER (
+            DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
+        )
+
+        // GERMLINE VERDICT TRANSFER (tumor-only, deep family)
+        // DeepVariant is a germline caller with no somatic discrimination -- its FILTER vocabulary is
+        // only PASS/RefCall/LowQual/NoCall -- and here it is run on the TUMOR BAM, so on its own its
+        // calls are "germline or clonal somatic" and cannot be told apart. Published unchanged, the
+        // germline VCF therefore carries most of the somatic call set.
+        //
+        // DeepSomatic evaluates the same sites and does emit a verdict: FILTER=GERMLINE ("Non somatic
+        // variants"), PON, RefCall or PASS. That verdict is transferred here, exactly as ClairS-TO
+        // adjudicates its own calls via NonSomatic and VCFSPLIT. On B1975944 DeepVariant's 5,058,527
+        // PASS calls resolve to 77.8% GERMLINE, 11.4% RefCall, 5.3% PON, 4.3% unevaluated and 1.14%
+        // (57,684) PASS -- the last being real somatic calls that must not be published as germline.
+        //
+        // Only positively-adjudicated germline sites are kept (GERMLINE or PON); RefCall and
+        // unevaluated sites are dropped rather than assumed germline. The verdict stays in
+        // INFO/DS_VERDICT so the decision is auditable in the published VCF.
+        //
+        // DeepSomatic FILTER is single-valued in practice (RefCall/GERMLINE/PON/PASS only, verified
+        // over 13.7M records), so transferring it as a plain string cannot inject the ";" that would
+        // break INFO parsing.
+        //
+        // MODULE: DS_VERDICT_QUERY (BCFTOOLS_QUERY alias, label: process_single)
+        // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF, before its PASS filter
+        // Output: .output/.index -- [meta, tsv.gz/tbi]  -- CHROM POS REF ALT FILTER
+        //
+        DS_VERDICT_QUERY ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index), [], [], [] )
+
+        //
+        // MODULE: DS_VERDICT_ANNOTATE (BCFTOOLS_ANNOTATE alias, label: process_medium)
+        // Stamps INFO/DS_VERDICT on each DeepVariant record from the DeepSomatic verdict table.
+        //
+        DEEPVARIANT_PASS_FILTER.out.vcf
+            .join(DS_VERDICT_QUERY.out.output, failOnMismatch: true, failOnDuplicate: true)
+            .join(DS_VERDICT_QUERY.out.index,  failOnMismatch: true, failOnDuplicate: true)
+            .map { meta, vcf, tbi, annotations, annotations_index ->
+                def columns      = []  // no extra column specs
+                def header_lines = []  // no extra header lines
+                def rename_chrs  = []  // no chromosome renaming
+                return [ meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
+            }
+            .set{ ds_verdict_annotate_input }
+
+        DS_VERDICT_ANNOTATE ( ds_verdict_annotate_input )
+
+        //
+        // MODULE: DS_GERMLINE_SELECT (BCFTOOLS_VIEW alias, label: process_medium)
+        // Keeps only the positively-adjudicated germline records (see ext.args in conf/modules.config).
+        //
+        DS_GERMLINE_SELECT (
+            DS_VERDICT_ANNOTATE.out.vcf.join(DS_VERDICT_ANNOTATE.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+            [], [], []
+        )
+
+        DS_GERMLINE_SELECT.out.vcf
+            .join(DS_GERMLINE_SELECT.out.index, failOnMismatch: true, failOnDuplicate: true)
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepvariant']
                 return [new_meta, vcf, tbi]
             }
             .set{deepvariant_ch}
-        // deepvariant_ch: [meta(+caller:'deepvariant'), vcf, tbi]
+        // deepvariant_ch: [meta(+caller:'deepvariant'), vcf, tbi]  -- germline-adjudicated only
     }
 
     // COMBINE GERMLINE VARIANTS
@@ -196,42 +310,6 @@ workflow TUMORONLY_SMALLVAR {
             .set{germline_vcf}
     }
 
-    // DEEPSOMATIC in tumor-only mode: normal BAM/BAI are empty lists
-    if(somatic_var_keep.contains('deepsomatic')) {
-        tumor_bams
-            .map { meta, tumor_bam, tumor_bai ->
-                def normal_bam = []
-                def normal_bai = []
-                return [meta,normal_bam,normal_bai,tumor_bam,tumor_bai]
-            }
-            .set{deepsomatic_input_ch}
-        // deepsomatic_input_ch: [meta, [], [], tumor_bam, tumor_bai]
-        //   empty normal_bam/bai signals tumor-only mode to DEEPSOMATIC subworkflow
-
-        //
-        // SUBWORKFLOW: DEEPSOMATIC (local)
-        // Input:  [meta, [], [], tumor_bam, tumor_bai]  -- tumor-only (no normal)
-        //         [[:],[]] / fasta / fai / [[:],[]]
-        // Output: .vcf       -- [meta, vcf]
-        //         .vcf_index -- [meta, tbi]
-        //
-        DEEPSOMATIC (
-            deepsomatic_input_ch,
-            [[:],[]],  // intervals (empty = genome-wide)
-            fasta,
-            fai,
-            [[:],[]],  // GZI (empty if FASTA is uncompressed)
-            ds_pon_channel
-        )
-        DEEPSOMATIC.out.vcf
-            .join(DEEPSOMATIC.out.vcf_index)
-            .map{ meta, vcf, tbi ->
-                def new_meta = meta + [caller:'deepsomatic']
-                return [new_meta, vcf, tbi]
-            }
-            .set{deepsomatic_ch}
-        // deepsomatic_ch: [meta(+caller:'deepsomatic'), vcf, tbi]
-    }
 
     // COMBINE SOMATIC VARIATION
     if (somatic_var_keep.size() > 1) {

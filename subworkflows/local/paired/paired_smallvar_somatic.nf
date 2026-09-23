@@ -6,6 +6,8 @@ include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/so
 // IMPORT SUBWORKFLOWS
 include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic.nf'
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { VCF_PASS_FILTER as CLAIRS_PASS_FILTER          } from '../../../subworkflows/local/vcf_pass_filter.nf'
+include { VCF_PASS_FILTER as DEEPSOMATIC_PASS_FILTER     } from '../../../subworkflows/local/vcf_pass_filter.nf'
 
 workflow PAIRED_SMALLVAR_SOMATIC {
 
@@ -71,8 +73,14 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             BCFTOOLS_CONCAT.out.vcf
         )
 
-        BCFTOOLS_SORT.out.vcf
-            .join(BCFTOOLS_SORT.out.tbi)
+        // The concatenated ClairS VCF still carries its LowQual and NonSomatic calls;
+        // restrict them the same way DeepSomatic's output is restricted so both callers
+        // enter the union on equal terms. variants/clairs/ is unaffected.
+        CLAIRS_PASS_FILTER (
+            BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.tbi)
+        )
+
+        CLAIRS_PASS_FILTER.out.vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clairs']
                 return [new_meta, vcf, tbi]
@@ -109,8 +117,14 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             ds_pon_channel
         )
 
-        DEEPSOMATIC.out.vcf
-            .join(DEEPSOMATIC.out.vcf_index)
+        // DeepSomatic emits a record for every site it evaluates (RefCall/GERMLINE/PON),
+        // not just its calls. Without this the union is "every site DeepSomatic looked
+        // at". The VCF published under variants/deepsomatic/ is unaffected.
+        DEEPSOMATIC_PASS_FILTER (
+            DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
+        )
+
+        DEEPSOMATIC_PASS_FILTER.out.vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]

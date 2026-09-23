@@ -239,6 +239,30 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateDeepCallerPairing()
+}
+
+//
+// The tumor-only germline arm runs DeepVariant on the TUMOR BAM, which cannot separate germline
+// from clonal somatic calls on its own. TUMORONLY_SMALLVAR resolves that by transferring
+// DeepSomatic's FILTER verdict (GERMLINE/PON/RefCall/PASS) onto those calls, so DeepVariant
+// without DeepSomatic would leave the germline arm unadjudicated -- and would reference
+// DEEPSOMATIC.out before it exists. Require the deep family to be fully on or fully off.
+//
+def callerList(value) {
+    if (value instanceof List) {
+        return value
+    }
+    return value.toString().tokenize(',').collect { token -> token.trim() }
+}
+
+def validateDeepCallerPairing() {
+    def germline = callerList(params.germline_var_keep)
+    def somatic  = callerList(params.somatic_var_keep)
+
+    if (germline.contains('deepvariant') && !somatic.contains('deepsomatic')) {
+        error("--germline_var_keep includes 'deepvariant' but --somatic_var_keep does not include 'deepsomatic'. In tumor-only mode the DeepVariant germline calls are adjudicated with DeepSomatic's verdict, so the two must be enabled together. Add 'deepsomatic' to --somatic_var_keep, or drop 'deepvariant' from --germline_var_keep.")
+    }
 }
 
 //

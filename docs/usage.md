@@ -135,6 +135,23 @@ For structural variants, the CHM13 panel of normals is a merged panel combining 
 
 For tumour-only small variants, ClairS-TO separates germline from somatic calls with a panel of normals and with its Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. `--genome CHM13` supplies five CHM13 PON VCFs (gnomAD, dbSNP, 1000 Genomes, CoLoRSdb and ASAP), which **replace** the GRCh38 databases inside the container. Unless `--skip_ascat` is set, purity and copy number come from the pipeline's own ASCAT run (`CLAIRSTO_VERDICT_TAG`); only with `--skip_ascat` does ClairS-TO estimate them itself, from assembly-specific loci, allele and GC content files. A GRCh38 resource set on a CHM13 run leaves germline variants untagged.
 
+When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
+runs DeepVariant on the **tumour** BAM. DeepVariant is a germline caller with no
+somatic discrimination, so on its own those calls mix germline and clonal somatic
+variants. The pipeline therefore transfers DeepSomatic's verdict onto them:
+DeepSomatic evaluates the same sites and labels each `GERMLINE`, `PON`, `RefCall`
+or `PASS`, and that label is recorded in `INFO/DS_VERDICT`. Only positively
+adjudicated germline sites (`GERMLINE` or `PON`) are kept in the germline arm;
+`RefCall` and sites DeepSomatic never evaluated are dropped rather than assumed
+germline. On a 30x tumour-only sample this keeps about 83% of DeepVariant's
+`PASS` calls and removes roughly 1% that DeepSomatic positively calls somatic.
+
+Because of this, `deepvariant` and `deepsomatic` must be enabled together:
+`--germline_var_keep deepvariant` without `deepsomatic` in `--somatic_var_keep` is
+rejected at launch. Note that even after adjudication the tumour-only germline arm
+is a tumour-derived proxy, not a call set from normal tissue, and should not be
+used for secondary findings without that caveat.
+
 With `--genome CHM13 --skip_ascat` the pipeline builds a CHM13 resource set from the ASCAT files it already downloads, so no extra setup is needed. LogR correction is GC-only, as ClairS-TO recommends for CHM13: no replication timing file is published for the assembly. Without `--skip_ascat` nothing is built, because the tagging comes from ASCAT's own tables.
 
 To use a resource set of your own — another assembly, or a CHM13 set carrying an `RT_<name>.txt` for replication timing correction — pass `--clairsto_cna_resources` together with `--skip_ascat`. Without `--skip_ascat` it is ignored, with a warning. Expected layout:
@@ -382,14 +399,69 @@ Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support n
 
 These options control how variants from multiple callers are filtered and merged.
 
-| Parameter                      | Description                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`             |
-| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`              |
-| `--germline_var_combine`       | Strategy for combining germline variant caller outputs (e.g. union, intersection). Default = `null` |
-| `--somatic_var_combine`        | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`  |
-| `--prioritize_caller_germline` | Comma-separated caller priority order used when combining germline calls. Default = `null`          |
-| `--prioritize_caller_somatic`  | Comma-separated caller priority order used when combining somatic calls. Default = `null`           |
+| Parameter                      | Description                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`                       |
+| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`                        |
+| `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`     |
+| `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`      |
+| `--prioritize_caller_germline` | Whose record to use for variants called by both germline callers: `deepvariant` or `clair`. Default = `clair` |
+| `--prioritize_caller_somatic`  | Whose record to use for variants called by both somatic callers: `deepsomatic` or `clair`. Default = `clair`  |
+| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                            |
+
+DeepVariant and DeepSomatic emit a record for every site they evaluate, not only
+for the variants they call: on a 30x PacBio tumour sample a DeepSomatic VCF holds
+around 13.7 M records of which roughly 50 k are `PASS`, the rest being `RefCall`,
+`GERMLINE` or `PON`. Clair3 and ClairS are far less extreme but still keep their
+`LowQual` and `NonSomatic` records. With `*_var_combine = 'all'` the union would
+otherwise be "every site every caller looked at", which inflates the phased VCFs
+by three orders of magnitude and produces a meaningless mutation burden.
+
+`--smallvar_filter_pass` (`true` by default) restricts the copy of each caller's
+VCF that is handed to the caller consensus, phasing, VEP and the report. In
+tumor-only mode ClairS-TO is unaffected by the setting: `VCFSPLIT` already
+restricts its somatic split to `PASS`, and its germline split is `PASS`-rewritten
+rather than `PASS`-filtered. The per-caller VCFs published under
+`<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
+from the results directory.
+
+Set it to `false` to restore the previous unfiltered behaviour. `VCFTAG`
+normalises `FILTER` to `PASS` on both arms before phasing, so the caller's own
+verdict is preserved in `INFO/ORIG_FILTER` and the signature input is filtered on
+that field rather than on `FILTER`; without this the `PASS` filter in front of
+SigProfiler could never remove anything once `FILTER` had been rewritten. Every
+published VCF downstream of phasing therefore reads `FILTER=PASS`, with the
+original value available in `INFO/ORIG_FILTER`.
+
+`consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
+every variant called by either. In both modes `--prioritize_caller_*` chooses only
+whose record represents a variant that both callers found -- it never decides which
+variants are kept.
+
+#### Germline and somatic provenance
+
+Germline and somatic small variants are merged into one VCF for somatic phasing,
+because Longphase needs all variant sites in a single file to produce consistent
+phase blocks. The somatic arm is then recovered from the phased result.
+
+That recovery selects on an `INFO/SOMATIC` flag stamped on each arm before the merge,
+not on position. A positional restriction cannot separate the two populations: a
+germline record at the same coordinate as a somatic call is indistinguishable from
+it, and `FILTER` is no help either, since `VCFSPLIT` normalises the ClairS-TO
+germline split to `PASS` so that downstream tools which filter on `PASS` still see
+every record.
+
+Three INFO fields carry this provenance:
+
+| Field         | Meaning                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `SOMATIC`     | Record came from the somatic call set                                                                            |
+| `GERMLINE`    | Record came from the germline call set                                                                           |
+| `ORIG_FILTER` | The `FILTER` value in the ClairS-TO output, before normalisation to `PASS`. Multiple filters are joined with `,` |
+
+Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
+lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
+`vep/germline/`, and in the unfiltered per-caller VCFs under `variants/<caller>/`.
 
 #### PON Options
 

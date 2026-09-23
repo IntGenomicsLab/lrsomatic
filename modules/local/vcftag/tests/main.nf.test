@@ -1,0 +1,81 @@
+nextflow_process {
+
+    name "Test Process VCFTAG"
+    script "../main.nf"
+    process "VCFTAG"
+
+    tag "modules"
+    tag "modules_local"
+    tag "vcftag"
+
+    // Runs for real (no -stub): the tagging is an awk program embedded in the Nextflow script
+    // block, so the escaping only holds if it is actually executed.
+    test("stamps the flag, declares its header and normalises FILTER") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = 'SOMATIC'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            // linesGzip is built into nf-test; the .vcf accessor needs an nft-vcf plugin that
+            // nf-test.config does not load, so this reads the records directly.
+            def all    = path(process.out.vcf[0][1]).linesGzip
+            def lines  = all.findAll { line -> !line.startsWith('#') }
+            def header = all.findAll { line -> line.startsWith('##') }.join('\n')
+
+            assertAll(
+                // every input record survives -- tagging must not filter
+                { assert lines.size() == 4 },
+                // the flag is declared, so bcftools can query it downstream
+                { assert header.contains('ID=SOMATIC') },
+                // every record carries the flag, including the one whose INFO was '.'
+                { assert lines.every { it.contains('SOMATIC') } },
+                // FILTER is normalised to PASS on all records, including NonSomatic and RefCall
+                { assert lines.every { it.split('\t')[6] == 'PASS' } },
+                // a pre-existing INFO field is preserved rather than overwritten
+                { assert lines.any { it.contains('EXISTING') && it.contains('CALLER=clairs-to') } },
+                // the record whose INFO was '.' gets no leading '.', just the stamped fields
+                { assert lines.any { it.split('\t')[7] == 'ORIG_FILTER=RefCall;SOMATIC' } },
+                // the caller's FILTER is preserved before being normalised away
+                { assert header.contains('ID=ORIG_FILTER') },
+                { assert lines.every { it.contains('ORIG_FILTER=') } },
+                { assert lines.any { it.contains('ORIG_FILTER=PASS') } },
+                { assert lines.any { it.contains('ORIG_FILTER=NonSomatic') } },
+                { assert lines.any { it.contains('ORIG_FILTER=RefCall') } },
+                // a record whose FILTER was '.' records '.' rather than being skipped
+                { assert lines.any { it.contains('ORIG_FILTER=.') } },
+                // ORIG_FILTER is stamped exactly once per record
+                { assert lines.every { it.split('\t')[7].count('ORIG_FILTER=') == 1 } }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [] ]
+                input[1] = 'GERMLINE'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

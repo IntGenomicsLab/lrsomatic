@@ -101,6 +101,13 @@
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
                 },
+                "smallvar_filter_pass": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep only PASS records from each small variant caller for downstream use.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "fa_icon": "fas fa-filter"
+                },
                 "generate_gvcf": {
                     "type": "boolean"
                 }
