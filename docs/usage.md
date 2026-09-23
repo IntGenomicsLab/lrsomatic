@@ -553,7 +553,8 @@ Prepared REVEL and EVE files are published to `<outdir>/vep_plugins/`, alongside
 a later run can point `--vep_revel` / `--vep_revel_tbi` (or the `--vep_eve` pair) at them and skip
 both the download and the reshaping. The two AlphaMissense tables are fetched already indexed.
 
-> [!IMPORTANT] > `<outdir>/vep_plugins/` holds data that is free for non-commercial use only. Exclude it when you
+> [!IMPORTANT]
+> `<outdir>/vep_plugins/` holds data that is free for non-commercial use only. Exclude it when you
 > share or archive a results directory — passing it on is redistribution, which those licences do
 > not grant you.
 
