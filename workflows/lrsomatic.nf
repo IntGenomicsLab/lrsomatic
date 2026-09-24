@@ -683,7 +683,7 @@ workflow LRSOMATIC {
             allele_files,
             loci_files,
             [],
-            ch_fasta.map { _meta, fasta -> fasta },  // alleleCounter -r, to decode CRAM
+            [],  // no fasta: the image's ASCAT has no ref.fasta argument; the CRAMs embed their reference
             gc_file,
             rt_file
         )
