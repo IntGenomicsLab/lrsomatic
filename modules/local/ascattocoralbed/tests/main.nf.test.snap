@@ -1,0 +1,60 @@
+{
+    "converts ASCAT cnvs.txt to CoRAL BED and respells contigs": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "sample1"
+                    },
+                    "sample1_coral_cn.bed:md5,771563ffb2c54c0fddbe3aafb288e984"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:36:07.311149784"
+    },
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_coral_cn.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        "ASCAT_TO_CORAL_BED",
+                        "python",
+                        "3.12.2"
+                    ]
+                ],
+                "bed": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_coral_cn.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_python": [
+                    [
+                        "ASCAT_TO_CORAL_BED",
+                        "python",
+                        "3.12.2"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:36:16.961617365"
+    }
+}

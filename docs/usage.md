@@ -680,6 +680,57 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
 > for `--custom` files, but a name it cannot map annotates nothing rather than raising an error, so
 > confirm that `CLNSIG` values appear in an annotated VCF before trusting them.
 
+## ecDNA and focal amplification
+
+CoRAL reconstructs amplicon structures and AmpliconClassifier labels them. Both run by default on
+every tumour sample that has ASCAT calls. CoRAL seeds from ASCAT's copy number, so `--skip_ascat`
+together with CoRAL is rejected at launch: use `--skip_coral` as well, or keep ASCAT.
+
+### Solver
+
+CoRAL's cycle decomposition is a non-convex mixed-integer quadratically-constrained problem. The
+pipeline defaults to `--coral_solver scip`, which is open-source, shipped in the image and needs no
+licence. Gurobi is available with:
+
+```bash
+--coral_solver gurobi_direct --gurobi_license /path/to/gurobi.lic
+```
+
+The licence is bind-mounted into the CoRAL tasks; it is never baked into the image. Under Gurobi the
+reconstruction steps are serialised (`maxForks = 1`), because a Web License Service licence caps
+concurrent solver sessions.
+
+Gurobi is faster, but on the models this pipeline produces that has not mattered: across 1102 solver
+logs from the earlier standalone cohort, the largest model was 620 rows by 438 columns and the
+slowest single solve took 0.49 s, with no model reaching the time limit. Prefer the default unless
+you have measured a reason not to.
+
+### AmpliconClassifier reference data
+
+AmpliconClassifier reads an AmpliconArchitect data repository at runtime. For `--genome GRCh38` it is
+downloaded automatically (about 1.1 GB) and needs no configuration. For `--genome CHM13` there is no
+published repository, so one must be supplied:
+
+```bash
+--genome CHM13 --aa_data_repo /path/to/AA_DATA_REPO
+```
+
+The directory must contain a `CHM13/` subdirectory. Alternatively run reconstruction alone with
+`--skip_ampliconclassifier`, which needs no reference data.
+
+### Tuning
+
+`--coral_gain` (default 6.0) sets the total copy number a segment must reach to seed an amplicon. A
+sample with nothing above it produces an empty seed file and is skipped with a log message rather
+than failing.
+
+`--coral_min_bp_support` defaults to 1.75, the value validated on this lab's cohort. CoRAL's own
+documentation recommends a considerably higher value for WGS, around 10.0; raise it if you see
+spurious breakpoints.
+
+`--coral_run_cycle` re-extracts cycles with `coral cycle_all` after reconstruction and classifies
+those instead of the originals. It is off by default.
+
 ## Core Nextflow arguments
 
 > [!NOTE]

@@ -1,0 +1,94 @@
+nextflow_process {
+
+    name "Test Process ASCAT_TO_CORAL_BED"
+    script "../main.nf"
+    process "ASCAT_TO_CORAL_BED"
+
+    tag "modules"
+    tag "modules_local"
+    tag "ascat_to_coral_bed"
+    tag "small"
+
+    // Fixture: an ASCAT cnvs.txt calling its contigs "1"/"2"/"X", with one zero-length
+    // segment that CoRAL's own parser would reject, and a .fai that spells them "chr1" etc.
+    test("converts ASCAT cnvs.txt to CoRAL BED and respells contigs") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample1' ],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true)
+                ]
+                input[1] = [
+                    [:],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def bed = path(process.out.bed[0][1]).readLines()
+
+            assertAll(
+                { assert process.success },
+                // The zero-length segment (chr1:500000-500000) is dropped
+                { assert bed.size() == 4 },
+                // Contigs respelled to match the reference
+                { assert bed.every { it.startsWith('chr') } },
+                // Total CN is nMajor + nMinor, in the last column
+                { assert bed[0].split('\t')[3] == '2' },
+                { assert bed[1].split('\t')[3] == '8' },
+                // Natural contig order: chr1, chr2, then chrX
+                { assert bed.collect { it.split('\t')[0] } == ['chr1', 'chr1', 'chr2', 'chrX'] },
+                { assert snapshot(process.out.bed).match() }
+            )
+        }
+    }
+
+    test("no reference index - contigs are left as ASCAT spelled them") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample1' ],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true)
+                ]
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            def bed = path(process.out.bed[0][1]).readLines()
+
+            assertAll(
+                { assert process.success },
+                { assert bed.collect { it.split('\t')[0] } == ['1', '1', '2', 'X'] }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'sample1' ], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true) ]
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

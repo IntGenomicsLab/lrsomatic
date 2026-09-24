@@ -1,0 +1,133 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "ampliconclassifier"
+description: Classify reconstructed amplicons as ecDNA, BFB, linear or no amplification.
+keywords:
+  - ecdna
+  - amplicon
+  - classification
+  - bfb
+tools:
+  - "ampliconclassifier":
+      description: "Classifies focal amplifications from AmpliconArchitect or CoRAL output."
+      homepage: "https://github.com/AmpliconSuite/AmpliconClassifier"
+      documentation: "https://github.com/AmpliconSuite/AmpliconClassifier"
+      doi: "10.1038/s41586-023-05937-5"
+      licence: ["BSD-2-Clause"]
+      identifier: ""
+
+## No environment.yml: bioconda's `ampliconclassifier` recipe is stuck at 0.4.14 (2023) and
+## predates CoRAL support, which arrived in v2.0.0. Built from a fork of v2.0.0 adding
+## T2T-CHM13 support (https://github.com/robert-a-forsyth/AmpliconClassifier, branch
+## chm13-support). See containers/ampliconclassifier.Dockerfile.
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - reconstruction:
+        type: directory
+        description: |
+          A CoRAL output directory holding matching *_graph.txt, *_cycles.txt and
+          *_summary.txt files. AmpliconClassifier pairs them by shared prefix.
+  - - meta2:
+        type: map
+        description: Groovy Map for the data repository
+    - data_repo:
+        type: directory
+        description: |
+          AmpliconArchitect data repository, exported as $AA_DATA_REPO. Staged under a
+          fixed name so the tool never writes into the shared reference directory.
+  - - ac_ref:
+        type: string
+        description: Reference genome name, one of hg19, GRCh37, GRCh38, mm10, CHM13
+
+output:
+  classification:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_amplicon_classification_profiles.tsv":
+        type: file
+        description: Per-amplicon class, ecDNA+ and BFB+ calls
+        pattern: "*_amplicon_classification_profiles.tsv"
+  gene_list:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_gene_list.tsv":
+        type: file
+        description: Genes intersecting each classified amplicon
+        pattern: "*_gene_list.tsv"
+  ecdna_counts:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_ecDNA_counts.tsv":
+        type: file
+        description: Number of distinct ecDNA species detected
+        pattern: "*_ecDNA_counts.tsv"
+  result_table:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_result_table.tsv":
+        type: file
+        description: Combined per-sample table, the AmpliconRepository ingest format
+        pattern: "*_result_table.tsv"
+  bed_files:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_classification_bed_files":
+        type: directory
+        description: Per-feature BED intervals for each classified amplicon
+  sv_summaries:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_SV_summaries":
+        type: directory
+        description: Per-amplicon structural variant summaries
+  annotated_cycles:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_annotated_cycles_files":
+        type: directory
+        description: Cycles files annotated with classification
+  log:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*.log":
+        type: file
+        description: Classifier log
+        pattern: "*.log"
+  versions_ampliconclassifier:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - ampliconclassifier:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - ampliconclassifier:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

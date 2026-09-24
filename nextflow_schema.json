@@ -10,7 +10,10 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": [
+                "input",
+                "outdir"
+            ],
             "properties": {
                 "input": {
                     "type": "string",
@@ -81,25 +84,37 @@
                     "type": "string",
                     "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
                     "default": "all",
-                    "enum": ["consensus", "all"]
+                    "enum": [
+                        "consensus",
+                        "all"
+                    ]
                 },
                 "somatic_var_combine": {
                     "type": "string",
                     "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
                     "default": "all",
-                    "enum": ["consensus", "all"]
+                    "enum": [
+                        "consensus",
+                        "all"
+                    ]
                 },
                 "prioritize_caller_germline": {
                     "type": "string",
                     "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
                     "default": "clair",
-                    "enum": ["deepvariant", "clair"]
+                    "enum": [
+                        "deepvariant",
+                        "clair"
+                    ]
                 },
                 "prioritize_caller_somatic": {
                     "type": "string",
                     "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
                     "default": "clair",
-                    "enum": ["deepsomatic", "clair"]
+                    "enum": [
+                        "deepsomatic",
+                        "clair"
+                    ]
                 },
                 "smallvar_filter_pass": {
                     "type": "boolean",
@@ -155,7 +170,10 @@
                     "description": "Name of iGenomes reference.",
                     "fa_icon": "fas fa-book",
                     "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details.",
-                    "enum": ["GRCh38", "CHM13"]
+                    "enum": [
+                        "GRCh38",
+                        "CHM13"
+                    ]
                 },
                 "igenomes_ignore": {
                     "type": "boolean",
@@ -590,6 +608,14 @@
                 "skip_report": {
                     "type": "boolean",
                     "description": "Skip the final per-sample HTML report"
+                },
+                "skip_coral": {
+                    "type": "boolean",
+                    "description": "Skip CoRAL amplicon reconstruction and AmpliconClassifier."
+                },
+                "skip_ampliconclassifier": {
+                    "type": "boolean",
+                    "description": "Run CoRAL but skip AmpliconClassifier, which avoids needing an AA data repository."
                 }
             }
         },
@@ -660,7 +686,14 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+                    "enum": [
+                        "symlink",
+                        "rellink",
+                        "link",
+                        "copy",
+                        "copyNoFollow",
+                        "move"
+                    ],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -742,6 +775,82 @@
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
             }
+        },
+        "coral_options": {
+            "title": "CoRAL / ecDNA options",
+            "type": "object",
+            "description": "Amplicon reconstruction with CoRAL and classification with AmpliconClassifier.",
+            "default": "",
+            "properties": {
+                "coral_gain": {
+                    "type": "number",
+                    "default": 6.0,
+                    "description": "Minimum total copy number for a segment to seed an amplicon (CoRAL's --gain)."
+                },
+                "coral_min_seed_size": {
+                    "type": "integer",
+                    "default": 100000,
+                    "description": "Minimum seed interval size in bp (CoRAL's --min-seed-size)."
+                },
+                "coral_max_seg_gap": {
+                    "type": "integer",
+                    "default": 300000,
+                    "description": "Largest gap in bp that CoRAL will bridge when merging seed segments (--max-seg-gap)."
+                },
+                "coral_solver": {
+                    "type": "string",
+                    "default": "scip",
+                    "enum": [
+                        "scip",
+                        "gurobi_direct"
+                    ],
+                    "description": "Optimiser for CoRAL's non-convex MIQCP cycle decomposition. SCIP is open-source and needs no licence; gurobi_direct is faster but requires --gurobi_license."
+                },
+                "coral_solver_threads": {
+                    "type": "integer",
+                    "default": -1,
+                    "description": "Solver threads; -1 lets the solver decide (CoRAL's --solver-threads)."
+                },
+                "coral_solver_time_limit": {
+                    "type": "integer",
+                    "default": 7200,
+                    "description": "Per-amplicon solver time limit in seconds (CoRAL's --solver-time-limit)."
+                },
+                "coral_global_time_limit": {
+                    "type": "integer",
+                    "default": 21600,
+                    "description": "Per-sample time limit in seconds across all amplicons (CoRAL's --global-time-limit)."
+                },
+                "coral_min_bp_support": {
+                    "type": "number",
+                    "default": 1.75,
+                    "description": "Minimum breakpoint read support (CoRAL's --min-bp-support). CoRAL's own README recommends a much larger value such as 10.0 for WGS; 1.75 matches the setting validated on this cohort."
+                },
+                "coral_run_cycle": {
+                    "type": "boolean",
+                    "description": "Re-extract cycles with `coral cycle_all` after reconstruction, and classify those instead."
+                },
+                "coral_cycle_decomp_alpha": {
+                    "type": "number",
+                    "default": 0.01,
+                    "description": "Cycle decomposition alpha, used only with --coral_run_cycle (CoRAL's --alpha)."
+                },
+                "coral_plot": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Render CoRAL's per-amplicon graph and cycle plots. Plot failures never fail the run."
+                },
+                "gurobi_license": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to a gurobi.lic, mounted into the CoRAL tasks. Required with --coral_solver gurobi_direct."
+                },
+                "aa_data_repo": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "AmpliconArchitect data repository for AmpliconClassifier. Downloaded automatically for GRCh38; required for CHM13, which has no published repo."
+                }
+            }
         }
     },
     "allOf": [
@@ -789,6 +898,9 @@
         },
         {
             "$ref": "#/$defs/report_options"
+        },
+        {
+            "$ref": "#/$defs/coral_options"
         },
         {
             "$ref": "#/$defs/skip_options"

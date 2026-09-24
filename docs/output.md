@@ -358,6 +358,54 @@ The germline/somatic split comes from a panel of normals and from ClairS-TO's Ve
 | `read_qual.txt`                           | file containing quality statistics about identified segements                     |
 | `severus.log`                             | log file                                                                          |
 
+#### `ecdna`
+
+Extrachromosomal DNA and focal amplification. CoRAL reconstructs amplicon structures from the tumour
+BAM, seeded by ASCAT's copy-number segments, and AmpliconClassifier labels each reconstructed
+amplicon (ecDNA, BFB, linear, and so on). Runs on every tumour sample with ASCAT calls; disable with
+`--skip_coral`, or keep reconstruction and drop classification with `--skip_ampliconclassifier`.
+
+A sample with no segment above `--coral_gain` produces an empty seed BED and is skipped with a log
+message rather than failing. CoRAL defaults to the open-source SCIP solver; `--coral_solver
+gurobi_direct` is faster but needs `--gurobi_license`. AmpliconClassifier needs an AmpliconArchitect
+data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13.
+
+```
+├── ecdna
+│   ├── sample_coral_cn.bed
+│   ├── coral
+│   │   ├── sample_CNV_SEEDS.bed
+│   │   ├── reconstruct
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   ├── sample_summary.txt
+│   │   │   └── sample_reconstruct.log
+│   │   └── plots
+│   │       ├── sample_amplicon1_graph.png
+│   │       └── sample_amplicon1_cycles.png
+│   └── amplicon_classifier
+│       ├── sample_amplicon_classification_profiles.tsv
+│       ├── sample_gene_list.tsv
+│       ├── sample_ecDNA_counts.tsv
+│       ├── sample_result_table.tsv
+│       └── sample_classification_bed_files/
+```
+
+| File                                            | Description                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| `sample_coral_cn.bed`                           | ASCAT's copy number as the BED CoRAL seeds from                                |
+| `sample_CNV_SEEDS.bed`                          | Amplified intervals above `--coral_gain`; empty means no amplicons             |
+| `sample_amplicon<N>_graph.txt`                  | Breakpoint graph per amplicon, in AmpliconArchitect format                     |
+| `sample_amplicon<N>_cycles.txt`                 | Decomposed cycles and paths per amplicon                                       |
+| `sample_summary.txt`                            | Per-run amplicon summary; written even when no amplicon is found               |
+| `sample_reconstruct.log`                        | CoRAL reconstruction log, including solver output                              |
+| `sample_amplicon<N>_{graph,cycles}.png`         | Per-amplicon copy-number and cycle plots                                       |
+| `sample_amplicon_classification_profiles.tsv`   | The headline call per amplicon: ecDNA+, BFB+, decomposition class              |
+| `sample_gene_list.tsv`                          | Genes intersecting each classified amplicon                                    |
+| `sample_ecDNA_counts.tsv`                       | Number of distinct ecDNA species detected                                      |
+| `sample_result_table.tsv`                       | Combined per-sample table, the format AmpliconRepository ingests               |
+| `sample_classification_bed_files/`              | Per-feature BED intervals for each classified amplicon                         |
+
 #### `savana`
 
 SAVANA structural variant and copy-number calling. Runs alongside Severus/ASCAT rather than replacing

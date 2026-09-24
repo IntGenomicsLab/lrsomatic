@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "coral_cycle"
+description: Re-extract cycle decompositions from existing breakpoint graphs.
+keywords:
+  - ecdna
+  - amplicon
+  - cycle decomposition
+tools:
+  - "coral":
+      description: "Reconstructs extrachromosomal DNA structures from long-read sequencing."
+      homepage: "https://github.com/AmpliconSuite/CoRAL"
+      documentation: "https://github.com/AmpliconSuite/CoRAL"
+      doi: "10.1101/gr.279131.124"
+      licence: ["BSD-3-Clause"]
+      identifier: ""
+
+## No environment.yml: CoRAL is not on bioconda -- the `coral` recipe there is an unrelated
+## RNA-seq read-bridging tool. Built from a fork adding T2T-CHM13 support and two SCIP fixes
+## (https://github.com/robert-a-forsyth/CoRAL, branch chm13-support).
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - reconstruction:
+        type: directory
+        description: Output directory from `coral reconstruct`
+
+output:
+  reconstruction:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "cycles":
+        type: directory
+        description: |
+          Re-extracted cycles alongside the graph and summary files copied from the
+          reconstruction, so AmpliconClassifier still sees a complete set.
+  cycles:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "cycles/*_amplicon*_cycles.txt":
+        type: file
+        description: Re-extracted per-amplicon cycles
+        pattern: "*_amplicon*_cycles.txt"
+  versions_coral:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

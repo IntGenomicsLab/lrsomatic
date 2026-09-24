@@ -1,0 +1,167 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon_classification_profiles.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_gene_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_ecDNA_counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_result_table.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "5": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "6": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "7": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_classifier.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "8": [
+                    [
+                        "AMPLICONCLASSIFIER",
+                        "ampliconclassifier",
+                        "2.0.0"
+                    ]
+                ],
+                "annotated_cycles": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "bed_files": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "classification": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon_classification_profiles.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "ecdna_counts": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_ecDNA_counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "gene_list": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_gene_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_classifier.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "result_table": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_result_table.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "sv_summaries": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "versions_ampliconclassifier": [
+                    [
+                        "AMPLICONCLASSIFIER",
+                        "ampliconclassifier",
+                        "2.0.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:50:03.780875635"
+    }
+}

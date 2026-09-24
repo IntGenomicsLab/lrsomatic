@@ -1,0 +1,121 @@
+nextflow_workflow {
+
+    name "Test Subworkflow ECDNA"
+    script "../ecdna.nf"
+    workflow "ECDNA"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "ecdna"
+    tag "small"
+
+    // Stub-only: CoRAL and AmpliconClassifier need real BAMs, a solver and a ~1 GB data
+    // repo. What these prove is the wiring -- that the joins pair, that the empty-seed
+    // branch drops a sample before reconstruct, and that the params gate the optional steps.
+    test("-stub - reconstructs and classifies a seeded sample") {
+
+        options "-stub"
+
+        when {
+            params {
+                coral_run_cycle = false
+                coral_plot = true
+                skip_ampliconclassifier = false
+            }
+            workflow {
+                """
+                input[0] = channel.of([ [ id:'sample1' ], file('sample1.bam'), file('sample1.bam.bai') ])
+                input[1] = channel.of([ [ id:'sample1' ], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true) ])
+                input[2] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true) ])
+                input[3] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures") ])
+                input[4] = 't2t'
+                input[5] = 'CHM13'
+                """
+            }
+        }
+
+        then {
+            def names = workflow.trace.tasks().collect { it.name.split(' ')[0] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert names.contains('ECDNA:ASCAT_TO_CORAL_BED') },
+                { assert names.contains('ECDNA:CORAL_SEED') },
+                { assert names.contains('ECDNA:CORAL_RECONSTRUCT') },
+                { assert names.contains('ECDNA:CORAL_PLOT') },
+                { assert names.contains('ECDNA:AMPLICONCLASSIFIER') },
+                // Cycle re-extraction is opt-in
+                { assert !names.contains('ECDNA:CORAL_CYCLE') },
+                { assert workflow.out.classification.size() == 1 }
+            )
+        }
+    }
+
+    test("-stub - coral_run_cycle classifies the re-extracted cycles") {
+
+        options "-stub"
+
+        when {
+            params {
+                coral_run_cycle = true
+                coral_plot = false
+                skip_ampliconclassifier = false
+            }
+            workflow {
+                """
+                input[0] = channel.of([ [ id:'sample1' ], file('sample1.bam'), file('sample1.bam.bai') ])
+                input[1] = channel.of([ [ id:'sample1' ], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true) ])
+                input[2] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true) ])
+                input[3] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures") ])
+                input[4] = 't2t'
+                input[5] = 'CHM13'
+                """
+            }
+        }
+
+        then {
+            def names = workflow.trace.tasks().collect { it.name.split(' ')[0] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert names.contains('ECDNA:CORAL_CYCLE') },
+                // Plotting is off, and must not gate the classifier
+                { assert !names.contains('ECDNA:CORAL_PLOT') },
+                { assert names.contains('ECDNA:AMPLICONCLASSIFIER') }
+            )
+        }
+    }
+
+    test("-stub - skip_ampliconclassifier stops after reconstruction") {
+
+        options "-stub"
+
+        when {
+            params {
+                coral_run_cycle = false
+                coral_plot = false
+                skip_ampliconclassifier = true
+            }
+            workflow {
+                """
+                input[0] = channel.of([ [ id:'sample1' ], file('sample1.bam'), file('sample1.bam.bai') ])
+                input[1] = channel.of([ [ id:'sample1' ], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true) ])
+                input[2] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true) ])
+                input[3] = channel.empty()
+                input[4] = 't2t'
+                input[5] = 'CHM13'
+                """
+            }
+        }
+
+        then {
+            def names = workflow.trace.tasks().collect { it.name.split(' ')[0] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert names.contains('ECDNA:CORAL_RECONSTRUCT') },
+                { assert !names.contains('ECDNA:AMPLICONCLASSIFIER') }
+            )
+        }
+    }
+}

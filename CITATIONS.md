@@ -18,6 +18,10 @@
 
   > Cheng J, Novati G, Pan J, Bycroft C, Žemgulytė A, Applebaum T, Pritzel A, Wong LH, Zielinski M, Sargeant T, Schneider RG, Senior AW, Jumper J, Hassabis D, Kohli P, Avsec Ž. Accurate proteome-wide missense variant effect prediction with AlphaMissense. Science. 2023 Sep 22;381(6664):eadg7492. doi: 10.1126/science.adg7492.
 
+- [AmpliconClassifier](https://doi.org/10.1038/s41586-023-05937-5)
+
+  > Luebeck, J., Ng, A.W.T., Galipeau, P.C. et al. Extrachromosomal DNA in the cancerous transformation of Barrett's oesophagus. Nature 616, 798-805 (2023). https://doi.org/10.1038/s41586-023-05937-5
+
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
 
   > Van Loo P, Nordgard SH, Lingjærde OC, Russnes HG, Rye IH, Sun W, Weigman VJ, Marynen P, Zetterberg A, Naume B, Perou CM, Børresen-Dale AL, Kristensen VN. Allele-specific copy number analysis of tumors. Proc Natl Acad Sci U S A. 2010 Sep 28;107(39):16910-5. doi: 10.1073/pnas.1009843107. Epub 2010 Sep 13. PubMed PMID: 20837533; PubMed Central PMCID: PMC2947907.
@@ -45,6 +49,10 @@
 - [ClinVar](https://doi.org/10.1093/nar/gkx1153)
 
   > Landrum MJ, Lee JM, Benson M, Brown GR, Chao C, Chitipiralla S, Gu B, Hart J, Hoffman D, Jang W, Karapetyan K, Katz K, Liu C, Maddipatla Z, Malheiro A, McDaniel K, Ovetsky M, Riley G, Zhou G, Holmes JB, Kattman BL, Maglott DR. ClinVar: improving access to variant interpretations and supporting evidence. Nucleic Acids Res. 2018 Jan 4;46(D1):D1062-D1067. doi: 10.1093/nar/gkx1153.
+
+- [CoRAL](https://doi.org/10.1101/gr.279131.124)
+
+  > Zhu, K., Jones, M.G., Luebeck, J. et al. CoRAL accurately resolves extrachromosomal DNA genome structures with long-read sequencing. Genome Res. 34, 1344-1354 (2024). https://doi.org/10.1101/gr.279131.124
 
 - [cramino](https://github.com/wdecoster/cramino)
 
