@@ -142,11 +142,7 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
-    // Stamp each arm with an INFO provenance flag before the merge. This is the only point where
-    // germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS can emit
-    // records that never passed through VCFSPLIT, so tagging earlier would leave holes. FILTER
-    // cannot tell the arms apart after the merge, so the flag carries provenance.
-    // LongPhase preserves custom INFO keys, so the flags survive phasing (verified on v2.0.1).
+    // Stamp each arm with an INFO provenance flag before the merge; LongPhase keeps it through phasing.
     //
     TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
     TAG_GERMLINE( germline_vcf, 'GERMLINE' )
@@ -163,9 +159,7 @@ workflow PHASING_HAPLOTYPING {
     tagged_germline_vcf
         .join(tagged_somatic_vcf)
         .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
-                // Order here is cosmetic: BCFTOOLS_CONCAT sorts its input file list alphabetically
-                // (modules/nf-core/bcftools/concat/main.nf), so the germline file is passed first
-                // regardless. With -a the output is coordinate-ordered either way.
+                // Order is cosmetic: BCFTOOLS_CONCAT sorts its inputs by name.
                 def vcfs = [som_vcf, germ_vcf]
                 def tbis = [som_tbi, germ_tbi]
                 return [ meta, vcfs, tbis]
@@ -278,11 +272,7 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: BCFTOOLS_VIEW (label: process_medium)
-    // Reduce the phased somatic+germline VCF to the somatic arm, selecting on the INFO/SOMATIC flag
-    // stamped before the merge -- by provenance, not position. The previous `-T <somatic vcf>`
-    // targets file matched CHROM/POS only, so germline records co-located with a somatic call were
-    // retained and became indistinguishable downstream. PS/HP tags on somatic variants survive;
-    // germline records are dropped here but stay published under variants/phased/ and vep/germline/.
+    // Keep the somatic arm by its INFO/SOMATIC flag, not by position; PS/HP tags survive.
     // Input:  [meta, phased_combined_vcf, phased_combined_tbi]
     // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
     //         .tbi -- [meta, tbi]

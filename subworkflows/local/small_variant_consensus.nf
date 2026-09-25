@@ -45,23 +45,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     // ALLELE FREQUENCY KEY -- BCFTOOLS_ANNOTATE below renames the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
-    // This guarantees the merged VCF exposes allele frequency under a single FORMAT key, which is
-    // what WAKHAN consumes. Every caller currently emits FORMAT/AF and none emits VAF (verified
-    // against Clair3, ClairS-TO, DeepVariant and DeepSomatic output), so under the default
-    // prioritize_caller='clair' it is a no-op; it is kept as the guarantee, not the mechanism.
-    //
-    // The callers do disagree on the AF *declaration*: ClairS-TO says Number=1, DeepVariant and
-    // DeepSomatic say Number=A. bcftools concat only warns and keeps the first file's definition.
-    // Renaming cannot fix that and `annotate -h` cannot override an existing FORMAT definition,
-    // but it is harmless because BCFTOOLS_NORM now splits multi-allelics (-m -any): every record
-    // reaching here carries one ALT and one AF value, making the two declarations equivalent.
-    // After BCFTOOLS_NORM_REJOIN, consensus files keep the source caller's own header (lossless round
-    // trip); 'all' mode takes the Number=A header of isec's 0000.vcf.gz, which concat lists first.
-    //
-    // The rename is carried out by BCFTOOLS_ANNOTATE below rather than by a second annotate call:
-    // meta.rename_to selects the --rename-annots file in conf/modules.config. Only 'all' mode needs
-    // it, since in 'consensus' mode every surviving record comes from one caller. BCFTOOLS_QUERY
-    // reads only CHROM/POS/REF/ALT, so it does not care whether the rename has happened yet.
+    // Only 'all' mode renames: it merges both callers, so the merged VCF needs one AF key for WAKHAN.
 
     //
     // MODULE: BCFTOOLS_QUERY (label: process_single)
@@ -80,8 +64,7 @@ workflow SMALL_VARIANT_CONSENSUS {
                     def columns = []       // no extra column specs
                     def header_lines = []  // no extra header lines
                     def rename_chrs = []   // no chromosome renaming
-                    // 'all' mode merges records from both callers into one VCF, so the allele
-                    // frequency key is unified here; 'consensus' mode needs no rename.
+                    // 'all' mode merges both callers, so unify the AF key; 'consensus' needs no rename.
                     def new_meta = combine_method == 'all'
                         ? meta + [rename_to: (prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF')]
                         : meta
@@ -109,8 +92,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     // annotated_vcfs: [meta(+caller), vcf, tbi]  -- VCF with CALLER INFO tag
 
     // Branch annotated VCFs by caller family for the intersection step
-    // An unrecognised meta.caller would silently vanish without the `other` arm, taking the whole
-    // sample out of the results with a successful exit.
+    // `other` errors on an unrecognised meta.caller instead of silently dropping the sample.
     annotated_vcfs
         .branch { meta, _vcfs, _tbi ->
             deepvariant: meta.caller in [ 'deepvariant', 'deepsomatic' ]
@@ -165,8 +147,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     // deepvariant_ch: [meta (no caller), vcf, tbi]
 
     // Join DeepVariant and Clair VCFs per sample into a single tuple for BCFTOOLS_ISEC
-    // failOnMismatch: a sample present for one caller but not the other would otherwise be dropped
-    // from every downstream result while the run still reported success.
+    // failOnMismatch: a sample missing one caller would otherwise be dropped silently.
     deepvariant_ch
         .join(clair_ch, failOnMismatch: true, failOnDuplicate: true)
         .map { meta, deepvar_vcf, deepvar_tbi, clair_vcf, clair_tbi ->
@@ -219,10 +200,8 @@ workflow SMALL_VARIANT_CONSENSUS {
     }
 
     else if (combine_method == 'all') {
-        // Union: all variants from both callers. Shared variants contribute a single record, taken
-        // from the prioritized caller; both callers' private calls are kept. prioritize_caller only
-        // selects whose record is used for shared variants, never which calls are kept.
-        // The three isec sets are disjoint by construction, so BCFTOOLS_CONCAT needs no -d.
+        // Union: shared calls (prioritized caller's record) plus both callers' private calls.
+        // The three isec sets are disjoint, so BCFTOOLS_CONCAT needs no -d.
         if (prioritize_caller in ['deepvariant', 'deepsomatic']) {
             // shared (DeepVariant record) + DeepVariant-private + Clair-private
             BCFTOOLS_ISEC.out.deepvar_consensus_vcf

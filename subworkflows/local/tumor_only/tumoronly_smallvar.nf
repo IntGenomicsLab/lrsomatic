@@ -12,7 +12,6 @@ include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subwork
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus.nf'
 
 // Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
-// Three independent bcftools invocations, so three aliased instances of the upstream modules.
 include { BCFTOOLS_QUERY    as DS_VERDICT_QUERY         } from '../../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE as DS_VERDICT_ANNOTATE      } from '../../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_VIEW     as DS_GERMLINE_SELECT       } from '../../../modules/nf-core/bcftools/view/main'
@@ -219,25 +218,7 @@ workflow TUMORONLY_SMALLVAR {
         // Keep only DeepSomatic-adjudicated germline sites; skipped when deepsomatic isn't selected.
         def deepvariant_germline = deepvariant_vcf
         if (somatic_var_keep.contains('deepsomatic')) {
-            // GERMLINE VERDICT TRANSFER (tumor-only, deep family)
-            // DeepVariant is a germline caller with no somatic discrimination -- its FILTER vocabulary is
-            // only PASS/RefCall/LowQual/NoCall -- and here it is run on the TUMOR BAM, so on its own its
-            // calls are "germline or clonal somatic" and cannot be told apart. Published unchanged, the
-            // germline VCF therefore carries most of the somatic call set.
-            //
-            // DeepSomatic evaluates the same sites and does emit a verdict: FILTER=GERMLINE ("Non somatic
-            // variants"), PON, RefCall or PASS. That verdict is transferred here, exactly as ClairS-TO
-            // adjudicates its own calls via NonSomatic and VCFSPLIT. On B1975944 DeepVariant's 5,058,527
-            // PASS calls resolve to 77.8% GERMLINE, 11.4% RefCall, 5.3% PON, 4.3% unevaluated and 1.14%
-            // (57,684) PASS -- the last being real somatic calls that must not be published as germline.
-            //
-            // Only positively-adjudicated germline sites are kept (GERMLINE or PON); RefCall and
-            // unevaluated sites are dropped rather than assumed germline. Only GERMLINE/PON verdicts
-            // are transferred to INFO/DS_VERDICT.
-            //
-            // DeepSomatic FILTER is single-valued in practice (RefCall/GERMLINE/PON/PASS only, verified
-            // over 13.7M records), so transferring it as a plain string cannot inject the ";" that would
-            // break INFO parsing.
+            // GERMLINE VERDICT TRANSFER: DeepVariant on the tumor BAM cannot tell germline from somatic.
             //
             // MODULE: DS_VERDICT_QUERY (BCFTOOLS_QUERY alias, label: process_single)
             // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF, before its PASS filter

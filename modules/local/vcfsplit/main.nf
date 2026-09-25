@@ -38,8 +38,7 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_filtered.vcf.gz snv_filtered.vcf.gz
     tabix -p vcf germline_tmp.vcf.gz
 
-    # Normalise FILTER to PASS and keep the original in INFO/ORIG_FILTER (";" stored as ",").
-    # The header's double quotes arrive via -v q, avoiding fragile escapes in the script block.
+    # Normalise FILTER to PASS, keeping the original in INFO/ORIG_FILTER (";" stored as ",").
     bcftools view germline_tmp.vcf.gz | awk -v q='"' 'BEGIN{FS=OFS="\t"}
         /^##/ { print; next }
         /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description=" q "Original FILTER value before normalisation to PASS" q ">"; print; next }
