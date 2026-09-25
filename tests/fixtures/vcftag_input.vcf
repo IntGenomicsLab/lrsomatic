@@ -2,6 +2,7 @@
 ##INFO=<ID=CALLER,Number=1,Type=String,Description="Variant caller">
 ##INFO=<ID=EXISTING,Number=0,Type=Flag,Description="pre-existing flag">
 ##FILTER=<ID=NonSomatic,Description="Non-somatic variant tagged by panel of normals">
+##FILTER=<ID=LowQual,Description="Low quality variant">
 ##FILTER=<ID=RefCall,Description="Genotyping model thinks this site is reference.">
 ##contig=<ID=chr1,length=248956422>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	testsample
@@ -9,3 +10,4 @@ chr1	100	.	A	C	30	PASS	CALLER=clairs-to	GT:DP	0/1:20
 chr1	200	.	G	T	20	NonSomatic	CALLER=clairs-to;EXISTING	GT:DP	0/1:18
 chr1	300	.	T	A	10	RefCall	.	GT:DP	0/0:12
 chr1	400	.	C	G	40	.	CALLER=deepsomatic	GT:DP	1/1:25
+chr1	500	.	G	A	5	LowQual;RefCall	CALLER=clair3;EXISTING	GT:DP	0/1:9

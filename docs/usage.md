@@ -425,13 +425,10 @@ rather than `PASS`-filtered. The per-caller VCFs published under
 `<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
 from the results directory.
 
-Set it to `false` to restore the previous unfiltered behaviour. `VCFTAG`
-normalises `FILTER` to `PASS` on both arms before phasing, so the caller's own
-verdict is preserved in `INFO/ORIG_FILTER` and the signature input is filtered on
-that field rather than on `FILTER`; without this the `PASS` filter in front of
-SigProfiler could never remove anything once `FILTER` had been rewritten. Every
-published VCF downstream of phasing therefore reads `FILTER=PASS`, with the
-original value available in `INFO/ORIG_FILTER`.
+Set it to `false` to restore the previous unfiltered behaviour: each caller's
+records are passed on with their original `FILTER`. Only the ClairS-TO germline
+split is normalised to `PASS`, with its original value kept in
+`INFO/ORIG_FILTER`.
 
 `consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
 every variant called by either. In both modes `--prioritize_caller_*` chooses only
@@ -453,11 +450,11 @@ every record.
 
 Three INFO fields carry this provenance:
 
-| Field         | Meaning                                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `SOMATIC`     | Record came from the somatic call set                                                                            |
-| `GERMLINE`    | Record came from the germline call set                                                                           |
-| `ORIG_FILTER` | The `FILTER` value in the ClairS-TO output, before normalisation to `PASS`. Multiple filters are joined with `,` |
+| Field         | Meaning                                                                                                               |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `SOMATIC`     | Record came from the somatic call set                                                                                 |
+| `GERMLINE`    | Record came from the germline call set                                                                                |
+| `ORIG_FILTER` | Original `FILTER` of ClairS-TO germline records, before normalisation to `PASS`. Multiple filters are joined with `,` |
 
 Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
 lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in

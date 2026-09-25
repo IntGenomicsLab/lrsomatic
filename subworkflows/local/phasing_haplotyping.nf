@@ -144,8 +144,8 @@ workflow PHASING_HAPLOTYPING {
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
     // Stamp each arm with an INFO provenance flag before the merge. This is the only point where
     // germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS can emit
-    // records that never passed through VCFSPLIT, so tagging earlier would leave holes. After the
-    // merge the two populations are otherwise indistinguishable -- both carry FILTER=PASS.
+    // records that never passed through VCFSPLIT, so tagging earlier would leave holes. FILTER
+    // cannot tell the arms apart after the merge, so the flag carries provenance.
     // LongPhase preserves custom INFO keys, so the flags survive phasing (verified on v2.0.1).
     //
     TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
