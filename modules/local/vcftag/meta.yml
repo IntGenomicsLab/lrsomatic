@@ -1,0 +1,75 @@
+name: vcftag
+description: Stamp a constant INFO flag, named by the flag input, on every record of a VCF; FILTER is left untouched
+keywords:
+  - vcf
+  - annotation
+  - INFO
+  - variant calling
+tools:
+  - bcftools:
+      description: Tools for variant calling and manipulating VCFs and BCFs
+      homepage: http://samtools.github.io/bcftools/bcftools.html
+      documentation: http://www.htslib.org/doc/bcftools.html
+      tool_dev_url: https://github.com/samtools/bcftools
+      doi: "10.1093/gigascience/giab008"
+      licence: ["MIT"]
+      identifier: biotools:bcftools
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information e.g. [ id:'test' ]
+    - vcf:
+        type: file
+        description: Input VCF file to tag
+        pattern: "*.vcf.gz"
+    - tbi:
+        type: file
+        description: Tabix index of the input VCF
+        pattern: "*.tbi"
+  - flag:
+      type: string
+      description: |
+        Name of the INFO flag added to every record (e.g. `GERMLINE`);
+        its lowercase form is also used in the default output prefix
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz:
+          type: file
+          description: VCF with the INFO flag added to every record
+          pattern: "*.vcf.gz"
+  tbi:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz.tbi:
+          type: file
+          description: Tabix index of the tagged VCF
+          pattern: "*.vcf.gz.tbi"
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version |& sed '1!d ; s/bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version |& sed '1!d ; s/bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

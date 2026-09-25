@@ -401,8 +401,8 @@ These options control how variants from multiple callers are filtered and merged
 
 | Parameter                      | Description                                                                                                   |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`                       |
-| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`                        |
+| `--germline_var_keep`          | Comma-separated germline callers to run: `deepvariant`, `clair`. Default = `clair`                            |
+| `--somatic_var_keep`           | Comma-separated somatic callers to run: `deepsomatic`, `clair`. Default = `clair`                             |
 | `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`     |
 | `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`      |
 | `--prioritize_caller_germline` | Whose record to use for variants called by both germline callers: `deepvariant` or `clair`. Default = `clair` |
