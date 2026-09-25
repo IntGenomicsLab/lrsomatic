@@ -191,6 +191,14 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to save secondary alignments"
+                },
+                "aligned_format": {
+                    "type": "string",
+                    "default": "cram",
+                    "enum": ["cram", "bam"],
+                    "description": "File format of the aligned and haplotagged reads, in the work directory and in `bamfiles/`.",
+                    "help_text": "`cram` writes CRAM 3.0 with the reference embedded: 33-70 % smaller than BAM on long reads, readable without the FASTA, and decoded by every tool in the pipeline. `bam` writes BAM with `.bai` indexes, for downstream tools that cannot read CRAM.",
+                    "fa_icon": "fas fa-file-archive"
                 }
             }
         },

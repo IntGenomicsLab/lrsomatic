@@ -66,13 +66,13 @@ nextflow_pipeline {
                 // ── BAM files ────────────────────────────────────────────────
                 {
                     ['sample1', 'sample2'].each { s ->
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram.crai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram.crai").exists()
                     }
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam").exists()
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam.bai").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram.crai").exists()
                 },
 
                 // ── Severus ──────────────────────────────────────────────────

@@ -240,6 +240,13 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
 | `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
 | `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true` |
+| `--aligned_format`           | `cram` or `bam`: format of the aligned and haplotagged reads. Default = `cram` (see below)  |
+
+`--aligned_format cram` writes CRAM 3.0 with the reference embedded, from alignment onwards and in `bamfiles/`. On
+long reads this is a third (ONT) to two thirds (PacBio Revio) smaller than BAM, with identical records and the same
+calls from every tool in the pipeline. Because the reference is embedded, the files can be read without the FASTA.
+Use `--aligned_format bam` if a tool you run on the results cannot read CRAM, or convert afterwards with
+`samtools view -b -o sample_tumor.bam sample_tumor.cram`.
 
 #### ASCAT Options
 

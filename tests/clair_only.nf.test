@@ -13,6 +13,8 @@ nextflow_pipeline {
                 input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
                 germline_var_keep   = 'clair'
                 somatic_var_keep    = 'clair'
+                // The one test on BAM (the other pipeline tests run the CRAM default), incl. sample4's merge
+                aligned_format      = 'bam'
             }
         }
 

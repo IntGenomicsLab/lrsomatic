@@ -166,7 +166,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 | `sample_tumor.cram.crai`  | index file for the tumor CRAM file                                                                    |
 
 The CRAM files are version 3.0 with the reference embedded, so they can be read without the reference FASTA
-(`samtools view sample_tumor.cram`); `samtools view -b` turns one back into a BAM.
+(`samtools view sample_tumor.cram`); `samtools view -b` turns one back into a BAM. With `--aligned_format bam`
+this directory holds `sample_{normal,tumor}.bam` and `.bam.bai` instead.
 
 </details>
 
