@@ -1,0 +1,107 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "padfoot"
+description: Functional annotation of somatic structural variants and copy number alterations (gene/exon overlap, repeats, microhomology, complex SV grouping) from Severus/Wakhan or SAVANA output. RepeatMasker insertion annotation requires the dedicated Dfam image.
+keywords:
+  - structural-variation
+  - copy-number
+  - annotation
+  - somatic
+  - long-read
+tools:
+  - "padfoot":
+      description: "SV and CNA annotation tool for Severus, Wakhan and Savana output"
+      homepage: "https://github.com/KolmogorovLab/Padfoot"
+      documentation: "https://github.com/KolmogorovLab/Padfoot"
+      tool_dev_url: "https://github.com/Tim-Yu/Padfoot"
+      licence: ["BSD-3-Clause"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - sv_vcf:
+        type: file
+        description: Somatic SV VCF (Severus `severus_somatic.vcf(.gz)` or SAVANA `*.classified.somatic.vcf(.gz)`)
+        pattern: "*.vcf{,.gz}"
+    - sv_caller:
+        type: string
+        description: SV input format, `severus` or `savana`
+    - cna_file:
+        type: file
+        description: CNA file (Wakhan `*_wakhan_cna_integers.vcf` or SAVANA `*_segmented_absolute_copy_number.tsv`)
+        pattern: "*.{vcf,tsv}"
+    - cna_caller:
+        type: string
+        description: CNA input format, `wakhan` or `savana`
+  - - meta2:
+        type: map
+        description: Groovy Map for the reference
+    - fasta:
+        type: file
+        description: Reference genome FASTA
+        pattern: "*.{fa,fasta}"
+  - - meta3:
+        type: map
+        description: Groovy Map for the reference index
+    - fai:
+        type: file
+        description: Reference genome FASTA index (must sit next to the FASTA)
+        pattern: "*.fai"
+  - - meta4:
+        type: map
+        description: Groovy Map for the Padfoot source
+    - padfoot_src:
+        type: directory
+        description: Padfoot source tree containing `padfoot.py`, `padfoot/` and `beds/` (Padfoot is not on bioconda)
+  - - meta5:
+        type: map
+        description: Groovy Map for annotations
+    - genome:
+        type: string
+        description: Padfoot genome preset (`hg38`, `chm13`, `mm10`); bundled annotations exist for hg38 and mm10 only
+    - gff:
+        type: file
+        description: Optional custom GFF3 gene annotation (overrides bundled)
+        pattern: "*.gff{,3}{,.gz}"
+    - rm:
+        type: file
+        description: Optional custom RepeatMasker annotation (overrides bundled)
+        pattern: "*.{out,bed}{,.gz}"
+
+output:
+  - annotated_svs:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/annotated_svs.tsv":
+          type: file
+          description: Per-SV annotation table (genes, exons, repeats, microhomology, VNTR, complex SV cluster)
+          pattern: "annotated_svs.tsv"
+  - by_gene:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/by_gene.tsv":
+          type: file
+          description: Per-gene table of SV and copy-number impact
+          pattern: "by_gene.tsv"
+  - log:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/padfoot.log":
+          type: file
+          description: Padfoot log
+          pattern: "padfoot.log"
+  - versions:
+      - versions.yml:
+          type: file
+          description: File containing software versions
+          pattern: "versions.yml"
+
+authors:
+  - "@Tim-Yu"
+maintainers:
+  - "@Tim-Yu"

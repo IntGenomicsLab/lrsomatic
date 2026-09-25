@@ -376,6 +376,103 @@
                 }
             }
         },
+        "padfoot_options": {
+            "title": "Padfoot options",
+            "type": "object",
+            "description": "Options for Padfoot SV/CNA functional annotation",
+            "default": "",
+            "properties": {
+                "padfoot_url": {
+                    "type": "string",
+                    "default": "https://github.com/Tim-Yu/Padfoot/archive/bf942055d4a0c710aed1178869998350823b15e0.tar.gz",
+                    "description": "URL of a Padfoot source tarball (GitHub archive). Padfoot is not distributed on bioconda; the tarball is downloaded once per run."
+                },
+                "padfoot_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Local Padfoot checkout (directory containing padfoot.py and beds/). Overrides --padfoot_url; use for offline systems."
+                },
+                "padfoot_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "chm13", "mm10"],
+                    "description": "Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default: inferred from `--genome`.",
+                    "help_text": "GRCh38 -> hg38, CHM13 -> chm13. Padfoot bundles gene and repeat annotations for hg38 and mm10 only; chm13 and other presets need `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning."
+                },
+                "padfoot_gff": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Custom GFF3 gene annotation for Padfoot"
+                },
+                "padfoot_rm": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Custom RepeatMasker annotation (.fa.out / BED) for Padfoot"
+                },
+                "padfoot_run_repeatmasker": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run RepeatMasker on inserted sequences. Containers ship the full Dfam 4.0 database; conda uses the curated Dfam subset bundled with bioconda RepeatMasker."
+                }
+            }
+        },
+        "reconplot_options": {
+            "title": "ReConPlot options",
+            "type": "object",
+            "description": "Options for ReConPlot rearrangement/copy-number figures",
+            "default": "",
+            "properties": {
+                "reconplot_pkg_url": {
+                    "type": "string",
+                    "default": "https://github.com/cortes-ciriano-lab/ReConPlot/archive/88bb76011703d7908aaa2e5bdecfe18ba5737db8.tar.gz",
+                    "description": "URL of the ReConPlot R package source (installed at run time when the environment lacks it, i.e. under conda)."
+                },
+                "reconplot_pkg_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Local checkout of the ReConPlot R package. Overrides --reconplot_pkg_url."
+                },
+                "reconplot_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "hg19", "T2T", "mm10", "mm39"],
+                    "description": "ReConPlot genome build for gene/chromosome annotations. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> T2T)."
+                },
+                "reconplot_max_cn": {
+                    "type": "integer",
+                    "default": 8,
+                    "description": "Copy number axis ceiling"
+                },
+                "reconplot_min_svlen": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Drop intra-chromosomal SVs shorter than this many bp (translocations are kept). 0 keeps everything."
+                },
+                "reconplot_exclude_vntr": {
+                    "type": "boolean",
+                    "description": "Drop Severus SVs flagged as inside a VNTR"
+                },
+                "reconplot_regions": {
+                    "type": "string",
+                    "description": "Comma-separated regions (e.g. 'chr8,chr17:30000000-50000000') for an additional multi-panel focus figure"
+                },
+                "reconplot_genes": {
+                    "type": "string",
+                    "description": "Comma-separated HUGO gene symbols to label on the focus figure"
+                },
+                "reconplot_baf_track": {
+                    "type": "boolean",
+                    "description": "Add a het-SNP BAF track to the focus figure (ASCAT and SAVANA copy number only)"
+                },
+                "reconplot_format": {
+                    "type": "string",
+                    "default": "pdf,png",
+                    "description": "Comma-separated output formats: pdf, png"
+                }
+            }
+        },
         "ascat_parameters": {
             "title": "ASCAT parameters",
             "type": "object",
@@ -546,6 +643,14 @@
                 "skip_savana": {
                     "type": "boolean",
                     "description": "Skip SAVANA (SV + copy-number calling)"
+                },
+                "skip_padfoot": {
+                    "type": "boolean",
+                    "description": "Skips Padfoot SV/CNA annotation"
+                },
+                "skip_reconplot": {
+                    "type": "boolean",
+                    "description": "Skips ReConPlot SV/CNA figures"
                 },
                 "skip_m6a": {
                     "type": "boolean",
@@ -770,6 +875,12 @@
         },
         {
             "$ref": "#/$defs/savana_options"
+        },
+        {
+            "$ref": "#/$defs/padfoot_options"
+        },
+        {
+            "$ref": "#/$defs/reconplot_options"
         },
         {
             "$ref": "#/$defs/ascat_parameters"

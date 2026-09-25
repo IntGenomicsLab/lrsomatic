@@ -1,0 +1,74 @@
+nextflow_process {
+
+    name "Test Process PADFOOT"
+    script "../main.nf"
+    process "PADFOOT"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "padfoot"
+
+    // Real Severus/Wakhan/SAVANA outputs are not available as public test data; only the I/O contract is tested here.
+    // An end-to-end run on real data is exercised through the pipeline (see docs/usage.md, Padfoot options).
+
+    test("severus + wakhan - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:'test' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/vcf/test.rnaseq.vcf', checkIfExists: true),
+                    'severus',
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
+                    'wakhan'
+                ]
+                input[1] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true) ]
+                input[2] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true) ]
+                input[3] = [ [ id:'padfoot' ], file("${moduleDir}", checkIfExists: true) ]
+                input[4] = [ [:], 'hg38', [], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("savana + savana - tumour only - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:null ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/vcf/test.rnaseq.vcf', checkIfExists: true),
+                    'savana',
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true),
+                    'savana'
+                ]
+                input[1] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true) ]
+                input[2] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true) ]
+                input[3] = [ [ id:'padfoot' ], file("${moduleDir}", checkIfExists: true) ]
+                input[4] = [ [:], 'hg38', [], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

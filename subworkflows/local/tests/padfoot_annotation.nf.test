@@ -1,0 +1,73 @@
+nextflow_workflow {
+
+    name "Test Workflow PADFOOT_ANNOTATION"
+    script "../padfoot_annotation.nf"
+    workflow "PADFOOT_ANNOTATION"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "padfoot_annotation"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // Padfoot needs whole-genome caller output, so the pipeline tests skip it. Under -stub what is
+    // tested is the pairing: Severus SVs + the top-ranked Wakhan solution, SAVANA SVs + SAVANA copy
+    // number, and that a sample missing one side of a pair is dropped rather than failing the run.
+
+    test("Severus + Wakhan and SAVANA pairs form per sample") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+            workflow {
+                """
+                // Empty stand-ins carrying the real callers' file names; Padfoot's stub does not read them
+                def mk = { String rel -> def f = file("\${launchDir}/fixtures/\${rel}"); f.parent.mkdirs(); f.text = ''; return f }
+                def s1 = [ id:'sample1', paired_data:true,  platform:'ont' ]
+                def s2 = [ id:'sample2', paired_data:true,  platform:'pb'  ]
+                def s3 = [ id:'sample3', paired_data:false, platform:'ont' ]
+
+                // Severus somatic SVs for both paired samples
+                input[0] = channel.of(
+                    [ s1, mk('severus/sample1/severus_somatic.vcf.gz') ],
+                    [ s2, mk('severus/sample2/severus_somatic.vcf.gz') ]
+                )
+                // Wakhan: sample1 has two solutions (solution_1 must be picked); sample2 has no integer-CN VCF
+                input[1] = channel.of(
+                    [ s1, [ mk('wakhan/sample1/solution_1/sample1_2.0_1.0_wakhan_cna_integers.vcf'),
+                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_wakhan_cna_subclonals.vcf'),
+                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_wakhan_cna_integers.vcf') ] ],
+                    [ s2, [ mk('wakhan/sample2/solution_1/sample2_2.0_1.0_wakhan_cna_subclonals.vcf') ] ]
+                )
+                // SAVANA: SVs for sample1 and sample3, a copy-number fit for sample1 only
+                input[2] = channel.of(
+                    [ s1, mk('savana/sample1/sample1.classified.somatic.vcf') ],
+                    [ s3, mk('savana/sample3/sample3.classified.somatic.vcf') ]
+                )
+                input[3] = channel.of([ s1, mk('savana/sample1/sample1_segmented_absolute_copy_number.tsv') ])
+                input[4] = channel.value([ [:], mk('ref/genome.fasta') ])
+                input[5] = channel.value([ [:], mk('ref/genome.fasta.fai') ])
+                input[6] = channel.value([ [:], 'hg38', [], [] ])
+                """
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                // sample1 only: sample2 has no integer-CN VCF to pair with
+                { assert tasks.count { name -> name.contains('PADFOOT_SEVERUS_WAKHAN') } == 1 },
+                { assert tasks.any { name -> name.contains('PADFOOT_SEVERUS_WAKHAN (sample1:') } },
+                // sample1 only: sample3 has SAVANA SVs but no copy-number fit
+                { assert tasks.count { name -> name.contains('PADFOOT_SAVANA') } == 1 },
+                { assert tasks.any { name -> name.contains('PADFOOT_SAVANA (sample1:') } },
+                { assert workflow.out.versions.size() >= 1 }
+            )
+        }
+    }
+}

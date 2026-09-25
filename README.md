@@ -66,6 +66,12 @@ a. Small variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep)), w
 
 b. Structural variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep))
 
+c. Somatic SV and CNA functional annotation ([`Padfoot`](https://github.com/KolmogorovLab/Padfoot))
+
+**5) Visualisation:**
+
+a. Rearrangement and copy-number figures per CN/SV caller pair ([`ReConPlot`](https://github.com/cortes-ciriano-lab/ReConPlot))
+
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
 
@@ -108,7 +114,7 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; see the [output documentation](/docs/output.md).
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations and ReConPlot figures go to `padfoot/` and `reconplot/`, one subfolder per caller pair. See the [output documentation](/docs/output.md).
 
 Example output directory structure:
 
@@ -116,6 +122,9 @@ Example output directory structure:
 ├── Sample 1
 │    ├── ascat
 │    ├── bamfiles
+│    ├── padfoot
+│    │   ├── savana
+│    │   └── severus_wakhan
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -123,6 +132,9 @@ Example output directory structure:
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
+│    ├── reconplot
+│    │   ├── savana
+│    │   └── severus_wakhan
 │    ├── variants
 │    │   ├──clairS-TO
 │    │   ├──severus
@@ -136,6 +148,9 @@ Example output directory structure:
 ├── Sample 2
 │    ├── ascat
 │    ├── bamfiles
+│    ├── padfoot
+│    │   ├── savana
+│    │   └── severus_wakhan
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -149,6 +164,10 @@ Example output directory structure:
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
+│    ├── reconplot
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
 │    ├── variants
 │    │   ├── clair3
 │    │   ├── clairS

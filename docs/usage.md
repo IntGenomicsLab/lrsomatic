@@ -169,6 +169,8 @@ If the loci cannot belong to the reference, ClairS-TO disables Verdict with a wa
 | `--skip_mosdepth`      | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_ascat`         | A boolean to skip `ascat`. ClairS-TO's Verdict germline tagging then falls back to Verdict's own purity and copy number estimate, which is still up to 0.14 from ASCAT's on the samples it was measured on — see [Verdict tags](output.md#clairs-to). Default = `false` |
 | `--skip_savana`        | A boolean to skip `savana` (SV + copy-number calling). Default = `false`                                                                                                                                                                                                |
+| `--skip_padfoot`       | A boolean to skip `padfoot` SV/CNA annotation. Default = `false`                                                                                                                                                                                                        |
+| `--skip_reconplot`     | A boolean to skip `reconplot` SV/CNA figures. Default = `false`                                                                                                                                                                                                         |
 | `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                                                                                                           |
 | `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                                                                                                              |
@@ -377,6 +379,64 @@ Running with neither, and without `--skip_signatures`, stops the pipeline at sta
 | `--sigprofiler_assignment_args`             | Extra arguments for `SigProfilerAssignment cosmic_fit`, e.g. `"--make_plots False"`. Default = `null`                                                                                               |
 
 Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support not yet in a SigProfiler release: SigProfilerMatrixGenerator from the branch behind [SigProfilerSuite/SigProfilerMatrixGenerator#250](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/pull/250) and SigProfilerAssignment from [ljwharbers/SigProfilerAssignment](https://github.com/ljwharbers/SigProfilerAssignment/tree/chm13-t2t-support), with COSMIC SBS/DBS signatures renormalised to CHM13. ID83 signatures always use the GRCh37 set. Conda is not supported for this step.
+
+#### Padfoot Options
+
+[Padfoot](https://github.com/KolmogorovLab/Padfoot) annotates somatic SVs and CNAs with gene/exon overlap, repeat context and complex-SV grouping. It is run for every available SV/CNA caller pair, for paired and tumour-only samples alike:
+
+- `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked (`solution_1`) Wakhan integer copy-number VCF (requires Wakhan not skipped)
+- `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
+
+Padfoot is not distributed on bioconda. The pipeline downloads the source tree from `--padfoot_url` (GitHub archive, once per run; the default is a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support not yet in `KolmogorovLab/Padfoot`) and runs it inside a container / conda environment that provides its dependencies (python, pysam, pandas, biopython, samtools, minimap2, bedtools). On systems without internet access on compute nodes, clone Padfoot once and pass the checkout with `--padfoot_dir`.
+
+RepeatMasker (used only to classify the sequence of novel insertions) runs by default. Under Docker/Singularity/Apptainer the module image (`ghcr.io/tim-yu/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships the full Dfam 4.0 database. Under `-profile conda` it uses the small curated Dfam subset bundled with bioconda RepeatMasker (sufficient for common human repeats such as Alu/L1/SVA). Use `--padfoot_run_repeatmasker false` to disable it; all other Padfoot annotations are unaffected.
+
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.
+
+| Parameter                    | Description                                                                                                                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--padfoot_url`              | URL of a Padfoot source tarball (GitHub archive). Default = pinned commit of `Tim-Yu/Padfoot` with Savana support                                                                                              |
+| `--padfoot_dir`              | Local Padfoot checkout (directory with `padfoot.py` and `beds/`); overrides `--padfoot_url`. Default = `null`                                                                                                  |
+| `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                                                                   |
+| `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                                                                        |
+| `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                                                                     |
+| `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions). Containers ship the full Dfam 4.0 database; conda uses the curated Dfam subset bundled with bioconda RepeatMasker. Default = `true` |
+
+#### ReConPlot Options
+
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`:
+
+- `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
+- `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
+- `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs
+
+Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track. Both the wrapper and the ReConPlot R package (neither on conda) are staged as source from GitHub (or local checkouts for offline systems); the default container ships the package pre-installed, while `-profile conda` installs it at run time.
+
+| Parameter                  | Description                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `--reconplot_pkg_url`      | ReConPlot R package source tarball. Default = pinned commit of `cortes-ciriano-lab/ReConPlot`                 |
+| `--reconplot_pkg_dir`      | Local ReConPlot package checkout; overrides `--reconplot_pkg_url`. Default = `null`                           |
+| `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)  |
+| `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                       |
+| `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                         |
+| `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                     |
+| `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"`. Default = `null` (no focus panel) |
+| `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                    |
+| `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                         |
+| `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                |
+
+##### Offline and air-gapped systems
+
+Both images are pinned by digest directly in the module `container` directives, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
+
+```groovy
+process {
+    withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' }
+    withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/reconplot.sif' }
+}
+```
+
+The Padfoot source tree and the ReConPlot R package are downloaded from GitHub at run time; use `--padfoot_dir` and `--reconplot_pkg_dir` to point at local checkouts instead.
 
 #### Variant Filtering and Combining Options
 
@@ -597,8 +657,7 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
   AlphaMissense covers the same class of variant and is CC BY 4.0.
 - **SpliceAI** — not currently wired up on either assembly.
 
-> [!IMPORTANT]
-> **REVEL is enabled by default and is free for non-commercial use only**; CADD and EVE, if you
+> [!IMPORTANT] > **REVEL is enabled by default and is free for non-commercial use only**; CADD and EVE, if you
 > enable them, are the same. The pipeline cannot accept those terms on your behalf: if your work is
 > commercial, pass `--skip_vep_plugins`, or set only the resources you are licensed for.
 
