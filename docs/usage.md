@@ -138,7 +138,7 @@ For tumour-only small variants, ClairS-TO separates germline from somatic calls 
 When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
 runs DeepVariant on the **tumour** BAM. DeepVariant is a germline caller with no
 somatic discrimination, so on its own those calls mix germline and clonal somatic
-variants. The pipeline therefore transfers DeepSomatic's verdict onto them:
+variants. When DeepSomatic also runs, the pipeline transfers its verdict onto them:
 DeepSomatic evaluates the same sites and labels each `GERMLINE`, `PON`, `RefCall`
 or `PASS`, and that label is recorded in `INFO/DS_VERDICT`. Only positively
 adjudicated germline sites (`GERMLINE` or `PON`) are kept in the germline arm;
@@ -146,9 +146,9 @@ adjudicated germline sites (`GERMLINE` or `PON`) are kept in the germline arm;
 germline. On a 30x tumour-only sample this keeps about 83% of DeepVariant's
 `PASS` calls and removes roughly 1% that DeepSomatic positively calls somatic.
 
-Because of this, `deepvariant` and `deepsomatic` must be enabled together:
-`--germline_var_keep deepvariant` without `deepsomatic` in `--somatic_var_keep` is
-rejected at launch. Note that even after adjudication the tumour-only germline arm
+This restriction to sites DeepSomatic calls `GERMLINE` or `PON` applies only when
+`deepsomatic` is also in `--somatic_var_keep`; without it, the DeepVariant germline
+calls are used without any verdict filter and may include somatic variants. Note that even after adjudication the tumour-only germline arm
 is a tumour-derived proxy, not a call set from normal tissue, and should not be
 used for secondary findings without that caveat.
 
