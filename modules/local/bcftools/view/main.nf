@@ -23,7 +23,6 @@ process BCFTOOLS_VIEW {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     bcftools view \\
-        -i 'INFO/SOMATIC=1' \\
         -Oz \\
         -W=tbi \\
         ${args} \\

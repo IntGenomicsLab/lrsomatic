@@ -1,5 +1,5 @@
 name: bcftools_view
-description: Filter VCF to positions defined by a targets file using bcftools view -T
+description: Filter a VCF with bcftools view, with the filter expression supplied via ext.args; outputs a bgzipped VCF and tbi index
 keywords:
   - filtering
   - VCF
@@ -25,14 +25,6 @@ input:
         type: file
         description: Tabix index of the input VCF
         pattern: "*.tbi"
-    - targets:
-        type: file
-        description: VCF file used as position filter (-T)
-        pattern: "*.{vcf.gz,vcf,bcf}"
-    - targets_tbi:
-        type: file
-        description: Tabix index of the targets VCF
-        pattern: "*.tbi"
 output:
   vcf:
     - - meta:
@@ -50,7 +42,28 @@ output:
           type: file
           description: Tabix index of filtered VCF
           pattern: "*.tbi"
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
 authors:
-  - "@rforsyth"
+  - "@robert-a-forsyth"
 maintainers:
-  - "@rforsyth"
+  - "@robert-a-forsyth"
