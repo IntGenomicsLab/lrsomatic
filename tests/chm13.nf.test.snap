@@ -14,6 +14,9 @@
                 "CLAIR3": {
                     "clair3": "1.2.0"
                 },
+                "CLAIR3_PASS_FILTER": {
+                    "bcftools": "1.23.1"
+                },
                 "CLAIRS": {
                     "clairs": "0.4.4"
                 },
@@ -22,6 +25,9 @@
                 },
                 "CLAIRSTO_CNA_RESOURCES": {
                     "coreutils": 9.5
+                },
+                "CLAIRS_PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "CRAMINO_POST": {
                     "cramino": "1.3.0"
@@ -66,9 +72,6 @@
                 },
                 "NANOPLOT_PRE": {
                     "nanoplot": "1.46.1"
-                },
-                "PASS_FILTER": {
-                    "bcftools": "1.23.1"
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
@@ -148,6 +151,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-23T10:46:28.14524359"
+        "timestamp": "2026-09-25T12:34:22.954806822"
     }
 }

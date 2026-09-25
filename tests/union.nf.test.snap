@@ -14,6 +14,9 @@
                 "BCFTOOLS_NORM": {
                     "bcftools": 1.22
                 },
+                "BCFTOOLS_NORM_REJOIN": {
+                    "bcftools": 1.22
+                },
                 "BCFTOOLS_QUERY": {
                     "bcftools": 1.22
                 },
@@ -26,11 +29,17 @@
                 "CLAIR3": {
                     "clair3": "1.2.0"
                 },
+                "CLAIR3_PASS_FILTER": {
+                    "bcftools": "1.23.1"
+                },
                 "CLAIRS": {
                     "clairs": "0.4.4"
                 },
                 "CLAIRSTO": {
                     "clairsto": "0.5.1"
+                },
+                "CLAIRS_PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "CRAMINO_POST": {
                     "cramino": "1.3.0"
@@ -44,6 +53,9 @@
                 "DEEPSOMATIC_MAKEEXAMPLES": {
                     "deepsomatic": "1.7.0"
                 },
+                "DEEPSOMATIC_PASS_FILTER": {
+                    "bcftools": "1.23.1"
+                },
                 "DEEPSOMATIC_POSTPROCESSVARIANTS": {
                     "deepsomatic": "1.7.0"
                 },
@@ -52,6 +64,9 @@
                 },
                 "DEEPVARIANT_MAKEEXAMPLES": {
                     "deepvariant": "1.9.0"
+                },
+                "DEEPVARIANT_PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.9.0"
@@ -102,9 +117,6 @@
                 },
                 "NANOPLOT_PRE": {
                     "nanoplot": "1.46.1"
-                },
-                "PASS_FILTER": {
-                    "bcftools": "1.23.1"
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": "1.22.1"
@@ -622,38 +634,38 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
-                "sample1_normal.bam:md5,dcb537c163750d41140d0a4da107f18e",
-                "sample1_normal.bam.bai:md5,12cf13fae8230cfc1cc8888f80102143",
-                "sample1_tumor.bam:md5,58cf65517c91958f95a1f4be1c75e2df",
-                "sample1_tumor.bam.bai:md5,e40049da796ad038e7ebeaa9ac070488",
+                "sample1_normal.bam:md5,f0809c8be190289f21339696883dea6f",
+                "sample1_normal.bam.bai:md5,cbff669c086761e893a84ba3ec032b5f",
+                "sample1_tumor.bam:md5,6267bf3e86a69536e45968b908d1cc6f",
+                "sample1_tumor.bam.bai:md5,1ec6d68c92182ff9051b8707c4975445",
                 "sample1_normal.flagstat:md5,1c41ea9923945501eb7e41f83a90502d",
                 "sample1_normal.idxstats:md5,902e503387799123ea59255e3fca172c",
                 "sample1_normal.stats:md5,a8b3fba9c54efbc0934d6eacc1807140",
                 "sample1_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample1_tumor.stats:md5,1c60a1d249d2e503b0678c72e851ea93",
-                "sample1_whatshap_stats.gtf:md5,9a7823e6b572036a7e95904b0083b8ca",
-                "sample1_whatshap_stats.log:md5,05c819627f77305a75d776a27dbf247e",
-                "sample1_whatshap_stats.tsv:md5,5b9d3f6a6e1e1c67c855f8f9b581bb18",
+                "sample1_whatshap_stats.gtf:md5,f5d331899db63b2ae21e51436bad2ddd",
+                "sample1_whatshap_stats.log:md5,111538b7e305189fb6de95ea978d06c8",
+                "sample1_whatshap_stats.tsv:md5,fa0fd5ce2b0919098ffa7d960cf177de",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,47cb0e0bbe71abdbf4f40217dfda43f9",
                 "read_qual.txt:md5,78247dfa2ea336eac0e128eba5e9eef4",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample2_normal.bam:md5,74e92562e0cd406a6282bce98ccc93d2",
-                "sample2_normal.bam.bai:md5,430c3b069a79227396a6b4f1c37a02ef",
-                "sample2_tumor.bam:md5,0059b8022c674b5daf2fd001ab69a54e",
-                "sample2_tumor.bam.bai:md5,e236afb5f7a644827e2b38cd36838d98",
+                "sample2_normal.bam:md5,c18bbb1bc05b0ec830fa1ac3c6ef542f",
+                "sample2_normal.bam.bai:md5,de77684ef264476b3e0531b61ca23740",
+                "sample2_tumor.bam:md5,8b8cb5ac7668b8ac2f4097f584481d35",
+                "sample2_tumor.bam.bai:md5,3b46456b0e7b00688519dfb25c8e3c88",
                 "sample2_normal.flagstat:md5,714d0cc0c213e2640e54a16f3d0e6e7e",
                 "sample2_normal.idxstats:md5,72eb83bb11748dc863fef1a0a5497e4b",
                 "sample2_normal.stats:md5,20c47cb94f9ac739d69c57be6daf82c5",
                 "sample2_tumor.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2_tumor.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
                 "sample2_tumor.stats:md5,8635df10132c85a13f2d9878b7cf90a2",
-                "sample2_whatshap_stats.gtf:md5,8107c5dce892aa11145274fd088788f8",
-                "sample2_whatshap_stats.log:md5,c2b17319f0f9e6a8ec102be86aa833ba",
-                "sample2_whatshap_stats.tsv:md5,7028c4a428f5d0fd31472439e287e565",
+                "sample2_whatshap_stats.gtf:md5,35cd28699c298d99d01cee1c24c6d61b",
+                "sample2_whatshap_stats.log:md5,9308d0bd8dc9a4a86359f1ec926e6cb1",
+                "sample2_whatshap_stats.tsv:md5,b81282a609eca306912d4f7b7fdfeebb",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,48baac86492026a4a7947bc708c47e6e",
@@ -678,8 +690,8 @@
         ],
         "meta": {
             "nf-test": "0.9.3",
-            "nextflow": "26.04.1"
+            "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-22T18:43:33.111991495"
+        "timestamp": "2026-09-25T12:04:10.544092583"
     }
 }
