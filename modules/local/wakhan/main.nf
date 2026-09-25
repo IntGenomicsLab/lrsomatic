@@ -38,7 +38,7 @@ process WAKHAN {
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
     // Whole directories, not the plots inside: every solution's plot has the same basename,
     // and LRSOMATICREPORT resolves them by solution_<rank>/ path
-    tuple val(meta), path("solution_*", type: 'dir')                            , emit: solution_dirs,   optional: true
+    tuple val(meta), path("solution_*", type: 'dir')                            , emit: solution_dirs
     // WARN: Manually update version information as tool does not provide on CLI
     tuple val("${task.process}"), val('wakhan'), val("0.4.4"), topic: versions, emit: versions_wakhan
 

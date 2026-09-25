@@ -696,12 +696,11 @@ workflow LRSOMATIC {
         // ascat_tumoronly_ch: [meta, purityploidy, segments]
 
         // All ASCAT files per sample for the report module, which globs by suffix
-        // groupKey: release each sample on its own three emissions, not when ASCAT finishes for all
-        ch_ascat_files = ASCAT.out.segments_raw
-            .mix(ASCAT.out.purityploidy, ASCAT.out.png)
-            .map { meta, files -> [groupKey(meta, 3), files] }
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }
+        // Joined per sample; segments_raw is optional, so it arrives as null when absent
+        ch_ascat_files = ASCAT.out.purityploidy
+            .join(ASCAT.out.png)
+            .join(ASCAT.out.segments_raw, remainder: true)
+            .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
     }
 
@@ -1257,12 +1256,11 @@ workflow LRSOMATIC {
         )
 
         // The WAKHAN outputs the report renders: ranked solutions, heatmap, per-solution plots
-        // groupKey: release each sample on its own three emissions
+        // Joined per sample; all three outputs are required
         ch_wakhan_files = WAKHAN.out.solutions_ranks
-            .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
-            .map { meta, files -> [groupKey(meta, 3), files] }
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }  // solution_dirs contributes a list
+            .join(WAKHAN.out.heatmap_html)
+            .join(WAKHAN.out.solution_dirs)
+            .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
     }
 
