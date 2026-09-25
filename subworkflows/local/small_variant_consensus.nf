@@ -1,4 +1,5 @@
 include { BCFTOOLS_NORM                                      } from '../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_NORM as BCFTOOLS_NORM_REJOIN              } from '../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
 include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
@@ -21,7 +22,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     main:
 
     //
-    // MODULE: BCFTOOLS_NORM (label: process_medium) -- left-align and normalise; sorted after, since left-alignment can reorder records
+    // MODULE: BCFTOOLS_NORM (label: process_medium) -- left-align and split multi-allelics for isec; rejoined before phasing
     // Input:  [meta, vcf, tbi]  -- per-caller VCF
     // Output: .vcf -- [meta, vcf]  -- left-aligned, normalised VCF (unsorted)
     //
@@ -54,6 +55,8 @@ workflow SMALL_VARIANT_CONSENSUS {
     // Renaming cannot fix that and `annotate -h` cannot override an existing FORMAT definition,
     // but it is harmless because BCFTOOLS_NORM now splits multi-allelics (-m -any): every record
     // reaching here carries one ALT and one AF value, making the two declarations equivalent.
+    // After BCFTOOLS_NORM_REJOIN, consensus files keep the source caller's own header (lossless round
+    // trip); 'all' mode takes the Number=A header of isec's 0000.vcf.gz, which concat lists first.
     //
     // The rename is carried out by BCFTOOLS_ANNOTATE below rather than by a second annotate call:
     // meta.rename_to selects the --rename-annots file in conf/modules.config. Only 'all' mode needs
@@ -266,8 +269,27 @@ workflow SMALL_VARIANT_CONSENSUS {
         error("combine_method must be 'consensus' or 'all', got '${combine_method}'")
     }
 
+    //
+    // MODULE: BCFTOOLS_NORM_REJOIN (BCFTOOLS_NORM alias) -- rejoin split sites (-m +any) so LongPhase and Wakhan see one record per position
+    // Input:  [meta, vcf, tbi]  -- sorted consensus/union VCF
+    // Output: .vcf -- [meta, vcf.gz]
+    //         .tbi -- [meta, tbi]
+    //
+    BCFTOOLS_NORM_REJOIN(
+        vcf.join(tbi, failOnMismatch: true, failOnDuplicate: true),
+        fasta
+    )
+
+    BCFTOOLS_NORM_REJOIN.out.vcf
+        .join(BCFTOOLS_NORM_REJOIN.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .multiMap { meta, rejoined_vcf, rejoined_tbi ->
+            vcf: [meta, rejoined_vcf]
+            tbi: [meta, rejoined_tbi]
+        }
+        .set { rejoined }
+
     emit:
-    vcf  // [meta, vcf]  -- final consensus/combined VCF
-    tbi  // [meta, tbi]
+    vcf = rejoined.vcf  // [meta, vcf]  -- final consensus/combined VCF, multi-allelics rejoined
+    tbi = rejoined.tbi  // [meta, tbi]
 
 }
