@@ -1,4 +1,6 @@
 // IMPORT MODULES
+include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 include { CLAIRSTO                  } from '../../../modules/local/clairsto/main.nf'
 include { CLAIRSTO_VERDICT_TAG      } from '../../../modules/local/clairsto/verdict_tag/main.nf'
 include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main.nf'
@@ -8,8 +10,6 @@ include { DEEPVARIANT                                   } from '../../../subwork
 include { DEEPSOMATIC                                   } from '../../../subworkflows/local/deepsomatic.nf'
 include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subworkflows/local/small_variant_consensus.nf'
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus.nf'
-include { VCF_PASS_FILTER as DEEPVARIANT_PASS_FILTER    } from '../../../subworkflows/local/vcf_pass_filter.nf'
-include { VCF_PASS_FILTER as DEEPSOMATIC_PASS_FILTER    } from '../../../subworkflows/local/vcf_pass_filter.nf'
 
 // Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
 // Three independent bcftools invocations, so three aliased instances of the upstream modules.
@@ -165,15 +165,15 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]],  // GZI (empty if FASTA is uncompressed)
             ds_pon_channel
         )
-        // DeepSomatic emits a record for every site it evaluates (RefCall/GERMLINE/PON),
-        // not just its calls. ClairS-TO needs no equivalent step here because VCFSPLIT
-        // already restricts it to PASS. The VCF published under variants/deepsomatic/ is
-        // unaffected.
-        DEEPSOMATIC_PASS_FILTER (
-            DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
-        )
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def deepsomatic_vcf = DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
+        if (params.smallvar_filter_pass) {
+            DEEPSOMATIC_PASS_FILTER ( deepsomatic_vcf, [], [], [] )
+            deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
+                .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
 
-        DEEPSOMATIC_PASS_FILTER.out.vcf
+        deepsomatic_vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]
@@ -208,15 +208,13 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]]   // GFF annotation (not used)
         )
 
-        // DeepVariant emits a record for every site it evaluates, not just its calls, so
-        // most records are RefCall. ClairS-TO needs no equivalent step here because
-        // VCFSPLIT already restricts its SOMATIC split to PASS -- note that its GERMLINE split
-        // is not PASS-filtered but PASS-rewritten, so a PASS filter would not reduce it and
-        // germline/somatic origin is carried in INFO by VCFTAG instead. The VCF published under
-        // variants/deepvariant/ is unaffected.
-        DEEPVARIANT_PASS_FILTER (
-            DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        )
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
+        if (params.smallvar_filter_pass) {
+            DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
+            deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
+                .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
 
         // GERMLINE VERDICT TRANSFER (tumor-only, deep family)
         // DeepVariant is a germline caller with no somatic discrimination -- its FILTER vocabulary is
@@ -248,7 +246,7 @@ workflow TUMORONLY_SMALLVAR {
         // MODULE: DS_VERDICT_ANNOTATE (BCFTOOLS_ANNOTATE alias, label: process_medium)
         // Stamps INFO/DS_VERDICT on each DeepVariant record from the DeepSomatic verdict table.
         //
-        DEEPVARIANT_PASS_FILTER.out.vcf
+        deepvariant_vcf
             .join(DS_VERDICT_QUERY.out.output, failOnMismatch: true, failOnDuplicate: true)
             .join(DS_VERDICT_QUERY.out.index,  failOnMismatch: true, failOnDuplicate: true)
             .map { meta, vcf, tbi, annotations, annotations_index ->

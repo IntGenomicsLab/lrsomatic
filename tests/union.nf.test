@@ -134,12 +134,11 @@ nextflow_pipeline {
                 { assert workflow.success },
 
                 // ── No PASS filter process may run ───────────────────────────
-                // VCF_PASS_FILTER passes its input straight through when the param is
-                // false, so PASS_FILTER never executes and never reports a version.
+                // With the param false no <CALLER>_PASS_FILTER process runs or reports a version.
                 {
                     def versions = file("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml")
                     assert versions.exists()
-                    assert !versions.text.contains('PASS_FILTER')
+                    assert !versions.text.contains('_PASS_FILTER')
                 },
 
                 // ── Phased VCFs still exist and have data ────────────────────

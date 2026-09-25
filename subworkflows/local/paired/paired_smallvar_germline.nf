@@ -1,11 +1,11 @@
 // IMPORT MODULES
+include { BCFTOOLS_VIEW as CLAIR3_PASS_FILTER      } from '../../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 include { CLAIR3                    } from '../../../modules/local/clair3/main.nf'
 
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                     } from '../../../subworkflows/nf-core/deepvariant/main.nf'
 include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
-include { VCF_PASS_FILTER as CLAIR3_PASS_FILTER           } from '../../../subworkflows/local/vcf_pass_filter.nf'
-include { VCF_PASS_FILTER as DEEPVARIANT_PASS_FILTER      } from '../../../subworkflows/local/vcf_pass_filter.nf'
 
 workflow PAIRED_SMALLVAR_GERMLINE {
 
@@ -75,14 +75,15 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             fai
         )
 
-        // Clair3's merge_output.vcf.gz keeps LowQual and RefCall records; restrict them the
-        // same way DeepVariant's output is restricted so both callers enter the union on
-        // equal terms. The VCF published under variants/clair3/ is unaffected.
-        CLAIR3_PASS_FILTER (
-            CLAIR3.out.vcf.join(CLAIR3.out.tbi)
-        )
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def clair3_vcf = CLAIR3.out.vcf.join(CLAIR3.out.tbi)
+        if (params.smallvar_filter_pass) {
+            CLAIR3_PASS_FILTER ( clair3_vcf, [], [], [] )
+            clair3_vcf = CLAIR3_PASS_FILTER.out.vcf
+                .join(CLAIR3_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
 
-        CLAIR3_PASS_FILTER.out.vcf
+        clair3_vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clair3']
                 return [new_meta, vcf, tbi]
@@ -127,14 +128,15 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             [[:],[]]   // GFF annotation (not used)
         )
 
-        // DeepVariant emits a record for every site it evaluates, not just its calls, so
-        // most records are RefCall. Without this the union is "every site DeepVariant
-        // looked at". The VCF published under variants/deepvariant/ is unaffected.
-        DEEPVARIANT_PASS_FILTER (
-            DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        )
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
+        if (params.smallvar_filter_pass) {
+            DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
+            deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
+                .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
 
-        DEEPVARIANT_PASS_FILTER.out.vcf
+        deepvariant_vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepvariant']
                 return [new_meta, vcf, tbi]
