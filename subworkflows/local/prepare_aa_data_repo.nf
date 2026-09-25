@@ -30,7 +30,9 @@ workflow PREPARE_AA_DATA_REPO {
             WGET_AA_DATA_REPO.out.outfile
         )
 
-        ch_data_repo = UNTAR_AA_DATA_REPO.out.untar
+        // .first(): UNTAR emits a queue channel, and every sample's classifier task
+        // needs the same repo -- without this only the first sample would get it.
+        ch_data_repo = UNTAR_AA_DATA_REPO.out.untar.first()
         ch_versions = ch_versions.mix(WGET_AA_DATA_REPO.out.versions, UNTAR_AA_DATA_REPO.out.versions)
     }
     else {

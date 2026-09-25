@@ -15,8 +15,8 @@ workflow ECDNA {
     take:
     tumor_bam    // [meta, bam, bai]                 -- tumour BAMs only
     ascat_cnvs   // [meta, cnvs_txt]                 -- ASCAT.out.cnvs
-    fai          // [[:], fai]
-    data_repo    // [[:], dir]  -- AA data repo, empty channel with --skip_ampliconclassifier
+    fai          // [[:], fai]                       -- value channel, reused by every sample
+    data_repo    // [[:], dir]                       -- value channel; empty with --skip_ampliconclassifier
     coral_ref    // val 'hg38' | 't2t'
     ac_ref       // val 'GRCh38' | 'CHM13'
 
@@ -30,7 +30,7 @@ workflow ECDNA {
     //
     ASCAT_TO_CORAL_BED (
         ascat_cnvs,
-        fai.first()
+        fai
     )
 
     //
@@ -129,7 +129,7 @@ workflow ECDNA {
     if (!params.skip_ampliconclassifier) {
         AMPLICONCLASSIFIER (
             ch_for_classifier,
-            data_repo.first(),
+            data_repo,
             ac_ref
         )
         ch_classification = AMPLICONCLASSIFIER.out.classification
