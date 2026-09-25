@@ -223,6 +223,8 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--vep_polyphen_sift_db`     | Ensembl pangenome PolyPhen/SIFT SQLite database, for the `PolyPhen_SIFT` plugin. Needed on CHM13 only                    |
 | `--vep_clinvar`              | ClinVar VCF, added as a VEP `--custom` annotation                                                                        |
 | `--vep_clinvar_tbi`          | Index for `--vep_clinvar`. Required whenever `--vep_clinvar` is set                                                      |
+| `--vep_clinvar_md5`          | Expected MD5 of a remote `--vep_clinvar`, checked after download. Dropped when `--vep_clinvar` is overridden             |
+| `--vep_clinvar_tbi_md5`      | Expected MD5 of the downloaded `--vep_clinvar_tbi`. Set on CHM13 only; dropped when either ClinVar file is overridden    |
 | `--vep_clinvar_fields`       | Comma-separated ClinVar INFO fields to carry through. Default = `"CLNSIG,CLNREVSTAT,CLNDN"`                              |
 | `--vep_cadd_snv`             | CADD SNV score file, for the `CADD` plugin. No default — 81 GB, so opt-in; prefer a local path. GRCh38 only              |
 | `--vep_cadd_snv_tbi`         | Index for `--vep_cadd_snv`. Required whenever `--vep_cadd_snv` is set                                                    |
@@ -468,7 +470,7 @@ Plugins are applied to the germline and somatic VEP runs, not to the structural-
 | **SIFT**          | already in the VEP cache, no file needed | `PolyPhen_SIFT` plugin        | CHM13: 13 GB database                               |
 | **PolyPhen**      | already in the VEP cache, no file needed | `PolyPhen_SIFT` plugin        | as above, the same database                         |
 | **AlphaMissense** | `AlphaMissense` plugin                   | `AlphaMissenseProtein` plugin | 613 MB (GRCh38) / 1.1 GB (CHM13)                    |
-| **ClinVar**       | `--custom` annotation                    | `--custom`, CHM13-lifted VCF  | 105 MB (GRCh38) / 190 MB (CHM13)                    |
+| **ClinVar**       | `--custom` annotation                    | `--custom`, CHM13-lifted VCF  | 193 MB (GRCh38) / 99 MB (CHM13)                     |
 | **CADD**          | `CADD` plugin, opt-in                    | not available — see below     | none — `--vep_cadd_snv` enables it (81 GB + 1.2 GB) |
 | **REVEL**         | `REVEL` plugin                           | not available — see below     | 667 MB release zip                                  |
 | **EVE**           | `EVE` plugin, opt-in                     | not available — see below     | none — `--vep_eve` enables it (9.6 GB)              |
@@ -527,6 +529,15 @@ Whether an index is required depends on the shape of what you supply:
 - **AlphaMissense, ClinVar and CADD** are used exactly as given, so their `_tbi` parameter is
   always required alongside them. Overriding a data file drops the default index: supply both, or
   neither.
+- **A remote ClinVar** (http, https or ftp) is downloaded once per run by `VEPPLUGIN_CLINVAR`, with
+  its index, rather than staged by `GERMLINE_VEP` and `SOMATIC_VEP` for every sample: NCBI answers
+  the burst of requests a multi-sample run sends with HTTP 503. The index must then be a URL too. The
+  download is checked against `--vep_clinvar_md5` (and `--vep_clinvar_tbi_md5` where set), so a
+  release re-published under the same name fails the run instead of changing the annotation. Both
+  defaults carry the MD5 their host publishes, and the CHM13 default also pins its index; NCBI
+  publishes no index checksum. With your own URL, pass its MD5 too, or the pipeline warns that the
+  release is not verified. Local and cloud-storage (`s3://`, `gs://`, `az://`) paths are staged as
+  given. The files are published to `<outdir>/vep_plugins/` for reuse as local paths.
 - **REVEL and EVE** ship as zip archives. Pass a `.zip` and the pipeline unpacks and reshapes it;
   pass a prepared file and its index to use it directly. Remote zips are fetched with `wget` rather
   than staged by Nextflow, and EVE's 9.6 GB archive serves slowly, so expect hours.
@@ -538,8 +549,8 @@ Whether an index is required depends on the shape of what you supply:
 | AlphaMissense (GRCh38)    | `https://storage.googleapis.com/dm_alphamissense/AlphaMissense_hg38.tsv.gz`, with an index we host                                | 613 MB | no, the index is fetched ready             | CC BY 4.0                    |
 | AlphaMissense (protein)   | a gene-symbol-keyed table we host, built from the AlphaMissense protein-space release                                             | 1.1 GB | no, fetched ready — see `CITATIONS.md`     | CC BY 4.0                    |
 | Pangenome PolyPhen/SIFT   | `https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/homo_sapiens_pangenome_PolyPhen_SIFT_20240502.db`             | 13 GB  | no, it is an SQLite database               | Ensembl / EMBL-EBI open      |
-| ClinVar (GRCh38)          | `clinvar_20260829.vcf.gz` under `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/` (+ `.tbi`)                | 105 MB | no, `.tbi` is published                    | public domain                |
-| ClinVar (CHM13)           | `clinvar_20240624_GCA_009914755.4.vcf.gz` under `https://ftp.ensembl.org/pub/rapid-release/species/Homo_sapiens/GCA_009914755.4/` | 190 MB | no, `.tbi` is published                    | public domain                |
+| ClinVar (GRCh38)          | `clinvar_20260829.vcf.gz` under `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/` (+ `.tbi`)                | 193 MB | downloaded once, MD5-checked               | public domain                |
+| ClinVar (CHM13)           | `clinvar_20240624_GCA_009914755.4.vcf.gz` under `https://ftp.ensembl.org/pub/rapid-release/species/Homo_sapiens/GCA_009914755.4/` | 99 MB  | downloaded once, MD5-checked               | public domain                |
 | CADD v1.7 SNVs (opt-in)   | `https://krishna.gs.washington.edu/download/CADD/v1.7/GRCh38/whole_genome_SNVs.tsv.gz` (+ `.tbi`)                                 | 81 GB  | no, `.tbi` is published                    | free for non-commercial use  |
 | CADD v1.7 indels (opt-in) | `https://krishna.gs.washington.edu/download/CADD/v1.7/GRCh38/gnomad.genomes.r4.0.indel.tsv.gz` (+ `.tbi`)                         | 1.2 GB | no, `.tbi` is published                    | free for non-commercial use  |
 | REVEL v1.3                | `https://rothsj06.dmz.hpc.mssm.edu/revel-v1.3_all_chromosomes.zip`                                                                | 667 MB | unpacked, re-sorted on GRCh38, indexed     | free for non-commercial use  |

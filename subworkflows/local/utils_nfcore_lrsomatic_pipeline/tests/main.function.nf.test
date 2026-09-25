@@ -413,6 +413,321 @@ nextflow_function {
         }
     }
 
+    // --- vepPluginNeedsFetch / vepPluginMd5: a remote ClinVar is downloaded once, against a pinned MD5
+
+    test("vepPluginNeedsFetch is true for the default remote ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a local ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a remote resource other than ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_alphamissense'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginMd5 takes the default MD5 when ClinVar is the default") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result ==~ /[0-9a-f]{32}/ }
+            )
+        }
+    }
+
+    test("vepPluginMd5 drops the default MD5 once ClinVar is overridden") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the default MD5 belongs to the default release, not to this one
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("vepPluginMd5 returns an explicitly supplied MD5") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == '0123456789abcdef0123456789abcdef' }
+            )
+        }
+    }
+
+    test("resolveVepPlugins defers a remote ClinVar to the download task") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/archive/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the argument keeps the release's own basename, which the download task writes
+                { assert function.result.args.startsWith('--custom file=clinvar_20250101.vcf.gz,short_name=ClinVar') },
+                { assert function.result.prepare['vep_clinvar'].vcf == 'https://example.org/archive/clinvar_20250101.vcf.gz' },
+                { assert function.result.prepare['vep_clinvar'].tbi == 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi' },
+                { assert function.result.prepare['vep_clinvar'].md5 == '0123456789abcdef0123456789abcdef' },
+                // never staged as a foreign file: every VEP task would re-check it on the host
+                { assert function.result.ready_files == [] }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a cloud-storage ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 's3://my-bucket/clinvar_20250101.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // wget cannot fetch s3://, so Nextflow keeps staging it as before
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is true for an ftp ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/clinvar_20260829.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 takes the default index MD5 on CHM13") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'CHM13'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result ==~ /[0-9a-f]{32}/ }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 is null on GRCh38, where NCBI publishes none") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 drops the default once the index is overridden") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'CHM13'
+                vep_clinvar_tbi = 'https://example.org/clinvar_20240624_GCA_009914755.4.vcf.gz.tbi'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the default MD5 belongs to the default index, not to this one
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("resolveVepPlugins carries the index MD5 to the download task") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/archive/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_tbi_md5 = 'fedcba9876543210fedcba9876543210'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.prepare['vep_clinvar'].tbi_md5 == 'fedcba9876543210fedcba9876543210' }
+            )
+        }
+    }
+
     // --- validateVepPluginParams: the error paths
 
     test("validateVepPluginParams passes when plugins are skipped") {
@@ -577,6 +892,96 @@ nextflow_function {
 
         then {
             assert function.success
+        }
+    }
+
+    test("validateVepPluginParams rejects an MD5 for a local ClinVar") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                // only the download task checks it, so a local file would skip it silently
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('vep_clinvar_md5') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams warns on a remote ClinVar without an MD5") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/clinvar.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/clinvar.vcf.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // log.warn reaches the log file, not the captured stdout
+                { assert path("${metaDir}/nextflow.log").text.contains('not verified') }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects a remote ClinVar with a local index") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                // the download task fetches both, so wget would be handed a local path
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('vep_clinvar_tbi') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects an index MD5 for a local ClinVar") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar.vcf.gz.tbi'
+                vep_clinvar_tbi_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('vep_clinvar_tbi_md5') } }
+            )
         }
     }
 }

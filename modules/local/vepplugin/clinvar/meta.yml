@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "vepplugin_clinvar"
+description: Download a dated ClinVar VCF and its index once per run, checked against a pinned MD5, for the VEP --custom annotation
+keywords:
+  - vep
+  - clinvar
+  - download
+  - annotation
+tools:
+  - "wget":
+      description: "GNU Wget is a free software package for retrieving files using HTTP, HTTPS, FTP and FTPS"
+      homepage: "https://www.gnu.org/software/wget/"
+      documentation: "https://www.gnu.org/software/wget/manual/wget.html"
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+
+input:
+  - - vcf_url:
+        type: string
+        description: URL of the ClinVar VCF; its basename becomes the output name
+    - tbi_url:
+        type: string
+        description: URL of the tabix index published alongside the VCF
+    - md5:
+        type: string
+        description: |
+          Expected MD5 of the VCF. When set, a download that does not match fails
+          the task. May be null, in which case the release is not verified.
+    - tbi_md5:
+        type: string
+        description: |
+          Expected MD5 of the index, checked the same way. May be null, as for
+          NCBI, which publishes no checksum for its indexes.
+
+output:
+  files:
+    - "${vcf_name}{,.tbi}":
+        type: file
+        description: The ClinVar VCF and its tabix index
+        pattern: "*.vcf.gz{,.tbi}"
+  versions:
+    - versions.yml:
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@AmberVerhasselt"
+maintainers:
+  - "@AmberVerhasselt"

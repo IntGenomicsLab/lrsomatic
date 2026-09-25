@@ -283,6 +283,20 @@
                     "fa_icon": "fas fa-file",
                     "help_text": "Required whenever --vep_clinvar is set: ClinVar publishes a .tbi alongside every VCF, so the pipeline does not build one."
                 },
+                "vep_clinvar_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the --vep_clinvar VCF, checked after the pipeline downloads it.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "A remote --vep_clinvar (http, https or ftp) is downloaded once per run by VEPPLUGIN_CLINVAR, rather than staged by GERMLINE_VEP and SOMATIC_VEP for every sample, and a VCF that does not match this MD5 fails the run, so the release cannot change silently. The GRCh38 and CHM13 defaults carry the MD5 their hosts publish; overriding --vep_clinvar drops it. A local or cloud-storage --vep_clinvar is staged as given, and takes no MD5."
+                },
+                "vep_clinvar_tbi_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the --vep_clinvar_tbi index, checked after the pipeline downloads it.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "Checked alongside --vep_clinvar_md5. The CHM13 default carries the MD5 Ensembl publishes; GRCh38 has none, since NCBI publishes no checksum for its indexes. Overriding --vep_clinvar or --vep_clinvar_tbi drops the default."
+                },
                 "vep_clinvar_fields": {
                     "type": "string",
                     "description": "Comma-separated ClinVar INFO fields to carry into the annotation.",

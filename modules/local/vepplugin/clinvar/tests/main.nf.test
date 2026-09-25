@@ -1,0 +1,41 @@
+nextflow_process {
+
+    name "Test Process VEPPLUGIN_CLINVAR"
+    script "../main.nf"
+    process "VEPPLUGIN_CLINVAR"
+
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "modules"
+    tag "modules_local"
+    tag "vepplugin_clinvar"
+
+    // Stub only: a real run downloads the full ClinVar release
+    test("clinvar release - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/clinvar_20260829.vcf.gz',
+                    'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/clinvar_20260829.vcf.gz.tbi',
+                    'dffae274fd559ee764d1de44f36df2cf',
+                    null // NCBI publishes no checksum for its index
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                // the VCF keeps its release name, and the index sits beside it under the name VEP looks for
+                { assert process.out.files[0].collect { f -> file(f).name }.sort() == [ 'clinvar_20260829.vcf.gz', 'clinvar_20260829.vcf.gz.tbi' ] },
+                { assert snapshot(process.out).match() }
+            )
+        }
+
+    }
+}
