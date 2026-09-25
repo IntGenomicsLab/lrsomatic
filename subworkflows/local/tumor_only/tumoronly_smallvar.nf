@@ -231,8 +231,8 @@ workflow TUMORONLY_SMALLVAR {
         // (57,684) PASS -- the last being real somatic calls that must not be published as germline.
         //
         // Only positively-adjudicated germline sites are kept (GERMLINE or PON); RefCall and
-        // unevaluated sites are dropped rather than assumed germline. The verdict stays in
-        // INFO/DS_VERDICT so the decision is auditable in the published VCF.
+        // unevaluated sites are dropped rather than assumed germline. Only GERMLINE/PON verdicts
+        // are transferred to INFO/DS_VERDICT.
         //
         // DeepSomatic FILTER is single-valued in practice (RefCall/GERMLINE/PON/PASS only, verified
         // over 13.7M records), so transferring it as a plain string cannot inject the ";" that would
@@ -240,7 +240,7 @@ workflow TUMORONLY_SMALLVAR {
         //
         // MODULE: DS_VERDICT_QUERY (BCFTOOLS_QUERY alias, label: process_single)
         // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF, before its PASS filter
-        // Output: .output/.index -- [meta, tsv.gz/tbi]  -- CHROM POS REF ALT FILTER
+        // Output: .output/.index -- [meta, tsv.gz/tbi]  -- CHROM POS REF ALT FILTER, non-PASS/RefCall rows only
         //
         DS_VERDICT_QUERY ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index), [], [], [] )
 
