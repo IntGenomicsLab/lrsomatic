@@ -1,5 +1,13 @@
 Changes in component 'nf-core/longphase/haplotag'
-'modules/nf-core/longphase/haplotag/environment.yml' is unchanged
+Changes in 'longphase/haplotag/environment.yml':
+--- modules/nf-core/longphase/haplotag/environment.yml
++++ modules/nf-core/longphase/haplotag/environment.yml
+@@ -7,3 +7,4 @@
+ dependencies:
+   - bioconda::htslib=1.23.1
+   - bioconda::longphase=2.0.1
++  - bioconda::samtools=1.23.1
+
 'modules/nf-core/longphase/haplotag/meta.yml' is unchanged
 Changes in 'longphase/haplotag/main.nf':
 --- modules/nf-core/longphase/haplotag/main.nf
