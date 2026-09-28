@@ -15,7 +15,7 @@
                         {
                             "id": "test"
                         },
-                        "test.log:md5,ee178bddc200e65da14440f5710f762e"
+                        "test.log:md5,c30c1b33203d139e5648d847cac4ab05"
                     ]
                 ],
                 "2": [
@@ -38,7 +38,7 @@
                         {
                             "id": "test"
                         },
-                        "test.log:md5,ee178bddc200e65da14440f5710f762e"
+                        "test.log:md5,c30c1b33203d139e5648d847cac4ab05"
                     ]
                 ],
                 "versions_modkit": [
@@ -54,7 +54,7 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-23T11:41:19.857952367"
+        "timestamp": "2026-09-24T09:10:47.411811907"
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], [], fasta": {
         "content": [
@@ -72,7 +72,7 @@
                         {
                             "id": "test"
                         },
-                        "test.log:md5,8861572cf65176e7d07256479c169269"
+                        "test.log:md5,256a0a5feab178024236ffc0b3a18c38"
                     ]
                 ],
                 "2": [
@@ -95,7 +95,7 @@
                         {
                             "id": "test"
                         },
-                        "test.log:md5,8861572cf65176e7d07256479c169269"
+                        "test.log:md5,256a0a5feab178024236ffc0b3a18c38"
                     ]
                 ],
                 "versions_modkit": [
@@ -111,7 +111,7 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-23T11:41:25.583014363"
+        "timestamp": "2026-09-24T09:10:55.676443925"
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta - stub": {
         "content": [
@@ -168,6 +168,6 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-23T11:41:31.474420326"
+        "timestamp": "2026-09-24T09:11:03.403287933"
     }
 }

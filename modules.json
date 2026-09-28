@@ -55,16 +55,6 @@
                         "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
                         "installed_by": ["modules"]
                     },
-                    "bedtools/closest": {
-                        "branch": "master",
-                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
-                        "installed_by": ["modules"]
-                    },
-                    "bedtools/intersect": {
-                        "branch": "master",
-                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
-                        "installed_by": ["modules"]
-                    },
                     "deepvariant/callvariants": {
                         "branch": "master",
                         "git_sha": "f2b138ee1d91f67d31c187317d7e83e429bf0309",
@@ -270,7 +260,7 @@
                 "nf-core": {
                     "modkit/dmr": {
                         "branch": "add-modkit-dmr",
-                        "git_sha": "9d93dfaa3dbe224588d2f7c10dce082528854dec",
+                        "git_sha": "d886465c00aa9f724c92fa89b30d84dd64c61ea6",
                         "installed_by": ["modules"]
                     }
                 }
