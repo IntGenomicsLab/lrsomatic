@@ -170,6 +170,20 @@
                     "description": "Verdict CNA resource directory for ClairS-TO, holding loci_files/, allele_files/ and one GC_*.txt. Read only with --skip_ascat.",
                     "help_text": "Read only on `--skip_ascat` runs; otherwise Verdict's germline tagging comes from the pipeline's ASCAT run and this is ignored. The image ships the GRCh38 set and `--genome CHM13 --skip_ascat` builds a CHM13 one, so this is only needed for another assembly or as an override. The directory must be self-contained, with no links reaching outside it. Add an `RT_<name>.txt` to correct LogR for replication timing as well; without it, correction is GC-only.",
                     "fa_icon": "fas fa-folder-open"
+                },
+                "dmr_cpg_islands_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "CpG-islands BED to restrict haplotype DMR calling to. Has a built-in default for --genome GRCh38/CHM13; required as an explicit override for any other genome when --modkit_phased is set and --skip_dmr is not.",
+                    "help_text": "Only used by the DMR subworkflow (see --skip_dmr). Without a value -- built-in or supplied -- DMR is skipped with a warning rather than the run failing.",
+                    "fa_icon": "fas fa-map-marker-alt"
+                },
+                "dmr_gencode_gene_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Gene-model BED (used for nearest-gene annotation of DMR calls) to use for haplotype DMR calling. Has a built-in default for --genome GRCh38/CHM13; required as an explicit override for any other genome when --modkit_phased is set and --skip_dmr is not.",
+                    "help_text": "Only used by the DMR subworkflow (see --skip_dmr). Without a value -- built-in or supplied -- DMR is skipped with a warning rather than the run failing.",
+                    "fa_icon": "fas fa-dna"
                 }
             }
         },
