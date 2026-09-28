@@ -13,8 +13,6 @@ nextflow_pipeline {
                 input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
                 germline_var_keep   = 'clair'
                 somatic_var_keep    = 'clair'
-                // The one test on BAM (the other pipeline tests run the CRAM default), incl. sample4's merge
-                aligned_format      = 'bam'
             }
         }
 
@@ -64,19 +62,19 @@ nextflow_pipeline {
                     }
                 },
 
-                // ── BAM files exist ──────────────────────────────────────────
+                // ── CRAM files exist ─────────────────────────────────────────
                 {
-                    // Paired samples have both tumor + normal BAMs
+                    // Paired samples have both tumor + normal CRAMs
                     ['sample1', 'sample2'].each { s ->
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram.crai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram.crai").exists()
                     }
-                    // Tumor-only samples have only tumor BAM
+                    // Tumor-only samples have only tumor CRAM; sample4 merges two replicates, so this covers the CRAM merge
                     ['sample3', 'sample4', 'sample5'].each { s ->
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram.crai").exists()
                     }
                 },
 
@@ -140,12 +138,13 @@ nextflow_pipeline {
                     }
                 },
 
-                // ── sample4: merged BAM content ──────────────────────────────
+                // ── sample4: merged CRAM content ─────────────────────────────
                 {
-                    // sample4's merged BAM has an unstable md5 (see tests/.nftignore), so
-                    // assert the reads instead
+                    // sample4's merged CRAM has an unstable md5 (see tests/.nftignore), so
+                    // assert the reads instead. htsjdk decodes it without a FASTA (embed_ref=1),
+                    // and the value is the one the merged BAM gave under --aligned_format bam
                     assert snapshot(
-                        bam("$launchDir/output/sample4/bamfiles/sample4_tumor.bam", stringency: 'silent').getReadsMD5()
+                        bam("$launchDir/output/sample4/bamfiles/sample4_tumor.cram", stringency: 'silent').getReadsMD5()
                     ).match("sample4_merged_reads")
                 },
 

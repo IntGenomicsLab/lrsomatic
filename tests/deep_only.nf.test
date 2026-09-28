@@ -12,6 +12,9 @@ nextflow_pipeline {
                 outdir              = "$outputDir"
                 germline_var_keep   = 'deepvariant'
                 somatic_var_keep    = 'deepsomatic'
+                // The one test on BAM (the others run the CRAM default); DeepVariant/DeepSomatic make_examples are
+                // 13-14x slower on CRAM on the thin chr19 test data only, so this also keeps the test short
+                aligned_format      = 'bam'
             }
         }
 
@@ -56,13 +59,13 @@ nextflow_pipeline {
                 // ── BAM files ────────────────────────────────────────────────
                 {
                     ['sample1', 'sample2'].each { s ->
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram.crai").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram.crai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
                     }
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram").exists()
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram.crai").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam.bai").exists()
                 },
 
                 // ── Severus SV outputs for paired samples ────────────────────
