@@ -19,7 +19,9 @@ process DMR_NEAREST_GENE {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: '-D a -t first'
+    // -D b: distance is signed relative to the gene's (B's) strand, which is meaningful --
+    // DMR regions (A) are unstranded, so -D a's "distance relative to A's strand" is not.
+    def args = task.ext.args ?: '-D b -t first'
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     sort -k1,1 -k2,2n ${dmr_bed} > dmr.sorted.bed
