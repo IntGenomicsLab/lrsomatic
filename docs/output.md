@@ -274,16 +274,16 @@ Present in **paired** (tumor + normal) samples.
 ├── clairs
 │   ├── indel.vcf.gz
 │   ├── indel.vcf.gz.tbi
-│   ├── snv.vcf.gz
-│   ├── snv.vcf.gz.tbi
+│   ├── snvs.vcf.gz
+│   ├── snvs.vcf.gz.tbi
 ```
 
 | File               | Description                       |
 | ------------------ | --------------------------------- |
 | `indel.vcf.gz`     | Somatic indel calls in vcf format |
 | `indel.vcf.gz.tbi` | Index for somatic indel calls     |
-| `snv.vcf.gz`       | Somatic SNV calls in vcf format   |
-| `snv.vcf.gz.tbi`   | Index for somatic SNV calls       |
+| `snvs.vcf.gz`      | Somatic SNV calls in vcf format   |
+| `snvs.vcf.gz.tbi`  | Index for somatic SNV calls       |
 
 #### `clairS-TO`
 
@@ -542,6 +542,31 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_SV_VEP.vcf.gz`                  | Annotated somatic structural variant vcf file                           |
 | `SVs/sample_SV_VEP_summary.html`            | Visual summary of somatic structural variant annotations in html format |
 | `SVs/sample_SV_VEP.vcf.gz.tbi`              | Annotated somatic structural variant vcf index file                     |
+
+</details>
+
+#### `vep_plugins`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── vep_plugins
+│   ├── clinvar_20260829.vcf.gz
+│   ├── clinvar_20260829.vcf.gz.tbi
+│   ├── revel_grch38.tsv.gz
+│   ├── revel_grch38.tsv.gz.tbi
+│   ├── eve_merged.vcf.gz
+│   ├── eve_merged.vcf.gz.tbi
+```
+
+| File                           | Description                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `clinvar_<date>.vcf.gz{,.tbi}` | ClinVar release and index as downloaded and MD5-checked by `VEPPLUGIN_CLINVAR`; only for a remote `--vep_clinvar` |
+| `revel_grch38.tsv.gz{,.tbi}`   | REVEL scores re-sorted on GRCh38 and indexed by `VEPPLUGIN_REVEL`                                                 |
+| `eve_merged.vcf.gz{,.tbi}`     | Per-protein EVE VCFs merged and indexed by `VEPPLUGIN_EVE`; only with the opt-in `--vep_eve`                      |
+
+Pass these to a later run as `--vep_clinvar`/`--vep_revel`/`--vep_eve` with their `_tbi` to skip the download and preparation. On CHM13 the ClinVar file is the CHM13-lifted Ensembl release instead.
 
 </details>
 
