@@ -2,8 +2,8 @@ process RECONPLOT {
     tag "${meta.id}:${cn_source}+${sv_source}"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
-    // Built from containers/reconplot/Dockerfile: R deps + ReConPlot package (not on conda; the wrapper is staged as source).
+    // No conda: the image ships the ReConPlot R package itself (guard in `script:`); the wrapper is pipeline glue in
+    // assets/reconplot/. Built from containers/reconplot/Dockerfile. Package update = new commit there, rebuild, re-pin the digest.
     // Override per site with `process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
     container "ghcr.io/tim-yu/reconplot@sha256:1145fc5aebe0227bec371f4c59b08b9a09871498e403c01b83f83973149ae9e7"
 
@@ -12,7 +12,6 @@ process RECONPLOT {
     // When cn_source == sv_source (e.g. savana) put everything in cn_files and leave sv_files empty.
     tuple val(meta), val(cn_source), path(cn_files, stageAs: 'cn_input/*'), val(sv_source), path(sv_files, stageAs: 'sv_input/*')
     tuple val(meta2), path(reconplot_src)   // ReConPlot wrapper (contains run_reconplot.R + R/)
-    tuple val(meta3), path(reconplot_pkg)   // ReConPlot R package source; installed only if the env lacks it
     val(genome)                             // hg38 | hg19 | T2T | mm10 | mm39
 
     output:
@@ -27,6 +26,10 @@ process RECONPLOT {
     task.ext.when == null || task.ext.when
 
     script:
+    // Exit if running this module with -profile conda / -profile mamba
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error "RECONPLOT does not support Conda: the ReConPlot package ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_reconplot."
+    }
     def args   = task.ext.args  ?: ''   // shared filters (e.g. --min-svlen, --max-cn)
     def args2  = task.ext.args2 ?: ''   // genome-wide strip extras
     def args3  = task.ext.args3 ?: ''   // focus panel extras (--regions/--genes/--baf-track); focus skipped if empty
@@ -47,13 +50,6 @@ process RECONPLOT {
         : ""
 
     """
-    # ReConPlot is pre-installed in the container; conda envs get it from the staged source tree
-    if ! Rscript -e 'suppressMessages(library(ReConPlot))' 2>/dev/null; then
-        mkdir -p rlib
-        R CMD INSTALL --no-docs --no-html -l rlib ${reconplot_pkg} > rlib_install.log 2>&1
-        export R_LIBS=\$PWD/rlib\${R_LIBS:+:\$R_LIBS}
-    fi
-
     ${layout_cmd}
     mkdir -p ${prefix}
 

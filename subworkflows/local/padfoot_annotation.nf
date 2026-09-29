@@ -1,14 +1,12 @@
 // IMPORT MODULES
 include { PADFOOT as PADFOOT_SEVERUS_WAKHAN } from '../../modules/local/padfoot/main'
 include { PADFOOT as PADFOOT_SAVANA         } from '../../modules/local/padfoot/main'
-include { WGET as PADFOOT_WGET              } from '../../modules/nf-core/wget/main'
-include { UNTAR as PADFOOT_UNTAR            } from '../../modules/nf-core/untar/main'
 
 //
 // Padfoot annotation of somatic SVs + CNAs, once per caller pair that produced output for a sample:
 // Severus SVs + the top-ranked Wakhan integer-CN VCF, and SAVANA SVs + SAVANA absolute CN.
-// Pass channel.empty() for a caller that did not run. Padfoot is not on bioconda: its source tree
-// comes from params.padfoot_url (GitHub archive) or a local checkout in params.padfoot_dir.
+// Pass channel.empty() for a caller that did not run. Padfoot is not on bioconda: it ships inside the
+// module's container (containers/padfoot/), so nothing is downloaded at run time.
 //
 workflow PADFOOT_ANNOTATION {
 
@@ -23,17 +21,6 @@ workflow PADFOOT_ANNOTATION {
 
     main:
     ch_versions = channel.empty()
-
-    if (params.padfoot_dir) {
-        padfoot_src = channel.value([[id: 'padfoot'], file(params.padfoot_dir, type: 'dir', checkIfExists: true)])
-    }
-    else {
-        PADFOOT_WGET( channel.value([[id: 'padfoot'], params.padfoot_url]) )
-        PADFOOT_UNTAR( PADFOOT_WGET.out.outfile )
-        padfoot_src = PADFOOT_UNTAR.out.untar
-        ch_versions = ch_versions.mix(PADFOOT_WGET.out.versions)
-    }
-    // padfoot_src: [meta, dir]  -- padfoot.py + beds/
 
     //
     // MODULE: PADFOOT_SEVERUS_WAKHAN (label: process_medium)
@@ -54,7 +41,7 @@ workflow PADFOOT_ANNOTATION {
         .map { meta, sv, cna -> [meta, sv, 'severus', cna, 'wakhan'] }
         .set { severus_wakhan_input }
 
-    PADFOOT_SEVERUS_WAKHAN( severus_wakhan_input, fasta, fai, padfoot_src, annot )
+    PADFOOT_SEVERUS_WAKHAN( severus_wakhan_input, fasta, fai, annot )
     ch_versions = ch_versions.mix(PADFOOT_SEVERUS_WAKHAN.out.versions)
 
     //
@@ -67,7 +54,7 @@ workflow PADFOOT_ANNOTATION {
         .map { meta, sv, cna -> [meta, sv, 'savana', cna, 'savana'] }
         .set { savana_input }
 
-    PADFOOT_SAVANA( savana_input, fasta, fai, padfoot_src, annot )
+    PADFOOT_SAVANA( savana_input, fasta, fai, annot )
     ch_versions = ch_versions.mix(PADFOOT_SAVANA.out.versions)
 
     emit:

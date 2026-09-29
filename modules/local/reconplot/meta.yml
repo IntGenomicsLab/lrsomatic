@@ -40,12 +40,6 @@ input:
     - reconplot_src:
         type: directory
         description: ReConPlot wrapper directory (`assets/reconplot`, contains `run_reconplot.R`, `R/` and `VERSION`)
-  - - meta3:
-        type: map
-        description: Groovy Map for the R package source
-    - reconplot_pkg:
-        type: directory
-        description: cortes-ciriano-lab/ReConPlot R package source; installed at run time only if the environment lacks it (containers ship it pre-installed)
   - - genome:
         type: string
         description: ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`)

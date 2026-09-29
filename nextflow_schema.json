@@ -403,17 +403,6 @@
             "description": "Options for Padfoot SV/CNA functional annotation",
             "default": "",
             "properties": {
-                "padfoot_url": {
-                    "type": "string",
-                    "default": "https://github.com/Tim-Yu/Padfoot/archive/bf942055d4a0c710aed1178869998350823b15e0.tar.gz",
-                    "description": "URL of a Padfoot source tarball (GitHub archive). Padfoot is not distributed on bioconda; the tarball is downloaded once per run."
-                },
-                "padfoot_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Local Padfoot checkout (directory containing padfoot.py and beds/). Overrides --padfoot_url; use for offline systems."
-                },
                 "padfoot_genome": {
                     "type": "string",
                     "enum": ["hg38", "chm13", "mm10"],
@@ -435,7 +424,7 @@
                 "padfoot_run_repeatmasker": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Run RepeatMasker on inserted sequences. Containers ship the full Dfam 4.0 database; conda uses the curated Dfam subset bundled with bioconda RepeatMasker."
+                    "description": "Run RepeatMasker on inserted sequences (repeat class of novel insertions); the module image ships the Dfam 4.0 root and curated-consensus partitions."
                 }
             }
         },
@@ -445,17 +434,6 @@
             "description": "Options for ReConPlot rearrangement/copy-number figures",
             "default": "",
             "properties": {
-                "reconplot_pkg_url": {
-                    "type": "string",
-                    "default": "https://github.com/cortes-ciriano-lab/ReConPlot/archive/88bb76011703d7908aaa2e5bdecfe18ba5737db8.tar.gz",
-                    "description": "URL of the ReConPlot R package source (installed at run time when the environment lacks it, i.e. under conda)."
-                },
-                "reconplot_pkg_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "exists": true,
-                    "description": "Local checkout of the ReConPlot R package. Overrides --reconplot_pkg_url."
-                },
                 "reconplot_genome": {
                     "type": "string",
                     "enum": ["hg38", "hg19", "T2T", "mm10", "mm39"],

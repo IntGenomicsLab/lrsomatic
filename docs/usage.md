@@ -162,6 +162,8 @@ Keep one resource set per directory: ClairS-TO derives the per-contig prefix fro
 
 If the loci cannot belong to the reference, ClairS-TO disables Verdict with a warning rather than applying the wrong coordinates. On a `--skip_ascat` run, look for `VERDICT CNA RESOURCE DIRECTORY` in the ClairS-TO log to confirm which set was used; otherwise Verdict runs outside ClairS-TO and the tables the tags came from are published next to the VCFs.
 
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot needs nothing extra on CHM13 (`T2T` preset).
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -405,24 +407,22 @@ Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support n
 - `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked (`solution_1`) Wakhan integer copy-number VCF (requires Wakhan not skipped)
 - `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
 
-Padfoot is not distributed on bioconda. The pipeline downloads the source tree from `--padfoot_url` (GitHub archive, once per run; the default is a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support not yet in `KolmogorovLab/Padfoot`) and runs it inside a container / conda environment that provides its dependencies (python, pysam, pandas, biopython, samtools, minimap2, bedtools). On systems without internet access on compute nodes, clone Padfoot once and pass the checkout with `--padfoot_dir`.
+Padfoot is not distributed on bioconda. The module's image (`ghcr.io/tim-yu/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
 
-RepeatMasker (used only to classify the sequence of novel insertions) runs by default. Under Docker/Singularity/Apptainer the module image (`ghcr.io/tim-yu/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships the full Dfam 4.0 database. Under `-profile conda` it uses the small curated Dfam subset bundled with bioconda RepeatMasker (sufficient for common human repeats such as Alu/L1/SVA). Use `--padfoot_run_repeatmasker false` to disable it; all other Padfoot annotations are unaffected.
+RepeatMasker (used only to classify the sequence of novel insertions) runs by default; the image ships the Dfam 4.0 root and curated-consensus partitions. `--padfoot_run_repeatmasker false` skips it.
 
 Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.
 
 | Parameter                    | Description                                                                                                                                                                                                    |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--padfoot_url`              | URL of a Padfoot source tarball (GitHub archive). Default = pinned commit of `Tim-Yu/Padfoot` with Savana support                                                                                              |
-| `--padfoot_dir`              | Local Padfoot checkout (directory with `padfoot.py` and `beds/`); overrides `--padfoot_url`. Default = `null`                                                                                                  |
 | `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                                                                   |
 | `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                                                                        |
 | `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                                                                     |
-| `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions). Containers ship the full Dfam 4.0 database; conda uses the curated Dfam subset bundled with bioconda RepeatMasker. Default = `true` |
+| `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions); the image ships the Dfam 4.0 root and curated-consensus partitions. Default = `true` |
 
 #### ReConPlot Options
 
-[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`:
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`ghcr.io/tim-yu/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
 
 - `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
 - `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
@@ -432,8 +432,6 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 
 | Parameter                  | Description                                                                                                   |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--reconplot_pkg_url`      | ReConPlot R package source tarball. Default = pinned commit of `cortes-ciriano-lab/ReConPlot`                 |
-| `--reconplot_pkg_dir`      | Local ReConPlot package checkout; overrides `--reconplot_pkg_url`. Default = `null`                           |
 | `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)  |
 | `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                       |
 | `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                         |
@@ -454,7 +452,7 @@ process {
 }
 ```
 
-The Padfoot source tree and the ReConPlot R package are downloaded from GitHub at run time; use `--padfoot_dir` and `--reconplot_pkg_dir` to point at local checkouts instead.
+Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image and re-pinning the digest (see the READMEs under `containers/`).
 
 #### Variant Filtering and Combining Options
 

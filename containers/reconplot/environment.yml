@@ -1,8 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
-# R runtime for the ReConPlot wrapper (https://github.com/Tim-Yu/ReConPlot). The ReConPlot package itself
-# (https://github.com/cortes-ciriano-lab/ReConPlot) is not on conda; the module installs it from the staged
-# source tree when it is not already present in the environment.
+# R runtime for the ReConPlot wrapper (assets/reconplot), used only to build containers/reconplot/Dockerfile;
+# the ReConPlot package itself (https://github.com/cortes-ciriano-lab/ReConPlot) is not on conda and is
+# installed into the image from a pinned commit.
 channels:
   - conda-forge
   - bioconda

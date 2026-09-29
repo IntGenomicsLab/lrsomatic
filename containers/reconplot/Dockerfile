@@ -1,8 +1,8 @@
 FROM mambaorg/micromamba:2.3.2
 
 # R runtime for the ReConPlot wrapper, with the ReConPlot package (not on conda) pre-installed
-# from a pinned upstream commit. The wrapper itself is staged by the pipeline (params.reconplot_url).
-COPY --chown=$MAMBA_USER modules/local/reconplot/environment.yml /tmp/environment.yml
+# from a pinned upstream commit. The wrapper itself ships with the pipeline in assets/reconplot/.
+COPY --chown=$MAMBA_USER containers/reconplot/environment.yml /tmp/environment.yml
 
 ARG RECONPLOT_COMMIT=88bb76011703d7908aaa2e5bdecfe18ba5737db8
 ADD --chown=$MAMBA_USER https://github.com/cortes-ciriano-lab/ReConPlot/archive/${RECONPLOT_COMMIT}.tar.gz /tmp/reconplot.tar.gz

@@ -1,6 +1,6 @@
 FROM mambaorg/micromamba:2.3.2
 
-COPY --chown=$MAMBA_USER modules/local/padfoot/environment.yml /tmp/environment.yml
+COPY --chown=$MAMBA_USER containers/padfoot/environment.yml /tmp/environment.yml
 
 ARG DFAM_URL_BASE=https://www.dfam.org/releases/current/families/FamDB
 ARG DFAM_ROOT_SHA256=4cdb3d571126de3061d61c9e79d0ffcf0b1d9dc1d3c555bf9bcb8db695efa91a
@@ -26,5 +26,20 @@ RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
     && test -s /tmp/repeatmasker-smoke/input.fa.out \
     && rm -rf /tmp/dfam40.* /tmp/repeatmasker-smoke
 
+# Padfoot itself is not on bioconda: install the pinned Tim-Yu/Padfoot commit (SAVANA input support) as source
+# under /opt/padfoot, so the PADFOOT module needs no run-time download. Bump = new commit + checksum here, rebuild, re-pin digest.
+ARG PADFOOT_COMMIT=e7eaed778fc2230bad96fb4232c704cec7cfe7eb
+ADD --checksum=sha256:81aff6572a2d513da9d7e8c6eeb2ae13be9eebf9cfc9ac6436f40fffe52cafb5 \
+    https://github.com/Tim-Yu/Padfoot/archive/${PADFOOT_COMMIT}.tar.gz /tmp/padfoot.tar.gz
+
+USER root
+RUN mkdir -p /opt/padfoot \
+    && tar -xzf /tmp/padfoot.tar.gz -C /opt/padfoot --strip-components 1 \
+    && rm -f /tmp/padfoot.tar.gz \
+    && chown -R $MAMBA_USER:$MAMBA_USER /opt/padfoot \
+    && /opt/conda/envs/padfoot/bin/python3 /opt/padfoot/padfoot.py --version
+USER $MAMBA_USER
+
 ENV PATH=/opt/conda/envs/padfoot/bin:${PATH}
 ENV FAMDB_DATA_DIR=/home/mambauser/dfam
+ENV PADFOOT_HOME=/opt/padfoot
