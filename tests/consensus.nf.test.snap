@@ -44,6 +44,9 @@
                 "CLAIRS_PASS_FILTER": {
                     "bcftools": "1.23.1"
                 },
+                "CONCAT_SOMATIC_UNPHASED": {
+                    "bcftools": 1.22
+                },
                 "CRAMINO_POST": {
                     "cramino": "1.3.0"
                 },
@@ -81,6 +84,9 @@
                     "bcftools": 1.22
                 },
                 "DS_VERDICT_QUERY": {
+                    "bcftools": 1.22
+                },
+                "GERMLINE_ANCHORS": {
                     "bcftools": 1.22
                 },
                 "GERMLINE_VEP": {
@@ -145,12 +151,21 @@
                 "SEVERUS": {
                     "severus": 1.6
                 },
+                "SOMATIC_ALT": {
+                    "bcftools": 1.22
+                },
+                "SOMATIC_NONALT": {
+                    "bcftools": 1.22
+                },
                 "SOMATIC_VEP": {
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
                 },
                 "SORT_POST_NORM": {
+                    "bcftools": 1.22
+                },
+                "SORT_SOMATIC_PHASED": {
                     "bcftools": 1.22
                 },
                 "SV_VEP": {
@@ -695,6 +710,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-25T12:21:59.090749802"
+        "timestamp": "2026-09-29T13:31:57.487084446"
     }
 }

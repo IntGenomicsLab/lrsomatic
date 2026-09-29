@@ -29,11 +29,17 @@
                 "CLAIRS_PASS_FILTER": {
                     "bcftools": "1.23.1"
                 },
+                "CONCAT_SOMATIC_UNPHASED": {
+                    "bcftools": 1.22
+                },
                 "CRAMINO_POST": {
                     "cramino": "1.3.0"
                 },
                 "CRAMINO_PRE": {
                     "cramino": "1.3.0"
+                },
+                "GERMLINE_ANCHORS": {
+                    "bcftools": 1.22
                 },
                 "GERMLINE_VEP": {
                     "ensemblvep": 115.2,
@@ -97,10 +103,19 @@
                 "SEVERUS": {
                     "severus": 1.6
                 },
+                "SOMATIC_ALT": {
+                    "bcftools": 1.22
+                },
+                "SOMATIC_NONALT": {
+                    "bcftools": 1.22
+                },
                 "SOMATIC_VEP": {
                     "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
                     "tabix": 1.21
+                },
+                "SORT_SOMATIC_PHASED": {
+                    "bcftools": 1.22
                 },
                 "SV_VEP": {
                     "ensemblvep": 115.2,
@@ -151,6 +166,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-25T12:34:22.954806822"
+        "timestamp": "2026-09-29T14:27:45.948524511"
     }
 }
