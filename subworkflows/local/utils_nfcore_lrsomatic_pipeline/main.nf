@@ -337,6 +337,18 @@ def validateSvAnnotationParams() {
         log.warn "ReConPlot: genome could not be inferred from '${params.genome}'; falling back to hg38 gene/chromosome annotations. " +
             "Set --reconplot_genome (hg38, hg19, T2T, mm10, mm39) to override."
     }
+
+    if (!params.skip_reconplot && params.reconplot_regions) {
+        // Same grammar as the wrapper's parse_regions(): tokens split on commas/semicolons/whitespace,
+        // each `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator).
+        // Regions on contigs without copy-number data are skipped at run time with a warning.
+        def bad = params.reconplot_regions.toString().split(/[,;\s]+/).findAll { tok -> tok }
+            .findAll { tok -> !(tok ==~ /[A-Za-z0-9_.]+/ || tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/) ||
+                              (tok.contains(':') && tok.split(':')[1].split('-').collect { v -> v.replace('_', '') as long }.with { r -> r[0] >= r[1] }) }
+        if (bad) {
+            error("--reconplot_regions: cannot parse ${bad.join(', ')}. Use a comma-separated list of `chr` or `chr:start-end` (start < end), e.g. \"chr8,chr17:30000000-50000000\".")
+        }
+    }
 }
 
 //

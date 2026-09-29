@@ -1,0 +1,97 @@
+nextflow_function {
+
+    name "Test SV annotation / plotting parameter checks"
+    script "../main.nf"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "sv_annotation"
+
+    // Launch-time checks only: nothing is staged and nothing touches the network.
+
+    // --- validateSvAnnotationParams: --reconplot_regions must parse before a 12 h run gets to ReConPlot
+
+    test("validateSvAnnotationParams accepts whole chromosomes and chr:start-end regions") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr8,chr17:30000000-50000000, 22:1_000-2_000'
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateSvAnnotationParams rejects a region whose start is not below its end") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr17:50000000-30000000'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('reconplot_regions') && line.contains('chr17:50000000-30000000') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams rejects a region that is not chr or chr:start-end") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr8,bogus:x-y'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('bogus:x-y') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams ignores --reconplot_regions when ReConPlot is skipped") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = true
+                reconplot_genome  = null
+                reconplot_regions = 'bogus:x-y'
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+}

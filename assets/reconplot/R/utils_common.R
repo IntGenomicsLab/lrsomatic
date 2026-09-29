@@ -225,7 +225,10 @@ sanitize_regions <- function(regions, cn) {
             paste(unique(regions$chr[missing_cn]), collapse = ", "))
     regions <- regions[!missing_cn, , drop = FALSE]
   }
-  if (nrow(regions) == 0) stop("No plottable regions left after filtering.")
+  if (nrow(regions) == 0) {
+    log_msg("WARNING: no plottable regions left after filtering; nothing will be drawn")
+    return(regions)
+  }
   regions$start[is.na(regions$start) | regions$start < 0] <- 0
   regions <- regions[order(match(regions$chr, MAIN_CHROMS), regions$start), , drop = FALSE]
   rownames(regions) <- NULL

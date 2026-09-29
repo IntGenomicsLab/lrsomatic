@@ -420,7 +420,7 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 | `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                       |
 | `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                         |
 | `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                     |
-| `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"`. Default = `null` (no focus panel) |
+| `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"` (syntax checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus panel is produced if none is left). Default = `null` (no focus panel) |
 | `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                    |
 | `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                         |
 | `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                |

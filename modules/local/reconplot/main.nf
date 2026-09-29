@@ -43,6 +43,9 @@ process RECONPLOT {
     def layout_cmd = cn_source == 'wakhan'
         ? "mkdir -p cn_input/solution_1/bed_output && mv cn_input/*.bed cn_input/solution_1/bed_output/"
         : ""
+    // The wrapper never fails for "nothing to draw": regions without copy number are skipped with a warning,
+    // and an empty result exits 0. The required per_chromosome/genome_wide outputs still fail the task when a
+    // sample has nothing plottable at all; the optional focus panel is simply absent.
     def focus_cmd = args3
         ? """
     Rscript ${reconplot_src}/run_reconplot.R ${source_args} --sample ${sample} --prefix ${sample} \\
