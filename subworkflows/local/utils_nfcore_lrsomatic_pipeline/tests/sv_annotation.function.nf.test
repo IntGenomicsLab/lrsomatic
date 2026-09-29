@@ -94,4 +94,48 @@ nextflow_function {
             assert function.success
         }
     }
+
+    // --- padfootGenome / padfootAnnotationOk: one gate, used by the workflow and by validateSvAnnotationParams
+
+    test("padfootGenome infers hg38 from --genome GRCh38") {
+        function "padfootGenome"
+        when { params { genome = 'GRCh38'; padfoot_genome = null } }
+        then { assert function.result == 'hg38' }
+    }
+
+    test("padfootGenome infers chm13 from --genome CHM13 and an explicit --padfoot_genome wins") {
+        function "padfootGenome"
+        when { params { genome = 'CHM13'; padfoot_genome = 'mm10' } }
+        then { assert function.result == 'mm10' }
+    }
+
+    test("padfootGenome is null for a genome without a preset") {
+        function "padfootGenome"
+        when { params { genome = 'GRCm38'; padfoot_genome = null } }
+        then { assert function.result == null }
+    }
+
+    test("padfootAnnotationOk is true on hg38 without extra annotations") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'GRCh38'; padfoot_genome = null; padfoot_gff = null; padfoot_rm = null } }
+        then { assert function.result == true }
+    }
+
+    test("padfootAnnotationOk is false on CHM13 without --padfoot_gff and --padfoot_rm") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'CHM13'; padfoot_genome = null; padfoot_gff = null; padfoot_rm = null } }
+        then { assert function.result == false }
+    }
+
+    test("padfootAnnotationOk is true on CHM13 with both --padfoot_gff and --padfoot_rm") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'CHM13'; padfoot_genome = null; padfoot_gff = '/data/chm13.gff3.gz'; padfoot_rm = '/data/chm13_rm.bed.gz' } }
+        then { assert function.result == true }
+    }
+
+    test("padfootAnnotationOk is false when no preset can be derived, even with both annotation files") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'GRCm38'; padfoot_genome = null; padfoot_gff = '/data/x.gff3.gz'; padfoot_rm = '/data/x_rm.bed.gz' } }
+        then { assert function.result == false }
+    }
 }

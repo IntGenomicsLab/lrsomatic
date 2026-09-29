@@ -318,19 +318,29 @@ def validateReportGenePanels() {
 }
 
 //
+// Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
+//
+def padfootGenome() {
+    return params.padfoot_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
+// Whether Padfoot can annotate on that preset: it bundles annotations for hg38 and mm10 only; any other
+// preset needs both --padfoot_gff and --padfoot_rm, and a null preset disables Padfoot even with them.
+// The workflow gate and validateSvAnnotationParams() both call this, so they cannot drift apart.
+//
+def padfootAnnotationOk() {
+    def genome = padfootGenome()
+    return (genome && ((genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))) as boolean
+}
+
+//
 // Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
 //
 def validateSvAnnotationParams() {
-    if (!params.skip_padfoot) {
-        def padfoot_genome = params.padfoot_genome ?:
-            (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
-        // Must mirror `padfoot_annot_ok` in workflows/lrsomatic.nf: a null genome disables
-        // Padfoot even when --padfoot_gff/--padfoot_rm are supplied.
-        def padfoot_annot_ok = padfoot_genome && ((padfoot_genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))
-        if (!padfoot_annot_ok) {
-            log.warn "Padfoot will be skipped: no annotations for genome '${params.genome}' (padfoot_genome=${padfoot_genome}). " +
-                "Set --padfoot_genome hg38|mm10, or set --padfoot_genome together with --padfoot_gff and --padfoot_rm."
-        }
+    if (!params.skip_padfoot && !padfootAnnotationOk()) {
+        log.warn "Padfoot will be skipped: no annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
+            "Set --padfoot_genome hg38|mm10, or set --padfoot_genome together with --padfoot_gff and --padfoot_rm."
     }
 
     if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {
