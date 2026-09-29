@@ -18,6 +18,7 @@ process PADFOOT {
     tuple val(meta), path("${prefix}/annotated_svs.tsv"), emit: annotated_svs
     tuple val(meta), path("${prefix}/by_gene.tsv")      , emit: by_gene
     tuple val(meta), path("${prefix}/padfoot.log")      , emit: log
+    tuple val(meta), path("${prefix}/staged.txt")       , emit: staged, optional: true // stub only: the staged inputs, for the tests
     path "versions.yml"                                 , emit: versions
 
     when:
@@ -64,6 +65,7 @@ process PADFOOT {
     """
     mkdir -p ${prefix}
     touch ${prefix}/annotated_svs.tsv ${prefix}/by_gene.tsv ${prefix}/padfoot.log
+    printf '%s\n' ${sv_vcf} ${cna_file} > ${prefix}/staged.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
