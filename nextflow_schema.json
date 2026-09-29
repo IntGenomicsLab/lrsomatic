@@ -91,13 +91,13 @@
                 },
                 "prioritize_caller_germline": {
                     "type": "string",
-                    "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
+                    "description": "When both germline callers are used, specifies whose record to keep where both callers call a position. Must be [deepvariant, clair].",
                     "default": "clair",
                     "enum": ["deepvariant", "clair"]
                 },
                 "prioritize_caller_somatic": {
                     "type": "string",
-                    "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
+                    "description": "When both somatic callers are used, specifies whose record to keep where both callers call a position. Must be [deepsomatic, clair].",
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
                 },

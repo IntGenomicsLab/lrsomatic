@@ -394,15 +394,15 @@ Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support n
 
 These options control how variants from multiple callers are filtered and merged.
 
-| Parameter                      | Description                                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `--germline_var_keep`          | Comma-separated germline callers to run: `deepvariant`, `clair`. Default = `clair`                            |
-| `--somatic_var_keep`           | Comma-separated somatic callers to run: `deepsomatic`, `clair`. Default = `clair`                             |
-| `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`     |
-| `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`      |
-| `--prioritize_caller_germline` | Whose record to use for variants called by both germline callers: `deepvariant` or `clair`. Default = `clair` |
-| `--prioritize_caller_somatic`  | Whose record to use for variants called by both somatic callers: `deepsomatic` or `clair`. Default = `clair`  |
-| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                            |
+| Parameter                      | Description                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`          | Comma-separated germline callers to run: `deepvariant`, `clair`. Default = `clair`                          |
+| `--somatic_var_keep`           | Comma-separated somatic callers to run: `deepsomatic`, `clair`. Default = `clair`                           |
+| `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`   |
+| `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`    |
+| `--prioritize_caller_germline` | Whose record to use where both germline callers call a variant: `deepvariant` or `clair`. Default = `clair` |
+| `--prioritize_caller_somatic`  | Whose record to use where both somatic callers call a variant: `deepsomatic` or `clair`. Default = `clair`  |
+| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                          |
 
 DeepVariant and DeepSomatic emit a record for every site they evaluate, not only
 for the variants they call, so most of their records are `RefCall`, `GERMLINE` or
@@ -423,11 +423,17 @@ records are passed on with their original `FILTER`. Only the ClairS-TO germline
 split is normalised to `PASS`, with its original value kept in
 `INFO/ORIG_FILTER`.
 
-`consensus` keeps only variants called by both callers; `all` keeps the union, i.e.
-every variant called by either. In both modes `--prioritize_caller_*` chooses only
-whose record represents a variant that both callers found -- it never decides which
-variants are kept. Multi-allelic records are split so they can be matched across
-callers, and rejoined before phasing.
+`consensus` keeps only alleles called by both callers, using the prioritised
+caller's record. Multi-allelic records are split so each allele can be matched
+across callers, and rejoined before phasing. A multi-allelic call of which only one
+allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
+and its `PL` values for the dropped allele are lost.
+
+`all` keeps the union by position: every record of the prioritised caller, plus
+the other caller's records at positions where the prioritised caller has none.
+Where both callers call a position, even with different alleles, only the
+prioritised caller's record is kept, so each output record is one caller's call.
+Records are not split in this mode.
 
 #### Germline and somatic provenance
 
