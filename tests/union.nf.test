@@ -51,16 +51,19 @@ nextflow_pipeline {
                     assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
                 },
 
-                // ── Phased union VCFs exist and have data ────────────────────
+                // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
+                { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                // ── 'all' mode keeps one caller's record per position ────────
                 {
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
-                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
-                        assert germline.exists()
-                        assert somatic.exists()
-                        assert germline.size() > 0
-                        assert somatic.size() > 0
+                        def germ = PhasedVcf.records("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def pos  = germ.collect { "${it[0]}:${it[1]}" }
+                        assert pos.size() == pos.toUnique().size() : "${s}: two germline records at one position"
                     }
+                    // DeepVariant calls T>A,G 1/2 here and Clair3 T>A 1/1; the prioritised Clair3 record is kept whole
+                    def site = PhasedVcf.records("$outputDir/sample2/variants/phased/germline_smallvariants.vcf.gz")
+                        .find { it[0] == 'chr19' && it[1] == '24897193' }
+                    assert site && site[4] == 'A' && site[7].split(';').contains('CALLER=clair3')
                 },
 
                 // ── BAM files ────────────────────────────────────────────────
@@ -141,15 +144,19 @@ nextflow_pipeline {
                     assert !versions.text.contains('_PASS_FILTER')
                 },
 
-                // ── Phased VCFs still exist and have data ────────────────────
+                // ── Phased VCFs keep non-PASS records; somatic 0/0 records are not phased ──
                 {
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
-                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
-                        assert germline.exists()
-                        assert somatic.exists()
-                        assert germline.size() > 0
-                        assert somatic.size() > 0
+                        def germ = PhasedVcf.records("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def som  = PhasedVcf.records("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
+                        assert !som.isEmpty() : "${s}: phased somatic VCF has no records"
+                        assert germ.any { it[6] != 'PASS' } : "${s}: no non-PASS germline record with the filter off"
+                        assert som.any { it[6] != 'PASS' } : "${s}: no non-PASS somatic record with the filter off"
+                        assert som.every { PhasedVcf.hasFlag(it, 'SOMATIC') } : "${s}: somatic record without INFO/SOMATIC"
+                        // LongPhase would copy a colliding germline record's phase onto a non-alt somatic record
+                        assert som.findAll { !PhasedVcf.isAlt(it) }.every { PhasedVcf.format(it, 'PS') in [null, '.'] } :
+                            "${s}: non-alt somatic record carries a phase set"
                     }
                 }
             )
