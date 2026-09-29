@@ -105,7 +105,7 @@ option_list <- list(
   make_option("--height", type = "double", default = NULL, help = "Figure height (in)"),
 
   make_option("--baf-track", action = "store_true", default = FALSE,
-              help = "Add a het-SNP BAF annotation panel (SAVANA only)"),
+              help = "Add a het-SNP BAF annotation panel (ASCAT: <sample>.tumour_tumourBAF.txt; SAVANA: allele counts BED)"),
   make_option("--annotation-file", type = "character", default = NULL,
               help = "Explicit annotation source (het-SNP BED for --baf-track)"),
   make_option("--baf-max-points", type = "integer", default = 5000,
@@ -171,6 +171,13 @@ regions <- if (!is.null(args$regions_file)) {
   parse_regions(args$regions, cn, genome = args$genome)
 }
 regions <- sanitize_regions(regions, cn)
+if (nrow(regions) == 0) {
+  ## e.g. --regions naming only contigs without copy number: not an error for an optional panel.
+  ## The caller decides whether the missing output matters (the pipeline's per-chromosome and
+  ## genome-wide figures are required outputs of the module, the focus panel is optional).
+  log_msg("done: 0 file(s) written to ", args$outdir, " (no plottable regions)")
+  quit(status = 0)
+}
 log_msg(sprintf("%d region(s) to plot", nrow(regions)))
 
 combined <- collapse_duplicate_chroms(regions)
@@ -214,4 +221,4 @@ written <- plot_region_sets(
 )
 
 log_msg(sprintf("done: %d file(s) written to %s", length(written), args$outdir))
-if (length(written) == 0) quit(status = 1)
+if (length(written) == 0) log_msg("WARNING: no figure was written for the requested regions")
