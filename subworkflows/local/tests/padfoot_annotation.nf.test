@@ -12,7 +12,8 @@ nextflow_workflow {
 
     // Padfoot needs whole-genome caller output, so the pipeline tests skip it. Under -stub what is
     // tested is the pairing: Severus SVs + the top-ranked Wakhan solution, SAVANA SVs + SAVANA copy
-    // number, and that a sample missing one side of a pair is dropped rather than failing the run.
+    // number, that a sample missing one side of a pair is dropped rather than failing the run, and
+    // which files each task actually received (the stub lists them in <prefix>/staged.txt).
 
     test("Severus + Wakhan and SAVANA pairs form per sample") {
 
@@ -57,15 +58,20 @@ nextflow_workflow {
 
         then {
             def tasks = workflow.trace.tasks().collect { task -> task.name }
+            // conf/modules.config publishes each task's <prefix>/ under <outdir>/<sample>/padfoot/
+            def staged = { String rel -> path("$outputDir/${rel}/staged.txt").text.trim().split('\n') as List }
 
             assertAll(
                 { assert workflow.success },
                 // sample1 only: sample2 has no integer-CN VCF to pair with
                 { assert tasks.count { name -> name.contains('PADFOOT_SEVERUS_WAKHAN') } == 1 },
                 { assert tasks.any { name -> name.contains('PADFOOT_SEVERUS_WAKHAN (sample1:') } },
+                // ... and it received the Severus VCF with solution_1's integer-CN VCF, not solution_2's or the subclonal one
+                { assert staged('sample1/padfoot/severus_wakhan') == ['severus_somatic.vcf.gz', 'sample1_2.0_1.0_wakhan_cna_integers.vcf'] },
                 // sample1 only: sample3 has SAVANA SVs but no copy-number fit
                 { assert tasks.count { name -> name.contains('PADFOOT_SAVANA') } == 1 },
                 { assert tasks.any { name -> name.contains('PADFOOT_SAVANA (sample1:') } },
+                { assert staged('sample1/padfoot/savana') == ['sample1.classified.somatic.vcf', 'sample1_segmented_absolute_copy_number.tsv'] },
                 { assert workflow.out.versions.size() >= 1 }
             )
         }

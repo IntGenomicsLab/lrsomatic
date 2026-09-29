@@ -20,6 +20,7 @@ process RECONPLOT {
     tuple val(meta), path("${prefix}/focus/*.{pdf,png}")         , emit: focus  , optional: true
     tuple val(meta), path("${prefix}/*.reconplot_{cn,sv}.tsv")   , emit: tables
     tuple val(meta), path("${prefix}/reconplot.log")             , emit: log
+    tuple val(meta), path("${prefix}/staged.txt")                , emit: staged, optional: true // stub only: the staged inputs, for the tests
     path "versions.yml"                                          , emit: versions
 
     when:
@@ -79,6 +80,7 @@ process RECONPLOT {
     touch ${prefix}/per_chromosome/${meta.id}_chr1.pdf ${prefix}/per_chromosome/${meta.id}_chr1.png
     touch ${prefix}/genome_wide/${meta.id}_genome_wide.pdf ${prefix}/genome_wide/${meta.id}_genome_wide.png
     touch ${prefix}/${meta.id}.reconplot_cn.tsv ${prefix}/${meta.id}.reconplot_sv.tsv ${prefix}/reconplot.log
+    { ls -1 cn_input/* sv_input/* 2>/dev/null || true; } | sort > ${prefix}/staged.txt   # sv_input is absent in single-source mode
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
