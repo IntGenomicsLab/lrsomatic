@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -1299,9 +1300,8 @@ workflow LRSOMATIC {
     // Padfoot bundles annotations for hg38 and mm10 only; other genomes need --padfoot_gff and --padfoot_rm
     // (validateInputParameters() warns when this gate is not met).
     //
-    def padfoot_genome = params.padfoot_genome ?:
-        (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
-    def padfoot_annot_ok = padfoot_genome && ((padfoot_genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))
+    def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
+    def padfoot_annot_ok = padfootAnnotationOk()
 
     if (!params.skip_padfoot && padfoot_annot_ok) {
         PADFOOT_ANNOTATION (
