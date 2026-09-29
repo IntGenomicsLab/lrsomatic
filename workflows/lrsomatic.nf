@@ -190,6 +190,15 @@ workflow LRSOMATIC {
     if (params.clairsto_cna_resources && !params.skip_ascat) {
         log.warn("--clairsto_cna_resources is ignored without --skip_ascat: Verdict's germline tagging then comes from ASCAT's purity and copy number.")
     }
+    // Tumour-only DeepVariant germline calls are adjudicated only by DeepSomatic's verdict; warn once if it is not run
+    if (params.germline_var_keep.contains('deepvariant') && !params.somatic_var_keep.contains('deepsomatic')) {
+        ch_samplesheet
+            .filter { meta, _bams -> !meta.paired_data }
+            .first()
+            .subscribe { meta, _bams ->
+                log.warn("Tumour-only samples (e.g. ${meta.id}) use DeepVariant germline calls without DeepSomatic's verdict, so they may include somatic variants. Add 'deepsomatic' to --somatic_var_keep to filter them.")
+            }
+    }
     // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
     build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
 
