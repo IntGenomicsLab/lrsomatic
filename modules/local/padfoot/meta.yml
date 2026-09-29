@@ -51,12 +51,6 @@ input:
         pattern: "*.fai"
   - - meta4:
         type: map
-        description: Groovy Map for the Padfoot source
-    - padfoot_src:
-        type: directory
-        description: Padfoot source tree containing `padfoot.py`, `padfoot/` and `beds/` (Padfoot is not on bioconda)
-  - - meta5:
-        type: map
         description: Groovy Map for annotations
     - genome:
         type: string

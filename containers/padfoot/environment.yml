@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
-# Runtime dependencies for Padfoot (https://github.com/KolmogorovLab/Padfoot); Padfoot itself is not on
-# bioconda and is staged as source (see params.padfoot_url / params.padfoot_dir).
+# Runtime dependencies for Padfoot (https://github.com/KolmogorovLab/Padfoot), used only to build
+# containers/padfoot/Dockerfile; Padfoot itself is not on bioconda and is installed into the image from a pinned commit.
 channels:
   - conda-forge
   - bioconda

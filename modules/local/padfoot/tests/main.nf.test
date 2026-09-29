@@ -28,8 +28,7 @@ nextflow_process {
                 ]
                 input[1] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true) ]
                 input[2] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true) ]
-                input[3] = [ [ id:'padfoot' ], file("${moduleDir}", checkIfExists: true) ]
-                input[4] = [ [:], 'hg38', [], [] ]
+                input[3] = [ [:], 'hg38', [], [] ]
                 """
             }
         }
@@ -58,8 +57,7 @@ nextflow_process {
                 ]
                 input[1] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true) ]
                 input[2] = [ [ id:'ref' ], file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true) ]
-                input[3] = [ [ id:'padfoot' ], file("${moduleDir}", checkIfExists: true) ]
-                input[4] = [ [:], 'hg38', [], [] ]
+                input[3] = [ [:], 'hg38', [], [] ]
                 """
             }
         }

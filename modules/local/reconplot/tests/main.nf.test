@@ -27,8 +27,7 @@ nextflow_process {
                     [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true) ]
                 ]
                 input[1] = [ [ id:'reconplot' ],     file("${projectDir}/modules/local/reconplot", checkIfExists: true) ]
-                input[2] = [ [ id:'reconplot_pkg' ], file("${projectDir}/modules/local/padfoot", checkIfExists: true) ]
-                input[3] = 'hg38'
+                input[2] = 'hg38'
                 """
             }
         }
@@ -56,8 +55,7 @@ nextflow_process {
                     []
                 ]
                 input[1] = [ [ id:'reconplot' ],     file("${projectDir}/modules/local/reconplot", checkIfExists: true) ]
-                input[2] = [ [ id:'reconplot_pkg' ], file("${projectDir}/modules/local/padfoot", checkIfExists: true) ]
-                input[3] = 'hg38'
+                input[2] = 'hg38'
                 """
             }
         }
