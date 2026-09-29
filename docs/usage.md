@@ -397,11 +397,11 @@ RepeatMasker (used only to classify the sequence of novel insertions) runs by de
 
 Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.
 
-| Parameter                    | Description                                                                                                                                                                                                    |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                                                                   |
-| `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                                                                        |
-| `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                                                                     |
+| Parameter                    | Description                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                    |
+| `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                         |
+| `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                      |
 | `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions); the image ships the Dfam 4.0 root and curated-consensus partitions. Default = `true` |
 
 #### ReConPlot Options
@@ -414,16 +414,16 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 
 Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track. Both the wrapper and the ReConPlot R package (neither on conda) are staged as source from GitHub (or local checkouts for offline systems); the default container ships the package pre-installed, while `-profile conda` installs it at run time.
 
-| Parameter                  | Description                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)  |
-| `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                       |
-| `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                         |
-| `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                     |
+| Parameter                  | Description                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)                                                                                                                                                       |
+| `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                                                                                                                                                                            |
+| `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                                                                                                                                                                              |
+| `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                                                                                                                                                                          |
 | `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"` (syntax checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus panel is produced if none is left). Default = `null` (no focus panel) |
-| `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                    |
-| `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                         |
-| `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                |
+| `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                                                                                                                                                                         |
+| `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                                                                                                                                                                              |
+| `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                                                                                                                                                                     |
 
 ##### Offline and air-gapped systems
 
@@ -666,7 +666,8 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
   AlphaMissense covers the same class of variant and is CC BY 4.0.
 - **SpliceAI** — not currently wired up on either assembly.
 
-> [!IMPORTANT] > **REVEL is enabled by default and is free for non-commercial use only**; CADD and EVE, if you
+> [!IMPORTANT]
+> **REVEL is enabled by default and is free for non-commercial use only**; CADD and EVE, if you
 > enable them, are the same. The pipeline cannot accept those terms on your behalf: if your work is
 > commercial, pass `--skip_vep_plugins`, or set only the resources you are licensed for.
 
