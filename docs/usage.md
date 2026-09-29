@@ -438,6 +438,13 @@ phase blocks. The somatic arm is then recovered from the phased result by an
 germline record at the same coordinate as a somatic call would otherwise be kept.
 Tagging leaves `FILTER` unchanged.
 
+Longphase phases by position, so a germline record at the position of a somatic
+call would lend the somatic record its genotype and phase set. Germline records
+at the position of any somatic call with an alternate genotype are therefore
+left out of somatic phasing. Somatic records without an alternate genotype
+(`0/0` or `./.`, present only with `--smallvar_filter_pass false`) are not
+phased: they are added back to `somatic_smallvariants.vcf.gz` unchanged.
+
 Three INFO fields carry this provenance:
 
 | Field         | Meaning                                                                                                               |

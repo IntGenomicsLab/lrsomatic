@@ -1,0 +1,77 @@
+name: bcftools_exclude_sites
+description: Remove every record of a VCF at a position (CHROM:POS) that a mask VCF also has, regardless of alleles
+keywords:
+  - filtering
+  - VCF
+  - positions
+tools:
+  - view:
+      description: VCF/BCF conversion, view, subset and filter VCF/BCF files.
+      homepage: http://samtools.github.io/bcftools/bcftools.html
+      documentation: http://www.htslib.org/doc/bcftools.html
+      tool_dev_url: https://github.com/samtools/bcftools
+      doi: "10.1093/bioinformatics/btp352"
+      licence: ["MIT"]
+      identifier: biotools:bcftools
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information e.g. [ id:'test' ]
+    - vcf:
+        type: file
+        description: VCF to remove records from
+        pattern: "*.vcf.gz"
+    - tbi:
+        type: file
+        description: Tabix index of the VCF
+        pattern: "*.tbi"
+    - mask:
+        type: file
+        description: VCF whose record positions are removed from the input
+        pattern: "*.vcf.gz"
+    - mask_tbi:
+        type: file
+        description: Tabix index of the mask VCF
+        pattern: "*.tbi"
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz:
+          type: file
+          description: Input VCF without the records at mask positions
+          pattern: "*.vcf.gz"
+  tbi:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz.tbi:
+          type: file
+          description: Tabix index of the output VCF
+          pattern: "*.tbi"
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"
