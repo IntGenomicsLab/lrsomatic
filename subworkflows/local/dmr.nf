@@ -104,11 +104,19 @@ workflow DMR {
         }
         .set { modkit_dmr_input }
 
+    // MODKIT_DMR's fai input only avoids rebuilding the index on every task -- see the
+    // module's own script comment. fasta/fai are each a single [[:], path] value channel
+    // (take: comments above), so .first() on each stays correct after the join.
+    fasta.first()
+        .combine(fai.first())
+        .map { meta, fasta_file, _meta2, fai_file -> [meta, fasta_file, fai_file] }
+        .set { fasta_with_fai }
+
     MODKIT_DMR (
         modkit_dmr_input.hp1,
         modkit_dmr_input.hp2,
         modkit_dmr_input.regions,
-        fasta.first()
+        fasta_with_fai
     )
 
     //

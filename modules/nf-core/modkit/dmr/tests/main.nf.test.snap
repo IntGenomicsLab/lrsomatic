@@ -1,46 +1,15 @@
 {
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta": {
         "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,c57c0b35ce975dbafa19f3b4b5604dec"
+                ]
+            ],
             {
-                "0": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,c57c0b35ce975dbafa19f3b4b5604dec"
-                    ]
-                ],
-                "1": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,c30c1b33203d139e5648d847cac4ab05"
-                    ]
-                ],
-                "2": [
-                    [
-                        "MODKIT_DMR",
-                        "modkit",
-                        "0.6.1"
-                    ]
-                ],
-                "bed": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,c57c0b35ce975dbafa19f3b4b5604dec"
-                    ]
-                ],
-                "log": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,c30c1b33203d139e5648d847cac4ab05"
-                    ]
-                ],
                 "versions_modkit": [
                     [
                         "MODKIT_DMR",
@@ -54,50 +23,19 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-24T09:10:47.411811907"
+        "timestamp": "2026-09-29T11:00:29.834449326"
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], [], fasta": {
         "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,e1ed04436fd4aee1c05fa4a612846417"
+                ]
+            ],
             {
-                "0": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,e1ed04436fd4aee1c05fa4a612846417"
-                    ]
-                ],
-                "1": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,256a0a5feab178024236ffc0b3a18c38"
-                    ]
-                ],
-                "2": [
-                    [
-                        "MODKIT_DMR",
-                        "modkit",
-                        "0.6.1"
-                    ]
-                ],
-                "bed": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,e1ed04436fd4aee1c05fa4a612846417"
-                    ]
-                ],
-                "log": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,256a0a5feab178024236ffc0b3a18c38"
-                    ]
-                ],
                 "versions_modkit": [
                     [
                         "MODKIT_DMR",
@@ -111,50 +49,19 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-24T09:10:55.676443925"
+        "timestamp": "2026-09-29T11:00:38.70209544"
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta - stub": {
         "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ],
             {
-                "0": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
-                    ]
-                ],
-                "1": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,d41d8cd98f00b204e9800998ecf8427e"
-                    ]
-                ],
-                "2": [
-                    [
-                        "MODKIT_DMR",
-                        "modkit",
-                        "0.6.1"
-                    ]
-                ],
-                "bed": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
-                    ]
-                ],
-                "log": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.log:md5,d41d8cd98f00b204e9800998ecf8427e"
-                    ]
-                ],
                 "versions_modkit": [
                     [
                         "MODKIT_DMR",
@@ -168,6 +75,6 @@
             "nf-test": "0.9.0",
             "nextflow": "25.10.2"
         },
-        "timestamp": "2026-09-24T09:11:03.403287933"
+        "timestamp": "2026-09-29T11:00:46.52021922"
     }
 }
