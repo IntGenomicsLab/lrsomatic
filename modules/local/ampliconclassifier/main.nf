@@ -32,14 +32,21 @@ process AMPLICONCLASSIFIER {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    export AA_DATA_REPO=\$(readlink -f aa_data_repo)
+    # A downloaded repo arrives as the <ref> dir itself (UNTAR strips it); AC wants its parent
+    if [ -e aa_data_repo/file_list.txt ]; then
+        mkdir repo
+        ln -s "\$(readlink -f aa_data_repo)" repo/${ac_ref}
+        export AA_DATA_REPO=\$PWD/repo
+    else
+        export AA_DATA_REPO=\$(readlink -f aa_data_repo)
+    fi
 
     amplicon_classifier.py \\
         --ref ${ac_ref} \\
         --AA_results ${reconstruction} \\
         -o ${prefix} \\
         ${args} \\
-        > ${prefix}_classifier.log 2>&1
+        2>&1 | tee ${prefix}_classifier.log
     """
 
     stub:
