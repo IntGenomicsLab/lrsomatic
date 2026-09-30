@@ -35,10 +35,10 @@
                     "longphase": "2.0.1"
                 },
                 "LONGPHASE_MODCALL_GERMLINE": {
-                    "longphase": "2.0.1"
+                    "longphase": "2.0.2"
                 },
                 "LONGPHASE_MODCALL_SOMATIC": {
-                    "longphase": "2.0.1"
+                    "longphase": "2.0.2"
                 },
                 "LONGPHASE_PHASE_GERMLINE": {
                     "longphase": "2.0.1"
@@ -597,7 +597,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-09-25T16:06:17.446805978",
+        "timestamp": "2026-09-30T22:15:22.330973314",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
