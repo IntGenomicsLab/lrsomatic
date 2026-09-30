@@ -1,6 +1,58 @@
 Changes in component 'nf-core/minimap2/align'
 'modules/nf-core/minimap2/align/environment.yml' is unchanged
-'modules/nf-core/minimap2/align/meta.yml' is unchanged
+Changes in 'minimap2/align/meta.yml':
+--- modules/nf-core/minimap2/align/meta.yml
++++ modules/nf-core/minimap2/align/meta.yml
+@@ -38,11 +38,14 @@
+           Reference database in FASTA format.
+         ontologies: []
+   - bam_format:
+-      type: boolean
+-      description: Specify that output should be in BAM format
++      type: string
++      description: |
++        Alignment output format: 'bam' (or true) for a coordinate-sorted BAM, 'cram'
++        for a coordinate-sorted CRAM encoded against `reference` (options such as
++        the CRAM version via ext.args2), false for PAF
+   - bam_index_extension:
+       type: string
+-      description: BAM alignment index extension (e.g. "bai")
++      description: Alignment index extension (e.g. "bai", "csi" or "crai")
+   - cigar_paf_format:
+       type: boolean
+       description: Specify that output CIGAR should be in PAF format
+@@ -74,16 +77,27 @@
+           description: Alignment in BAM format
+           pattern: "*.bam"
+           ontologies: []
++  cram:
++    - - meta:
++          type: map
++          description: |
++            Groovy Map containing sample information
++            e.g. [ id:'test', single_end:false ]
++      - "*.cram":
++          type: file
++          description: Alignment in CRAM format (bam_format 'cram')
++          pattern: "*.cram"
++          ontologies: []
+   index:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+             e.g. [ id:'test', single_end:false ]
+-      - "*.bam.${bam_index_extension}":
++      - "*.{bam,cram}.${bam_index_extension}":
+           type: file
+-          description: BAM alignment index
+-          pattern: "*.bam.*"
++          description: BAM or CRAM alignment index
++          pattern: "*.{bam,cram}.*"
+           ontologies: []
+   versions_minimap2:
+     - - ${task.process}:
+
 Changes in 'minimap2/align/main.nf':
 --- modules/nf-core/minimap2/align/main.nf
 +++ modules/nf-core/minimap2/align/main.nf

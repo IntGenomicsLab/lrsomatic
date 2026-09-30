@@ -138,6 +138,27 @@ nextflow_pipeline {
                     }
                 },
 
+                // ── Read groups ──────────────────────────────────────────────
+                {
+                    // CRAM keeps one RG per record: each one must be declared in the file's
+                    // header (a second, undeclared RG, e.g. the basecaller's, would win), and
+                    // sample4's merge must keep both replicates' read groups
+                    ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
+                     'sample3_tumor', 'sample4_tumor', 'sample5_tumor'].each { name ->
+                        def s = name.tokenize('_')[0]
+                        def reader = htsjdk.samtools.SamReaderFactory.makeDefault()
+                            .validationStringency(htsjdk.samtools.ValidationStringency.SILENT)
+                            .open(new File("$launchDir/output/${s}/bamfiles/${name}.cram"))
+                        def ids = reader.getFileHeader().getReadGroups()*.getId() as Set
+                        def undeclared = reader.iterator().findAll { !(it.getAttribute('RG') in ids) }.size()
+                        reader.close()
+                        assert undeclared == 0 : "${name}.cram: ${undeclared} records carry an RG missing from the header ${ids}"
+                        if (s == 'sample4') {
+                            assert ids == ['sample4_tumor_rep1', 'sample4_tumor_rep2'] as Set
+                        }
+                    }
+                },
+
                 // ── sample4: merged CRAM content ─────────────────────────────
                 {
                     // sample4's merged CRAM has an unstable md5 (see tests/.nftignore), so
