@@ -8,14 +8,17 @@ pipeline in `assets/reconplot/`. The module does not support `-profile conda`: t
 Build and publish from the pipeline root:
 
 ```bash
-export RECONPLOT_IMAGE=<registry>/reconplot:0.2-r4.4
-docker build -f containers/reconplot/Dockerfile -t "$RECONPLOT_IMAGE" .
-docker push "$RECONPLOT_IMAGE"
+TAG=0.2-r4.4
+docker build -f containers/reconplot/Dockerfile -t "ghcr.io/tim-yu/reconplot:$TAG" .
+docker push "ghcr.io/tim-yu/reconplot:$TAG"
+# the SIF twin, built from the image just pushed and published with ORAS (singularity remote login first)
+singularity build "reconplot-$TAG.sif" "docker-daemon://ghcr.io/tim-yu/reconplot:$TAG"
+singularity push "reconplot-$TAG.sif" "oras://ghcr.io/tim-yu/reconplot-sif:$TAG"
 ```
 
-Pin the pushed digest in the `container` directive of `modules/local/reconplot/main.nf` (or override per site via
-`process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`). The module currently pins
-`ghcr.io/tim-yu/reconplot@sha256:1145fc5aebe0227bec371f4c59b08b9a09871498e403c01b83f83973149ae9e7`.
+The module pins both to the same tag in `modules/local/reconplot/main.nf` (`oras://ghcr.io/tim-yu/reconplot-sif:<tag>`
+under Singularity/Apptainer, `ghcr.io/tim-yu/reconplot:<tag>` otherwise); override per site via
+`process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
 
 The R dependencies come from `containers/reconplot/environment.yml`. To update ReConPlot, change
-`RECONPLOT_COMMIT` in the Dockerfile, rebuild, push and re-pin the digest.
+`RECONPLOT_COMMIT` in the Dockerfile, rebuild, push both images and bump the tags.
