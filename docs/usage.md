@@ -705,9 +705,10 @@ licence. Gurobi is available with:
 --coral_solver gurobi_direct --gurobi_license /path/to/gurobi.lic
 ```
 
-The licence is bind-mounted into the CoRAL tasks; it is never baked into the image. Under Gurobi the
+The licence is mounted into the CoRAL tasks (`--bind` under Singularity/Apptainer, `--volume` under
+Docker/Podman), so give an absolute path; it is never baked into the image. Under Gurobi the
 reconstruction steps are serialised (`maxForks = 1`), because a Web License Service licence caps
-concurrent solver sessions.
+concurrent solver sessions, and the solver uses the task's CPUs. SCIP runs single-threaded.
 
 Gurobi is faster, but on the models this pipeline produces that has not mattered: across 1102 solver
 logs from the earlier standalone cohort, the largest model was 620 rows by 438 columns and the
@@ -717,15 +718,24 @@ you have measured a reason not to.
 ### AmpliconClassifier reference data
 
 AmpliconClassifier reads an AmpliconArchitect data repository at runtime. For `--genome GRCh38` it is
-downloaded automatically (about 1.1 GB) and needs no configuration. For `--genome CHM13` there is no
-published repository, so one must be supplied:
+downloaded automatically (about 1.1 GB) and checked against the MD5 the host publishes
+(`--aa_data_repo_md5`), so a re-published repository fails the run rather than changing results
+silently. The download and its ~4 GB unpack repeat on every run; to avoid both, extract
+`GRCh38.tar.gz` once and pass it:
+
+```bash
+--aa_data_repo /path/to/GRCh38
+```
+
+For `--genome CHM13` there is no published repository. Without `--aa_data_repo` the classifier is
+skipped with a warning and reconstruction still runs:
 
 ```bash
 --genome CHM13 --aa_data_repo /path/to/AA_DATA_REPO
 ```
 
-The directory must contain a `CHM13/` subdirectory. Alternatively run reconstruction alone with
-`--skip_ampliconclassifier`, which needs no reference data.
+`--aa_data_repo` may be the reference directory itself (`GRCh38/`, `CHM13/`) or the directory that
+contains it. `--skip_ampliconclassifier` drops classification explicitly and needs no reference data.
 
 ### Tuning
 

@@ -368,7 +368,8 @@ amplicon (ecDNA, BFB, linear, and so on). Runs on every tumour sample with ASCAT
 A sample with no segment above `--coral_gain` produces an empty seed BED and is skipped with a log
 message rather than failing. CoRAL defaults to the open-source SCIP solver; `--coral_solver
 gurobi_direct` is faster but needs `--gurobi_license`. AmpliconClassifier needs an AmpliconArchitect
-data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13.
+data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13;
+a CHM13 run without one skips classification with a warning.
 
 ```
 ├── ecdna
@@ -391,20 +392,20 @@ data repository, downloaded automatically for GRCh38 and supplied with `--aa_dat
 │       └── sample_classification_bed_files/
 ```
 
-| File                                            | Description                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `sample_coral_cn.bed`                           | ASCAT's copy number as the BED CoRAL seeds from                                |
-| `sample_CNV_SEEDS.bed`                          | Amplified intervals above `--coral_gain`; empty means no amplicons             |
-| `sample_amplicon<N>_graph.txt`                  | Breakpoint graph per amplicon, in AmpliconArchitect format                     |
-| `sample_amplicon<N>_cycles.txt`                 | Decomposed cycles and paths per amplicon                                       |
-| `sample_summary.txt`                            | Per-run amplicon summary; written even when no amplicon is found               |
-| `sample_reconstruct.log`                        | CoRAL reconstruction log, including solver output                              |
-| `sample_amplicon<N>_{graph,cycles}.png`         | Per-amplicon copy-number and cycle plots                                       |
-| `sample_amplicon_classification_profiles.tsv`   | The headline call per amplicon: ecDNA+, BFB+, decomposition class              |
-| `sample_gene_list.tsv`                          | Genes intersecting each classified amplicon                                    |
-| `sample_ecDNA_counts.tsv`                       | Number of distinct ecDNA species detected                                      |
-| `sample_result_table.tsv`                       | Combined per-sample table, the format AmpliconRepository ingests               |
-| `sample_classification_bed_files/`              | Per-feature BED intervals for each classified amplicon                         |
+| File                                          | Description                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| `sample_coral_cn.bed`                         | ASCAT's copy number as the BED CoRAL seeds from                    |
+| `sample_CNV_SEEDS.bed`                        | Amplified intervals above `--coral_gain`; empty means no amplicons |
+| `sample_amplicon<N>_graph.txt`                | Breakpoint graph per amplicon, in AmpliconArchitect format         |
+| `sample_amplicon<N>_cycles.txt`               | Decomposed cycles and paths per amplicon                           |
+| `sample_summary.txt`                          | Per-run amplicon summary; written even when no amplicon is found   |
+| `sample_reconstruct.log`                      | CoRAL reconstruction log, including solver output                  |
+| `sample_amplicon<N>_{graph,cycles}.png`       | Per-amplicon copy-number and cycle plots                           |
+| `sample_amplicon_classification_profiles.tsv` | The headline call per amplicon: ecDNA+, BFB+, decomposition class  |
+| `sample_gene_list.tsv`                        | Genes intersecting each classified amplicon                        |
+| `sample_ecDNA_counts.tsv`                     | Number of distinct ecDNA species detected                          |
+| `sample_result_table.tsv`                     | Combined per-sample table, the format AmpliconRepository ingests   |
+| `sample_classification_bed_files/`            | Per-feature BED intervals for each classified amplicon             |
 
 #### `savana`
 
