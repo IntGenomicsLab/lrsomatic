@@ -18,7 +18,7 @@ Build and publish from the pipeline root:
 export PADFOOT_IMAGE=<registry>/padfoot-repeatmasker:4.2.4-dfam4-padfoot-<padfoot commit>
 docker build -f containers/padfoot/Dockerfile -t "$PADFOOT_IMAGE" .
 docker push "$PADFOOT_IMAGE"
-docker inspect --format '{{index .RepoDigests 0}}' "$PADFOOT_IMAGE"
+docker images --digests "$PADFOOT_IMAGE"   # the DIGEST column is what the module pins
 ```
 
 Pin the pushed digest in the `container` directive of `modules/local/padfoot/main.nf`, or override per site:
