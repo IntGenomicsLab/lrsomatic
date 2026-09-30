@@ -316,7 +316,7 @@ workflow LRSOMATIC {
         // Output: cramino_pre.out.arrow -- [meta, arrow_file] (feather format stats)
         //
 
-        CRAMINO_PRE( ch_samplesheet )
+        CRAMINO_PRE( ch_samplesheet, [[:], []] )
 
         if (!params.skip_nanoplot) {
 
@@ -504,22 +504,27 @@ workflow LRSOMATIC {
     // MODULE: MINIMAP2_ALIGN (label: process_high) -- once per replicate; @RG encodes sample, type and replicate
     // Input:  [meta_with_replicate, bam]  -- unaligned BAM per replicate
     //         ch_fasta     -- [[:], fasta]
-    //         sort_bam=true, cigar_paf_format='bai', cigar_bam='', split_prefix=''
-    // Output: .bam   -- [meta_with_replicate, bam]  -- coordinate-sorted aligned BAM
-    //         .index -- [meta_with_replicate, bai]  -- BAM index
+    //         bam_format=params.aligned_format ('cram' or 'bam'), bam_index_extension='crai' or 'bai'
+    // Output: .cram / .bam -- [meta_with_replicate, alignments]  -- coordinate-sorted; CRAM is reference-compressed
+    //         .index       -- [meta_with_replicate, crai or bai]
     //
+
+    def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
     MINIMAP2_ALIGN (
         ch_ubams,
         ch_fasta,
-        true,
-        'bai',
+        params.aligned_format,
+        aligned_index,
         "",
         ""
     )
 
-    // Join BAM with index, drop the replicate field, group per sample; single-replicate samples skip SAMTOOLS_MERGE
+    // Join alignments with index, drop the replicate field, group per sample; single-replicate samples skip SAMTOOLS_MERGE.
+    // Downstream tuples keep the [meta, bam, bai] names whichever format --aligned_format picks; every consumer
+    // reads CRAM through the same slots.
     MINIMAP2_ALIGN.out.bam
+        .mix(MINIMAP2_ALIGN.out.cram)
         .join(MINIMAP2_ALIGN.out.index)
         .map { meta, bam, bai ->
             def new_meta = meta.subMap('id',
@@ -555,22 +560,23 @@ workflow LRSOMATIC {
 
     //
     // MODULE: SAMTOOLS_MERGE (label: process_low) -- replicate identity survives via the unique @RG lines
-    // Input:  [meta, [bam...], [bai...]]  -- grouped replicate BAMs + indices
-    // Output: .bam -- [meta, bam]  -- merged BAM
+    // Input:  [meta, [cram...], [crai...]]  -- grouped replicate alignments + indices
+    //         [meta, fasta, fai, gzi]         -- reference to decode CRAM inputs and encode a merged CRAM
+    // Output: .cram / .bam -- [meta, alignments]  -- merged (output format follows the input extension)
     //
     SAMTOOLS_MERGE(
         ch_aligned_split.multiple,
-        [[],[],[],[]]
+        ch_fasta.join(ch_fai).map { meta, fasta, fai -> [meta, fasta, fai, []] }.first()
     )
 
-    // Index the merged BAM to produce a BAI (SAMTOOLS_MERGE does not create BAI inline)
-    SAMTOOLS_INDEX_MERGE(SAMTOOLS_MERGE.out.bam)
+    // Index the merged file (SAMTOOLS_MERGE does not index inline)
+    SAMTOOLS_INDEX_MERGE(SAMTOOLS_MERGE.out.bam.mix(SAMTOOLS_MERGE.out.cram))
 
-    // Combine single-replicate and merged paths into a unified [meta, bam, bai] channel
+    // Combine single-replicate and merged paths into a unified [meta, alignments, index] channel
     ch_single_indexed
         .mix(
-            SAMTOOLS_MERGE.out.bam
-                .join(SAMTOOLS_INDEX_MERGE.out.bai)
+            SAMTOOLS_MERGE.out.bam.mix(SAMTOOLS_MERGE.out.cram)
+                .join(SAMTOOLS_INDEX_MERGE.out.bai.mix(SAMTOOLS_INDEX_MERGE.out.crai))
         )
         .set { ch_index_minimap }
     // ch_index_minimap: [meta, bam, bai]  -- one aligned BAM + index per sample (all replicates merged)
@@ -681,7 +687,7 @@ workflow LRSOMATIC {
             allele_files,
             loci_files,
             [],
-            [],
+            [],  // no fasta: the image's ASCAT has no ref.fasta argument; the CRAMs embed their reference
             gc_file,
             rt_file
         )
@@ -1028,7 +1034,7 @@ workflow LRSOMATIC {
         // Output: .arrow -- [meta, arrow_file]  -- alignment statistics in feather format
         //
 
-        CRAMINO_POST ( ch_minimap_bam )
+        CRAMINO_POST ( ch_minimap_bam, ch_fasta )
 
         ch_cramino_post_txt = CRAMINO_POST.out.txt
 
