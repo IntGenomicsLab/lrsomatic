@@ -33,6 +33,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── samtools
 │    │    └── whatshap_stats
 │    ├── reconplot
+│    │   ├── severus_ascat
 │    │   ├── severus_wakhan
 │    │   └── savana
 │    ├── signatures
