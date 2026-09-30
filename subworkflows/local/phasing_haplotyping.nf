@@ -6,8 +6,13 @@ include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_GERMLINE   } from '../../module
 include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_SOMATIC    } from '../../modules/local/longphase/modcall/main.nf'
 include { SAMTOOLS_INDEX                                    } from '../../modules/nf-core/samtools/index/main.nf'
 include { BCFTOOLS_CONCAT                                   } from '../../modules/nf-core/bcftools/concat/main'
+include { BCFTOOLS_CONCAT as CONCAT_SOMATIC_UNPHASED        } from '../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                     } from '../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_SORT as SORT_SOMATIC_PHASED              } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_VIEW                                     } from '../../modules/local/bcftools/view/main.nf'
+include { BCFTOOLS_VIEW as SOMATIC_ALT                      } from '../../modules/local/bcftools/view/main.nf'
+include { BCFTOOLS_VIEW as SOMATIC_NONALT                   } from '../../modules/local/bcftools/view/main.nf'
+include { BCFTOOLS_EXCLUDE_SITES as GERMLINE_ANCHORS        } from '../../modules/local/bcftools/excludesites/main.nf'
 include { VCFTAG as TAG_SOMATIC                             } from '../../modules/local/vcftag/main.nf'
 include { VCFTAG as TAG_GERMLINE                            } from '../../modules/local/vcftag/main.nf'
 
@@ -142,11 +147,7 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
-    // Stamp each arm with an INFO provenance flag before the merge. This is the only point where
-    // germline-vs-somatic origin is unambiguous for every caller: GERMLINE_CONSENSUS can emit
-    // records that never passed through VCFSPLIT, so tagging earlier would leave holes. After the
-    // merge the two populations are otherwise indistinguishable -- both carry FILTER=PASS.
-    // LongPhase preserves custom INFO keys, so the flags survive phasing (verified on v2.0.1).
+    // Stamp each arm with an INFO provenance flag before the merge; LongPhase keeps it through phasing.
     //
     TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
     TAG_GERMLINE( germline_vcf, 'GERMLINE' )
@@ -159,19 +160,40 @@ workflow PHASING_HAPLOTYPING {
         .set{ tagged_germline_vcf }
     // tagged_*_vcf: [meta, vcf, tbi]
 
+    // LongPhase phases by position, so a germline record at a somatic call's POS would lend it its phase.
+    // Only alt-genotype somatic records are phased; 0/0 and ./. records rejoin unphased after the split.
+    SOMATIC_ALT   ( tagged_somatic_vcf )
+    SOMATIC_NONALT( tagged_somatic_vcf )
+
+    SOMATIC_ALT.out.vcf
+        .join(SOMATIC_ALT.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .set{ somatic_alt_vcf }
+    SOMATIC_NONALT.out.vcf
+        .join(SOMATIC_NONALT.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .set{ somatic_nonalt_vcf }
+    // somatic_alt_vcf / somatic_nonalt_vcf: [meta, vcf, tbi]
+
+    //
+    // MODULE: GERMLINE_ANCHORS (BCFTOOLS_EXCLUDE_SITES alias) -- germline records not at an alt somatic POS
+    // Input:  [meta, germline_vcf, tbi, somatic_alt_vcf, tbi]
+    // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
+    //
+    GERMLINE_ANCHORS (
+        tagged_germline_vcf.join(somatic_alt_vcf, failOnMismatch: true, failOnDuplicate: true)
+    )
+
     // Somatic phasing needs germline and somatic sites in one VCF for consistent phase blocks
-    tagged_germline_vcf
-        .join(tagged_somatic_vcf)
+    GERMLINE_ANCHORS.out.vcf
+        .join(GERMLINE_ANCHORS.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .join(somatic_alt_vcf)
         .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
-                // Order here is cosmetic: BCFTOOLS_CONCAT sorts its input file list alphabetically
-                // (modules/nf-core/bcftools/concat/main.nf), so the germline file is passed first
-                // regardless. With -a the output is coordinate-ordered either way.
+                // Order is cosmetic: BCFTOOLS_CONCAT sorts its inputs by name.
                 def vcfs = [som_vcf, germ_vcf]
                 def tbis = [som_tbi, germ_tbi]
                 return [ meta, vcfs, tbis]
         }
         .set{germline_somatic_vcfs}
-    // germline_somatic_vcfs (pre-concat): [meta, [somatic_vcf, germline_vcf], [somatic_tbi, germline_tbi]]
+    // germline_somatic_vcfs (pre-concat): [meta, [somatic_alt_vcf, germline_anchor_vcf], [tbis...]]
 
     //
     // MODULE: BCFTOOLS_CONCAT (label: process_medium)
@@ -278,19 +300,28 @@ workflow PHASING_HAPLOTYPING {
 
     //
     // MODULE: BCFTOOLS_VIEW (label: process_medium)
-    // Reduce the phased somatic+germline VCF to the somatic arm, selecting on the INFO/SOMATIC flag
-    // stamped before the merge -- by provenance, not position. The previous `-T <somatic vcf>`
-    // targets file matched CHROM/POS only, so germline records co-located with a somatic call were
-    // retained and became indistinguishable downstream. PS/HP tags on somatic variants survive;
-    // germline records are dropped here but stay published under variants/phased/ and vep/germline/.
+    // Keep the somatic arm by its INFO/SOMATIC flag, not by position; PS/HP tags survive.
     // Input:  [meta, phased_combined_vcf, phased_combined_tbi]
     // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
     //         .tbi -- [meta, tbi]
     //
     BCFTOOLS_VIEW ( phased_somatic_germline_vcf )
 
+    // Add the unphased 0/0 and ./. somatic records back (only present with --smallvar_filter_pass false)
     BCFTOOLS_VIEW.out.vcf
-        .join(BCFTOOLS_VIEW.out.tbi)
+        .join(BCFTOOLS_VIEW.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .join(somatic_nonalt_vcf, failOnMismatch: true, failOnDuplicate: true)
+        .map { meta, phased_vcf, phased_tbi, nonalt_vcf, nonalt_tbi ->
+            return [ meta, [phased_vcf, nonalt_vcf], [phased_tbi, nonalt_tbi] ]
+        }
+        .set{ somatic_parts }
+    // somatic_parts: [meta, [phased_alt_vcf, nonalt_vcf], [tbis...]]
+
+    CONCAT_SOMATIC_UNPHASED ( somatic_parts )
+    SORT_SOMATIC_PHASED ( CONCAT_SOMATIC_UNPHASED.out.vcf )
+
+    SORT_SOMATIC_PHASED.out.vcf
+        .join(SORT_SOMATIC_PHASED.out.tbi, failOnMismatch: true, failOnDuplicate: true)
         .set{ phased_somatic_vcf }
     // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- phased somatic-only VCF (germline removed)
 

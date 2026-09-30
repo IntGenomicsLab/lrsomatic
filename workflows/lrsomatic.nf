@@ -195,6 +195,15 @@ workflow LRSOMATIC {
     if (params.clairsto_cna_resources && !params.skip_ascat) {
         log.warn("--clairsto_cna_resources is ignored without --skip_ascat: Verdict's germline tagging then comes from ASCAT's purity and copy number.")
     }
+    // Tumour-only DeepVariant germline calls are adjudicated only by DeepSomatic's verdict; warn once if it is not run
+    if (params.germline_var_keep.contains('deepvariant') && !params.somatic_var_keep.contains('deepsomatic')) {
+        ch_samplesheet
+            .filter { meta, _bams -> !meta.paired_data }
+            .first()
+            .subscribe { meta, _bams ->
+                log.warn("Tumour-only samples (e.g. ${meta.id}) use DeepVariant germline calls without DeepSomatic's verdict, so they may include somatic variants. Add 'deepsomatic' to --somatic_var_keep to filter them.")
+            }
+    }
     // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
     build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
 
@@ -712,12 +721,11 @@ workflow LRSOMATIC {
         // ascat_tumoronly_ch: [meta, purityploidy, segments]
 
         // All ASCAT files per sample for the report module, which globs by suffix
-        // groupKey: release each sample on its own three emissions, not when ASCAT finishes for all
-        ch_ascat_files = ASCAT.out.segments_raw
-            .mix(ASCAT.out.purityploidy, ASCAT.out.png)
-            .map { meta, files -> [groupKey(meta, 3), files] }
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }
+        // Joined per sample; segments_raw is optional, so it arrives as null when absent
+        ch_ascat_files = ASCAT.out.purityploidy
+            .join(ASCAT.out.png)
+            .join(ASCAT.out.segments_raw, remainder: true)
+            .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
 
         // CoRAL seeds from ASCAT's total copy number. Built from ascat_ch so the meta
@@ -1284,12 +1292,11 @@ workflow LRSOMATIC {
         )
 
         // The WAKHAN outputs the report renders: ranked solutions, heatmap, per-solution plots
-        // groupKey: release each sample on its own three emissions
+        // Joined per sample; all three outputs are required
         ch_wakhan_files = WAKHAN.out.solutions_ranks
-            .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
-            .map { meta, files -> [groupKey(meta, 3), files] }
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }  // solution_dirs contributes a list
+            .join(WAKHAN.out.heatmap_html)
+            .join(WAKHAN.out.solution_dirs)
+            .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
     }
 

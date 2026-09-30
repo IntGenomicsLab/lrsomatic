@@ -1,9 +1,9 @@
-name: bcftools_view
-description: Filter a VCF with bcftools view, with the filter expression supplied via ext.args; outputs a bgzipped VCF and tbi index
+name: bcftools_exclude_sites
+description: Remove every record of a VCF at a position (CHROM:POS) that a mask VCF also has, regardless of alleles
 keywords:
   - filtering
   - VCF
-  - variant calling
+  - positions
 tools:
   - view:
       description: VCF/BCF conversion, view, subset and filter VCF/BCF files.
@@ -19,28 +19,36 @@ input:
         description: Groovy Map containing sample information e.g. [ id:'test' ]
     - vcf:
         type: file
-        description: Input VCF/BCF file to filter
-        pattern: "*.{vcf.gz,vcf,bcf}"
+        description: VCF to remove records from
+        pattern: "*.vcf.gz"
     - tbi:
         type: file
-        description: Tabix index of the input VCF
+        description: Tabix index of the VCF
+        pattern: "*.tbi"
+    - mask:
+        type: file
+        description: VCF whose record positions are removed from the input
+        pattern: "*.vcf.gz"
+    - mask_tbi:
+        type: file
+        description: Tabix index of the mask VCF
         pattern: "*.tbi"
 output:
   vcf:
     - - meta:
           type: map
           description: Groovy Map containing sample information
-      - "*.vcf.gz":
+      - ${prefix}.vcf.gz:
           type: file
-          description: Filtered VCF file
+          description: Input VCF without the records at mask positions
           pattern: "*.vcf.gz"
   tbi:
     - - meta:
           type: map
           description: Groovy Map containing sample information
-      - "*.tbi":
+      - ${prefix}.vcf.gz.tbi:
           type: file
-          description: Tabix index of filtered VCF
+          description: Tabix index of the output VCF
           pattern: "*.tbi"
   versions_bcftools:
     - - ${task.process}:
