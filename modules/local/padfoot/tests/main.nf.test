@@ -8,6 +8,8 @@ nextflow_process {
     tag "modules"
     tag "modules_local"
     tag "padfoot"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
 
     // Real Severus/Wakhan/SAVANA outputs are not available as public test data; only the I/O contract is tested here.
     // An end-to-end run on real data is exercised through the pipeline (see docs/usage.md, Padfoot options).

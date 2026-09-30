@@ -412,7 +412,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 - `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
 - `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs
 
-Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track. Both the wrapper and the ReConPlot R package (neither on conda) are staged as source from GitHub (or local checkouts for offline systems); the default container ships the package pre-installed, while `-profile conda` installs it at run time.
+Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track.
 
 | Parameter                  | Description                                                                                                                                                                                                                                                        |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

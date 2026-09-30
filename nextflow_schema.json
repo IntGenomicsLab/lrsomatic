@@ -406,17 +406,20 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
+                    "help_text": "Custom GFF3 gene annotation for Padfoot. Padfoot bundles annotations for the `hg38` and `mm10` presets only; for any other preset (e.g. `chm13`) pass both `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.",
                     "description": "Custom GFF3 gene annotation for Padfoot"
                 },
                 "padfoot_rm": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
+                    "help_text": "Custom RepeatMasker annotation (`.fa.out` or BED) for Padfoot. Needed together with `--padfoot_gff` for presets other than `hg38`/`mm10`; otherwise Padfoot is skipped with a warning.",
                     "description": "Custom RepeatMasker annotation (.fa.out / BED) for Padfoot"
                 },
                 "padfoot_run_repeatmasker": {
                     "type": "boolean",
                     "default": true,
+                    "help_text": "When true, Padfoot runs RepeatMasker on the sequence of novel insertions to classify their repeat family. The module image ships RepeatMasker 4.2.4 with the Dfam 4.0 root and curated-consensus partitions. Set false to skip that step.",
                     "description": "Run RepeatMasker on inserted sequences (repeat class of novel insertions); the module image ships the Dfam 4.0 root and curated-consensus partitions."
                 }
             }
@@ -430,37 +433,45 @@
                 "reconplot_genome": {
                     "type": "string",
                     "enum": ["hg38", "hg19", "T2T", "mm10", "mm39"],
+                    "help_text": "ReConPlot preset for chromosome lengths and gene annotations: `hg38`, `hg19`, `T2T`, `mm10` or `mm39`. Inferred from `--genome` (GRCh38 -> hg38, CHM13 -> T2T); a custom genome without a preset falls back to hg38 with a warning.",
                     "description": "ReConPlot genome build for gene/chromosome annotations. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> T2T)."
                 },
                 "reconplot_max_cn": {
                     "type": "integer",
                     "default": 8,
+                    "help_text": "Upper limit of the copy-number axis in every ReConPlot figure; segments above it are drawn at the ceiling.",
                     "description": "Copy number axis ceiling"
                 },
                 "reconplot_min_svlen": {
                     "type": "integer",
                     "default": 0,
+                    "help_text": "Intra-chromosomal SVs shorter than this many bp are left out of the figures and the harmonised SV table; translocations are always kept. 0 keeps every SV.",
                     "description": "Drop intra-chromosomal SVs shorter than this many bp (translocations are kept). 0 keeps everything."
                 },
                 "reconplot_exclude_vntr": {
                     "type": "boolean",
+                    "help_text": "When true, Severus SVs flagged as lying inside a VNTR are left out of the figures (Severus pairs only).",
                     "description": "Drop Severus SVs flagged as inside a VNTR"
                 },
                 "reconplot_regions": {
                     "type": "string",
+                    "help_text": "Comma-separated regions for an additional `focus/` figure per caller pair, each `chr` or `chr:start-end` (start < end), e.g. `chr8,chr17:30000000-50000000`. The syntax is checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus figure is produced if none is left. Unset = no focus figure.",
                     "description": "Comma-separated regions (e.g. 'chr8,chr17:30000000-50000000') for an additional multi-panel focus figure"
                 },
                 "reconplot_genes": {
                     "type": "string",
+                    "help_text": "Comma-separated HUGO symbols to label on the focus figure (used only with `--reconplot_regions`).",
                     "description": "Comma-separated HUGO gene symbols to label on the focus figure"
                 },
                 "reconplot_baf_track": {
                     "type": "boolean",
+                    "help_text": "Adds a het-SNP B-allele-frequency track to the focus figure. Applies to the ASCAT and SAVANA pairs, which provide per-SNP allele counts; ignored for Wakhan.",
                     "description": "Add a het-SNP BAF track to the focus figure (ASCAT and SAVANA copy number only)"
                 },
                 "reconplot_format": {
                     "type": "string",
                     "default": "pdf,png",
+                    "help_text": "Figure formats written by ReConPlot: `pdf`, `png` or `pdf,png`.",
                     "description": "Comma-separated output formats: pdf, png"
                 }
             }
@@ -638,10 +649,12 @@
                 },
                 "skip_padfoot": {
                     "type": "boolean",
+                    "help_text": "Skips Padfoot annotation of somatic SVs and CNAs (Severus + Wakhan and SAVANA pairs). Padfoot runs only inside its container; skip it under `-profile conda`.",
                     "description": "Skips Padfoot SV/CNA annotation"
                 },
                 "skip_reconplot": {
                     "type": "boolean",
+                    "help_text": "Skips the ReConPlot rearrangement and copy-number figures (ASCAT + Severus, Wakhan + Severus and SAVANA pairs). ReConPlot runs only inside its container; skip it under `-profile conda`.",
                     "description": "Skips ReConPlot SV/CNA figures"
                 },
                 "skip_m6a": {

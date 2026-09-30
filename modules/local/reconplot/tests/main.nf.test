@@ -8,6 +8,8 @@ nextflow_process {
     tag "modules"
     tag "modules_local"
     tag "reconplot"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
 
     // Real ASCAT/Wakhan/Severus/SAVANA outputs are not available as public test data; only the I/O contract is
     // tested here. The three combinations were run end to end on real data through the pipeline.
