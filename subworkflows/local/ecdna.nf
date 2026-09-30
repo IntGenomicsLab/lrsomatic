@@ -16,7 +16,7 @@ workflow ECDNA {
     tumor_bam    // [meta, bam, bai]                 -- tumour BAMs only
     ascat_cnvs   // [meta, cnvs_txt]                 -- ASCAT.out.cnvs
     fai          // [[:], fai]                       -- value channel, reused by every sample
-    data_repo    // [[:], dir]                       -- value channel; empty with --skip_ampliconclassifier
+    data_repo    // [[:], dir]                       -- value channel; empty with --skip_ampliconclassifier or no repo
     coral_ref    // val 'hg38' | 't2t'
     ac_ref       // val 'GRCh38' | 'CHM13'
 
@@ -38,8 +38,7 @@ workflow ECDNA {
     // Input:  [meta, cn_seg_bed, bam, bai]
     // Output: .seeds -- [meta, bed]  -- amplified intervals above --gain
     //
-    // multiMap, not two reads of one channel: a channel feeding both a process and an
-    // operator is not allowed, and reconstruct needs the same cn_seg/bam that seed used.
+    // multiMap: seed, reconstruct and plot each take the same cn_seg/bam in their own shape
     ASCAT_TO_CORAL_BED.out.bed
         .join(tumor_bam, failOnMismatch: true, failOnDuplicate: true)
         .multiMap { meta, cn_seg, bam, bai ->
@@ -62,7 +61,7 @@ workflow ECDNA {
     //
     CORAL_SEED.out.seeds
         .branch { _meta, bed ->
-            seeded: bed.toFile().length() > 0
+            seeded: bed.size() > 0
             unseeded: true
         }
         .set { branched_seeds }
@@ -71,7 +70,7 @@ workflow ECDNA {
         .subscribe { meta, _bed -> log.info("No amplified intervals found for ${meta.id}: skipping ecDNA reconstruction.") }
 
     //
-    // MODULE: CORAL_RECONSTRUCT (label: process_high)
+    // MODULE: CORAL_RECONSTRUCT (label: process_medium)
     // Input:  [meta, seeds, cn_seg_bed, bam, bai]
     // Output: .reconstruction -- [meta, dir]  -- graph/cycles/summary, named as AC expects
     //
@@ -85,8 +84,15 @@ workflow ECDNA {
         coral_reconstruct_input
     )
 
+    // errorStrategy 'ignore' drops a failed sample silently, so name it here
+    branched_seeds.seeded
+        .map { meta, _seeds -> [meta] }
+        .join(CORAL_RECONSTRUCT.out.reconstruction, remainder: true)
+        .filter { _meta, dir -> dir == null }
+        .subscribe { meta, _dir -> log.warn("CoRAL reconstruct failed for ${meta.id}: no ecDNA results for this sample.") }
+
     //
-    // MODULE: CORAL_CYCLE (label: process_high) -- opt-in cycle re-extraction
+    // MODULE: CORAL_CYCLE (label: process_low) -- opt-in cycle re-extraction
     // Input:  [meta, reconstruction_dir]
     // Output: .reconstruction -- [meta, dir]  -- re-extracted cycles beside the copied graphs
     //
@@ -94,6 +100,12 @@ workflow ECDNA {
         CORAL_CYCLE (
             CORAL_RECONSTRUCT.out.reconstruction
         )
+
+        CORAL_RECONSTRUCT.out.reconstruction
+            .map { meta, _dir -> [meta] }
+            .join(CORAL_CYCLE.out.reconstruction, remainder: true)
+            .filter { _meta, dir -> dir == null }
+            .subscribe { meta, _dir -> log.warn("CoRAL cycle_all failed for ${meta.id}: it will not be classified.") }
         ch_for_classifier = CORAL_CYCLE.out.reconstruction
     }
     else {
@@ -104,11 +116,11 @@ workflow ECDNA {
     //
     // MODULE: CORAL_PLOT (label: process_medium)
     // Runs beside the classifier rather than in front of it: plotting is cosmetic
-    // and must never gate classification.
+    // and must never gate classification. Plots the same cycles the classifier reads.
     //
     ch_plots = channel.empty()
     if (params.coral_plot) {
-        CORAL_RECONSTRUCT.out.reconstruction
+        ch_for_classifier
             .join(coral_inputs.plot, failOnDuplicate: true)
             .set { coral_plot_input }
         // coral_plot_input: [meta, reconstruction_dir, bam, bai]

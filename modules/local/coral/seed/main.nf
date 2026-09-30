@@ -34,9 +34,9 @@ process CORAL_SEED {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // A non-empty seed, so the stub exercises the reconstruct path rather than the
-    // empty-seed branch. Use --coral_gain to force the empty case in a test.
+    // A non-empty seed by default; meta.stub_empty_seed, set only by the ECDNA test, reaches the empty-seed branch
+    def seed_cmd = meta.stub_empty_seed ? "touch ${prefix}_CNV_SEEDS.bed" : "printf 'chr1\\t100000\\t400000\\t8\\n' > ${prefix}_CNV_SEEDS.bed"
     """
-    printf 'chr1\\t100000\\t400000\\t8\\n' > ${prefix}_CNV_SEEDS.bed
+    ${seed_cmd}
     """
 }

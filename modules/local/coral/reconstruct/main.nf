@@ -1,6 +1,6 @@
 process CORAL_RECONSTRUCT {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_medium'
 
     // A single unsolvable amplicon should not fail a whole cohort; the subworkflow
     // warns on the missing output rather than letting the report slot go silent.
