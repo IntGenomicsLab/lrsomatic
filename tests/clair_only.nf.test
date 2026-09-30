@@ -10,7 +10,9 @@ nextflow_pipeline {
         when {
             params {
                 outdir              = "$outputDir"
-                input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+                // test_sheet_2 with sample3's uBAM RG-tagged on every record, as dorado output is, so the
+                // "Read groups" assertion below catches a MINIMAP2_ALIGN that keeps the uBAM's RG
+                input               = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2_rgtagged.csv"
                 germline_var_keep   = 'clair'
                 somatic_var_keep    = 'clair'
             }
@@ -142,7 +144,9 @@ nextflow_pipeline {
                 {
                     // CRAM keeps one RG per record: each one must be declared in the file's
                     // header (a second, undeclared RG, e.g. the basecaller's, would win), and
-                    // sample4's merge must keep both replicates' read groups
+                    // sample4's merge must keep both replicates' read groups. Without
+                    // `samtools reset -x RG` in MINIMAP2_ALIGN, all of sample3's records fail this
+                    // (its uBAM is RG-tagged); no snapshot entry changes, so only this catches it
                     ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
                      'sample3_tumor', 'sample4_tumor', 'sample5_tumor'].each { name ->
                         def s = name.tokenize('_')[0]
