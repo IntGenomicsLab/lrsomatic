@@ -4,9 +4,11 @@ process PADFOOT {
 
     // No conda: the image ships Padfoot itself (a pinned Tim-Yu/Padfoot commit at /opt/padfoot), not just its
     // dependencies (guard in `script:`). Built from containers/padfoot/Dockerfile: Padfoot + RepeatMasker 4.2.4 with the
-    // Dfam 4.0 root and curated-consensus partitions. Padfoot update = new commit in the Dockerfile, rebuild, re-pin the digest.
+    // Dfam 4.0 root and curated-consensus partitions. Padfoot update = new commit in the Dockerfile, rebuild, bump these two tags.
     // Override per site with `process { withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
-    container "ghcr.io/tim-yu/padfoot-repeatmasker@sha256:bf134e2ffca5ae5f0b0c85c7f9d189ab0a886c0ba389c5ff7f1d39a39bd58467"
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://ghcr.io/tim-yu/padfoot-repeatmasker-sif:4.2.4-dfam4-padfoot-e7eaed7'
+        : 'ghcr.io/tim-yu/padfoot-repeatmasker:4.2.4-dfam4-padfoot-e7eaed7'}"
 
     input:
     tuple val(meta), path(sv_vcf), val(sv_caller), path(cna_file), val(cna_caller)

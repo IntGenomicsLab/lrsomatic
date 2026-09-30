@@ -27,7 +27,7 @@ RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
     && rm -rf /tmp/dfam40.* /tmp/repeatmasker-smoke
 
 # Padfoot itself is not on bioconda: install the pinned Tim-Yu/Padfoot commit (SAVANA input support) as source
-# under /opt/padfoot, so the PADFOOT module needs no run-time download. Bump = new commit + checksum here, rebuild, re-pin digest.
+# under /opt/padfoot, so the PADFOOT module needs no run-time download. Bump = new commit + checksum here, rebuild, push both images, bump the tags.
 ARG PADFOOT_COMMIT=e7eaed778fc2230bad96fb4232c704cec7cfe7eb
 ADD --checksum=sha256:81aff6572a2d513da9d7e8c6eeb2ae13be9eebf9cfc9ac6436f40fffe52cafb5 \
     https://github.com/Tim-Yu/Padfoot/archive/${PADFOOT_COMMIT}.tar.gz /tmp/padfoot.tar.gz

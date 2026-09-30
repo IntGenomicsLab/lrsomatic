@@ -443,7 +443,7 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 
 ##### Offline and air-gapped systems
 
-Both images are pinned by digest directly in the module `container` directives, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
+Both modules use the same pinned-tag pair as the other custom images in the pipeline: a prebuilt SIF (`oras://ghcr.io/tim-yu/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`ghcr.io/tim-yu/<name>:<tag>`) otherwise, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
 
 ```groovy
 process {
@@ -452,7 +452,7 @@ process {
 }
 ```
 
-Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image and re-pinning the digest (see the READMEs under `containers/`).
+Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under `containers/`).
 
 #### Variant Filtering and Combining Options
 
@@ -857,12 +857,12 @@ What this means in practice:
   `NXF_SINGULARITY_LIBRARYDIR` is checked first and never written to, so a read-only shared
   directory of prebuilt images works as well.
 
-The other custom SIFs (modkit, SigProfiler and the report image, the largest at 0.8 GB) are still
-`oras://ghcr.io/ljwharbers/<name>-sif:<tag>` and can hit the same cut on a very slow link. If one
-does, the SIF bytes are the registry blob, which ghcr serves with Range support. Download it
-resumably into the cache under the name Nextflow expects (`ghcr.io-ljwharbers-<name>-sif-<tag>.img`)
-with `curl -C -`, re-requesting the anonymous token from
-`https://ghcr.io/token?scope=repository:ljwharbers/<name>-sif:pull` on each attempt, until the file
+The other custom SIFs (modkit, SigProfiler, the report image at 0.8 GB, and the Padfoot and ReConPlot
+images at 3 GB and 1.6 GB) are still `oras://ghcr.io/<owner>/<name>-sif:<tag>` and can hit the same
+cut on a very slow link. If one does, the SIF bytes are the registry blob, which ghcr serves with
+Range support. Download it resumably into the cache under the name Nextflow expects
+(`ghcr.io-<owner>-<name>-sif-<tag>.img`) with `curl -C -`, re-requesting the anonymous token from
+`https://ghcr.io/token?scope=repository:<owner>/<name>-sif:pull` on each attempt, until the file
 reaches the layer size in the image manifest; then check its `sha256sum` against the layer digest
 and `chmod +x` it.
 
