@@ -41,7 +41,7 @@ Changes in 'nanoplot/main.nf':
 +
 +    for nanoplot_file in *.html *.png *.txt *.log
 +    do
-+        if [[ -s \$nanoplot_file ]]
++        if [[ -s \$nanoplot_file && \$nanoplot_file != "${ontfile}" ]]
 +        then
 +            mv \$nanoplot_file ${prefix}_\$nanoplot_file
 +        fi
@@ -74,5 +74,192 @@ Changes in 'nanoplot/main.nf':
 
 'modules/nf-core/nanoplot/tests/main.nf.test' is unchanged
 'modules/nf-core/nanoplot/tests/tags.yaml' is unchanged
-'modules/nf-core/nanoplot/tests/main.nf.test.snap' is unchanged
+Changes in 'nanoplot/tests/main.nf.test.snap':
+--- modules/nf-core/nanoplot/tests/main.nf.test.snap
++++ modules/nf-core/nanoplot/tests/main.nf.test.snap
+@@ -8,14 +8,14 @@
+                             "id": "test"
+                         },
+                         [
+-                            "LengthvsQualityScatterPlot_dot.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "LengthvsQualityScatterPlot_kde.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "NanoPlot-report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Non_weightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Non_weightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "WeightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "WeightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Yield_By_Length.html:md5,d41d8cd98f00b204e9800998ecf8427e"
++                            "test_LengthvsQualityScatterPlot_dot.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_LengthvsQualityScatterPlot_kde.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_NanoPlot-report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Non_weightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Non_weightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_WeightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_WeightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Yield_By_Length.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                         ]
+                     ]
+                 ],
+@@ -27,14 +27,14 @@
+                         {
+                             "id": "test"
+                         },
+-                        "NanoStats.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "test_NanoStats.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "3": [
+                     [
+                         "NANOPLOT",
+                         "NanoPlot",
+-                        "1.47.0"
++                        "1.48.0"
+                     ]
+                 ],
+                 "html": [
+@@ -43,14 +43,14 @@
+                             "id": "test"
+                         },
+                         [
+-                            "LengthvsQualityScatterPlot_dot.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "LengthvsQualityScatterPlot_kde.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "NanoPlot-report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Non_weightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Non_weightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "WeightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "WeightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+-                            "Yield_By_Length.html:md5,d41d8cd98f00b204e9800998ecf8427e"
++                            "test_LengthvsQualityScatterPlot_dot.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_LengthvsQualityScatterPlot_kde.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_NanoPlot-report.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Non_weightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Non_weightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_WeightedHistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_WeightedLogTransformed_HistogramReadlength.html:md5,d41d8cd98f00b204e9800998ecf8427e",
++                            "test_Yield_By_Length.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                         ]
+                     ]
+                 ],
+@@ -62,86 +62,86 @@
+                         {
+                             "id": "test"
+                         },
+-                        "NanoStats.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "test_NanoStats.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "versions_nanoplot": [
+                     [
+                         "NANOPLOT",
+                         "NanoPlot",
+-                        "1.47.0"
++                        "1.48.0"
+                     ]
+                 ]
+             }
+         ],
+-        "timestamp": "2026-06-12T16:20:34.912757",
++        "timestamp": "2026-10-01T14:41:02.306096412",
+         "meta": {
+             "nf-test": "0.9.4",
+-            "nextflow": "26.04.1"
++            "nextflow": "26.04.3"
+         }
+     },
+     "NanoPlot FASTQ": {
+         "content": [
+             [
+-                "LengthvsQualityScatterPlot_dot.html",
+-                "LengthvsQualityScatterPlot_kde.html",
+-                "NanoPlot-report.html",
+-                "Non_weightedHistogramReadlength.html",
+-                "Non_weightedLogTransformed_HistogramReadlength.html",
+-                "WeightedHistogramReadlength.html",
+-                "WeightedLogTransformed_HistogramReadlength.html",
+-                "Yield_By_Length.html"
++                "test_LengthvsQualityScatterPlot_dot.html",
++                "test_LengthvsQualityScatterPlot_kde.html",
++                "test_NanoPlot-report.html",
++                "test_Non_weightedHistogramReadlength.html",
++                "test_Non_weightedLogTransformed_HistogramReadlength.html",
++                "test_WeightedHistogramReadlength.html",
++                "test_WeightedLogTransformed_HistogramReadlength.html",
++                "test_Yield_By_Length.html"
+             ],
+-            "NanoStats.txt",
++            "test_NanoStats.txt",
+             {
+                 "versions_nanoplot": [
+                     [
+                         "NANOPLOT",
+                         "NanoPlot",
+-                        "1.47.0"
++                        "1.48.0"
+                     ]
+                 ]
+             }
+         ],
+-        "timestamp": "2026-06-12T16:20:27.977813",
++        "timestamp": "2026-10-01T14:40:55.99406515",
+         "meta": {
+             "nf-test": "0.9.4",
+-            "nextflow": "26.04.1"
++            "nextflow": "26.04.3"
+         }
+     },
+     "NanoPlot summary": {
+         "content": [
+             [
+-                "ActivePores_Over_Time.html",
+-                "ActivityMap_ReadsPerChannel.html",
+-                "CumulativeYieldPlot_Gigabases.html",
+-                "CumulativeYieldPlot_NumberOfReads.html",
+-                "NanoPlot-report.html",
+-                "Non_weightedHistogramReadlength.html",
+-                "Non_weightedLogTransformed_HistogramReadlength.html",
+-                "NumberOfReads_Over_Time.html",
+-                "TimeLengthViolinPlot.html",
+-                "TimeQualityViolinPlot.html",
+-                "TimeSequencingSpeed_ViolinPlot.html",
+-                "WeightedHistogramReadlength.html",
+-                "WeightedLogTransformed_HistogramReadlength.html",
+-                "Yield_By_Length.html"
++                "test_ActivePores_Over_Time.html",
++                "test_ActivityMap_ReadsPerChannel.html",
++                "test_CumulativeYieldPlot_Gigabases.html",
++                "test_CumulativeYieldPlot_NumberOfReads.html",
++                "test_NanoPlot-report.html",
++                "test_Non_weightedHistogramReadlength.html",
++                "test_Non_weightedLogTransformed_HistogramReadlength.html",
++                "test_NumberOfReads_Over_Time.html",
++                "test_TimeLengthViolinPlot.html",
++                "test_TimeQualityViolinPlot.html",
++                "test_TimeSequencingSpeed_ViolinPlot.html",
++                "test_WeightedHistogramReadlength.html",
++                "test_WeightedLogTransformed_HistogramReadlength.html",
++                "test_Yield_By_Length.html"
+             ],
+-            "NanoStats.txt",
++            "test_NanoStats.txt",
+             {
+                 "versions_nanoplot": [
+                     [
+                         "NANOPLOT",
+                         "NanoPlot",
+-                        "1.47.0"
++                        "1.48.0"
+                     ]
+                 ]
+             }
+         ],
+-        "timestamp": "2026-06-12T16:20:17.864744",
++        "timestamp": "2026-10-01T14:40:45.220473935",
+         "meta": {
+             "nf-test": "0.9.4",
+-            "nextflow": "26.04.1"
++            "nextflow": "26.04.3"
+         }
+     }
+-}+}
+
 ************************************************************

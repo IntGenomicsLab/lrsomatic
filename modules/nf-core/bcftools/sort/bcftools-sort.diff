@@ -34,5 +34,253 @@ Changes in 'bcftools/sort/main.nf':
 'modules/nf-core/bcftools/sort/tests/vcf_gz_index.config' is unchanged
 'modules/nf-core/bcftools/sort/tests/main.nf.test' is unchanged
 'modules/nf-core/bcftools/sort/tests/vcf_gz_index_csi.config' is unchanged
-'modules/nf-core/bcftools/sort/tests/main.nf.test.snap' is unchanged
+Changes in 'bcftools/sort/tests/main.nf.test.snap':
+--- modules/nf-core/bcftools/sort/tests/main.nf.test.snap
++++ modules/nf-core/bcftools/sort/tests/main.nf.test.snap
+@@ -22,7 +22,7 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -45,15 +45,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:43:34.731344",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:47.191043783",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "vcf": {
+@@ -74,7 +74,7 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -92,15 +92,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:42:44.941677",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:25.103909097",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf_gz_index": {
+@@ -126,15 +126,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:42:51.393004",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:28.269816034",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf_gz_index_csi": {
+@@ -160,15 +160,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:42:58.637723",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:31.44210133",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf_gz_index - stub": {
+@@ -194,7 +194,7 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -217,15 +217,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:43:20.314367",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:40.991048286",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf_gz_index_csi - stub": {
+@@ -251,7 +251,7 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -274,15 +274,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:43:27.839561",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:44.027648087",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf - stub": {
+@@ -303,7 +303,7 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -321,15 +321,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:43:14.11854",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:37.849437343",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - vcf_gz_index_tbi": {
+@@ -355,15 +355,15 @@
+                     [
+                         "BCFTOOLS_SORT",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:43:05.017607",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:34.646259068",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     }
+-}+}
+
 ************************************************************

@@ -32,7 +32,7 @@ process NANOPLOT {
 
     for nanoplot_file in *.html *.png *.txt *.log
     do
-        if [[ -s \$nanoplot_file ]]
+        if [[ -s \$nanoplot_file && \$nanoplot_file != "${ontfile}" ]]
         then
             mv \$nanoplot_file ${prefix}_\$nanoplot_file
         fi
