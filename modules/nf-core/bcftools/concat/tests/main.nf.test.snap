@@ -22,15 +22,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:16.850504",
+        "timestamp": "2026-10-01T14:40:25.650740903",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], []]": {
@@ -51,7 +51,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -69,15 +69,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:27.579554",
+        "timestamp": "2026-10-01T14:40:32.598819366",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - stub": {
@@ -98,7 +98,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -116,15 +116,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:32.807204",
+        "timestamp": "2026-10-01T14:40:36.073192493",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - vcf_gz_index - stub": {
@@ -150,7 +150,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -173,15 +173,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:37.654819",
+        "timestamp": "2026-10-01T14:40:39.374585697",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - vcf_gz_index_tbi": {
@@ -207,15 +207,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:21.961765",
+        "timestamp": "2026-10-01T14:40:29.05239383",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]]": {
@@ -236,7 +236,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -254,15 +254,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:06.656455",
+        "timestamp": "2026-10-01T14:40:18.91103878",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - vcf_gz_index": {
@@ -288,15 +288,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:11.49041",
+        "timestamp": "2026-10-01T14:40:22.302743227",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - vcf_gz_index_tbi - stub": {
@@ -322,7 +322,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -345,15 +345,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:48.223745",
+        "timestamp": "2026-10-01T14:40:46.034100251",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "homo_sapiens - [[vcf1, vcf2], [tbi1, tbi2]] - vcf_gz_index_csi - stub": {
@@ -379,7 +379,7 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -402,15 +402,15 @@
                     [
                         "BCFTOOLS_CONCAT",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:02:43.108308",
+        "timestamp": "2026-10-01T14:40:42.693147579",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     }
 }
