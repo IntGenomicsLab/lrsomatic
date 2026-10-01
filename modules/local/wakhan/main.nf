@@ -66,7 +66,7 @@ process WAKHAN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     sol=solution_2.0_0.8_0.9
-    mkdir -p \$sol/genes coverage_data coverage_plots phasing_output
+    mkdir -p \$sol/genes coverage_data coverage_plots phasing_output snps_loh_plots
     for f in integer_profile subclonal_profile; do
         touch \$sol/\$f.html \$sol/\$f.pdf \$sol/\$f.bed \$sol/\$f.vcf
     done
@@ -78,6 +78,7 @@ process WAKHAN {
     touch phasing_output/PHASE_CORRECTION_INDEX.html phasing_output/chr1.pdf
     echo "" | gzip > phasing_output/rephased.vcf.gz
     touch phasing_output/rephased.vcf.gz.csi
+    touch snps_loh_plots/${prefix}_genome_snps_ratio_loh.html
     printf 'repository_name\\tdna_purity\\tcell_purity\\tploidy\\tconfidence\\tsolution_rank\\n%s\\t0.8\\t0.8\\t2.0\\t0.9\\t1\\n' \$sol > solutions_ranks.tsv
     """
 }
