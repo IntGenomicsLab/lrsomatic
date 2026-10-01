@@ -3,9 +3,9 @@ process VCFSPLIT {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/bcftools:1.20--h8b25389_0':
-        'biocontainers/bcftools:1.20--h8b25389_0' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/bcftools:1.24--h118bc1c_2' :
+        'biocontainers/bcftools:1.24--h118bc1c_2' }"
 
     input:
     tuple val(meta), path(snv_vcf), path(indel_vcf)

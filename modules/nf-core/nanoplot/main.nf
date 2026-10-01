@@ -3,9 +3,9 @@ process NANOPLOT {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nanoplot:1.46.1--pyhdfd78af_0' :
-        'biocontainers/nanoplot:1.46.1--pyhdfd78af_0' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/nanoplot:1.48.0--pyhdfd78af_1' :
+        'quay.io/biocontainers/nanoplot:1.48.0--pyhdfd78af_1' }"
 
     input:
     tuple val(meta), path(ontfile)
@@ -14,42 +14,32 @@ process NANOPLOT {
     tuple val(meta), path("*.html")                , emit: html
     tuple val(meta), path("*.png") , optional: true, emit: png
     tuple val(meta), path("*.txt")                 , emit: txt
-    tuple val("${task.process}"), val('nanoplot'), eval("NanoPlot --version 2>&1 | sed 's/^.*NanoPlot //; s/ .*\$//'"), topic: versions, emit: versions_nanoplot
+    tuple val("${task.process}"), val('NanoPlot'), eval('NanoPlot --version | sed \'s/^.*NanoPlot //; s/ .*\$//\''), emit: versions_nanoplot, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
     def input_file = ("$ontfile".endsWith(".fastq.gz") || "$ontfile".endsWith(".fq.gz")) ? "--fastq ${ontfile}" :
-        ("$ontfile".endsWith(".txt")) ? "--summary ${ontfile}" : ("$ontfile".endsWith(".arrow")) ? "--arrow ${ontfile}" : ''
+        ("$ontfile".endsWith(".txt")) ? "--summary ${ontfile}" : ''
     """
     NanoPlot \\
         $args \\
         -t $task.cpus \\
         $input_file
-
-    for nanoplot_file in *.html *.png *.txt *.log
-    do
-        if [[ -s \$nanoplot_file ]]
-        then
-            mv \$nanoplot_file ${prefix}_\$nanoplot_file
-        fi
-    done
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_LengthvsQualityScatterPlot_dot.html
-    touch ${prefix}_LengthvsQualityScatterPlot_kde.html
-    touch ${prefix}_NanoPlot-report.html
-    touch ${prefix}_NanoStats.txt
-    touch ${prefix}_Non_weightedHistogramReadlength.html
-    touch ${prefix}_Non_weightedLogTransformed_HistogramReadlength.html
-    touch ${prefix}_WeightedHistogramReadlength.html
-    touch ${prefix}_WeightedLogTransformed_HistogramReadlength.html
-    touch ${prefix}_Yield_By_Length.html
+    touch LengthvsQualityScatterPlot_dot.html
+    touch LengthvsQualityScatterPlot_kde.html
+    touch NanoPlot-report.html
+    touch NanoStats.txt
+    touch Non_weightedHistogramReadlength.html
+    touch Non_weightedLogTransformed_HistogramReadlength.html
+    touch WeightedHistogramReadlength.html
+    touch WeightedLogTransformed_HistogramReadlength.html
+    touch Yield_By_Length.html
     """
 }

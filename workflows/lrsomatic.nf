@@ -560,7 +560,8 @@ workflow LRSOMATIC {
     //
     SAMTOOLS_MERGE(
         ch_aligned_split.multiple,
-        [[],[],[],[]]
+        [[],[],[],[]],
+        ''  // index_format: indexed separately by SAMTOOLS_INDEX_MERGE
     )
 
     // Index the merged BAM to produce a BAI (SAMTOOLS_MERGE does not create BAI inline)
@@ -570,7 +571,7 @@ workflow LRSOMATIC {
     ch_single_indexed
         .mix(
             SAMTOOLS_MERGE.out.bam
-                .join(SAMTOOLS_INDEX_MERGE.out.bai)
+                .join(SAMTOOLS_INDEX_MERGE.out.index)
         )
         .set { ch_index_minimap }
     // ch_index_minimap: [meta, bam, bai]  -- one aligned BAM + index per sample (all replicates merged)
@@ -856,6 +857,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -877,6 +879,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -980,8 +983,6 @@ workflow LRSOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
-    ch_versions = ch_versions.mix(SEVERUS.out.versions)
-
     SEVERUS.out.all_vcf
         .map { meta, vcf ->
             def extra = []
@@ -1007,6 +1008,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
+            [[], []],  // gtf: annotate from the cache
             '',
             vep_custom,
             vep_custom_tbi
@@ -1073,7 +1075,8 @@ workflow LRSOMATIC {
         //
         MOSDEPTH (
             ch_mosdepth_in,
-            ch_fasta
+            ch_fasta,
+            []  // quantize_labels: no --quantize
         )
 
         ch_mosdepth_global = MOSDEPTH.out.global_txt
@@ -1096,7 +1099,7 @@ workflow LRSOMATIC {
 
         BAM_STATS_SAMTOOLS (
             ch_index_minimap, // [meta, bam, bai]
-            ch_fasta
+            ch_fasta.combine(ch_fai).map { meta, fasta, _meta_fai, fai -> [meta, fasta, fai] }.first()
         )
 
         ch_bam_stats = BAM_STATS_SAMTOOLS.out.stats
@@ -1219,6 +1222,7 @@ workflow LRSOMATIC {
                 vep_cache,
                 ch_fasta,
                 [],
+                [[], []],  // gtf: annotate from the cache
                 '',
                 vep_custom,
                 vep_custom_tbi

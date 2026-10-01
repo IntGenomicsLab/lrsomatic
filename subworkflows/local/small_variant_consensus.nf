@@ -100,7 +100,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     BCFTOOLS_ANNOTATE(annotate_input)
 
     BCFTOOLS_ANNOTATE.out.vcf
-        .join(BCFTOOLS_ANNOTATE.out.tbi)
+        .join(BCFTOOLS_ANNOTATE.out.index)
         .set{annotated_vcfs}
     // annotated_vcfs: [meta(+caller), vcf, tbi]  -- VCF with CALLER INFO tag
 
@@ -197,7 +197,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         // BCFTOOLS_SORT_CONSENSUS renames it per sample (conf/modules.config)
         BCFTOOLS_SORT_CONSENSUS(isec_consensus_vcf)
         BCFTOOLS_SORT_CONSENSUS.out.vcf.set{vcf}
-        BCFTOOLS_SORT_CONSENSUS.out.tbi.set{tbi}
+        BCFTOOLS_SORT_CONSENSUS.out.index.set{tbi}
         // vcf/tbi: [meta, vcf/tbi]  -- consensus-only calls from the priority caller, renamed
     }
 
@@ -237,7 +237,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         BCFTOOLS_SORT(concat_out)
         BCFTOOLS_SORT.out.vcf
             .set{vcf}
-        BCFTOOLS_SORT.out.tbi
+        BCFTOOLS_SORT.out.index
             .set{tbi}
         // vcf/tbi: [meta, vcf/tbi]  -- sorted combined VCF
     }

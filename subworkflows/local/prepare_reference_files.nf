@@ -40,7 +40,6 @@ workflow PREPARE_REFERENCE_FILES {
             UNZIP_FASTA( [ [:], fasta ])
 
             ch_prepared_fasta = UNZIP_FASTA.out.file
-            ch_versions = ch_versions.mix(UNZIP_FASTA.out.versions)
         } else {
             ch_prepared_fasta = channel.value([ [:], fasta ])
         }
@@ -53,21 +52,20 @@ workflow PREPARE_REFERENCE_FILES {
             def meta_new = [id: model]
             def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
             def url = "${download_prefix}/${model}.tar.gz"
-            return [ meta_new, url ]
+            return [ meta_new, url, 'tar.gz' ]
         }
         .unique()  // deduplicate: multiple samples with the same Clair3 model share one download
         .set{ clair3_model_urls }
-        // clair3_model_urls: [meta(id=clair3_model_name), download_url_str]
+        // clair3_model_urls: [meta(id=clair3_model_name), download_url_str, suffix_str]
         //   one item per unique Clair3 model needed across all samples
 
         //
         // MODULE: WGET (label: process_single)
-        // Input:  [meta, url_str]  -- model name (id) + download URL
+        // Input:  [meta, url_str, suffix_str]  -- model name (id) + download URL + output extension
         // Output: .outfile -- [meta, tarball]  -- downloaded .tar.gz model archive
         //
         WGET ( clair3_model_urls )
 
-        ch_versions = ch_versions.mix(WGET.out.versions)
 
         //
         // MODULE: UNTAR (label: process_single)
@@ -108,7 +106,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_ALLELES(channel.fromPath(file(ascat_alleles)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 allele_files = UNZIP_ALLELES.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // allele_files: [path, path, ...]  -- all per-chromosome allele files collected
-                ch_versions = ch_versions.mix(UNZIP_ALLELES.out.versions)
             } else allele_files = channel.fromPath(ascat_alleles).collect()
 
             // Loci files: per-chromosome SNP loci positions
@@ -118,7 +115,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_LOCI(channel.fromPath(file(ascat_loci)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 loci_files = UNZIP_LOCI.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // loci_files: [path, path, ...]  -- all per-chromosome loci files collected
-                ch_versions = ch_versions.mix(UNZIP_LOCI.out.versions)
             } else loci_files = channel.fromPath(ascat_loci).collect()
 
             // GC correction file: genome-wide GC content per locus (optional)
@@ -128,7 +124,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_GC(channel.fromPath(file(ascat_loci_gc)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 gc_file = UNZIP_GC.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // gc_file: [path, ...]  -- GC correction file(s) collected
-                ch_versions = ch_versions.mix(UNZIP_GC.out.versions)
             } else gc_file = channel.fromPath(ascat_loci_gc).collect()
         }
 
@@ -140,7 +135,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_RT(channel.fromPath(file(ascat_loci_rt)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 rt_file = UNZIP_RT.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // rt_file: [path, ...]  -- RT correction file(s) collected
-                ch_versions = ch_versions.mix(UNZIP_RT.out.versions)
             } else rt_file = channel.fromPath(ascat_loci_rt).collect()
         }
 

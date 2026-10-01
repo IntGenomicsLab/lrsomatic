@@ -72,7 +72,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
         )
 
         BCFTOOLS_SORT.out.vcf
-            .join(BCFTOOLS_SORT.out.tbi)
+            .join(BCFTOOLS_SORT.out.index)
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clairs']
                 return [new_meta, vcf, tbi]
