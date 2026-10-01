@@ -15,8 +15,11 @@ on:
   issue_comment:
     types: [created]
 
+# Workflow concurrency applies before the job `if`, so every PR comment joins
+# the group, including Claude's own summary comment. Comments that are not
+# `@claude review` get a group of their own, so they cannot cancel a review.
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}${{ github.event_name == 'issue_comment' && !startsWith(github.event.comment.body, '@claude review') && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
