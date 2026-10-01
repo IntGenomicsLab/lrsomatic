@@ -45,11 +45,21 @@ workflow SMALL_VARIANT_CONSENSUS {
     // MODULE: STANDARDIZE_AF (BCFTOOLS_ANNOTATE alias, label: process_low) -- rename the AF FORMAT field to the priority caller's:
     //   FORMAT/AF  -> FORMAT/VAF  when prioritize_caller is 'deepvariant'/'deepsomatic'
     //   FORMAT/VAF -> FORMAT/AF   when prioritize_caller is 'clair'
+    //   Only the other family's VCFs are renamed: Clair callers write AF, DeepVariant/DeepSomatic write VAF,
+    //   and bcftools >= 1.24 fails on a rename whose source tag is absent instead of skipping it
     //
     if (combine_method == 'all') {
+        def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
         normalized_vcfs
+            .branch { meta, _vcf, _tbi ->
+                def caller_tag = meta.caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
+                rename: caller_tag != rename_to
+                keep: true
+            }
+            .set { af_tag }
+
+        af_tag.rename
             .map { meta, vcf, tbi ->
-                def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
                 def new_meta = meta + [rename_to: rename_to]
                 return [new_meta, vcf, tbi, [], [], [], [], []]
             }
@@ -63,6 +73,7 @@ workflow SMALL_VARIANT_CONSENSUS {
                 def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
                 return [clean_meta, vcf, tbi]
             }
+            .mix(af_tag.keep)
             .set { normalized_vcfs }
         // normalized_vcfs: [meta(+caller), vcf, tbi]  -- normalised, AF-standardized per-caller VCF
     }
