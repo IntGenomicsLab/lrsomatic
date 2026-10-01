@@ -32,5 +32,308 @@ Changes in 'bcftools/annotate/main.nf':
 
 'modules/nf-core/bcftools/annotate/tests/nextflow.config' is unchanged
 'modules/nf-core/bcftools/annotate/tests/main.nf.test' is unchanged
-'modules/nf-core/bcftools/annotate/tests/main.nf.test.snap' is unchanged
+Changes in 'bcftools/annotate/tests/main.nf.test.snap':
+--- modules/nf-core/bcftools/annotate/tests/main.nf.test.snap
++++ modules/nf-core/bcftools/annotate/tests/main.nf.test.snap
+@@ -33,15 +33,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:30.386236",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:40:06.115433412",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_gz_index_tbi": {
+@@ -69,15 +69,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:16:53.085281",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:49.244970585",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_gz_index_csi": {
+@@ -105,15 +105,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:16:45.422524",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:45.898318613",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_gz_index_tbi - stub": {
+@@ -141,15 +141,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:42.838698",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:40:12.461863492",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_gz_index_csi - stub": {
+@@ -186,15 +186,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:36.707392",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:40:09.299090106",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_gz_index": {
+@@ -222,15 +222,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:16:38.31037",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:42.545833081",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - stub": {
+@@ -252,15 +252,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:24.100554",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:40:02.825728798",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, [], annotation, annotation_tbi], [], header, [] - bcf_output": {
+@@ -282,15 +282,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:00.449491",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:52.638620607",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, [], annotation, annotation_tbi], [], [], [] - vcf_output": {
+@@ -312,15 +312,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:16:32.076785",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:39.313622671",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi, annotation, annotation_tbi], [], [], [] - vcf_output": {
+@@ -342,15 +342,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:16:24.950028",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:35.842754834",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, [], annotation, annotation_tbi], [], header, rename_chrs - vcf_gz_index": {
+@@ -378,15 +378,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:15.090199",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:59.429473491",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, [], annotation, annotation_tbi], columns, [], [] - bcf_output": {
+@@ -408,15 +408,15 @@
+                     [
+                         "BCFTOOLS_ANNOTATE",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:17:07.903873",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:39:56.007074817",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     }
+-}+}
+
 ************************************************************
