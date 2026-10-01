@@ -1,6 +1,7 @@
 process DEEPVARIANT_POSTPROCESSVARIANTS {
     tag "$meta.id"
     label 'process_high'
+    label 'process_short'
 
     //Conda is not supported at the moment
     container "docker.io/google/deepvariant:1.10.0"
@@ -27,7 +28,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}_germline"
 
     def regions = intervals ? "--regions ${intervals}" : ""
     def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
@@ -97,7 +98,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
-    prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}_germline"
     """
     echo "" | gzip > ${prefix}.vcf.gz
     touch ${prefix}.vcf.gz.tbi

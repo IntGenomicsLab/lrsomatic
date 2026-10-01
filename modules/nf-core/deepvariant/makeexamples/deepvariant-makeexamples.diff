@@ -3,12 +3,11 @@ Changes in component 'nf-core/deepvariant/makeexamples'
 Changes in 'deepvariant/makeexamples/main.nf':
 --- modules/nf-core/deepvariant/makeexamples/main.nf
 +++ modules/nf-core/deepvariant/makeexamples/main.nf
-@@ -1,9 +1,10 @@
+@@ -1,9 +1,9 @@
  process DEEPVARIANT_MAKEEXAMPLES {
      tag "$meta.id"
 -    label 'process_high'
 +    label 'process_very_high'
-+    label 'process_short'
  
      //Conda is not supported at the moment
 -    container "docker.io/google/deepvariant:1.10.0"
@@ -16,7 +15,7 @@ Changes in 'deepvariant/makeexamples/main.nf':
  
      input:
      tuple val(meta), path(input), path(index), path(intervals)
-@@ -15,7 +16,7 @@
+@@ -15,7 +15,7 @@
  
      output:
      tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")                , emit: examples
@@ -25,7 +24,7 @@ Changes in 'deepvariant/makeexamples/main.nf':
      tuple val(meta), path("${small_model_filename}",  arity: "0..*"), emit: small_model_calls
      tuple val(meta), path("${prefix}-read-phasing_debug-*of-*.tsv", arity: "0..*"), emit: read_phase_inputs
      tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
-@@ -36,6 +37,7 @@
+@@ -36,6 +36,7 @@
          : "${split_pref[0]}_call_variant_outputs.examples.tfrecord-*-of-*.gz"
      )
      def regions = intervals ? "--regions ${intervals}" : ""
@@ -33,7 +32,7 @@ Changes in 'deepvariant/makeexamples/main.nf':
      def par_regions = par_bed ? "--par_regions_bed=${par_bed}" : ""
  
      def phasing_args = ( with_phasing
-@@ -52,7 +54,8 @@
+@@ -52,7 +53,8 @@
          --ref "${fasta}" \\
          --reads "${input}" \\
          --examples "./${prefix}.examples.tfrecord@${task.cpus}.gz" \\
