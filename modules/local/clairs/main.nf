@@ -2,7 +2,9 @@ process CLAIRS {
     tag "$meta.id"
     label 'process_very_high'
 
-    container "docker.io/hkubal/clairs:v0.5.1"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'docker.io/hkubal/clairs:v0.5.1' :
+        'docker.io/hkubal/clairs:v0.5.1' }"
 
     input:
     tuple val(meta), path(tumor_bam), path(tumor_bai), path(normal_bam), path(normal_bai), val(model)
