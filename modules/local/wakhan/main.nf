@@ -3,9 +3,14 @@ process WAKHAN {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    // No biocontainer was built for 0.5.0; this image installs bioconda::wakhan=0.5.0
-    // (recipe: https://github.com/ljwharbers/Wakhan/tree/container/0.5.0/container)
-    container "ghcr.io/ljwharbers/wakhan:0.5.0"
+    // No biocontainer was built for 0.5.0. This image is bioconda::wakhan=0.5.0 plus upstream commit
+    // 1afd44d4 (KolmogorovLab/Wakhan#64), which stops update_coverage_hist raising IndexError on reads
+    // past a chromosome's last coverage bin. Recipe:
+    // https://github.com/ljwharbers/Wakhan/tree/container/0.5.0-histfix/container
+    // Docker Hub rather than ghcr, for the reason given in modules/local/clairsto/main.nf.
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://docker.io/ljwharbers/wakhan-sif:0.5.0-histfix-1afd44d'
+        : 'docker.io/ljwharbers/wakhan:0.5.0-histfix-1afd44d'}"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
