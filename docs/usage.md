@@ -429,11 +429,13 @@ across callers, and rejoined before phasing. A multi-allelic call of which only 
 allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
 and its `PL` values for the dropped allele are lost.
 
-`all` keeps the union by position: every record of the prioritised caller, plus
-the other caller's records at positions where the prioritised caller has none.
-Where both callers call a position, even with different alleles, only the
-prioritised caller's record is kept, so each output record is one caller's call.
-Records are not split in this mode.
+`all` keeps the union by position, one caller's record per position: every
+record of the prioritised caller, plus the other caller's records at positions
+where the prioritised caller has none. Where both callers call a position, even
+with different alleles, only the prioritised caller's record is kept. With
+`--smallvar_filter_pass false`, a `PASS` record wins over a non-`PASS` one first,
+so the prioritised caller's `RefCall`/`LowQual` record does not hide the other
+caller's `PASS` call. Records are not split in this mode.
 
 #### Germline and somatic provenance
 

@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=LowQual,Description="Low quality">
+##FILTER=<ID=RefCall,Description="Reference call">
+##contig=<ID=chr1,length=248956422>
+##INFO=<ID=CALLER,Number=1,Type=String,Description="Caller">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	testsample
+chr1	100	.	A	T	30	PASS	CALLER=clair3	GT	0/1
+chr1	200	.	C	G	5	LowQual	CALLER=clair3	GT	0/1
+chr1	300	.	G	A	5	RefCall	CALLER=clair3	GT	0/0
+chr1	500	.	T	C	30	PASS	CALLER=clair3	GT	1/1
+chr1	600	.	A	G	5	LowQual	CALLER=clair3	GT	0/1

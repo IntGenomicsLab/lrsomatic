@@ -3,11 +3,9 @@ include { BCFTOOLS_NORM as BCFTOOLS_NORM_REJOIN              } from '../../modul
 include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
 include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
 include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
-include { BCFTOOLS_CONCAT                                    } from '../../modules/nf-core/bcftools/concat/main'
-include { BCFTOOLS_SORT                                      } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_SORT as BCFTOOLS_SORT_CONSENSUS           } from '../../modules/nf-core/bcftools/sort/main'
-include { BCFTOOLS_EXCLUDE_SITES                             } from '../../modules/local/bcftools/excludesites/main'
+include { BCFTOOLS_CALLER_UNION                              } from '../../modules/local/bcftools/callerunion/main'
 
 
 
@@ -211,39 +209,24 @@ workflow SMALL_VARIANT_CONSENSUS {
         // vcf/tbi: [meta, vcf/tbi]  -- consensus calls from the priority caller, multi-allelics rejoined
     }
     else {
-        // Union by locus: the priority caller's records, plus the other caller's at positions it has no record for.
+        // Union by locus, one caller's record per position: PASS records first, then the priority caller's.
         // Records are unsplit here, so every output record is one caller's call.
         mixed_vcfs
-            .multiMap { meta, vcfs, tbis ->
+            .map { meta, vcfs, tbis ->
                 def prio = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 0 : 1
-                priority: [meta, vcfs[prio], tbis[prio]]
-                exclude:  [meta, vcfs[1 - prio], tbis[1 - prio], vcfs[prio], tbis[prio]]
+                return [meta, vcfs[prio], tbis[prio], vcfs[1 - prio], tbis[1 - prio]]
             }
-            .set{ by_priority }
-        // by_priority.priority: [meta, prio_vcf, prio_tbi]
-        // by_priority.exclude:  [meta, other_vcf, other_tbi, prio_vcf, prio_tbi]
+            .set{ union_input }
+        // union_input: [meta, prio_vcf, prio_tbi, other_vcf, other_tbi]
 
         //
-        // MODULE: BCFTOOLS_EXCLUDE_SITES (label: process_single) -- the other caller's records at positions the priority caller lacks
-        // Input:  [meta, other_vcf, other_tbi, prio_vcf, prio_tbi]
-        // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
+        // MODULE: BCFTOOLS_CALLER_UNION (label: process_single)
+        // Input:  [meta, prio_vcf, prio_tbi, other_vcf, other_tbi]
+        // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]  -- sorted union VCF, one record per position
         //
-        BCFTOOLS_EXCLUDE_SITES(by_priority.exclude)
-
-        by_priority.priority
-            .join(BCFTOOLS_EXCLUDE_SITES.out.vcf, failOnMismatch: true, failOnDuplicate: true)
-            .join(BCFTOOLS_EXCLUDE_SITES.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-            .map { meta, prio_vcf, prio_tbi, other_vcf, other_tbi ->
-                return [meta, [prio_vcf, other_vcf], [prio_tbi, other_tbi]]
-            }
-            .set{concat_input}
-        // concat_input: [meta, [prio_vcf, other_only_vcf], [tbis...]]
-
-        BCFTOOLS_CONCAT(concat_input)
-        BCFTOOLS_SORT(BCFTOOLS_CONCAT.out.vcf)
-        BCFTOOLS_SORT.out.vcf.set{ vcf }
-        BCFTOOLS_SORT.out.tbi.set{ tbi }
-        // vcf/tbi: [meta, vcf/tbi]  -- sorted union VCF, one record per position
+        BCFTOOLS_CALLER_UNION(union_input)
+        BCFTOOLS_CALLER_UNION.out.vcf.set{ vcf }
+        BCFTOOLS_CALLER_UNION.out.tbi.set{ tbi }
     }
 
     emit:
