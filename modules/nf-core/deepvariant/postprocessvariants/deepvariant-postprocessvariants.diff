@@ -10,7 +10,7 @@ Changes in 'deepvariant/postprocessvariants/main.nf':
 +    label 'process_high'
  
      //Conda is not supported at the moment
-     container "docker.io/google/deepvariant:1.9.0"
+     container "docker.io/google/deepvariant:1.10.0"
 @@ -14,8 +14,8 @@
      output:
      tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
@@ -47,21 +47,19 @@ Changes in 'deepvariant/postprocessvariants/main.nf':
  
      // The following block determines whether the small model was used, and if so, adds the variant calls from it
      // to the argument --small_model_cvo_records.
-@@ -62,10 +65,10 @@
+@@ -80,8 +83,8 @@
          --ref "${fasta}" \\
          --infile "${variant_calls_tfrecord_name}" \\
          --outfile "${prefix}.vcf.gz" \\
 -        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
 -        --gvcf_outfile "${prefix}.g.vcf.gz" \\
 +        --sample_name ${prefix} \\
++        ${gvcf_arg} \\
          ${regions} \\
          ${small_model_arg} \\
-+        ${gvcf_arg} \\
-         --cpus $task.cpus
- 
-     """
+         ${phased_inputs_arg} \\
 
+'modules/nf-core/deepvariant/postprocessvariants/tests/nextflow.config' is unchanged
 'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test' is unchanged
 'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/deepvariant/postprocessvariants/tests/nextflow.config' is unchanged
 ************************************************************

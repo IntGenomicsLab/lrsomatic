@@ -136,7 +136,7 @@ workflow TUMORONLY_SMALLVAR {
         //
         // SUBWORKFLOW: DEEPVARIANT (nf-core)
         // Input:  [meta, bam, bai, []]  -- [] = genome-wide (no interval list)
-        //         fasta / fai / [[:],[]] x2  -- empty PAR/GFF
+        //         fasta / fai / [[:],[]] x2  -- no gzi, no PAR regions BED; with_phasing false
         // Output: .vcf       -- [meta, vcf]
         //         .vcf_index -- [meta, tbi]
         //
@@ -152,8 +152,9 @@ workflow TUMORONLY_SMALLVAR {
             deepvariant_input_ch,
             fasta,
             fai,
-            [[:],[]],  // PAR regions (not used)
-            [[:],[]]   // GFF annotation (not used)
+            [[:],[]],  // gzi: the FASTA is not bgzipped
+            [[:],[]],  // PAR regions BED (not used)
+            false      // with_phasing: LongPhase phases the calls downstream
         )
 
         DEEPVARIANT.out.vcf

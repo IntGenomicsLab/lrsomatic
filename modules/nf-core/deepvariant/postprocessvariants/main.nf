@@ -1,13 +1,12 @@
 process DEEPVARIANT_POSTPROCESSVARIANTS {
     tag "$meta.id"
     label 'process_high'
-    label 'process_short'
 
     //Conda is not supported at the moment
-    container "docker.io/google/deepvariant:1.9.0"
+    container "docker.io/google/deepvariant:1.10.0"
 
     input:
-    tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), path(small_model_calls), path(intervals)
+    tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), path(small_model_calls), path(phase_inputs), path(intervals)
     tuple val(meta2), path(fasta)
     tuple val(meta3), path(fai)
     tuple val(meta4), path(gzi)
@@ -28,7 +27,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}_germline"
+    prefix = task.ext.prefix ?: "${meta.id}"
 
     def regions = intervals ? "--regions ${intervals}" : ""
     def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
@@ -60,16 +59,35 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
         small_model_arg = "--small_model_cvo_records ${small_model_tfrecords_logical_name}"
     }
 
+    // The following block determines whether phase info was outputted, and if so, adds the info from it
+    // to the argument --phased_reads_input_path.
+    def phased_inputs_arg = ""
+    if (phase_inputs) {
+        phase_inputs_matcher = (phase_inputs[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/)
+        if (!phase_inputs_matcher.matches()) {
+            throw new IllegalArgumentException("read-phasing_debug baseName '" + phase_inputs[0].baseName + "' doesn't match the expected pattern")
+        }
+        phase_input_name = phase_inputs_matcher[0][1]
+        phase_input_shardCount = phase_inputs_matcher[0][2]
+        // Reconstruct the logical name. Example: test_call_variant_outputs.examples.tfrecord@12.gz
+        phase_input_logical_name = "${phase_input_name}@${phase_input_shardCount}.gz"
+        phased_inputs_arg = "--phased_reads_input_path ${phase_input_logical_name}"
+    }
+
     """
+    export MPLCONFIGDIR=\$PWD/.matplotlib
+    mkdir -p \$MPLCONFIGDIR
+
     /opt/deepvariant/bin/postprocess_variants \\
         ${args} \\
         --ref "${fasta}" \\
         --infile "${variant_calls_tfrecord_name}" \\
         --outfile "${prefix}.vcf.gz" \\
         --sample_name ${prefix} \\
+        ${gvcf_arg} \\
         ${regions} \\
         ${small_model_arg} \\
-        ${gvcf_arg} \\
+        ${phased_inputs_arg} \\
         --cpus $task.cpus
 
     """
@@ -79,7 +97,7 @@ process DEEPVARIANT_POSTPROCESSVARIANTS {
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
-    prefix = task.ext.prefix ?: "${meta.id}_germline"
+    prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo "" | gzip > ${prefix}.vcf.gz
     touch ${prefix}.vcf.gz.tbi
