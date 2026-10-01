@@ -37,7 +37,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     SORT_POST_NORM(BCFTOOLS_NORM.out.vcf)
 
     SORT_POST_NORM.out.vcf
-        .join(SORT_POST_NORM.out.tbi)
+        .join(SORT_POST_NORM.out.index)
         .set { normalized_vcfs }
     // normalized_vcfs: [meta(+caller), vcf.gz, tbi]  -- normalised, sorted per-caller VCF
 
@@ -58,7 +58,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         STANDARDIZE_AF(standardize_input)
 
         STANDARDIZE_AF.out.vcf
-            .join(STANDARDIZE_AF.out.tbi)
+            .join(STANDARDIZE_AF.out.index)
             .map { meta, vcf, tbi ->
                 def clean_meta = meta.findAll { k, _v -> k != 'rename_to' }
                 return [clean_meta, vcf, tbi]
