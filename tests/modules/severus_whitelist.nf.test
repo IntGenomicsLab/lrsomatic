@@ -1,14 +1,15 @@
 nextflow_process {
 
     name "Test Process SEVERUS with and without --whitelist"
-    script "../modules/nf-core/severus/main.nf"
+    script "../../modules/nf-core/severus/main.nf"
     process "SEVERUS"
 
     tag "modules"
     tag "severus"
     tag "small"
 
-    // Lives here rather than in modules/nf-core/severus/tests, which nf-test.config ignores, so PR CI runs it.
+    // Lives here rather than in modules/nf-core/severus/tests, which nf-test.config ignores, so PR CI runs it;
+    // not directly in tests/, where nf-core lint (nf_test_content) treats every *.nf.test as a pipeline test.
     // Paired, because without a control or PON Severus writes no somatic_SVs and the module's bgzip step fails.
     // Real Severus on the nf-core nanopore test BAMs: checks that the patched image runs, that --whitelist reaches
     // the command only when a whitelist is given, and that the bgzipped VCFs are emitted either way.
