@@ -491,13 +491,14 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "SigProfilerMatrixGenerator volume directory containing tsb/<sigprofiler_genome>/ (the installed genome payload).",
-                    "help_text": "Create it once with `--download_sigprofiler_genome` (published to `<outdir>/cache/sigprofiler/volume`) or with `SigProfilerMatrixGenerator install <genome> --volume <dir>`, then pass it here on later runs.",
+                    "help_text": "Takes precedence over `--download_sigprofiler_genome`. A run without it downloads the payload and publishes it to `<outdir>/cache/sigprofiler/volume`; pass that (or a `SigProfilerMatrixGenerator install <genome> --volume <dir>` volume) here on later runs.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "download_sigprofiler_genome": {
                     "type": "boolean",
-                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run instead of using --sigprofiler_genome_dir.",
-                    "fa_icon": "fas fa-download"
+                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run when no --sigprofiler_genome_dir is given.",
+                    "fa_icon": "fas fa-download",
+                    "default": true
                 },
                 "sigprofiler_cosmic_version": {
                     "type": "number",
