@@ -984,15 +984,17 @@ workflow LRSOMATIC {
     //   normal_bam/bai are empty lists [] for tumor-only samples
 
     //
-    // MODULE: SEVERUS (label: process_high)
+    // MODULE: SEVERUS (label: process_medium)
     // Input:  severus_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
     //         [[:], bed_file, pon_file]  -- optional target BED and panel-of-normals for SV filtering
-    // Output: .all_vcf -- [meta, vcf]  -- all somatic SVs (sniffles2 format)
+    //         [[:], whitelist]  -- optional (--severus_whitelist): regions in which every SV is reported
+    // Output: .all_vcf / .somatic_vcf -- [meta, vcf.gz]  -- all and somatic SVs
     //
 
     SEVERUS (
         severus_input,
-        [[:], params.bed_file, params.pon_file]
+        [[:], params.bed_file, params.pon_file],
+        [[:], params.severus_whitelist ? file(params.severus_whitelist, checkIfExists: true) : []]
     )
 
     SEVERUS.out.all_vcf
