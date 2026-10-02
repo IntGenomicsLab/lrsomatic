@@ -1,0 +1,40 @@
+nextflow_process {
+
+    name "Test Process SIGPROFILER_ASSIGNMENT"
+    script "../main.nf"
+    process "SIGPROFILER_ASSIGNMENT"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sigprofiler"
+    tag "sigprofiler_assignment"
+    tag "small"
+
+    // Under -stub; the versions eval still runs in the pinned image, so its tag must resolve under each profile
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                // any file stands in for the SBS96 matrix; the stub does not read it
+                def matrix = file("\${projectDir}/tests/fixtures/sigprofiler_stub_volume/tsb/CHM13-T2T/1.txt", checkIfExists: true)
+                input[0] = [ [ id:'sample1' ], matrix, [], [] ]
+                input[1] = 'CHM13-T2T'
+                input[2] = 3.6
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.activities.size() == 1 },
+                { assert process.out.versions_sigprofilerassignment.size() == 1 },
+                { assert process.out.versions_sigprofilerassignment[0][2] ==~ /\d+\.\d+.*/ }
+            )
+        }
+    }
+}
