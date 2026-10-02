@@ -12,10 +12,10 @@
                     "bcftools": 1.24
                 },
                 "CLAIR3": {
-                    "clair3": "1.2.0"
+                    "clair3": "2.0.3"
                 },
                 "CLAIRS": {
-                    "clairs": "0.4.4"
+                    "clairs": "0.5.1"
                 },
                 "CLAIRSTO": {
                     "clairsto": "0.5.1"
@@ -102,9 +102,6 @@
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
-                "UNTAR": {
-                    "untar": 1.34
-                },
                 "UNZIP_ALLELES": {
                     "7za": 16.02
                 },
@@ -125,9 +122,6 @@
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
-                "WGET": {
-                    "wget": "1.21.4"
-                },
                 "WHATSHAP_STATS": {
                     "whatshap": 2.8
                 },
@@ -136,7 +130,7 @@
                 }
             }
         ],
-        "timestamp": "2026-10-01T12:09:21.969543344",
+        "timestamp": "2026-10-01T12:30:55.360918966",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
