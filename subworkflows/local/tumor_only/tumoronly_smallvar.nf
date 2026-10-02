@@ -211,8 +211,9 @@ workflow TUMORONLY_SMALLVAR {
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.
+        // Tumour-only germline is PASS-only: DS_GERMLINE_SELECT enforces it under the verdict, this filter otherwise.
         def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        if (params.smallvar_filter_pass) {
+        if (params.smallvar_filter_pass || !somatic_var_keep.contains('deepsomatic')) {
             DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
             deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
                 .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
