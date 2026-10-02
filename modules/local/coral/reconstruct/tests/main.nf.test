@@ -1,0 +1,42 @@
+nextflow_process {
+
+    name "Test Process CORAL_RECONSTRUCT"
+    script "../main.nf"
+    process "CORAL_RECONSTRUCT"
+
+    tag "modules"
+    tag "modules_local"
+    tag "coral_reconstruct"
+    tag "small"
+
+    // Stub only: the real tool needs a BAM, a solver and, for the classifier, a ~1 GB data repo.
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample1' ],
+                    file('sample1_CNV_SEEDS.bed'),
+                    file('sample1_coral_cn.bed'),
+                    file('sample1.bam'),
+                    file('sample1.bam.bai')
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // AmpliconClassifier pairs graph/cycles/summary by prefix in one directory
+                { assert process.out.graphs[0][1].toString().endsWith('_amplicon1_graph.txt') },
+                { assert process.out.cycles[0][1].toString().endsWith('_amplicon1_cycles.txt') },
+                { assert process.out.summary[0][1].toString().endsWith('_summary.txt') },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

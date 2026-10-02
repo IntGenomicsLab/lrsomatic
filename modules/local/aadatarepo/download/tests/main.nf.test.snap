@@ -1,0 +1,35 @@
+{
+    "GRCh38 data repo - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "aa_data_repo"
+                        },
+                        "GRCh38.tar.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,3d07074650f444dad718bd48add94911"
+                ],
+                "archive": [
+                    [
+                        {
+                            "id": "aa_data_repo"
+                        },
+                        "GRCh38.tar.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,3d07074650f444dad718bd48add94911"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-30T16:21:36.209439147"
+    }
+}

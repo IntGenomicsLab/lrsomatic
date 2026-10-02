@@ -1,0 +1,112 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "coral_reconstruct"
+description: Reconstruct amplicon breakpoint graphs and decompose them into cycles.
+keywords:
+  - ecdna
+  - amplicon
+  - structural variation
+  - long-read
+tools:
+  - "coral":
+      description: "Reconstructs extrachromosomal DNA structures from long-read sequencing."
+      homepage: "https://github.com/AmpliconSuite/CoRAL"
+      documentation: "https://github.com/AmpliconSuite/CoRAL"
+      doi: "10.1101/gr.279131.124"
+      licence: ["BSD-3-Clause"]
+      identifier: ""
+
+## No environment.yml: CoRAL is not on bioconda -- the `coral` recipe there is an unrelated
+## RNA-seq read-bridging tool. Built from a fork adding T2T-CHM13 support and two SCIP fixes
+## (https://github.com/robert-a-forsyth/CoRAL, branch chm13-support).
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - seeds:
+        type: file
+        description: Seed intervals from `coral seed`
+        pattern: "*_CNV_SEEDS.bed"
+    - cn_seg:
+        type: file
+        description: Copy-number segments with total CN in the last column
+        pattern: "*.{bed,cns}"
+    - bam:
+        type: file
+        description: Tumour BAM
+        pattern: "*.bam"
+    - bai:
+        type: file
+        description: BAM index
+        pattern: "*.bai"
+
+output:
+  reconstruction:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "reconstruct":
+        type: directory
+        description: |
+          Graph, cycles and summary files together. AmpliconClassifier pairs them by
+          shared prefix, so nothing inside may be renamed.
+  graphs:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "reconstruct/*_amplicon*_graph.txt":
+        type: file
+        description: Per-amplicon breakpoint graph, AmpliconArchitect format
+        pattern: "*_amplicon*_graph.txt"
+  cycles:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "reconstruct/*_amplicon*_cycles.txt":
+        type: file
+        description: Per-amplicon decomposed cycles and paths
+        pattern: "*_amplicon*_cycles.txt"
+  summary:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "reconstruct/*_summary.txt":
+        type: file
+        description: Per-run amplicon summary, written even with no amplicons
+        pattern: "*_summary.txt"
+  log:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "reconstruct/*_reconstruct.log":
+        type: file
+        description: Reconstruction log including solver output
+        pattern: "*_reconstruct.log"
+  versions_coral:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

@@ -1,0 +1,117 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "5": [
+                    [
+                        "CORAL_RECONSTRUCT",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ],
+                "cycles": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "graphs": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "reconstruction": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_coral": [
+                    [
+                        "CORAL_RECONSTRUCT",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:50:23.471598843"
+    }
+}

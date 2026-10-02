@@ -1,0 +1,49 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            "sample1_amplicon1_cycles.png:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_amplicon1_graph.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        "CORAL_PLOT",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ],
+                "plots": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            "sample1_amplicon1_cycles.png:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_amplicon1_graph.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "versions_coral": [
+                    [
+                        "CORAL_PLOT",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:50:15.950672699"
+    }
+}

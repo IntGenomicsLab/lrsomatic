@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "ascat_to_coral_bed"
+description: Convert ASCAT copy-number calls into the BED CoRAL seeds from.
+keywords:
+  - copy number
+  - ascat
+  - ecdna
+tools:
+  - "python":
+      description: "Python, running bin/ascat_to_coral_bed.py from this pipeline."
+      homepage: "https://www.python.org"
+      documentation: "https://docs.python.org"
+      licence: ["PSF-2.0"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - cnvs:
+        type: file
+        description: ASCAT cnvs.txt with chr/startpos/endpos/nMajor/nMinor columns
+        pattern: "*.cnvs.txt"
+  - - meta2:
+        type: map
+        description: Groovy Map for the reference
+    - fai:
+        type: file
+        description: |
+          Reference index, used to respell contigs. ASCAT writes "1" where the BAM may
+          say "chr1", and CoRAL builds chromosome sizes from the BAM header. Optional.
+        pattern: "*.fai"
+
+output:
+  bed:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_coral_cn.bed":
+        type: file
+        description: Headerless BED4 with total copy number in the last column
+        pattern: "*_coral_cn.bed"
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - python:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - python:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"
