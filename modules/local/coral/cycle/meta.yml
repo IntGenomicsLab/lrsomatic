@@ -35,8 +35,8 @@ output:
     - "cycles":
         type: directory
         description: |
-          Re-extracted cycles alongside the graph and summary files copied from the
-          reconstruction, so AmpliconClassifier still sees a complete set.
+          Decomposed cycles and the amplicon summary, beside the graph files copied from
+          the reconstruction, so AmpliconClassifier still sees a complete set.
   cycles:
     - meta:
         type: map

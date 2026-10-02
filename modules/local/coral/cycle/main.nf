@@ -24,11 +24,11 @@ process CORAL_CYCLE {
     }
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Graphs are copied alongside the re-extracted cycles so AmpliconClassifier
-    // still finds a matching graph/cycles/summary set in one directory.
+    // Graphs are copied beside the new cycles so AmpliconClassifier finds a matching
+    // graph/cycles/summary set in one directory; cycle_all writes its own summary.
     """
     mkdir -p cycles
-    cp ${reconstruction}/*_graph.txt ${reconstruction}/*_summary.txt cycles/ 2>/dev/null || true
+    cp ${reconstruction}/*_graph.txt cycles/ 2>/dev/null || true
 
     coral cycle_all \\
         --bp-dir ${reconstruction} \\
@@ -42,6 +42,6 @@ process CORAL_CYCLE {
     mkdir -p cycles
     touch cycles/${prefix}_amplicon1_cycles.txt
     touch cycles/${prefix}_amplicon1_graph.txt
-    touch cycles/${prefix}_summary.txt
+    touch cycles/${prefix}_amplicon_summary.txt
     """
 }

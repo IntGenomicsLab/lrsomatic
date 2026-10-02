@@ -15,7 +15,7 @@ process CORAL_RECONSTRUCT {
     tuple val(meta), path("reconstruct"), emit: reconstruction
     tuple val(meta), path("reconstruct/*_amplicon*_graph.txt"), emit: graphs, optional: true
     tuple val(meta), path("reconstruct/*_amplicon*_cycles.txt"), emit: cycles, optional: true
-    tuple val(meta), path("reconstruct/*_summary.txt"), emit: summary, optional: true
+    tuple val(meta), path("reconstruct/*_amplicon_summary.txt"), emit: summary, optional: true
     tuple val(meta), path("reconstruct/*_reconstruct.log"), emit: log, optional: true
     tuple val("${task.process}"), val('coral'), eval("python -c 'import importlib.metadata as m; print(m.version(\"CoRAL\"))'"), topic: versions, emit: versions_coral
 
@@ -47,7 +47,7 @@ process CORAL_RECONSTRUCT {
     mkdir -p reconstruct
     touch reconstruct/${prefix}_amplicon1_graph.txt
     touch reconstruct/${prefix}_amplicon1_cycles.txt
-    touch reconstruct/${prefix}_summary.txt
+    touch reconstruct/${prefix}_amplicon_summary.txt
     touch reconstruct/${prefix}_reconstruct.log
     """
 }

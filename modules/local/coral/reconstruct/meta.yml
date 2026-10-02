@@ -71,10 +71,10 @@ output:
     - meta:
         type: map
         description: Groovy Map containing sample information
-    - "reconstruct/*_summary.txt":
+    - "reconstruct/*_amplicon_summary.txt":
         type: file
-        description: Per-run amplicon summary, written even with no amplicons
-        pattern: "*_summary.txt"
+        description: Per-run amplicon summary, written by cycle decomposition (absent with --coral_run_cycle)
+        pattern: "*_amplicon_summary.txt"
   log:
     - meta:
         type: map
