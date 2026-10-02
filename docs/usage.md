@@ -139,8 +139,8 @@ When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
 runs DeepVariant on the **tumour** BAM, so on its own those calls mix germline and
 clonal somatic variants. When `deepsomatic` is also in `--somatic_var_keep`, the
 pipeline records DeepSomatic's verdict at each site in `INFO/DS_VERDICT` and keeps
-only sites it calls `GERMLINE` or `PON`; `RefCall` and sites DeepSomatic never
-evaluated are dropped. Without `deepsomatic`, the DeepVariant germline calls are
+DeepVariant's `PASS` calls only at sites it calls `GERMLINE` or `PON`; `RefCall` and
+sites DeepSomatic never evaluated are dropped, whatever `--smallvar_filter_pass` is. Without `deepsomatic`, the DeepVariant germline calls are
 used without a verdict filter and may include somatic variants. Either way the
 tumour-only germline arm is a tumour-derived proxy, not a call set from normal
 tissue.
