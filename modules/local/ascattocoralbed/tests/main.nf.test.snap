@@ -6,7 +6,7 @@
                     {
                         "id": "sample1"
                     },
-                    "sample1_coral_cn.bed:md5,771563ffb2c54c0fddbe3aafb288e984"
+                    "sample1_coral_cn.bed:md5,3859fdd0d158fed44218a1dc18135482"
                 ]
             ]
         ],
@@ -14,7 +14,7 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-24T09:36:07.311149784"
+        "timestamp": "2026-10-02T14:15:53.258312229"
     },
     "stub": {
         "content": [

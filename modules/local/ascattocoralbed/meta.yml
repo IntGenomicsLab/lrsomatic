@@ -28,8 +28,9 @@ input:
     - fai:
         type: file
         description: |
-          Reference index, used to respell contigs. ASCAT writes "1" where the BAM may
-          say "chr1", and CoRAL builds chromosome sizes from the BAM header. Optional.
+          Reference index, used to respell contigs and to run each contig's last segment
+          to its end. ASCAT writes "1" where the BAM may say "chr1", and CoRAL builds
+          chromosome sizes from the BAM header. Optional.
         pattern: "*.fai"
 
 output:
@@ -39,7 +40,9 @@ output:
         description: Groovy Map containing sample information
     - "*_coral_cn.bed":
         type: file
-        description: Headerless BED4 with total copy number in the last column
+        description: |
+          Headerless 0-based half-open BED4 tiling each contig without gaps, with total
+          copy number in the last column
         pattern: "*_coral_cn.bed"
   versions_python:
     - - ${task.process}:
