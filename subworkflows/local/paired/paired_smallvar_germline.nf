@@ -30,7 +30,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
                 return [meta, clair3_model_name, file]
             }
             .set{clair3_models}
-        // clair3_models: [meta(id=model_name), model_name_str, model_dir]
+        // clair3_models: [meta(id=model_name), model_name_str, model_dir or []]
 
         // Emit [meta, clair3_model_name, bam, bai] to use model_name as the combine key
         normal_bams

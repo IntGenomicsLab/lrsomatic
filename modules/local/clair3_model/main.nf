@@ -19,11 +19,12 @@ process CLAIR3_MODEL {
 
     script:
     def args = task.ext.args ?: ''
-    // Clair3 v2 models are directories holding two PyTorch checkpoints, served unpacked
+    // Clair3 v2 models are directories holding two PyTorch checkpoints, served unpacked. Clair3 unpickles
+    // them, so the certificate is checked: wget's default CA path is empty in the image, but conda ships a bundle
     """
     mkdir ${meta.id}
     for checkpoint in pileup.pt full_alignment.pt; do
-        wget ${args} -O ${meta.id}/\$checkpoint ${url}/\$checkpoint
+        wget ${args} --ca-certificate=\${CONDA_PREFIX:-/opt/conda}/ssl/cert.pem -O ${meta.id}/\$checkpoint ${url}/\$checkpoint
     done
     """
 

@@ -239,7 +239,9 @@ workflow LRSOMATIC {
     ch_samplesheet
         .join(basecall_meta)
         .map { meta, bam, basecall_model_meta, kinetics_meta ->
-            def chosen_clair3_model = meta.clair3_model ?: clair3_modelMap.get(basecall_model_meta)
+            // Same unset test as PREPARE_REFERENCE_FILES, so both pick the same model and the combine keys agree
+            def clair3_model_unset = !meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']
+            def chosen_clair3_model = clair3_model_unset ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def chosen_clairSTO_model = meta.clairSTO_model ?: clairs_modelMap.get(basecall_model_meta)
             def chosen_clairS_model = meta.clairS_model ?: clairs_modelMap.get(basecall_model_meta)
             def meta_new =[ id: meta.id,
@@ -267,7 +269,7 @@ workflow LRSOMATIC {
     // Input:  params.fasta, ASCAT file paths, basecall_meta, clair3_modelMap
     // Output: .prepped_fasta           -- [[:], fasta]
     //         .prepped_fai             -- [[:], fai]
-    //         .clair3_models-- [meta(id=model_name), model_dir]
+    //         .clair3_models           -- [meta(id=model_name), model_dir or []]  -- [] = bundled with the Clair3 image
     //         .allele_files / .loci_files / .gc_file / .rt_file  -- flat file collections
     //
 
@@ -304,7 +306,7 @@ workflow LRSOMATIC {
     // clairsto_cna_channel: [meta, cna_resource_dir] or [[:], []]  -- [] uses the image's own set
 
     clair3_models = PREPARE_REFERENCE_FILES.out.clair3_models
-    // clair3_models: [meta(id=clair3_model_name), model_dir]
+    // clair3_models: [meta(id=clair3_model_name), model_dir or []]  -- [] = bundled with the Clair3 image
 
     ch_nanoplot_pre_txt = channel.empty()
 
@@ -731,7 +733,7 @@ workflow LRSOMATIC {
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE
     // Input:  branched_paired_ch.normal -- [meta, bam, bai]  -- normal sample BAMs only
-    //         clair3_models  -- [meta(id=model_name), model_dir]
+    //         clair3_models  -- [meta(id=model_name), model_dir or []]
     // Output: .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (Clair3 and/or DeepVariant consensus)
     PAIRED_SMALLVAR_GERMLINE (
         branched_paired_ch.normal,
