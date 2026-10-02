@@ -98,10 +98,11 @@ nextflow_workflow {
             }
             workflow {
                 """
+                // A real repo, so the param alone is what keeps the classifier from running
                 input[0] = channel.of([ [ id:'sample1' ], file('sample1.bam'), file('sample1.bam.bai') ])
                 input[1] = channel.of([ [ id:'sample1' ], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true) ])
                 input[2] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true) ])
-                input[3] = channel.empty()
+                input[3] = channel.value([ [:], file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures") ])
                 input[4] = 't2t'
                 input[5] = 'CHM13'
                 """
