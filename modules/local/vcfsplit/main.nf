@@ -22,6 +22,8 @@ process VCFSPLIT {
     task.ext.when == null || task.ext.when
 
     script:
+    // Extra bcftools view filter for the germline arm (--smallvar_filter_pass sets it in conf/modules.config)
+    def germline_args = task.ext.args ?: ''
     """
 
     bcftools view -i 'FILTER="PASS"' $indel_vcf | bgzip -c > indels_pass.vcf.gz
@@ -31,8 +33,8 @@ process VCFSPLIT {
     bcftools concat -a -Oz -o somatic.vcf.gz indels_pass.vcf.gz snv_pass.vcf.gz
     tabix -p vcf somatic.vcf.gz
 
-    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $indel_vcf | bgzip -c > indels_filtered.vcf.gz
-    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $snv_vcf | bgzip -c > snv_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $indel_vcf | bcftools view ${germline_args} - | bgzip -c > indels_filtered.vcf.gz
+    bcftools view -i 'FILTER~"NonSomatic" || INFO/Verdict_Germline=1' $snv_vcf | bcftools view ${germline_args} - | bgzip -c > snv_filtered.vcf.gz
     tabix -p vcf indels_filtered.vcf.gz
     tabix -p vcf snv_filtered.vcf.gz
     bcftools concat -a -Oz -o germline_tmp.vcf.gz indels_filtered.vcf.gz snv_filtered.vcf.gz
