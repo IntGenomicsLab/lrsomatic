@@ -134,6 +134,7 @@ Example output directory structure:
 │    │    │   ├── samtools
 │    ├── reconplot
 │    │   ├── savana
+│    │   ├── severus_ascat
 │    │   └── severus_wakhan
 │    ├── variants
 │    │   ├──clairS-TO

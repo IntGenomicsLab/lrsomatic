@@ -1,10 +1,11 @@
 # Padfoot RepeatMasker image
 
-This is the image the `PADFOOT` module runs in: `ghcr.io/tim-yu/padfoot-repeatmasker:<tag>` under Docker and its
-prebuilt SIF twin `oras://ghcr.io/tim-yu/padfoot-repeatmasker-sif:<tag>` under Singularity/Apptainer, both pinned to the
-same tag in `modules/local/padfoot/main.nf`. It contains:
+This is the image the `PADFOOT` module runs in: `docker.io/timmy9527/padfoot-repeatmasker:<tag>` under Docker and its
+prebuilt SIF twin `oras://docker.io/timmy9527/padfoot-repeatmasker-sif:<tag>` under Singularity/Apptainer, both pinned to the
+same tag in `modules/local/padfoot/main.nf` (Docker Hub, like the pipeline's other large custom images). It contains:
 
-- Padfoot itself at `/opt/padfoot` (`padfoot.py`, `padfoot/`, `beds/` with the hg38 and mm10 annotations), installed from
+- Padfoot itself at `/opt/padfoot` (`padfoot.py`, `padfoot/`, `beds/` with the hg38 and mm10 gene/repeat annotations and the
+  cancer-gene table it used to download at run time), installed from
   the pinned commit of [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) given by `PADFOOT_COMMIT` in the Dockerfile,
   checksum-verified (Padfoot is not on bioconda; the fork adds SAVANA input support);
 - its runtime dependencies from `containers/padfoot/environment.yml` (Python 3.12, pysam, pandas, biopython, samtools,
@@ -17,12 +18,13 @@ The module does not support `-profile conda`: the image ships the tool, not just
 Build and publish from the pipeline root:
 
 ```bash
-TAG=4.2.4-dfam4-padfoot-<padfoot commit>
-docker build -f containers/padfoot/Dockerfile -t "ghcr.io/tim-yu/padfoot-repeatmasker:$TAG" .
-docker push "ghcr.io/tim-yu/padfoot-repeatmasker:$TAG"
-# the SIF twin, built from the image just pushed and published with ORAS (singularity remote login first)
-singularity build "padfoot-repeatmasker-$TAG.sif" "docker-daemon://ghcr.io/tim-yu/padfoot-repeatmasker:$TAG"
-singularity push "padfoot-repeatmasker-$TAG.sif" "oras://ghcr.io/tim-yu/padfoot-repeatmasker-sif:$TAG"
+TAG=4.2.4-dfam4-padfoot-<padfoot commit>   # e.g. 4.2.4-dfam4-padfoot-25fd6d4
+docker build -f containers/padfoot/Dockerfile -t "docker.io/timmy9527/padfoot-repeatmasker:$TAG" .
+docker push "docker.io/timmy9527/padfoot-repeatmasker:$TAG"
+# the SIF twin, built from the image just pushed (by digest, so it is exactly the published image) and published with ORAS
+# (`singularity remote login --username <user> oras://docker.io` first)
+singularity build "padfoot-repeatmasker-$TAG.sif" "docker://docker.io/timmy9527/padfoot-repeatmasker:$TAG"
+singularity push "padfoot-repeatmasker-$TAG.sif" "oras://docker.io/timmy9527/padfoot-repeatmasker-sif:$TAG"
 ```
 
 Bump both tags in the `container` directive of `modules/local/padfoot/main.nf`, or override per site:

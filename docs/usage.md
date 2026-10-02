@@ -407,9 +407,11 @@ Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support n
 - `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked (`solution_1`) Wakhan integer copy-number VCF (requires Wakhan not skipped)
 - `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
 
-Padfoot is not distributed on bioconda. The module's image (`ghcr.io/tim-yu/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
+Padfoot is not distributed on bioconda. The module's image (`docker.io/timmy9527/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
 
 RepeatMasker (used only to classify the sequence of novel insertions) runs by default; the image ships the Dfam 4.0 root and curated-consensus partitions. `--padfoot_run_repeatmasker false` skips it.
+
+Gene copy number in `by_gene.tsv` is labelled against the tumour ploidy: the module passes the CN caller's fitted purity/ploidy table (Wakhan `solutions_ranks.tsv`, SAVANA `*_fitted_purity_ploidy.tsv`) and Padfoot compares each haplotype's integer copy number with ploidy/2 (SAVANA's fractional major/minor copy numbers are rounded first). Without a fit table Padfoot estimates the ploidy from the profile and says so in `padfoot.log`; segments without a minor-allele estimate are reported as `NA`.
 
 Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.
 
@@ -422,7 +424,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 
 #### ReConPlot Options
 
-[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`ghcr.io/tim-yu/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`docker.io/timmy9527/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
 
 - `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
 - `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
@@ -443,7 +445,7 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 
 ##### Offline and air-gapped systems
 
-Both modules use the same pinned-tag pair as the other custom images in the pipeline: a prebuilt SIF (`oras://ghcr.io/tim-yu/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`ghcr.io/tim-yu/<name>:<tag>`) otherwise, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
+Both modules use the same pinned-tag pair as the pipeline's other large custom images (ClairS-TO): a prebuilt SIF (`oras://docker.io/timmy9527/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`docker.io/timmy9527/<name>:<tag>`) otherwise, both on Docker Hub, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
 
 ```groovy
 process {
@@ -825,7 +827,8 @@ To use a different container from the default container or conda environment spe
 The ClairS-TO image is the pipeline's largest custom image (about 3.3 GB as a SIF). Under
 Singularity and Apptainer it is pulled as a prebuilt SIF from Docker Hub,
 `oras://docker.io/ljwharbers/clairs-to-sif:<tag>`; every other engine runs
-`docker.io/ljwharbers/clairs-to:<tag>`. It lives on Docker Hub rather than on ghcr with the
+`docker.io/ljwharbers/clairs-to:<tag>`. The Padfoot and ReConPlot images follow the same arrangement
+(`docker.io/timmy9527/<name>-sif` / `docker.io/timmy9527/<name>`). ClairS-TO lives on Docker Hub rather than on ghcr with the
 pipeline's other custom images because ghcr redirects each download to a signed URL that expires
 at the next 5-minute mark and cuts a stream that is still open then, and Apptainer cannot resume a
 cut download: the SIF failed with `PROTOCOL_ERROR` on any link slower than about 10 MB/s. Docker
@@ -857,12 +860,12 @@ What this means in practice:
   `NXF_SINGULARITY_LIBRARYDIR` is checked first and never written to, so a read-only shared
   directory of prebuilt images works as well.
 
-The other custom SIFs (modkit, SigProfiler, the report image at 0.8 GB, and the Padfoot and ReConPlot
-images at 3 GB and 1.6 GB) are still `oras://ghcr.io/<owner>/<name>-sif:<tag>` and can hit the same
-cut on a very slow link. If one does, the SIF bytes are the registry blob, which ghcr serves with
-Range support. Download it resumably into the cache under the name Nextflow expects
-(`ghcr.io-<owner>-<name>-sif-<tag>.img`) with `curl -C -`, re-requesting the anonymous token from
-`https://ghcr.io/token?scope=repository:<owner>/<name>-sif:pull` on each attempt, until the file
+The other custom SIFs (modkit, SigProfiler and the report image, the largest at 0.8 GB) are still
+`oras://ghcr.io/ljwharbers/<name>-sif:<tag>` and can hit the same cut on a very slow link. If one
+does, the SIF bytes are the registry blob, which ghcr serves with Range support. Download it
+resumably into the cache under the name Nextflow expects (`ghcr.io-ljwharbers-<name>-sif-<tag>.img`)
+with `curl -C -`, re-requesting the anonymous token from
+`https://ghcr.io/token?scope=repository:ljwharbers/<name>-sif:pull` on each attempt, until the file
 reaches the layer size in the image manifest; then check its `sha256sum` against the layer digest
 and `chmod +x` it.
 

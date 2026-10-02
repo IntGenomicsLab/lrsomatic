@@ -654,11 +654,11 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │       └── padfoot.log
 ```
 
-| File                | Description                                                                                                                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `annotated_svs.tsv` | One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type |
-| `by_gene.tsv`       | One row per gene: SV and copy-number impact per haplotype                                                                                |
-| `padfoot.log`       | Padfoot log                                                                                                                              |
+| File                | Description                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotated_svs.tsv` | One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type                     |
+| `by_gene.tsv`       | One row per gene: SV and copy-number impact per haplotype, labelled against the caller's fitted ploidy (`NA` where the caller gave no minor-allele estimate) |
+| `padfoot.log`       | Padfoot log                                                                                                                                                  |
 
 `severus_wakhan/` combines Severus somatic SVs with the top-ranked Wakhan copy-number solution; `savana/` combines SAVANA classified somatic SVs with SAVANA absolute copy number (only present when SAVANA CNA was produced).
 
@@ -684,14 +684,14 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │       └── (same layout)
 ```
 
-| File                      | Description                                                                                           |
-| ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type |
-| `genome_wide/*`           | All chromosomes side by side in one strip                                                             |
-| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)    |
-| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot         |
-| `sample.reconplot_sv.tsv` | Harmonised SV table (`chr1,pos1,chr2,pos2,strands`) as passed to ReConPlot                            |
-| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied)                                     |
+| File                      | Description                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                            |
+| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                        |
+| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                               |
+| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                    |
+| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`; ReConPlot reads the five coordinate/orientation columns) |
+| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied)                                                                |
 
 `severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
 
