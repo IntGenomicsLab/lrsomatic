@@ -453,12 +453,12 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── somatic_smallvariants.vcf.gz.tbi
 ```
 
-| File                                | Description                                                      |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags |
-| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                |
-| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags  |
-| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                 |
+| File                                | Description                                                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                                           |
+| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                                          |
+| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags; `0/0` and `./.` records are left unphased |
+| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                                           |
 
 </details>
 

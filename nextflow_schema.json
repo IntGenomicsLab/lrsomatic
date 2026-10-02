@@ -79,27 +79,34 @@
                 },
                 "germline_var_combine": {
                     "type": "string",
-                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "somatic_var_combine": {
                     "type": "string",
-                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "prioritize_caller_germline": {
                     "type": "string",
-                    "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
+                    "description": "When both germline callers are used, specifies whose record to keep where both callers call a position. Must be [deepvariant, clair].",
                     "default": "clair",
                     "enum": ["deepvariant", "clair"]
                 },
                 "prioritize_caller_somatic": {
                     "type": "string",
-                    "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
+                    "description": "When both somatic callers are used, specifies whose record to keep where both callers call a position. Must be [deepsomatic, clair].",
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
+                },
+                "smallvar_filter_pass": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep only PASS records from each small variant caller for downstream use.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {
                     "type": "boolean"

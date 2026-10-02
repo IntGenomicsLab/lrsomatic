@@ -1,4 +1,6 @@
 // IMPORT MODULES
+include { BCFTOOLS_VIEW as CLAIRS_PASS_FILTER      } from '../../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 include { CLAIRS                    } from '../../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/sort'
@@ -71,8 +73,15 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             BCFTOOLS_CONCAT.out.vcf
         )
 
-        BCFTOOLS_SORT.out.vcf
-            .join(BCFTOOLS_SORT.out.tbi)
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def clairs_vcf = BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.tbi)
+        if (params.smallvar_filter_pass) {
+            CLAIRS_PASS_FILTER ( clairs_vcf, [], [], [] )
+            clairs_vcf = CLAIRS_PASS_FILTER.out.vcf
+                .join(CLAIRS_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
+
+        clairs_vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clairs']
                 return [new_meta, vcf, tbi]
@@ -109,8 +118,15 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             ds_pon_channel
         )
 
-        DEEPSOMATIC.out.vcf
-            .join(DEEPSOMATIC.out.vcf_index)
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def deepsomatic_vcf = DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
+        if (params.smallvar_filter_pass) {
+            DEEPSOMATIC_PASS_FILTER ( deepsomatic_vcf, [], [], [] )
+            deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
+                .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
+
+        deepsomatic_vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]
