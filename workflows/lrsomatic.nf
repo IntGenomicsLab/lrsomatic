@@ -60,6 +60,7 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { DMR                             } from '../subworkflows/local/dmr'
 
 
 
@@ -111,6 +112,13 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.savana_contigs = getGenomeAttribute('savana_contigs')
     params.savana_g1000_vcf = getGenomeAttribute('savana_g1000_vcf')
+    // An explicit --dmr_cpg_islands_bed/--dmr_gencode_gene_bed wins over the per-genome
+    // default (getGenomeAttribute alone would silently clobber it, same as every other
+    // getGenomeAttribute-assigned param above -- these two are the only ones a user is
+    // expected to override directly, since GRCh38/CHM13 are the only genomes with a built-in
+    // default and any other genome needs its own values).
+    params.dmr_cpg_islands_bed = params.dmr_cpg_islands_bed ?: getGenomeAttribute('dmr_cpg_islands_bed')
+    params.dmr_gencode_gene_bed = params.dmr_gencode_gene_bed ?: getGenomeAttribute('dmr_gencode_gene_bed')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
@@ -786,6 +794,36 @@ workflow LRSOMATIC {
             : ch_index_minimap
         // ch_modkit_input: [meta, bam, bai]  -- BAM to pile up; meta.type selects the publish directory
         MODKIT_PILEUP(ch_modkit_input, ch_fasta, ch_fai, [[:],[]])
+
+        //
+        // SUBWORKFLOW: DMR (label: process_medium)
+        // Differential methylation between a sample's two haplotypes. Only possible when
+        // --modkit_phased produced hp1/hp2 bedMethyl in the first place; --skip_dmr additionally
+        // turns it off on top of that. dmr_cpg_islands_bed/dmr_gencode_gene_bed have a built-in
+        // default only for --genome GRCh38/CHM13 (see getGenomeAttribute() above) -- any other
+        // genome needs both supplied explicitly, and DMR is skipped with a warning rather than
+        // the run failing when they are not (e.g. a custom --fasta with no --genome, or a
+        // --genome this pipeline doesn't ship DMR references for).
+        if (params.modkit_phased && !params.skip_dmr) {
+            if (params.dmr_cpg_islands_bed && params.dmr_gencode_gene_bed) {
+                DMR (
+                    MODKIT_PILEUP.out.bedgz,
+                    ch_fasta,
+                    ch_fai,
+                    file(params.dmr_cpg_islands_bed, checkIfExists: true),
+                    file(params.dmr_gencode_gene_bed, checkIfExists: true)
+                )
+                ch_versions = ch_versions.mix(DMR.out.versions)
+            }
+            else {
+                log.warn(
+                    "--modkit_phased is set but DMR is being skipped: --dmr_cpg_islands_bed/" +
+                    "--dmr_gencode_gene_bed have no default for --genome '${params.genome}' " +
+                    "(only GRCh38/CHM13 ship one). Pass both explicitly to enable DMR calling, " +
+                    "or set --skip_dmr to silence this warning."
+                )
+            }
+        }
     }
 
     // Prepare phased VCFs for VEP: add empty 'extra' list required by ENSEMBLVEP_VEP

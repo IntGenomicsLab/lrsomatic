@@ -1,0 +1,98 @@
+nextflow_workflow {
+
+    name "Test Workflow DMR"
+    script "../dmr.nf"
+    workflow "DMR"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "dmr"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // Real (not stub), public, non-confidential coverage of the full haplotype-DMR chain:
+    // MODKIT_PILEUP (--phased) -> HTSLIB_BGZIPTABIX -> DMR_HAPLOTYPE_REGIONS -> MODKIT_DMR ->
+    // DMR_NEAREST_GENE. Uses the same public, phased nf-core/test-datasets BAM already used by
+    // modkit/pileup's and modkit/dmr's own module tests -- no new fixture needed. cpg_islands_bed
+    // reuses the exact chr22:0-40001 region modkit/dmr's own module test already proves has real
+    // dual-haplotype coverage; gencode_gene_bed is a small synthetic gene entry over the same span
+    // for DMR_NEAREST_GENE to annotate against.
+    setup {
+        run("MODKIT_PILEUP") {
+            script "../../../modules/nf-core/modkit/pileup/main.nf"
+            process {
+                """
+                // lrsomatic's vendored modkit/pileup takes fasta/fai as separate 2-tuples plus
+                // a bed-region tuple -- 4 inputs, not the 3-tuple/3-input shape upstream
+                // nf-core/modules now uses. Matches its real call in workflows/lrsomatic.nf.
+                input[0] = [
+                    [ id: 'test', type: 'tumor' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true)
+                ]
+                input[1] = [
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ]
+                input[2] = [
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ]
+                input[3] = [[:],[]]
+                """
+            }
+        }
+    }
+
+    test("real phased public data -> haplotype DMR, annotated with nearest gene") {
+
+        when {
+            workflow {
+                """
+                def cpg_islands_bed = Channel.of('chr22\\t0\\t40001')
+                    .collectFile(name: 'cpg_islands.bed', newLine: true)
+
+                def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
+                    .collectFile(name: 'gencode_gene.bed', newLine: true)
+
+                // DMR's internal fasta.first()/fai.first() need real single-emission value
+                // channels -- a bare list literal here is a 2-item queue channel (meta, then
+                // path, as separate emissions), and .first() would silently take just the meta.
+                input[0] = MODKIT_PILEUP.out.bedgz
+                input[1] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ])
+                input[2] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ])
+                input[3] = cpg_islands_bed
+                input[4] = gencode_gene_bed
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('HTSLIB_BGZIPTABIX') } },
+                { assert processes.any { name -> name.contains('DMR_HAPLOTYPE_REGIONS') } },
+                { assert processes.any { name -> name.contains('MODKIT_DMR') } },
+                { assert processes.any { name -> name.contains('DMR_NEAREST_GENE') } },
+                { assert workflow.out.nearest_gene_bed.size() == 1 },
+                // Real content, not just a file existing: at least one DMR call, annotated
+                // with the synthetic gene above.
+                {
+                    def bed = workflow.out.nearest_gene_bed[0][1]
+                    def lines = file(bed).readLines()
+                    assert lines.size() > 0
+                    assert lines.every { line -> line.contains('TEST_GENE') }
+                }
+            )
+        }
+    }
+}

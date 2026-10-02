@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "dmr_nearest_gene"
+description: |
+  Sort a DMR bed (modkit dmr pair's output) by position and annotate each region with its nearest
+  gene from a GENCODE-derived gene BED, using bedtools closest.
+keywords:
+  - methylation
+  - dmr
+  - gene annotation
+  - bedtools
+tools:
+  - "bedtools":
+      description: "A powerful toolset for genome arithmetic"
+      homepage: "https://bedtools.readthedocs.io/"
+      documentation: "https://bedtools.readthedocs.io/"
+      licence: ["GPL-2.0-only"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - dmr_bed:
+        type: file
+        description: modkit dmr pair's output BED
+        pattern: "*.bed"
+  - - gencode_gene_bed:
+        type: file
+        description: Genome-wide, position-sorted gene-level BED (chrom, start, end, gene_name, score, strand)
+        pattern: "*.bed"
+
+output:
+  nearest_gene_bed:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - "*.nearestGene.bed":
+        type: file
+        description: dmr_bed with each region's nearest gene and signed distance appended
+        pattern: "*.nearestGene.bed"
+  versions:
+    - "versions.yml":
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@YannVRB"
+maintainers:
+  - "@YannVRB"

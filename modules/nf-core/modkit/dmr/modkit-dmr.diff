@@ -1,0 +1,36 @@
+Changes in component 'nf-core/modkit/dmr'
+'modules/nf-core/modkit/dmr/environment.yml' is unchanged
+'modules/nf-core/modkit/dmr/meta.yml' is unchanged
+Changes in 'modkit/dmr/main.nf':
+--- modules/nf-core/modkit/dmr/main.nf
++++ modules/nf-core/modkit/dmr/main.nf
+@@ -2,10 +2,13 @@
+     tag "${meta.id}"
+     label 'process_medium'
+
+-    conda "${moduleDir}/environment.yml"
+-    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+-        ? 'https://depot.galaxyproject.org/singularity/ont-modkit:0.6.1--hcdda2d0_0'
+-        : 'quay.io/biocontainers/ont-modkit:0.6.1--hcdda2d0_0'}"
++    // Conda is not supported: matches MODKIT_PILEUP's own patch (the guard in `script:` stops
++    // conda/mamba runs) -- kept on the same patched build as pileup for a single consistent
++    // modkit binary across the whole DMR chain, rather than mixing stock 0.6.1 (dmr pair) with
++    // the patched 0.6.4 (pileup). Revert to the biocontainer once the patch is upstreamed/released.
++    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
++        ? 'oras://ghcr.io/ljwharbers/modkit-sif:0.6.4-pacbiofix-6e0afa2'
++        : 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2'}"
+
+     input:
+     tuple val(meta), path(bedmethyl_a), path(bedmethyl_a_tbi)
+@@ -22,6 +25,10 @@
+     task.ext.when == null || task.ext.when
+
+     script:
++    // Exit if running this module with -profile conda / -profile mamba
++    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
++        error "MODKIT_DMR does not support Conda: the patched container is Docker/Singularity/Apptainer-only. Use one of those, or --skip_dmr."
++    }
+     def args = task.ext.args ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     def regions = regions_bed ? "-r ${regions_bed}" : ''
+************************************************************
