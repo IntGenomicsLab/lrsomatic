@@ -151,7 +151,12 @@ nextflow_pipeline {
                         def som  = PhasedVcf.records("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz")
                         assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
                         assert !som.isEmpty() : "${s}: phased somatic VCF has no records"
-                        assert germ.any { it[6] != 'PASS' } : "${s}: no non-PASS germline record with the filter off"
+                        // Tumour-only germline stays PASS: VCFSPLIT rewrites ClairS-TO's FILTER, DS_GERMLINE_SELECT keeps DeepVariant PASS
+                        if (s == 'sample3') {
+                            assert germ.every { it[6] == 'PASS' } : "${s}: non-PASS record in the tumour-only germline arm"
+                        } else {
+                            assert germ.any { it[6] != 'PASS' } : "${s}: no non-PASS germline record with the filter off"
+                        }
                         assert som.any { it[6] != 'PASS' } : "${s}: no non-PASS somatic record with the filter off"
                         assert som.every { PhasedVcf.hasFlag(it, 'SOMATIC') } : "${s}: somatic record without INFO/SOMATIC"
                         // LongPhase would copy a colliding germline record's phase onto a non-alt somatic record
