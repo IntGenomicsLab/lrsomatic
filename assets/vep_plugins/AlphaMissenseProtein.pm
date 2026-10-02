@@ -47,8 +47,8 @@ limitations under the License.
  differs from the GRCh38 one it returns no score rather than a score for the
  wrong substitution. AlphaMissenseProtein_match reports which happened:
    gene_aa      - matched on gene symbol and amino-acid substitution
-   aa_mismatch  - the gene and position exist but no row has this substitution
-   not_found    - the gene symbol and position are absent from the table
+   aa_mismatch  - the gene and position exist but the reference amino acid differs
+   not_found    - no row for this gene, position and substitution
    no_gene      - VEP produced no gene symbol for this transcript
 
  Requires --symbol (implied by --everything), since the join key is the gene
@@ -228,19 +228,23 @@ sub run {
 
   return { AlphaMissenseProtein_match => 'not_found' } unless $rows && @$rows;
 
-  my $hit;
+  # The padded window can return neighbouring residues, so classify on exact aapos only.
+  my ($hit, $at_pos, $ref_ok);
   for my $row (@$rows) {
     next unless defined $row->{aapos} && $row->{aapos} eq "$pos";
+    $at_pos = 1;
     next unless defined $row->{aaref} && $row->{aaref} eq $ref_aa;
+    $ref_ok = 1;
     next unless defined $row->{aaalt} && $row->{aaalt} eq $alt_aa;
     $hit = $row;
     last;
   }
 
-  # The position exists in the table but not this substitution: the local
-  # protein and the protein AlphaMissense was numbered against disagree here, so
-  # we deliberately return no score.
-  return { AlphaMissenseProtein_match => 'aa_mismatch' } unless $hit;
+  return { AlphaMissenseProtein_match => 'not_found' } unless $at_pos;
+  # The position exists but its reference residue differs: the local protein and the one
+  # AlphaMissense was numbered against disagree here, so we deliberately return no score.
+  return { AlphaMissenseProtein_match => 'aa_mismatch' } unless $ref_ok;
+  return { AlphaMissenseProtein_match => 'not_found' } unless $hit;
 
   my %return = (AlphaMissenseProtein_match => 'gene_aa');
   for my $col (@{$self->{cols}}) {

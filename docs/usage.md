@@ -668,8 +668,8 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
   pangenome database covers the HPRC assemblies.
 - **`AlphaMissenseProtein`** (in `assets/vep_plugins/`) keys on gene symbol plus amino-acid
   substitution, using a table built from AlphaMissense's protein-space release. A row is used only
-  when both amino acids match what VEP computed for the CHM13 transcript; otherwise it reports
-  `aa_mismatch` and no score. The `AlphaMissenseProtein_match` values are listed under
+  when both amino acids match what VEP computed for the CHM13 transcript; a position whose
+  reference residue differs reports `aa_mismatch` and no score. The `AlphaMissenseProtein_match` values are listed under
   [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
 
 ### What is not available, and why
