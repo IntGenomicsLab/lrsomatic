@@ -29,6 +29,7 @@ include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/
 include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
 include { ASCAT                             } from '../modules/nf-core/ascat/main'
 include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
+include { SEVERUS_WHITELIST                 } from '../modules/local/severus/whitelist/main'
 include { METAEXTRACT                       } from '../modules/local/metaextract/main'
 include { CLAIRSTO_CNA_RESOURCES            } from '../modules/local/clairsto/cna_resources/main'
 include { WAKHAN                            } from '../modules/local/wakhan/main'
@@ -972,18 +973,32 @@ workflow LRSOMATIC {
     //   normal_bam/bai are empty lists [] for tumor-only samples
 
     //
-    // MODULE: SEVERUS (label: process_high)
+    // MODULE: SEVERUS or SEVERUS_WHITELIST (label: process_medium)
     // Input:  severus_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
     //         [[:], bed_file, pon_file]  -- optional target BED and panel-of-normals for SV filtering
-    // Output: .all_vcf -- [meta, vcf]  -- all somatic SVs (sniffles2 format)
+    //         [[:], whitelist]  -- SEVERUS_WHITELIST only: regions in which every SV is reported
+    // Output: .all_vcf / .somatic_vcf -- [meta, vcf.gz]  -- all and somatic SVs
+    // --severus_whitelist swaps in the patched build; everything downstream reads ch_severus_*_vcf
     //
 
-    SEVERUS (
-        severus_input,
-        [[:], params.bed_file, params.pon_file]
-    )
+    if (params.severus_whitelist) {
+        SEVERUS_WHITELIST (
+            severus_input,
+            [[:], params.bed_file, params.pon_file],
+            [[:], file(params.severus_whitelist, checkIfExists: true)]
+        )
+        ch_severus_all_vcf     = SEVERUS_WHITELIST.out.all_vcf
+        ch_severus_somatic_vcf = SEVERUS_WHITELIST.out.somatic_vcf
+    } else {
+        SEVERUS (
+            severus_input,
+            [[:], params.bed_file, params.pon_file]
+        )
+        ch_severus_all_vcf     = SEVERUS.out.all_vcf
+        ch_severus_somatic_vcf = SEVERUS.out.somatic_vcf
+    }
 
-    SEVERUS.out.all_vcf
+    ch_severus_all_vcf
         .map { meta, vcf ->
             def extra = []
             return [meta, vcf, extra]
@@ -1244,7 +1259,7 @@ workflow LRSOMATIC {
 
         // Attach SEVERUS SV VCF to the severus_input channel (dropping the phased TBI)
         severus_input
-            .join(SEVERUS.out.all_vcf)
+            .join(ch_severus_all_vcf)
             .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, _phased_tbi, all_vcf ->
                 return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, all_vcf]
             }
@@ -1288,7 +1303,7 @@ workflow LRSOMATIC {
             .map { meta, vcf -> [meta.id, vcf] }
             .set { report_sv_vep_ch }
 
-        SEVERUS.out.somatic_vcf
+        ch_severus_somatic_vcf
             .map { meta, vcf -> [meta.id, vcf] }
             .set { report_severus_ch }
 
