@@ -53,6 +53,7 @@ nextflow_pipeline {
 
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {

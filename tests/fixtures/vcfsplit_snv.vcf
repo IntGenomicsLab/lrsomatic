@@ -15,3 +15,4 @@ chr1	200	.	G	T	20	NonSomatic	.	GT:DP	0/1:18
 chr1	300	.	T	A	5	LowQual;NonSomatic	CALLER=clairs-to	GT:DP	0/1:9
 chr1	400	.	C	G	15	NonSomatic	CALLER=clairs-to;ORIG_FILTER=RefCall	GT:DP	0/1:14
 chr1	500	.	G	A	8	LowQual	CALLER=clairs-to	GT:DP	0/1:7
+chr1	600	.	A	G	3	NonSomatic;RefCall	CALLER=clairs-to	GT:DP	0/0:6
