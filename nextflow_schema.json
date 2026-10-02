@@ -481,7 +481,7 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "SigProfilerMatrixGenerator volume directory containing tsb/<sigprofiler_genome>/ (the installed genome payload).",
-                    "help_text": "Create it once with `--download_sigprofiler_genome` (published to `<outdir>/cache/sigprofiler/volume`) or with `SigProfilerMatrixGenerator install <genome> --volume <dir>`, then pass it here on later runs. The volume is checked against the pipeline's SigProfilerMatrixGenerator checksums before any sample is processed. GRCh38 and CHM13-T2T volumes installed before lrsomatic PR #216 are a superseded payload revision and must be reinstalled.",
+                    "help_text": "Create it once with `--download_sigprofiler_genome` (published to `<outdir>/cache/sigprofiler/volume`) or with `SigProfilerMatrixGenerator install <genome> --volume <dir>`, then pass it here on later runs. The volume is checked against the pipeline's SigProfilerMatrixGenerator checksums before any sample is processed. The run stops if files are missing or a checksum differs, which means a corrupted copy or, for GRCh38 and CHM13-T2T volumes installed for lrsomatic < 1.2.0, a superseded payload revision; reinstall it in either case.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "download_sigprofiler_genome": {

@@ -380,7 +380,7 @@ Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.c
 
 Running with neither, and without `--skip_signatures`, stops the pipeline at start-up.
 
-A volume passed with `--sigprofiler_genome_dir` is checked once per run against the chromosome checksums of the pipeline's SigProfilerMatrixGenerator (`SIGPROFILER_VERIFY`). If it does not match, the run stops before any sample is processed.
+A volume passed with `--sigprofiler_genome_dir` is checked once per run against the chromosome checksums of the pipeline's SigProfilerMatrixGenerator (`SIGPROFILER_VERIFY`). If a chromosome file is missing or a checksum differs, the run stops before any sample is processed, and the error says which of the two it found. A genome the image has no checksums for is rejected too.
 
 > [!WARNING]
 > GRCh38 and CHM13-T2T payloads installed before this release no longer pass that check. SigProfilerMatrixGenerator corrected how both are encoded, and the payloads it now downloads differ from the earlier ones. Reinstall once with `--download_sigprofiler_genome`, or with `SigProfilerMatrixGenerator install <genome> --volume <dir>` from the same image, and pass the new volume on later runs. Mutation counts and COSMIC fits are unaffected. Only the strand-split matrices (for example SBS288 and SBS384) change, slightly.
