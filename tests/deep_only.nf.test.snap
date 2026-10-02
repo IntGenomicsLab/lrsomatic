@@ -3,42 +3,72 @@
         "content": [
             {
                 "BCFTOOLS_CONCAT": {
-                    "bcftools": 1.24
+                    "bcftools": 1.22
                 },
                 "BCFTOOLS_SORT": {
-                    "bcftools": 1.24
+                    "bcftools": 1.22
                 },
                 "BCFTOOLS_VIEW": {
-                    "bcftools": 1.24
+                    "bcftools": 1.22
+                },
+                "CONCAT_SOMATIC_UNPHASED": {
+                    "bcftools": 1.22
                 },
                 "CRAMINO_POST": {
-                    "cramino": "2.0.0"
+                    "cramino": "1.3.0"
                 },
                 "CRAMINO_PRE": {
-                    "cramino": "2.0.0"
+                    "cramino": "1.3.0"
                 },
                 "DEEPSOMATIC_CALLVARIANTS": {
-                    "deepsomatic": "1.10.0"
+                    "deepsomatic": "1.7.0"
                 },
                 "DEEPSOMATIC_MAKEEXAMPLES": {
-                    "deepsomatic": "1.10.0"
+                    "deepsomatic": "1.7.0"
+                },
+                "DEEPSOMATIC_PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "DEEPSOMATIC_POSTPROCESSVARIANTS": {
-                    "deepsomatic": "1.10.0"
+                    "deepsomatic": "1.7.0"
                 },
                 "DEEPVARIANT_CALLVARIANTS": {
-                    "deepvariant": "1.10.0"
+                    "deepvariant": "1.9.0"
                 },
                 "DEEPVARIANT_MAKEEXAMPLES": {
-                    "deepvariant": "1.10.0"
+                    "deepvariant": "1.9.0"
+                },
+                "DEEPVARIANT_PASS_FILTER": {
+                    "bcftools": "1.23.1"
                 },
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
-                    "deepvariant": "1.10.0"
+                    "deepvariant": "1.9.0"
+                },
+                "DS_GERMLINE_REJOIN": {
+                    "bcftools": 1.22
+                },
+                "DS_GERMLINE_SELECT": {
+                    "bcftools": "1.23.1"
+                },
+                "DS_VERDICT_ANNOTATE": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_QUERY": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DS": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DV": {
+                    "bcftools": 1.22
+                },
+                "GERMLINE_ANCHORS": {
+                    "bcftools": 1.22
                 },
                 "GERMLINE_VEP": {
-                    "ensemblvep": 116.1,
+                    "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
-                    "tabix": "1.23.1"
+                    "tabix": 1.21
                 },
                 "LONGPHASE_HAPLOTAG": {
                     "longphase": "2.0.1"
@@ -56,38 +86,37 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "1.6.1"
+                    "lrsomatic_report": "1.6.0"
                 },
                 "METAEXTRACT": {
-                    "samtools": 1.24
+                    "samtools": 1.21
                 },
                 "MINIMAP2_ALIGN": {
-                    "minimap2": "2.30-r1287"
+                    "minimap2": "2.29-r1283"
                 },
                 "MOSDEPTH": {
-                    "gzip": 1.14,
-                    "mosdepth": "0.3.14"
+                    "mosdepth": "0.3.11"
                 },
                 "NANOPLOT_POST": {
-                    "NanoPlot": "1.48.0"
+                    "nanoplot": "1.46.1"
                 },
                 "NANOPLOT_PRE": {
-                    "NanoPlot": "1.48.0"
+                    "nanoplot": "1.46.1"
                 },
                 "SAMTOOLS_FAIDX": {
-                    "samtools": 1.24
+                    "samtools": "1.22.1"
                 },
                 "SAMTOOLS_FLAGSTAT": {
-                    "samtools": 1.24
+                    "samtools": "1.22.1"
                 },
                 "SAMTOOLS_IDXSTATS": {
-                    "samtools": 1.24
+                    "samtools": "1.22.1"
                 },
                 "SAMTOOLS_INDEX": {
-                    "samtools": 1.24
+                    "samtools": "1.22.1"
                 },
                 "SAMTOOLS_STATS": {
-                    "samtools": 1.24
+                    "samtools": "1.22.1"
                 },
                 "SAVANA_CLASSIFY": {
                     "savana": "1.3.8"
@@ -96,25 +125,46 @@
                     "savana": "1.3.8"
                 },
                 "SEVERUS": {
-                    "severus": 1.7
+                    "severus": 1.6
+                },
+                "SOMATIC_ALT": {
+                    "bcftools": 1.22
+                },
+                "SOMATIC_NONALT": {
+                    "bcftools": 1.22
                 },
                 "SOMATIC_VEP": {
-                    "ensemblvep": 116.1,
+                    "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
-                    "tabix": "1.23.1"
+                    "tabix": 1.21
+                },
+                "SORT_SOMATIC_PHASED": {
+                    "bcftools": 1.22
                 },
                 "SV_VEP": {
-                    "ensemblvep": 116.1,
+                    "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
-                    "tabix": "1.23.1"
+                    "tabix": 1.21
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
+                },
+                "UNTAR": {
+                    "untar": 1.34
                 },
                 "UNZIP_FASTA": {
                     "pigz": 2.8
                 },
                 "VEP_SAVANA": {
-                    "ensemblvep": 116.1,
+                    "ensemblvep": 115.2,
                     "perl-math-cdf": 0.1,
-                    "tabix": "1.23.1"
+                    "tabix": 1.21
+                },
+                "WGET": {
+                    "wget": "1.21.4"
                 },
                 "WHATSHAP_STATS": {
                     "whatshap": 2.8
@@ -243,9 +293,6 @@
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_NanoStats.txt",
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_Non_weightedHistogramReadlength.html",
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_Non_weightedLogTransformed_HistogramReadlength.html",
-                "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_PercentIdentityHistogramDynamic_Histogram_percent_identity.html",
-                "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_PercentIdentityvsAlignedReadLength_dot.html",
-                "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_PercentIdentityvsAlignedReadLength_kde.html",
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_WeightedHistogramReadlength.html",
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_WeightedLogTransformed_HistogramReadlength.html",
                 "sample1/qc/normal/nanoplot_ubam_rep1/sample1_normal_rep1_ubam_Yield_By_Length.html",
@@ -277,9 +324,6 @@
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_NanoStats.txt",
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_Non_weightedHistogramReadlength.html",
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_Non_weightedLogTransformed_HistogramReadlength.html",
-                "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_PercentIdentityHistogramDynamic_Histogram_percent_identity.html",
-                "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_dot.html",
-                "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_kde.html",
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_WeightedHistogramReadlength.html",
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_WeightedLogTransformed_HistogramReadlength.html",
                 "sample1/qc/tumor/nanoplot_ubam_rep1/sample1_tumor_rep1_ubam_Yield_By_Length.html",
@@ -375,9 +419,6 @@
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_NanoStats.txt",
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_Non_weightedHistogramReadlength.html",
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_Non_weightedLogTransformed_HistogramReadlength.html",
-                "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_PercentIdentityHistogramDynamic_Histogram_percent_identity.html",
-                "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_PercentIdentityvsAlignedReadLength_dot.html",
-                "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_PercentIdentityvsAlignedReadLength_kde.html",
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_WeightedHistogramReadlength.html",
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_WeightedLogTransformed_HistogramReadlength.html",
                 "sample2/qc/normal/nanoplot_ubam_rep1/sample2_normal_rep1_ubam_Yield_By_Length.html",
@@ -409,9 +450,6 @@
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_NanoStats.txt",
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_Non_weightedHistogramReadlength.html",
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_Non_weightedLogTransformed_HistogramReadlength.html",
-                "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_PercentIdentityHistogramDynamic_Histogram_percent_identity.html",
-                "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_dot.html",
-                "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_kde.html",
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_WeightedHistogramReadlength.html",
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_WeightedLogTransformed_HistogramReadlength.html",
                 "sample2/qc/tumor/nanoplot_ubam_rep1/sample2_tumor_rep1_ubam_Yield_By_Length.html",
@@ -504,9 +542,6 @@
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_NanoStats.txt",
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_Non_weightedHistogramReadlength.html",
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_Non_weightedLogTransformed_HistogramReadlength.html",
-                "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_PercentIdentityHistogramDynamic_Histogram_percent_identity.html",
-                "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_dot.html",
-                "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_PercentIdentityvsAlignedReadLength_kde.html",
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_WeightedHistogramReadlength.html",
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_WeightedLogTransformed_HistogramReadlength.html",
                 "sample3/qc/tumor/nanoplot_ubam_rep1/sample3_tumor_rep1_ubam_Yield_By_Length.html",
@@ -562,64 +597,64 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
-                "sample1_normal.bam:md5,bffc2444a70313bb24a6b52189bbb65a",
-                "sample1_normal.bam.bai:md5,c8162096af7955d5550bb01a9a870013",
-                "sample1_tumor.bam:md5,a04100696156c1d2c66f2b69e1119048",
-                "sample1_tumor.bam.bai:md5,3cbed78851ca9d34da2cca80a680bd4a",
+                "sample1_normal.bam:md5,c3eec48a64763f8a5cc7307c5fe00773",
+                "sample1_normal.bam.bai:md5,ddb44b5bfb0f798950d8872e9d60d784",
+                "sample1_tumor.bam:md5,8173a435625724d6192ff6a0e9e737bb",
+                "sample1_tumor.bam.bai:md5,1de9940795d293f650a22c6983b2a072",
                 "sample1_normal.flagstat:md5,1c41ea9923945501eb7e41f83a90502d",
                 "sample1_normal.idxstats:md5,902e503387799123ea59255e3fca172c",
-                "sample1_normal.stats:md5,d79e3c68505d39cf29641dfdf5849ef1",
+                "sample1_normal.stats:md5,a8b3fba9c54efbc0934d6eacc1807140",
                 "sample1_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
-                "sample1_tumor.stats:md5,fb77e8b2b144fe4c525e944a61757ef9",
-                "sample1_whatshap_stats.gtf:md5,0123cb1b2ef6d158600eac3a8e414b2f",
-                "sample1_whatshap_stats.log:md5,404f2e8ae5be85eecec64a105edb6698",
-                "sample1_whatshap_stats.tsv:md5,27ad8c797b836a4d236684c2cf12a64f",
+                "sample1_tumor.stats:md5,1c60a1d249d2e503b0678c72e851ea93",
+                "sample1_whatshap_stats.gtf:md5,e1d0e87353a5f9aed8a9ac4bf7973427",
+                "sample1_whatshap_stats.log:md5,43811a1aa4726c2ef62646ff22d1fad0",
+                "sample1_whatshap_stats.tsv:md5,a821c5d0e3451f82327645fee89e68eb",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,003e4e80ec4233315762233e5f1ec0d8",
-                "read_qual.txt:md5,92321a03aae1168fdce8ea921b635036",
+                "breakpoints_double.csv:md5,47cb0e0bbe71abdbf4f40217dfda43f9",
+                "read_qual.txt:md5,78247dfa2ea336eac0e128eba5e9eef4",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample2_normal.bam:md5,dc00cceeb05cf7d44720022376bee8cb",
-                "sample2_normal.bam.bai:md5,53126dd3667fcd9aeb8a06ac5de1bcb2",
-                "sample2_tumor.bam:md5,565c542d2786b5ec53950ffbf0ef89d7",
-                "sample2_tumor.bam.bai:md5,a9a7606e6c48f667b4f3cbe15ce33017",
+                "sample2_normal.bam:md5,cfe03e8510475f54eceea0c0c80db501",
+                "sample2_normal.bam.bai:md5,02a12e347af31e04ffa589935f89e5ed",
+                "sample2_tumor.bam:md5,7380c09f2ee3ebe328f1a50671408209",
+                "sample2_tumor.bam.bai:md5,644083528fd153b24d97ef687417e089",
                 "sample2_normal.flagstat:md5,714d0cc0c213e2640e54a16f3d0e6e7e",
                 "sample2_normal.idxstats:md5,72eb83bb11748dc863fef1a0a5497e4b",
-                "sample2_normal.stats:md5,1aeade21dc682b0c5ca284214e6fc4d0",
+                "sample2_normal.stats:md5,20c47cb94f9ac739d69c57be6daf82c5",
                 "sample2_tumor.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2_tumor.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
-                "sample2_tumor.stats:md5,a156fe81f4c6a120357f9e32afcc00ef",
-                "sample2_whatshap_stats.gtf:md5,e055e04aed7909a3281c3939f81425ea",
-                "sample2_whatshap_stats.log:md5,262e751b2f5b0408ebb72ce55b7776a3",
-                "sample2_whatshap_stats.tsv:md5,567b71d75b74f0953a1757e5cf6a0c08",
+                "sample2_tumor.stats:md5,8635df10132c85a13f2d9878b7cf90a2",
+                "sample2_whatshap_stats.gtf:md5,af33281699a1d0da83fbe7eaff198d03",
+                "sample2_whatshap_stats.log:md5,0cd536df69e244a5271e9c5440ea0f3f",
+                "sample2_whatshap_stats.tsv:md5,c7cc47024ef622a72e7f4f0d5fa119eb",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,ab7ccd32508029426ca1365053fdc23b",
-                "read_qual.txt:md5,57aaac5f18f81b1cbde13e49c012651a",
+                "breakpoints_double.csv:md5,48baac86492026a4a7947bc708c47e6e",
+                "read_qual.txt:md5,8b92ff7dc4536188be159b95525511cd",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample3_tumor.bam:md5,86ed5e8df5e85fc1d31ad3e07b2d533c",
-                "sample3_tumor.bam.bai:md5,0f7687c3ff32fc163dfc9c96e3dd589a",
+                "sample3_tumor.bam:md5,9449340acf09825767e1f5b4a3f0e5c2",
+                "sample3_tumor.bam.bai:md5,3be46bae7402c3865f27881457b7a466",
                 "sample3_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample3_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
-                "sample3_tumor.stats:md5,9d2945cfd8813c828d702e86afbaa58b",
-                "sample3_whatshap_stats.gtf:md5,5a4585aaf9dd5831fccaf53156239e79",
-                "sample3_whatshap_stats.log:md5,0a308efbd98acee98fd876d719e49203",
-                "sample3_whatshap_stats.tsv:md5,939ac4d90b4274ff53cb804a9dbd4500",
+                "sample3_tumor.stats:md5,ecd5ea4fee37379dd5c5ae3e89dfddda",
+                "sample3_whatshap_stats.gtf:md5,5a9b20b6ed25ef2ede4271156a83ce88",
+                "sample3_whatshap_stats.log:md5,a62c149286176f863d4293d0748a6dec",
+                "sample3_whatshap_stats.tsv:md5,90c20ce05eef472d9f5bb77754636d31",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,c18b66eebc1714279e685ab1c56d6cf3",
-                "read_qual.txt:md5,f6d803b54f3aa4a36f21af1a9a97923f",
+                "breakpoints_double.csv:md5,56e899f85876cee082788927d0f89c5f",
+                "read_qual.txt:md5,b918430d35354dad1d7f02f21e4cd4ed",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-01T12:53:51.646596481",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "26.04.3"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-02T10:11:49.172008724"
     }
 }

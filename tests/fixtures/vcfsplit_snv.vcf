@@ -1,0 +1,17 @@
+##fileformat=VCFv4.2
+##INFO=<ID=SB,Number=1,Type=Float,Description="Strand bias">
+##INFO=<ID=CALLER,Number=1,Type=String,Description="Variant caller">
+##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description="Original FILTER value before normalisation to PASS">
+##INFO=<ID=Verdict_Germline,Number=0,Type=Flag,Description="Germline verdict">
+##FILTER=<ID=NonSomatic,Description="Non-somatic variant">
+##FILTER=<ID=LowQual,Description="Low quality variant">
+##FILTER=<ID=RefCall,Description="Reference call">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+##contig=<ID=chr1,length=248956422>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	testsample
+chr1	100	.	A	C	30	PASS	CALLER=clairs-to	GT:DP	0/1:20
+chr1	200	.	G	T	20	NonSomatic	.	GT:DP	0/1:18
+chr1	300	.	T	A	5	LowQual;NonSomatic	CALLER=clairs-to	GT:DP	0/1:9
+chr1	400	.	C	G	15	NonSomatic	CALLER=clairs-to;ORIG_FILTER=RefCall	GT:DP	0/1:14
+chr1	500	.	G	A	8	LowQual	CALLER=clairs-to	GT:DP	0/1:7
