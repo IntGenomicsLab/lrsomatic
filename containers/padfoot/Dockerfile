@@ -1,8 +1,10 @@
+# syntax=docker/dockerfile:1.6
 FROM mambaorg/micromamba:2.3.2
 
 COPY --chown=$MAMBA_USER containers/padfoot/environment.yml /tmp/environment.yml
 
-ARG DFAM_URL_BASE=https://www.dfam.org/releases/current/families/FamDB
+# Versioned Dfam directory: `releases/current` moves on with the next Dfam release and would break the rebuild
+ARG DFAM_URL_BASE=https://www.dfam.org/releases/Dfam_4.0/families/FamDB
 ARG DFAM_ROOT_SHA256=4cdb3d571126de3061d61c9e79d0ffcf0b1d9dc1d3c555bf9bcb8db695efa91a
 ARG DFAM_CONSENSUS_SHA256=ce50a75fe90a5481864cd87792a80564667a4e7f373322730a42a7b737b8bbdd
 
@@ -24,12 +26,15 @@ RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
     && printf '>smoke\nACGTACGTACGTACGT\n' > /tmp/repeatmasker-smoke/input.fa \
     && RepeatMasker -species human -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
     && test -s /tmp/repeatmasker-smoke/input.fa.out \
+    && rm -f /tmp/repeatmasker-smoke/input.fa.* \
+    && RepeatMasker -species "Mus musculus" -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
+    && test -s /tmp/repeatmasker-smoke/input.fa.out \
     && rm -rf /tmp/dfam40.* /tmp/repeatmasker-smoke
 
 # Padfoot itself is not on bioconda: install the pinned Tim-Yu/Padfoot commit (SAVANA input support) as source
 # under /opt/padfoot, so the PADFOOT module needs no run-time download. Bump = new commit + checksum here, rebuild, push both images, bump the tags.
-ARG PADFOOT_COMMIT=e7eaed778fc2230bad96fb4232c704cec7cfe7eb
-ADD --checksum=sha256:81aff6572a2d513da9d7e8c6eeb2ae13be9eebf9cfc9ac6436f40fffe52cafb5 \
+ARG PADFOOT_COMMIT=25fd6d4aaf1b78b57c10dbef7964aa5e45d4e7d7
+ADD --checksum=sha256:2e3607164cb690bfbc73952bf649085e480c1b23abc24024b8367843d1975164 \
     https://github.com/Tim-Yu/Padfoot/archive/${PADFOOT_COMMIT}.tar.gz /tmp/padfoot.tar.gz
 
 USER root

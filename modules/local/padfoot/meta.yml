@@ -35,6 +35,10 @@ input:
     - cna_caller:
         type: string
         description: CNA input format, `wakhan` or `savana`
+    - ploidy_file:
+        type: file
+        description: Fitted purity/ploidy table of the CN caller (SAVANA `*_fitted_purity_ploidy.tsv` or Wakhan `solutions_ranks.tsv`), or `[]` to let Padfoot estimate the ploidy from the profile
+        pattern: "*.tsv"
   - - meta2:
         type: map
         description: Groovy Map for the reference
@@ -89,6 +93,14 @@ output:
           type: file
           description: Padfoot log
           pattern: "padfoot.log"
+  - staged:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/staged.txt":
+          type: file
+          description: Stub runs only -- the SV and CNA file names the task received, asserted on by the subworkflow tests (optional)
+          pattern: "staged.txt"
   - versions:
       - versions.yml:
           type: file

@@ -1302,13 +1302,17 @@ workflow LRSOMATIC {
     //
     def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
     def padfoot_annot_ok = padfootAnnotationOk()
+    // Padfoot and ReConPlot ship only inside their containers (validateSvAnnotationParams() warns under conda/mamba)
+    def sv_annot_container_ok = !workflow.profile.tokenize(',').intersect(['conda', 'mamba'])
 
-    if (!params.skip_padfoot && padfoot_annot_ok) {
+    if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
         PADFOOT_ANNOTATION (
             SEVERUS.out.somatic_vcf,
             params.skip_wakhan ? channel.empty() : WAKHAN.out.vcf_files,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
             savana_somatic_vcf,
             savana_cna,
+            savana_fitted_purity_ploidy,
             ch_fasta,
             ch_fai,
             [[:], padfoot_genome,
@@ -1321,7 +1325,7 @@ workflow LRSOMATIC {
     //
     // SUBWORKFLOW: RECONPLOT_FIGURES -- ReConPlot figures per CN/SV caller pair (ASCAT + Severus, Wakhan + Severus, SAVANA)
     //
-    if (!params.skip_reconplot) {
+    if (!params.skip_reconplot && sv_annot_container_ok) {
         RECONPLOT_FIGURES (
             SEVERUS.out.somatic_vcf,
             params.skip_ascat  ? channel.empty() : ASCAT.out.segments,

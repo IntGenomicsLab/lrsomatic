@@ -3,11 +3,12 @@ process RECONPLOT {
     label 'process_low'
 
     // No conda: the image ships the ReConPlot R package itself (guard in `script:`); the wrapper is pipeline glue in
-    // assets/reconplot/. Built from containers/reconplot/Dockerfile. Package update = new commit there, rebuild, bump these two tags.
+    // assets/reconplot/. Built from containers/reconplot/Dockerfile (upstream package + a build-time patch of its genome-wide
+    // clipping bug). Package update = new commit there, rebuild, bump these two tags. Docker Hub, like the other large images.
     // Override per site with `process { withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/tim-yu/reconplot-sif:0.2-r4.4'
-        : 'ghcr.io/tim-yu/reconplot:0.2-r4.4'}"
+        ? 'oras://docker.io/timmy9527/reconplot-sif:0.2-r4.4-clipfix'
+        : 'docker.io/timmy9527/reconplot:0.2-r4.4-clipfix'}"
 
     input:
     // cn_files / sv_files are the caller output files the wrapper's parsers discover by name.

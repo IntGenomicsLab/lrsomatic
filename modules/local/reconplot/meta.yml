@@ -85,6 +85,14 @@ output:
           type: file
           description: Wrapper log
           pattern: "reconplot.log"
+  - staged:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/staged.txt":
+          type: file
+          description: Stub runs only -- the CN and SV file names the task received, asserted on by the subworkflow tests (optional)
+          pattern: "staged.txt"
   - versions:
       - versions.yml:
           type: file
