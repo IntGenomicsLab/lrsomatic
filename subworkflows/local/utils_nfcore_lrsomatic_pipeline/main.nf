@@ -349,15 +349,33 @@ def validateSvAnnotationParams() {
     }
 
     if (!params.skip_reconplot && params.reconplot_regions) {
-        // Same grammar as the wrapper's parse_regions(): tokens split on commas/semicolons/whitespace,
-        // each `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator).
+        // Same grammar as the wrapper's parse_regions(): thousands separators inside numbers are dropped
+        // first (`chr8:30,000,000-50,000,000`), then tokens split on commas/semicolons/whitespace, each
+        // `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator, start < end).
         // Regions on contigs without copy-number data are skipped at run time with a warning.
-        def bad = params.reconplot_regions.toString().split(/[,;\s]+/).findAll { tok -> tok }
-            .findAll { tok -> !(tok ==~ /[A-Za-z0-9_.]+/ || tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/) ||
-                              (tok.contains(':') && tok.split(':')[1].split('-').collect { v -> v.replace('_', '') as long }.with { r -> r[0] >= r[1] }) }
+        def spec = params.reconplot_regions.toString().replaceAll(/(?<=[0-9]),(?=[0-9]{3}(?:[^0-9]|$))/, '')
+        def bad = spec.split(/[,;\s]+/).findAll { tok -> tok }.findAll { tok ->
+            if (tok ==~ /[A-Za-z0-9_.]+/) { return false }
+            if (!(tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/)) { return true }
+            def ends = tok.split(':')[1].split('-').collect { v -> v.replace('_', '') }
+            return !ends.every { v -> v && v.isLong() } || (ends[0] as long) >= (ends[1] as long)
+        }
         if (bad) {
             error("--reconplot_regions: cannot parse ${bad.join(', ')}. Use a comma-separated list of `chr` or `chr:start-end` (start < end), e.g. \"chr8,chr17:30000000-50000000\".")
         }
+    }
+
+    if (!params.skip_reconplot && params.reconplot_genes && params.reconplot_genes.toString() =~ /\s/) {
+        error("--reconplot_genes must be a comma-separated list of gene symbols without spaces, e.g. \"MYC,TP53\" (got \"${params.reconplot_genes}\").")
+    }
+    if (!params.skip_reconplot && params.reconplot_format && !(params.reconplot_format.toString() ==~ /(pdf|png)(,(pdf|png))?/)) {
+        error("--reconplot_format must be pdf, png or pdf,png (the module collects only *.pdf and *.png figures); got \"${params.reconplot_format}\".")
+    }
+
+    // Both tools ship only inside their containers: under -profile conda/mamba the modules would fail hours in
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']) && !(params.skip_padfoot && params.skip_reconplot)) {
+        log.warn "Padfoot and ReConPlot need Docker, Singularity or Apptainer and are skipped under -profile conda/mamba " +
+            "(use --skip_padfoot --skip_reconplot to silence this warning)."
     }
 }
 

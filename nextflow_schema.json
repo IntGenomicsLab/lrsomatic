@@ -478,6 +478,7 @@
                 "reconplot_format": {
                     "type": "string",
                     "default": "pdf,png",
+                    "pattern": "^(pdf|png)(,(pdf|png))?$",
                     "help_text": "Figure formats written by ReConPlot: `pdf`, `png` or `pdf,png`.",
                     "description": "Comma-separated output formats: pdf, png"
                 }

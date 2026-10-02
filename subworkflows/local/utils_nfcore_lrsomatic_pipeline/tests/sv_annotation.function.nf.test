@@ -103,7 +103,13 @@ nextflow_function {
         then { assert function.result == 'hg38' }
     }
 
-    test("padfootGenome infers chm13 from --genome CHM13 and an explicit --padfoot_genome wins") {
+    test("padfootGenome infers chm13 from --genome CHM13") {
+        function "padfootGenome"
+        when { params { genome = 'CHM13'; padfoot_genome = null } }
+        then { assert function.result == 'chm13' }
+    }
+
+    test("padfootGenome: an explicit --padfoot_genome wins over the --genome inference") {
         function "padfootGenome"
         when { params { genome = 'CHM13'; padfoot_genome = 'mm10' } }
         then { assert function.result == 'mm10' }
