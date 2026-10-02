@@ -1314,11 +1314,12 @@ workflow LRSOMATIC {
         // The data repo is only fetched when the classifier will actually use it
         ch_aa_data_repo = channel.empty()
         if (!params.skip_ampliconclassifier) {
-            // Overriding the repo drops the default MD5, which belongs to the published tarball
+            // Overriding the repo or its URL drops the default MD5, which belongs to the published tarball
+            def aa_repo_overridden = params.aa_data_repo || params.aa_data_repo_url != getGenomeAttribute('aa_data_repo_url')
             PREPARE_AA_DATA_REPO (
                 params.aa_data_repo,
                 params.aa_data_repo_url,
-                params.aa_data_repo_md5 ?: (params.aa_data_repo ? null : getGenomeAttribute('aa_data_repo_md5'))
+                params.aa_data_repo_md5 ?: (aa_repo_overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
             )
             ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
             ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)

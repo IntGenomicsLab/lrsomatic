@@ -3,7 +3,7 @@ process CORAL_CYCLE {
     label 'process_low'
 
     // As for CORAL_RECONSTRUCT: the subworkflow warns on the missing output
-    errorStrategy { task.exitStatus in 130..145 ? 'retry' : 'ignore' }
+    errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
 
     container "docker.io/robertaforsyth/coral:3.0.0-chm13-847f3d4"
 
@@ -24,16 +24,19 @@ process CORAL_CYCLE {
     }
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Graphs are copied alongside the re-extracted cycles so AmpliconClassifier
-    // still finds a matching graph/cycles/summary set in one directory.
+    // Graphs are copied beside the new cycles so AmpliconClassifier finds a matching
+    // graph/cycles/summary set in one directory; cycle_all writes its own summary.
     """
     mkdir -p cycles
-    cp ${reconstruction}/*_graph.txt ${reconstruction}/*_summary.txt cycles/ 2>/dev/null || true
+    cp ${reconstruction}/*_graph.txt cycles/ 2>/dev/null || true
 
     coral cycle_all \\
         --bp-dir ${reconstruction} \\
         --output-prefix cycles/${prefix} \\
         ${args}
+
+    # Pyomo's solver model dumps; nothing downstream reads them
+    rm -rf cycles/models
     """
 
     stub:
@@ -42,6 +45,6 @@ process CORAL_CYCLE {
     mkdir -p cycles
     touch cycles/${prefix}_amplicon1_cycles.txt
     touch cycles/${prefix}_amplicon1_graph.txt
-    touch cycles/${prefix}_summary.txt
+    touch cycles/${prefix}_amplicon_summary.txt
     """
 }

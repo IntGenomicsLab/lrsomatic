@@ -3,7 +3,7 @@ process CORAL_PLOT {
     label 'process_medium'
 
     // Plotting is cosmetic: never let it fail a run that reconstructed successfully
-    errorStrategy { task.exitStatus in 130..145 ? 'retry' : 'ignore' }
+    errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
 
     container "docker.io/robertaforsyth/coral:3.0.0-chm13-847f3d4"
 

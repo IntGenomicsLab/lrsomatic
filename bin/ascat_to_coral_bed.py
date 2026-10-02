@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Convert ASCAT's cnvs.txt into the headerless BED CoRAL's --cn-seg expects.
 
+ASCAT segments are 1-based inclusive; the BED is 0-based half-open and tiles each
+chromosome without gaps (gaps split at their midpoint, ends run to the contig edges).
 CoRAL reads total copy number from the last column and builds chromosome sizes from
 the BAM header, so contigs are respelled to match the reference (chr1 vs 1).
 """
@@ -10,11 +12,17 @@ import sys
 REQUIRED = ('chr', 'startpos', 'endpos', 'nMajor', 'nMinor')
 
 
-def fai_contigs(path):
+def fai_lengths(path):
+    """Contig name -> length, from a .fai; empty without one."""
     if not path:
-        return []
+        return {}
+    lengths = {}
     with open(path) as fp:
-        return [line.split('\t', 1)[0] for line in fp if line.strip()]
+        for line in fp:
+            if line.strip():
+                fields = line.split('\t')
+                lengths[fields[0]] = int(fields[1])
+    return lengths
 
 
 def spell_like_reference(chrom, contigs):
@@ -38,14 +46,37 @@ def sort_key(chrom):
     return (2, 0, bare)
 
 
+def tile(segments, length):
+    """Make one chromosome's sorted [start, end, cn] segments contiguous from 0 to its length.
+
+    Returns the tiles and how many segments lay wholly inside an earlier one and were dropped.
+    """
+    tiles, contained = [], 0
+    for start, end, cn in segments:
+        if not tiles:
+            tiles.append([0, end, cn])
+            continue
+        prev = tiles[-1]
+        if end <= prev[1]:
+            contained += 1
+            continue
+        # The midpoint of a gap, or of an overlap; both neighbours keep at least 1 bp
+        boundary = min(max((prev[1] + start) // 2, prev[0] + 1), end - 1)
+        prev[1] = boundary
+        tiles.append([boundary, end, cn])
+    if tiles and length and length > tiles[-1][0]:
+        tiles[-1][1] = length
+    return tiles, contained
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--cnvs', required=True, help="ASCAT <sample>.cnvs.txt")
-    parser.add_argument('--fai', help="Reference .fai, to respell contigs to match the BAM")
+    parser.add_argument('--fai', help="Reference .fai, to respell contigs and extend the last segment to each contig's end")
     parser.add_argument('--output', required=True, help="BED4 written for CoRAL --cn-seg")
     args = parser.parse_args()
 
-    contigs = fai_contigs(args.fai)
+    lengths = fai_lengths(args.fai)
 
     with open(args.cnvs) as fp:
         header = fp.readline().rstrip('\n').split('\t')
@@ -54,28 +85,34 @@ def main():
             sys.exit(f"ERROR: {args.cnvs} is missing required columns: {', '.join(missing)}")
         idx = {c: header.index(c) for c in REQUIRED}
 
-        rows, dropped = [], 0
+        by_chrom, dropped = {}, 0
         for line in fp:
             if not line.strip():
                 continue
             fields = line.rstrip('\n').split('\t')
             start, end = int(fields[idx['startpos']]), int(fields[idx['endpos']])
-            # CoRAL's segment parser rejects these, so drop them here with a count
-            if start >= end:
+            # start == end is a valid one-base segment; only an inverted one is malformed
+            if start > end:
                 dropped += 1
                 continue
             total_cn = round(float(fields[idx['nMajor']])) + round(float(fields[idx['nMinor']]))
-            rows.append((spell_like_reference(fields[idx['chr']], contigs), start, end, total_cn))
+            chrom = spell_like_reference(fields[idx['chr']], lengths)
+            by_chrom.setdefault(chrom, []).append((start - 1, end, total_cn))
 
     if dropped:
-        print(f"WARNING: dropped {dropped} segments with start >= end", file=sys.stderr)
+        print(f"WARNING: dropped {dropped} segments with start > end", file=sys.stderr)
 
-    rows.sort(key=lambda r: (sort_key(r[0]), r[1]))
+    contained = 0
     with open(args.output, 'w') as out:
-        for chrom, start, end, total_cn in rows:
-            out.write(f"{chrom}\t{start}\t{end}\t{total_cn}\n")
+        for chrom in sorted(by_chrom, key=sort_key):
+            tiles, n = tile(sorted(by_chrom[chrom]), lengths.get(chrom))
+            contained += n
+            for start, end, total_cn in tiles:
+                out.write(f"{chrom}\t{start}\t{end}\t{total_cn}\n")
 
-    if not rows:
+    if contained:
+        print(f"WARNING: dropped {contained} segments lying wholly inside another", file=sys.stderr)
+    if not by_chrom:
         print(f"WARNING: {args.output} is empty; CoRAL will find no seeds", file=sys.stderr)
 
 

@@ -711,7 +711,10 @@ licence. Gurobi is available with:
 The licence is mounted into the CoRAL tasks (`--bind` under Singularity/Apptainer, `--volume` under
 Docker/Podman), so give an absolute path; it is never baked into the image. Under Gurobi the
 reconstruction steps are serialised (`maxForks = 1`), because a Web License Service licence caps
-concurrent solver sessions, and the solver uses the task's CPUs. SCIP runs single-threaded.
+concurrent solver sessions, and the solver uses the task's CPUs. `maxForks` is per process, which
+suffices because only one CoRAL process solves in a run: `CORAL_RECONSTRUCT` by default, or
+`CORAL_CYCLE` with `--coral_run_cycle`, when reconstruction skips decomposition. SCIP runs
+single-threaded.
 
 Gurobi is faster, but on the models this pipeline produces that has not mattered: across 1102 solver
 logs from the earlier standalone cohort, the largest model was 620 rows by 438 columns and the
@@ -750,8 +753,10 @@ than failing.
 documentation recommends a considerably higher value for WGS, around 10.0; raise it if you see
 spurious breakpoints.
 
-`--coral_run_cycle` re-extracts cycles with `coral cycle_all` after reconstruction and classifies
-those instead of the originals. It is off by default.
+`--coral_run_cycle` moves cycle decomposition into a separate `coral cycle_all` step: reconstruction
+then builds only the breakpoint graphs (`--skip-cycle-decomp`), and the classifier and plots read the
+cycles `cycle_all` writes. It is off by default. `--coral_cycle_decomp_alpha` (default 0.01) applies
+to whichever step decomposes.
 
 ## Core Nextflow arguments
 

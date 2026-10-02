@@ -9,8 +9,8 @@ nextflow_process {
     tag "ascat_to_coral_bed"
     tag "small"
 
-    // Fixture: an ASCAT cnvs.txt calling its contigs "1"/"2"/"X", with one zero-length
-    // segment that CoRAL's own parser would reject, and a .fai that spells them "chr1" etc.
+    // Fixture: an ASCAT cnvs.txt calling its contigs "1"/"2"/"X", with gaps and a one-base
+    // segment (chr1:500000-500000), and a .fai that spells them "chr1" etc.
     test("converts ASCAT cnvs.txt to CoRAL BED and respells contigs") {
 
         when {
@@ -33,15 +33,15 @@ nextflow_process {
 
             assertAll(
                 { assert process.success },
-                // The zero-length segment (chr1:500000-500000) is dropped
-                { assert bed.size() == 4 },
-                // Contigs respelled to match the reference
-                { assert bed.every { it.startsWith('chr') } },
-                // Total CN is nMajor + nMinor, in the last column
-                { assert bed[0].split('\t')[3] == '2' },
-                { assert bed[1].split('\t')[3] == '8' },
-                // Natural contig order: chr1, chr2, then chrX
-                { assert bed.collect { it.split('\t')[0] } == ['chr1', 'chr1', 'chr2', 'chrX'] },
+                // 0-based half-open, gaps split at their midpoint, each contig tiled to its .fai length;
+                // contigs respelled, total CN = nMajor + nMinor, natural contig order
+                { assert bed == [
+                    'chr1\t0\t224999\t2',
+                    'chr1\t224999\t449999\t8',
+                    'chr1\t449999\t248956422\t3',
+                    'chr2\t0\t248956422\t2',
+                    'chrX\t0\t248956422\t1',
+                ] },
                 { assert snapshot(process.out.bed).match() }
             )
         }
@@ -64,9 +64,48 @@ nextflow_process {
         then {
             def bed = path(process.out.bed[0][1]).readLines()
 
+            // Without contig lengths the last segment keeps ASCAT's end
             assertAll(
                 { assert process.success },
-                { assert bed.collect { it.split('\t')[0] } == ['1', '1', '2', 'X'] }
+                { assert bed == [
+                    '1\t0\t224999\t2',
+                    '1\t224999\t449999\t8',
+                    '1\t449999\t500000\t3',
+                    '2\t0\t300000\t2',
+                    'X\t0\t200000\t1',
+                ] }
+            )
+        }
+    }
+
+    // Fixture: two overlapping segments, a third wholly inside the second, and an inverted one
+    test("overlapping segments are split at the overlap midpoint") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'overlap' ],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/overlap.cnvs.txt", checkIfExists: true)
+                ]
+                input[1] = [
+                    [:],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/chr.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def bed = path(process.out.bed[0][1]).readLines()
+
+            // The contained and the inverted segments are dropped
+            assertAll(
+                { assert process.success },
+                { assert bed == [
+                    'chr1\t0\t1900\t2',
+                    'chr1\t1900\t248956422\t4',
+                ] }
             )
         }
     }

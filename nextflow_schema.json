@@ -809,12 +809,12 @@
                 },
                 "coral_run_cycle": {
                     "type": "boolean",
-                    "description": "Re-extract cycles with `coral cycle_all` after reconstruction, and classify those instead."
+                    "description": "Decompose cycles in a separate `coral cycle_all` step: reconstruction then builds the breakpoint graphs only (CoRAL's --skip-cycle-decomp)."
                 },
                 "coral_cycle_decomp_alpha": {
                     "type": "number",
                     "default": 0.01,
-                    "description": "Cycle decomposition alpha, used only with --coral_run_cycle (CoRAL's --alpha)."
+                    "description": "Cycle decomposition alpha, balancing copy-number weight against path constraints: CoRAL reconstruct's --cycle-decomp-alpha, or cycle_all's --alpha with --coral_run_cycle."
                 },
                 "coral_plot": {
                     "type": "boolean",

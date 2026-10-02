@@ -10,8 +10,8 @@
                         [
                             "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
                             "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
-                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e",
-                            "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            "sample1_amplicon_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e"
                         ]
                     ]
                 ],
@@ -36,7 +36,7 @@
                         {
                             "id": "sample1"
                         },
-                        "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "sample1_amplicon_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "4": [
@@ -86,8 +86,8 @@
                         [
                             "sample1_amplicon1_cycles.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
                             "sample1_amplicon1_graph.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
-                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e",
-                            "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            "sample1_amplicon_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "sample1_reconstruct.log:md5,d41d8cd98f00b204e9800998ecf8427e"
                         ]
                     ]
                 ],
@@ -96,7 +96,7 @@
                         {
                             "id": "sample1"
                         },
-                        "sample1_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "sample1_amplicon_summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "versions_coral": [
@@ -112,6 +112,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-24T09:50:23.471598843"
+        "timestamp": "2026-10-02T14:18:40.110749953"
     }
 }
