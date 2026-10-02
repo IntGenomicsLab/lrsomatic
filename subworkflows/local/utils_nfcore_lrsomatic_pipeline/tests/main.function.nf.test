@@ -984,4 +984,76 @@ nextflow_function {
             )
         }
     }
+
+    // --- validateCondaSupport: container-only steps fail at launch under conda
+
+    test("validateCondaSupport names every container-only step left on under conda") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = true
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,conda'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('modkit pileup, mutational signatures') } },
+                { assert function.stdout.any { line -> line.contains('--skip_modkit --skip_signatures') } }
+            )
+        }
+    }
+
+    test("validateCondaSupport passes under conda once those steps are skipped") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = true
+                skip_report = true
+                skip_signatures = true
+            }
+            function {
+                """
+                input[0] = 'mamba'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateCondaSupport ignores container profiles") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = false
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,singularity'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
 }

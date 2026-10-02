@@ -239,6 +239,24 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateCondaSupport(workflow.profile)
+}
+
+//
+// Fail at launch, not mid-run, when a step whose tool ships only in its container would run under conda/mamba
+//
+def validateCondaSupport(profile) {
+    if (!profile || profile.tokenize(',').intersect(['conda', 'mamba']).isEmpty()) {
+        return
+    }
+    def steps = [
+        [!params.skip_modkit,     'modkit pileup',         '--skip_modkit'],
+        [!params.skip_report,     'the lrsomatic report',  '--skip_report'],
+        [!params.skip_signatures, 'mutational signatures', '--skip_signatures'],
+    ].findAll { enabled, _name, _flag -> enabled }
+    if (steps) {
+        error("Conda/mamba cannot run ${steps.collect { it[1] }.join(', ')}: these tools ship only in their containers. Use Docker / Singularity / Apptainer, or add ${steps.collect { it[2] }.join(' ')}.")
+    }
 }
 
 //
