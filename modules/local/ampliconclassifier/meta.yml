@@ -29,7 +29,7 @@ input:
         type: directory
         description: |
           A CoRAL output directory holding matching *_graph.txt, *_cycles.txt and
-          *_summary.txt files. AmpliconClassifier pairs them by shared prefix.
+          *_amplicon_summary.txt files. AmpliconClassifier pairs them by shared prefix.
   - - meta2:
         type: map
         description: Groovy Map for the data repository
@@ -96,6 +96,61 @@ output:
     - "*_annotated_cycles_files":
         type: directory
         description: Cycles files annotated with classification
+  basic_properties:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_feature_basic_properties.tsv":
+        type: file
+        description: Per-feature captured size, median and max copy number, borderline flag
+        pattern: "*_feature_basic_properties.tsv"
+  feature_complexity:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_feature_complexity.tsv":
+        type: file
+        description: Per-feature decomposition entropy scores
+        pattern: "*_feature_complexity.tsv"
+  ecdna_context:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_ecDNA_context_calls.tsv":
+        type: file
+        description: Genomic context call for each ecDNA feature
+        pattern: "*_ecDNA_context_calls.tsv"
+  fan_calls:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_fan_calls.tsv":
+        type: file
+        description: Per-amplicon FAN call, probability and the features behind it
+        pattern: "*_fan_calls.tsv"
+  feature_similarity:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_feature_similarity_scores.tsv":
+        type: file
+        description: Pairwise similarity scores between overlapping features
+        pattern: "*_feature_similarity_scores.tsv"
+  result_data:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_result_data.json":
+        type: file
+        description: The result table as JSON, the AmpliconRepository ingest format
+        pattern: "*_result_data.json"
+  bfbarchitect:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "bfbarchitect_outputs":
+        type: directory
+        description: BFBArchitect graphs, cycles and plots, written only when a BFB is reconstructed
   log:
     - meta:
         type: map

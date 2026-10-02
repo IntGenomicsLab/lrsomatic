@@ -18,6 +18,55 @@
                         "sample1_gene_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
+                "10": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_fan_calls.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "11": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_feature_similarity_scores.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "12": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_result_data.json:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "13": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "14": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_classifier.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "15": [
+                    [
+                        "AMPLICONCLASSIFIER",
+                        "ampliconclassifier",
+                        "2.0.0"
+                    ]
+                ],
                 "2": [
                     [
                         {
@@ -69,14 +118,23 @@
                         {
                             "id": "sample1"
                         },
-                        "sample1_classifier.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "sample1_feature_basic_properties.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "8": [
                     [
-                        "AMPLICONCLASSIFIER",
-                        "ampliconclassifier",
-                        "2.0.0"
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_feature_complexity.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "9": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_ecDNA_context_calls.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "annotated_cycles": [
@@ -89,7 +147,25 @@
                         ]
                     ]
                 ],
+                "basic_properties": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_feature_basic_properties.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
                 "bed_files": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        [
+                            
+                        ]
+                    ]
+                ],
+                "bfbarchitect": [
                     [
                         {
                             "id": "sample1"
@@ -107,12 +183,44 @@
                         "sample1_amplicon_classification_profiles.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
+                "ecdna_context": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_ecDNA_context_calls.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
                 "ecdna_counts": [
                     [
                         {
                             "id": "sample1"
                         },
                         "sample1_ecDNA_counts.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "fan_calls": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_fan_calls.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "feature_complexity": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_feature_complexity.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "feature_similarity": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_feature_similarity_scores.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "gene_list": [
@@ -129,6 +237,14 @@
                             "id": "sample1"
                         },
                         "sample1_classifier.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "result_data": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_result_data.json:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "result_table": [
@@ -162,6 +278,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-24T09:50:03.780875635"
+        "timestamp": "2026-10-02T14:20:55.726979854"
     }
 }
