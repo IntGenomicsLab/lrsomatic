@@ -137,6 +137,9 @@ workflow LRSOMATIC {
         ? params.somatic_var_keep
         : params.somatic_var_keep.tokenize(',').collect { it.trim() }
 
+    // Without --genome or --clairsto_pon_vcfs ClairS-TO falls back to its bundled GRCh38 PoNs
+    def pon_files = []
+    def pon_flags = []
     if (params.clairsto_pon_vcfs != null) {
         pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {
