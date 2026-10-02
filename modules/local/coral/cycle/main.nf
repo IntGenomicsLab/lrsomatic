@@ -34,6 +34,9 @@ process CORAL_CYCLE {
         --bp-dir ${reconstruction} \\
         --output-prefix cycles/${prefix} \\
         ${args}
+
+    # Pyomo's solver model dumps; nothing downstream reads them
+    rm -rf cycles/models
     """
 
     stub:

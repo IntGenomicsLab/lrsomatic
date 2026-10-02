@@ -39,6 +39,9 @@ process CORAL_RECONSTRUCT {
         --cn-seg ${cn_seg} \\
         --output-prefix reconstruct/${prefix} \\
         ${args}
+
+    # Pyomo's solver model dumps; nothing downstream reads them
+    rm -rf reconstruct/models
     """
 
     stub:
