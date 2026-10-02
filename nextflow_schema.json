@@ -70,12 +70,14 @@
                 "germline_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of germline variant callers to use. Valid values: deepvariant, clair. Example: 'deepvariant,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepvariant)\\s*(,\\s*(clair|deepvariant)\\s*)?$"
                 },
                 "somatic_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of somatic variant callers to use. Valid values: deepsomatic, clair. Example: 'deepsomatic,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepsomatic)\\s*(,\\s*(clair|deepsomatic)\\s*)?$"
                 },
                 "germline_var_combine": {
                     "type": "string",

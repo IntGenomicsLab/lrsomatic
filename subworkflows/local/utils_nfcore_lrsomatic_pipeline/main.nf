@@ -239,6 +239,34 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateSmallvarCallers()
+}
+
+//
+// Validate --germline_var_keep / --somatic_var_keep before workflows/lrsomatic.nf tokenises them
+//
+def validateSmallvarCallers() {
+    def allowed = [germline_var_keep: ['clair', 'deepvariant'], somatic_var_keep: ['clair', 'deepsomatic']]
+    allowed.each { name, valid ->
+        def value = params[name]
+        def callers = value instanceof List
+            ? value.collect { it.toString().trim() }
+            : (value == null ? [] : value.toString().split(',', -1).collect { it.trim() })
+        if (!callers || callers.every { !it }) {
+            error("--${name}: no caller given. Choose one or more of: ${valid.join(', ')}.")
+        }
+        if (callers.any { !it }) {
+            error("--${name}: empty entry in '${value}'. Give a comma-separated list of: ${valid.join(', ')}.")
+        }
+        def unknown = callers.findAll { !(it in valid) }.unique()
+        if (unknown) {
+            error("--${name}: '${unknown.join("', '")}' is not a valid caller. Choose one or more of: ${valid.join(', ')}.")
+        }
+        def duplicates = callers.countBy { it }.findAll { _caller, count -> count > 1 }.keySet()
+        if (duplicates) {
+            error("--${name}: '${duplicates.join("', '")}' is listed more than once in '${value}'.")
+        }
+    }
 }
 
 //
