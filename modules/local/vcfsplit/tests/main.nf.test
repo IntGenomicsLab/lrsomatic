@@ -1,0 +1,70 @@
+nextflow_process {
+
+    name "Test Process VCFSPLIT"
+    script "../main.nf"
+    process "VCFSPLIT"
+
+    tag "modules"
+    tag "modules_local"
+    tag "vcfsplit"
+    tag "small"
+
+    // Runs for real (no -stub) so the awk embedded in the script block is exercised.
+    test("splits on the verdict and keeps the original FILTER in INFO/ORIG_FILTER") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/vcfsplit_snv.vcf", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/vcfsplit_indel.vcf", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def records  = { f -> path(f).linesGzip.findAll { line -> !line.startsWith('#') } }
+            def somatic  = records(process.out.somatic_vcf[0][1])
+            def germline = records(process.out.germline_vcf[0][1])
+            def gHeader  = path(process.out.germline_vcf[0][1]).linesGzip.findAll { line -> line.startsWith('##') }
+
+            def col = { recs, i -> recs.collectEntries { l -> def f = l.split('\t'); [ (f[1]): f[i] ] } }
+
+            assertAll(
+                // PASS records go to the somatic arm untouched
+                { assert col(somatic, 6) == [ '100':'PASS', '150':'PASS' ] },
+                // NonSomatic or Verdict_Germline records go to the germline arm, FILTER normalised to PASS
+                { assert col(germline, 6) == [ '200':'PASS', '250':'PASS', '300':'PASS', '400':'PASS' ] },
+                { assert col(germline, 7)['200'] == 'ORIG_FILTER=NonSomatic' },
+                { assert col(germline, 7)['250'] == 'SB=1;Verdict_Germline;ORIG_FILTER=LowQual' },
+                // a multi-valued FILTER is stored comma-separated, since ';' is illegal in an INFO value
+                { assert col(germline, 7)['300'] == 'CALLER=clairs-to;ORIG_FILTER=LowQual,NonSomatic' },
+                // a pre-existing ORIG_FILTER is kept, not duplicated or overwritten
+                { assert col(germline, 7)['400'] == 'CALLER=clairs-to;ORIG_FILTER=RefCall' },
+                { assert gHeader.count { it.startsWith('##INFO=<ID=ORIG_FILTER,') } == 1 },
+                { assert snapshot(somatic, germline, process.out.versions_bcftools).match() }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
