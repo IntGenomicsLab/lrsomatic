@@ -11,8 +11,10 @@ nextflow_process {
     // "small" is what .github/workflows/nf-test.yml selects on for pull_request
     tag "small"
 
-    // Real Severus/Wakhan/SAVANA outputs are not available as public test data; only the I/O contract is tested here.
-    // An end-to-end run on real data is exercised through the pipeline (see docs/usage.md, Padfoot options).
+    // The stub tests check the I/O contract. The "real" tests run Padfoot itself on the synthetic Severus/Wakhan/SAVANA
+    // fixtures in tests/fixtures/padfoot_reconplot (invented events on a 2 Mb slice of GRCh38 chr19: a deletion over STK11
+    // exons with a matching one-copy loss, a tandem duplication with a matching gain, a templated and an Alu insertion,
+    // two breakend pairs), so the command line, the parsers, minimap2/samtools and RepeatMasker are exercised in CI.
 
     test("severus + wakhan - stub") {
 
@@ -68,6 +70,90 @@ nextflow_process {
             assertAll(
                 { assert process.success },
                 { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("severus + wakhan - real, RepeatMasker on") {
+
+        config "./nextflow.repeatmasker.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:'test' ],
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true),
+                    'severus',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_wakhan_cna_integers.vcf", checkIfExists: true),
+                    'wakhan'
+                ]
+                input[1] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ]
+                input[2] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ]
+                input[3] = [ [:], 'hg38', [], [] ]
+                """
+            }
+        }
+
+        then {
+            def svs = path(process.out.annotated_svs.get(0).get(1)).readLines()
+            def svs_by_id = svs.drop(1).collectEntries { line -> def f = line.split('\t', -1); [(f[0]): f] }
+            assertAll(
+                { assert process.success },
+                // every fixture SV annotated once; breakend pairs collapse to their _1 record
+                { assert svs_by_id.keySet() == ['severus_BND1_1', 'severus_BND2_1', 'severus_INS1', 'severus_INS2', 'severus_DEL1', 'severus_DUP1'] as Set },
+                // the STK11 exon deletion is the high-impact TSG hit; the Alu insertion sits in an ABCA7 intron and maps back to its source
+                { assert svs_by_id['severus_DEL1'][9] == 'HIGH_ONCO' && svs_by_id['severus_DEL1'][11] == 'STK11' },
+                { assert svs_by_id['severus_INS2'][11] == 'ABCA7' && svs_by_id['severus_INS2'][24].startsWith('chr19:') },
+                { assert svs_by_id['severus_INS1'][24].startsWith('chr19:118') },
+                { assert path(process.out.by_gene.get(0).get(1)).text.contains('STK11') },
+                { assert path(process.out.log.get(0).get(1)).text.contains('Padfoot completed successfully') },
+                // stable outputs: both tables, file names and the tool versions
+                { assert snapshot(
+                    process.out.annotated_svs,
+                    process.out.by_gene,
+                    file(process.out.log.get(0).get(1)).name,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    test("savana + savana - real, RepeatMasker off") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:'test' ],
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true),
+                    'savana',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                    'savana'
+                ]
+                input[1] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ]
+                input[2] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ]
+                input[3] = [ [:], 'hg38', [], [] ]
+                """
+            }
+        }
+
+        then {
+            def svs = path(process.out.annotated_svs.get(0).get(1)).readLines()
+            def svs_by_id = svs.drop(1).collectEntries { line -> def f = line.split('\t', -1); [(f[0]): f] }
+            assertAll(
+                { assert process.success },
+                // SAVANA breakend pairs are reported once under the shared ID; the <INS> record has no sequence to map
+                { assert svs_by_id.keySet() == ['ID_1', 'ID_2', 'ID_3', 'ID_4', 'ID_5'] as Set },
+                { assert svs_by_id['ID_1'][9] == 'HIGH_ONCO' && svs_by_id['ID_1'][11] == 'STK11' },
+                { assert svs_by_id['ID_1'][7] == '+-' && svs_by_id['ID_2'][7] == '-+' && svs_by_id['ID_4'][7] == '++' && svs_by_id['ID_5'][7] == '--' },
+                { assert path(process.out.log.get(0).get(1)).text.contains('Padfoot completed successfully') },
+                { assert snapshot(
+                    process.out.annotated_svs,
+                    process.out.by_gene,
+                    file(process.out.log.get(0).get(1)).name,
+                    process.out.versions
+                ).match() }
             )
         }
     }

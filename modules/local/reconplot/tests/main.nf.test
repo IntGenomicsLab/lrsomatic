@@ -69,4 +69,113 @@ nextflow_process {
             )
         }
     }
+
+    // The "real" tests run the wrapper and the ReConPlot package on the synthetic fixtures in tests/fixtures/padfoot_reconplot
+    // (the same invented chr19 events as the PADFOOT tests, in every CN caller's own file layout). Figures are not
+    // snapshotted (PDF/PNG bytes are not stable across platforms); the harmonised CN/SV tables are.
+
+    test("ascat + severus - real") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // one chromosome in the fixtures -> one per-chromosome and one genome-wide figure, PDF + PNG each
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.focus == [] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('CN file: test.segments.txt') && path(process.out.log.get(0).get(1)).text.contains('purity=0.9') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    test("wakhan + severus - real") {
+
+        when {
+            process {
+                """
+                // bed_output/*.bed files plus solutions_ranks.tsv, as the subworkflow stages them; the module re-creates the solution_1 layout
+                input[0] = [
+                    [ id:'test' ],
+                    'wakhan',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_copynumbers_segments_HP_1.bed", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_copynumbers_segments_HP_2.bed", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/solutions_ranks.tsv", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('Wakhan solution: solution_1') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    test("savana single source - real") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.bedpe", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_fitted_purity_ploidy.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_allele_counts_hetSNPs.bed", checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
 }
