@@ -3,13 +3,17 @@ process SEVERUS {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
+    // Patched Severus 1.7 (github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration, 6813dee) carries the --whitelist fixes;
+    // without --whitelist its output is identical to stock 1.7. Revert to the biocontainer once KolmogorovLab/Severus carries the fixes.
+    // Conda installs stock bioconda Severus, so --severus_whitelist is refused under conda at startup (utils_nfcore_lrsomatic_pipeline).
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8f/8fd0858ee067f8b95246e57683a7431bc126929b4203fbda8e315cd94d2570ad/data':
-        'community.wave.seqera.io/library/severus:1.7--d16d59609ef4ee7d' }"
+        'oras://docker.io/amberverhasselt/severus-sif:1.7-whitelist-6813dee':
+        'docker.io/amberverhasselt/severus:1.7-whitelist-6813dee' }"
 
     input:
     tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
     tuple val(meta2), path(bed), path(pon_path)
+    tuple val(meta3), path(whitelist)
 
     output:
     tuple val(meta), path("${prefix}/severus.log")                              , emit: log
@@ -39,6 +43,7 @@ process SEVERUS {
     def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
     def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
     def pon = pon_path && (!control_input) ? "--PON ${pon_path}" : ""
+    def whitelist_bed = whitelist ? "--whitelist ${whitelist}" : ""
 
     """
     severus \\
@@ -49,6 +54,7 @@ process SEVERUS {
         $pon \\
         $control \\
         $phasing_vcf \\
+        $whitelist_bed \\
         --out-dir ${prefix}
 
     bgzip ${prefix}/somatic_SVs/severus_somatic.vcf

@@ -270,13 +270,13 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 
 #### SEVERUS Options
 
-| Parameter                  | Description                                                                                                                                                                                                    |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--severus_minsupport`     | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3`                                                                                                                           |
-| `--severus_whitelist`      | BED file of regions in which every SV is reported (Severus `--whitelist`). Setting it replaces the standard Severus run with `SEVERUS_WHITELIST`, whose VCFs feed SV VEP, Wakhan and the report. Default = off |
-| `--severus_whitelist_args` | Extra arguments for `SEVERUS_WHITELIST`, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Default = none                                                          |
+| Parameter                  | Description                                                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--severus_minsupport`     | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3`                                                                                                 |
+| `--severus_whitelist`      | BED file of regions in which every SV is reported (Severus `--whitelist`). Passed to `SEVERUS` as `--whitelist`; its VCFs feed SV VEP, Wakhan and the report as usual. Default = off |
+| `--severus_whitelist_args` | Extra arguments for `SEVERUS`, only used with `--severus_whitelist`, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Default = none    |
 
-`SEVERUS_WHITELIST` runs a patched Severus build ([AmberVerhasselt/Severus](https://github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration)) from `docker.io/amberverhasselt/severus` (`oras://docker.io/amberverhasselt/severus-sif` under Singularity/Apptainer). Inside the whitelisted regions it skips the read-quality, minimum-support and VNTR filters, and keeps a junction supported by a single read only when a reciprocal or independently supported junction corroborates it. This is meant for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads. **Conda is not supported** for this step.
+`SEVERUS` runs a patched Severus 1.7 build ([AmberVerhasselt/Severus](https://github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration)) from `oras://docker.io/amberverhasselt/severus-sif` (`docker.io/amberverhasselt/severus` under Docker); without `--severus_whitelist` its output is identical to stock Severus 1.7. Inside the whitelisted regions it skips the read-quality, minimum-support and VNTR filters, and keeps a junction supported by a single read only when a reciprocal or independently supported junction corroborates it. This is meant for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads. **`--severus_whitelist` is not supported under Conda**, which installs stock Severus.
 
 #### SAVANA Options
 
