@@ -77,6 +77,9 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.9.0"
                 },
+                "DS_GERMLINE_REJOIN": {
+                    "bcftools": 1.22
+                },
                 "DS_GERMLINE_SELECT": {
                     "bcftools": "1.23.1"
                 },
@@ -84,6 +87,12 @@
                     "bcftools": 1.22
                 },
                 "DS_VERDICT_QUERY": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DS": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DV": {
                     "bcftools": 1.22
                 },
                 "GERMLINE_ANCHORS": {
@@ -710,6 +719,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-29T13:31:57.487084446"
+        "timestamp": "2026-10-02T10:14:00.696785246"
     }
 }

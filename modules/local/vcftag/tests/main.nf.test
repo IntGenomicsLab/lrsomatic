@@ -7,6 +7,7 @@ nextflow_process {
     tag "modules"
     tag "modules_local"
     tag "vcftag"
+    tag "small"
 
     // Runs for real (no -stub): the tagging is an awk program embedded in the Nextflow script
     // block, so the escaping only holds if it is actually executed.

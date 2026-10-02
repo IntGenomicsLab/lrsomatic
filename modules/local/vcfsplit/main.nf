@@ -39,11 +39,14 @@ process VCFSPLIT {
     tabix -p vcf germline_tmp.vcf.gz
 
     # Normalise FILTER to PASS, keeping the original in INFO/ORIG_FILTER (";" stored as ",").
+    # An ORIG_FILTER already present (header or record) is kept rather than duplicated.
     bcftools view germline_tmp.vcf.gz | awk -v q='"' 'BEGIN{FS=OFS="\t"}
+        /^##INFO=<ID=ORIG_FILTER,/ { has_hdr = 1 }
         /^##/ { print; next }
-        /^#CHROM/ { print "##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description=" q "Original FILTER value before normalisation to PASS" q ">"; print; next }
+        /^#CHROM/ { if (!has_hdr) print "##INFO=<ID=ORIG_FILTER,Number=.,Type=String,Description=" q "Original FILTER value before normalisation to PASS" q ">"; print; next }
         { of = \$7; gsub(/;/, ",", of)
-          \$8 = (\$8 == "." || \$8 == "") ? "ORIG_FILTER=" of : \$8 ";ORIG_FILTER=" of
+          if (\$8 == "." || \$8 == "") \$8 = "ORIG_FILTER=" of
+          else if (\$8 !~ /(^|;)ORIG_FILTER=/) \$8 = \$8 ";ORIG_FILTER=" of
           \$7 = "PASS"
           print }
     ' | bgzip -c > germline.vcf.gz

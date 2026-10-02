@@ -5,10 +5,10 @@
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": 1.22
                 },
-                "BCFTOOLS_CONCAT": {
+                "BCFTOOLS_CALLER_UNION": {
                     "bcftools": 1.22
                 },
-                "BCFTOOLS_EXCLUDE_SITES": {
+                "BCFTOOLS_CONCAT": {
                     "bcftools": 1.22
                 },
                 "BCFTOOLS_NORM": {
@@ -71,6 +71,9 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.9.0"
                 },
+                "DS_GERMLINE_REJOIN": {
+                    "bcftools": 1.22
+                },
                 "DS_GERMLINE_SELECT": {
                     "bcftools": "1.23.1"
                 },
@@ -78,6 +81,12 @@
                     "bcftools": 1.22
                 },
                 "DS_VERDICT_QUERY": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DS": {
+                    "bcftools": 1.22
+                },
+                "DS_VERDICT_SPLIT_DV": {
                     "bcftools": 1.22
                 },
                 "GERMLINE_ANCHORS": {
@@ -704,6 +713,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-09-29T12:18:55.043468734"
+        "timestamp": "2026-10-02T10:14:05.338322172"
     }
 }

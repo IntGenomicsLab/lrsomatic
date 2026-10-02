@@ -79,13 +79,13 @@
                 },
                 "germline_var_combine": {
                     "type": "string",
-                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "somatic_var_combine": {
                     "type": "string",
-                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
