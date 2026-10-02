@@ -46,7 +46,7 @@ output:
         description: Groovy Map containing sample information
     - "output/SBS/*.SBS96.all":
         type: file
-        description: SBS96 mutational matrix (rows are the 96 trinucleotide classes, one column per sample)
+        description: SBS96 mutational matrix (rows are the 96 trinucleotide classes, one column per sample; absent when the sample has no SNVs)
         pattern: "output/SBS/*.SBS96.all"
   dbs78:
     - meta:

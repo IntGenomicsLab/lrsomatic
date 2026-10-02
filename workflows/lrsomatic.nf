@@ -962,13 +962,15 @@ workflow LRSOMATIC {
             params.sigprofiler_genome
         )
 
-        // DBS78 / ID83 matrices are only written when the sample carries such variants
-        SIGPROFILER_MATRIXGENERATOR.out.sbs96
+        // Each matrix is only written when the sample carries such variants; samples with none are dropped
+        SIGPROFILER_MATRIXGENERATOR.out.output_dir
+            .join(SIGPROFILER_MATRIXGENERATOR.out.sbs96, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
-            .map { meta, sbs96, dbs78, id83 -> [meta, sbs96, dbs78 ?: [], id83 ?: []] }
+            .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
+            .map { meta, _output_dir, sbs96, dbs78, id83 -> [meta, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
             .set { sigprofiler_matrices }
-        // sigprofiler_matrices: [meta, sbs96, dbs78 | [], id83 | []]
+        // sigprofiler_matrices: [meta, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
