@@ -369,7 +369,12 @@ A sample with no segment above `--coral_gain` produces an empty seed BED and is 
 message rather than failing. CoRAL defaults to the open-source SCIP solver; `--coral_solver
 gurobi_direct` is faster but needs `--gurobi_license`. AmpliconClassifier needs an AmpliconArchitect
 data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13;
-a CHM13 run without one skips classification with a warning.
+a CHM13 run without one skips classification with a warning. An unseeded sample gets only its seed
+BED: no `reconstruct/` directory, and so no amplicon summary.
+
+With `--coral_run_cycle`, reconstruction builds the breakpoint graphs only, and the cycles and the
+amplicon summary are written to `cycles/` instead, beside copies of the graphs; the classifier and
+the plots then read `cycles/`.
 
 ```
 ├── ecdna
@@ -379,8 +384,12 @@ a CHM13 run without one skips classification with a warning.
 │   │   ├── reconstruct
 │   │   │   ├── sample_amplicon1_graph.txt
 │   │   │   ├── sample_amplicon1_cycles.txt
-│   │   │   ├── sample_summary.txt
+│   │   │   ├── sample_amplicon_summary.txt
 │   │   │   └── sample_reconstruct.log
+│   │   ├── cycles                      # --coral_run_cycle only
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   └── sample_amplicon_summary.txt
 │   │   └── plots
 │   │       ├── sample_amplicon1_graph.png
 │   │       └── sample_amplicon1_cycles.png
@@ -398,14 +407,18 @@ a CHM13 run without one skips classification with a warning.
 | `sample_CNV_SEEDS.bed`                        | Amplified intervals above `--coral_gain`; empty means no amplicons |
 | `sample_amplicon<N>_graph.txt`                | Breakpoint graph per amplicon, in AmpliconArchitect format         |
 | `sample_amplicon<N>_cycles.txt`               | Decomposed cycles and paths per amplicon                           |
-| `sample_summary.txt`                          | Per-run amplicon summary; written even when no amplicon is found   |
+| `sample_amplicon_summary.txt`                 | Per-run amplicon summary, written by cycle decomposition           |
 | `sample_reconstruct.log`                      | CoRAL reconstruction log, including solver output                  |
+| `cycles/`                                     | `--coral_run_cycle` only: `cycle_all`'s cycles and summary, graphs |
 | `sample_amplicon<N>_{graph,cycles}.png`       | Per-amplicon copy-number and cycle plots                           |
 | `sample_amplicon_classification_profiles.tsv` | The headline call per amplicon: ecDNA+, BFB+, decomposition class  |
 | `sample_gene_list.tsv`                        | Genes intersecting each classified amplicon                        |
 | `sample_ecDNA_counts.tsv`                     | Number of distinct ecDNA species detected                          |
 | `sample_result_table.tsv`                     | Combined per-sample table, the format AmpliconRepository ingests   |
 | `sample_classification_bed_files/`            | Per-feature BED intervals for each classified amplicon             |
+| `sample_result_data.json`                     | The result table as JSON                                           |
+| `sample_feature_*.tsv`, `sample_*_calls.tsv`  | Feature properties, complexity and similarity; FAN, ecDNA context  |
+| `bfbarchitect_outputs/`                       | BFBArchitect reconstructions, only when a BFB is found             |
 
 #### `savana`
 
