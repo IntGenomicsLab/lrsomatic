@@ -129,7 +129,7 @@ This cache carries gene and transcript models only, so every pathogenicity score
 
 Setting `--vep_genome T2T-CHM13v2.0` by hand, without `--genome CHM13`, resolves no plugin defaults — supply the `--vep_*` paths yourself, or accept VEP without plugin annotation.
 
-For mutational signatures, `--genome CHM13` selects the `CHM13-T2T` SigProfilerMatrixGenerator genome. Its payload is not on the AlexandrovLab FTP yet, so `--download_sigprofiler_genome` fetches it from the IntGenomicsLab Globus collection (`--sigprofiler_genome_url`); see [Mutational Signature Options](#mutational-signature-options).
+For mutational signatures, `--genome CHM13` selects the `CHM13-T2T` SigProfilerMatrixGenerator genome. Its payload is not on the AlexandrovLab FTP yet, so the default download fetches it from the IntGenomicsLab Globus collection (`--sigprofiler_genome_url`); see [Mutational Signature Options](#mutational-signature-options).
 
 For structural variants, the CHM13 panel of normals is a merged panel combining the 1000 Genomes CHM13 panel shipped with SEVERUS and the ASAP cohort, with median confidence intervals per breakpoint. The pipeline exposes it as `--pon_file` and hands it to SEVERUS via that tool's own `--PON` flag; it is downloaded automatically with `--genome CHM13`. GRCh38 continues to use the 1000 Genomes panel shipped with SEVERUS.
 
@@ -229,7 +229,7 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--skip_vep_plugins`         | Annotate with VEP alone, fetching no plugin data. Default = `false`                                                      |
 | `--vep_alphamissense`        | AlphaMissense GRCh38 score file, for the `AlphaMissense` plugin. GRCh38 only                                             |
 | `--vep_alphamissense_tbi`    | Index for `--vep_alphamissense`. Required whenever `--vep_alphamissense` is set                                          |
-| `--vep_alphamissense_aa`     | AlphaMissense protein-space release, or a table already built from it, for the `AlphaMissenseProtein` plugin. CHM13 only |
+| `--vep_alphamissense_aa`     | Prepared gene-symbol-keyed table for the `AlphaMissenseProtein` plugin (see below). CHM13 only                           |
 | `--vep_alphamissense_aa_tbi` | Index for `--vep_alphamissense_aa`. Required whenever `--vep_alphamissense_aa` is set                                    |
 | `--vep_polyphen_sift_db`     | Ensembl pangenome PolyPhen/SIFT SQLite database, for the `PolyPhen_SIFT` plugin. Needed on CHM13 only                    |
 | `--vep_clinvar`              | ClinVar VCF, added as a VEP `--custom` annotation                                                                        |
@@ -245,6 +245,15 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--vep_revel_tbi`            | Index for `--vep_revel`. Required only when `--vep_revel` is an already-prepared file                                    |
 | `--vep_eve`                  | EVE release zip, or a merged VCF, for the `EVE` plugin. **Not** on by default. GRCh38 only. Default = `null`             |
 | `--vep_eve_tbi`              | Index for `--vep_eve`. Required only when `--vep_eve` is an already-merged VCF. Default = `null`                         |
+
+`--vep_alphamissense_aa` is used as given: unlike REVEL and EVE, the pipeline does not build it from
+the AlphaMissense release. The CHM13 default is a table we host. A replacement must be a bgzipped,
+tab-separated file whose first line is a `#`-prefixed header with at least `gene` (gene symbol),
+`aapos` (1-based residue), `aaref` and `aaalt` (one-letter amino acids), plus the score columns to
+report (by default `am_pathogenicity` and `am_class`; the hosted table also has `uniprot_acc`),
+sorted by gene and position and indexed with `tabix -s 1 -b 2 -e 2 -c "#"`. The hosted table is
+AlphaMissense's `AlphaMissense_aa_substitutions.tsv.gz` with the UniProt accession mapped to a gene
+symbol and the protein variant (e.g. `V2L`) split into those three columns; see `CITATIONS.md`.
 
 #### Minimap2 Options
 
@@ -373,17 +382,17 @@ Checked at launch:
 
 #### Mutational Signature Options
 
-Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline. Either:
+Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline:
 
-- run once with `--download_sigprofiler_genome`; the payload is installed, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`, or
-- point `--sigprofiler_genome_dir` at an existing SigProfilerMatrixGenerator volume (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run).
+- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`;
+- `--sigprofiler_genome_dir` points at an existing SigProfilerMatrixGenerator volume instead (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run). It takes precedence over the download, so pass it on later runs to skip the ~3 GB fetch.
 
-Running with neither, and without `--skip_signatures`, stops the pipeline at start-up.
+Running with `--download_sigprofiler_genome false` and no `--sigprofiler_genome_dir`, or with a `--genome` that has no SigProfilerMatrixGenerator genome and no `--sigprofiler_genome`, stops the pipeline at start-up unless `--skip_signatures` is set.
 
 | Parameter                                   | Description                                                                                                                                                                                         |
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--sigprofiler_genome_dir`                  | Full path to a SigProfilerMatrixGenerator volume containing `tsb/<sigprofiler_genome>/`. Default = `null`                                                                                           |
-| `--download_sigprofiler_genome`             | A boolean to download and install the genome payload during the run (published to `<outdir>/cache/sigprofiler/volume`). Default = `false`                                                           |
+| `--download_sigprofiler_genome`             | A boolean to download and install the genome payload during the run when no `--sigprofiler_genome_dir` is given (published to `<outdir>/cache/sigprofiler/volume`). Default = `true`                |
 | `--sigprofiler_cosmic_version`              | COSMIC reference signature version fitted by SigProfilerAssignment. Default = `3.6`                                                                                                                 |
 | `--sigprofiler_exclude_signature_subgroups` | Comma-separated SigProfilerAssignment signature subgroups to exclude from the fit, e.g. `"Artifact_signatures,Lymphoid_signatures"` (see the SigProfilerAssignment documentation). Default = `null` |
 | `--sigprofiler_matrix_args`                 | Extra arguments for `SigProfilerMatrixGenerator matrix_generator`. Default = `"--plot"`                                                                                                             |
@@ -668,9 +677,9 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
   pangenome database covers the HPRC assemblies.
 - **`AlphaMissenseProtein`** (in `assets/vep_plugins/`) keys on gene symbol plus amino-acid
   substitution, using a table built from AlphaMissense's protein-space release. A row is used only
-  when both amino acids match what VEP computed for the CHM13 transcript; otherwise it reports
-  `aa_mismatch` and no score. The `AlphaMissenseProtein_match` values are listed under
-  [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
+  when both amino acids match what VEP computed for the CHM13 transcript; a position whose
+  reference residue differs reports `aa_mismatch` and no score. The `AlphaMissenseProtein_match`
+  values are listed under [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
 
 ### What is not available, and why
 

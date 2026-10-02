@@ -8,7 +8,7 @@ process SIGPROFILER_ASSIGNMENT {
         : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-28a9ce8'}"
 
     input:
-    tuple val(meta), path(sbs96), path(dbs78), path(id83)   // SigProfilerMatrixGenerator matrices; dbs78/id83 may be []
+    tuple val(meta), path(sbs96), path(dbs78), path(id83)   // SigProfilerMatrixGenerator matrices; any may be []
     val(genome)                                             // genome build for the COSMIC reference signatures, e.g. GRCh38 or CHM13-T2T
     val(cosmic_version)                                     // COSMIC version, e.g. 3.6
 

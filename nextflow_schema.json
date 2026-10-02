@@ -394,6 +394,16 @@
                 "savana_allele_mapq": {
                     "type": "integer",
                     "description": "Mapping quality threshold for reads counted at a het-SNP site (SAVANA's --allele_mapq, default 5). Intended for test profiles running on downsampled data below that coverage floor."
+                },
+                "savana_contigs": {
+                    "type": "string",
+                    "description": "File of contigs (one per line) SAVANA is restricted to (`--contigs`). Set from `--genome`; without one, SAVANA uses all contigs.",
+                    "hidden": true
+                },
+                "savana_g1000_vcf": {
+                    "type": "string",
+                    "description": "SAVANA's bundled 1000 Genomes SNP set for tumour-only allele counting (`--g1000_vcf`), e.g. `1000g_hg38`. Set from `--genome`.",
+                    "hidden": true
                 }
             }
         },
@@ -481,13 +491,14 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "SigProfilerMatrixGenerator volume directory containing tsb/<sigprofiler_genome>/ (the installed genome payload).",
-                    "help_text": "Create it once with `--download_sigprofiler_genome` (published to `<outdir>/cache/sigprofiler/volume`) or with `SigProfilerMatrixGenerator install <genome> --volume <dir>`, then pass it here on later runs.",
+                    "help_text": "Takes precedence over `--download_sigprofiler_genome`. A run without it downloads the payload and publishes it to `<outdir>/cache/sigprofiler/volume`; pass that (or a `SigProfilerMatrixGenerator install <genome> --volume <dir>` volume) here on later runs.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "download_sigprofiler_genome": {
                     "type": "boolean",
-                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run instead of using --sigprofiler_genome_dir.",
-                    "fa_icon": "fas fa-download"
+                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run when no --sigprofiler_genome_dir is given.",
+                    "fa_icon": "fas fa-download",
+                    "default": true
                 },
                 "sigprofiler_cosmic_version": {
                     "type": "number",

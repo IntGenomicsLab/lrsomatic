@@ -137,6 +137,9 @@ workflow LRSOMATIC {
         ? params.somatic_var_keep
         : params.somatic_var_keep.tokenize(',').collect { it.trim() }
 
+    // Without --genome or --clairsto_pon_vcfs ClairS-TO falls back to its bundled GRCh38 PoNs
+    def pon_files = []
+    def pon_flags = []
     if (params.clairsto_pon_vcfs != null) {
         pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {
@@ -959,13 +962,15 @@ workflow LRSOMATIC {
             params.sigprofiler_genome
         )
 
-        // DBS78 / ID83 matrices are only written when the sample carries such variants
-        SIGPROFILER_MATRIXGENERATOR.out.sbs96
+        // Each matrix is only written when the sample carries such variants; samples with none are dropped
+        SIGPROFILER_MATRIXGENERATOR.out.output_dir
+            .join(SIGPROFILER_MATRIXGENERATOR.out.sbs96, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
-            .map { meta, sbs96, dbs78, id83 -> [meta, sbs96, dbs78 ?: [], id83 ?: []] }
+            .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
+            .map { meta, _output_dir, sbs96, dbs78, id83 -> [meta, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
             .set { sigprofiler_matrices }
-        // sigprofiler_matrices: [meta, sbs96, dbs78 | [], id83 | []]
+        // sigprofiler_matrices: [meta, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
@@ -1209,10 +1214,10 @@ workflow LRSOMATIC {
             .set { tumoronly_savana_input }
         // tumoronly_savana_input: [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
 
-        ch_savana_contigs = channel.value([[:], params.savana_contigs])
+        ch_savana_contigs = channel.value([[:], params.savana_contigs ?: []])
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
-        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf])
+        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,

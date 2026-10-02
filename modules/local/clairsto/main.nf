@@ -39,8 +39,9 @@ process CLAIRSTO {
     def conda_prefix = (workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') ? '--conda_prefix /opt/micromamba/envs/clairs-to' : ''
     // Omitted for GRCh38; a set that cannot belong to --ref_fn disables Verdict with a warning
     def cna_resource_dir = cna_resources ? "--cna_resource_dir ${cna_resources}" : ''
-    def pon_string   = pon_vcfs.join(',')
-    def flags_string = pon_flags.join(',')
+    // An empty PoN list leaves ClairS-TO on its bundled defaults; a lone PoN stages as a bare Path
+    def pon_list = pon_vcfs instanceof Collection ? pon_vcfs : [pon_vcfs]
+    def pon_args = pon_vcfs ? "--panel_of_normals ${pon_list.join(',')} --panel_of_normals_require_allele_matching ${pon_flags.join(',')}" : ''
 
     """
     /opt/bin/run_clairs_to \
@@ -52,8 +53,7 @@ process CLAIRSTO {
         --sample_name ${prefix} \\
         --snv_output_prefix snv_out \\
         --indel_output_prefix indel_out \\
-        --panel_of_normals ${pon_string} \\
-        --panel_of_normals_require_allele_matching ${flags_string} \\
+        $pon_args \\
         $conda_prefix \\
         $cna_resource_dir \\
         $args
