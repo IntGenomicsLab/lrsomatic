@@ -750,8 +750,10 @@ than failing.
 documentation recommends a considerably higher value for WGS, around 10.0; raise it if you see
 spurious breakpoints.
 
-`--coral_run_cycle` re-extracts cycles with `coral cycle_all` after reconstruction and classifies
-those instead of the originals. It is off by default.
+`--coral_run_cycle` moves cycle decomposition into a separate `coral cycle_all` step: reconstruction
+then builds only the breakpoint graphs (`--skip-cycle-decomp`), and the classifier and plots read the
+cycles `cycle_all` writes. It is off by default. `--coral_cycle_decomp_alpha` (default 0.01) applies
+to whichever step decomposes.
 
 ## Core Nextflow arguments
 
