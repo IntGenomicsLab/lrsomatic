@@ -530,6 +530,9 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   │   ├── sample_SV_VEP.vcf.gz
 │   │   ├── sample_SV_VEP_summary.html
 │   │   ├── sample_SV_VEP.vcf.gz.tbi
+│   │   ├── sample_VEP_SAVANA.vcf.gz
+│   │   ├── sample_VEP_SAVANA_summary.html
+│   │   ├── sample_VEP_SAVANA.vcf.gz.tbi
 ```
 
 | File                                        | Description                                                             |
@@ -543,6 +546,9 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_SV_VEP.vcf.gz`                  | Annotated somatic structural variant vcf file                           |
 | `SVs/sample_SV_VEP_summary.html`            | Visual summary of somatic structural variant annotations in html format |
 | `SVs/sample_SV_VEP.vcf.gz.tbi`              | Annotated somatic structural variant vcf index file                     |
+| `SVs/sample_VEP_SAVANA.vcf.gz`              | Annotated SAVANA somatic structural variant vcf file                    |
+| `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
+| `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
 
 </details>
 
@@ -775,7 +781,7 @@ Sections:
   - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. Phasing statistics (WhatsHap) are a collapsible block within this section.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
 
 Filtering in the browser:
 

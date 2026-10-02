@@ -229,7 +229,7 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--skip_vep_plugins`         | Annotate with VEP alone, fetching no plugin data. Default = `false`                                                      |
 | `--vep_alphamissense`        | AlphaMissense GRCh38 score file, for the `AlphaMissense` plugin. GRCh38 only                                             |
 | `--vep_alphamissense_tbi`    | Index for `--vep_alphamissense`. Required whenever `--vep_alphamissense` is set                                          |
-| `--vep_alphamissense_aa`     | AlphaMissense protein-space release, or a table already built from it, for the `AlphaMissenseProtein` plugin. CHM13 only |
+| `--vep_alphamissense_aa`     | Prepared gene-symbol-keyed table for the `AlphaMissenseProtein` plugin (see below). CHM13 only                           |
 | `--vep_alphamissense_aa_tbi` | Index for `--vep_alphamissense_aa`. Required whenever `--vep_alphamissense_aa` is set                                    |
 | `--vep_polyphen_sift_db`     | Ensembl pangenome PolyPhen/SIFT SQLite database, for the `PolyPhen_SIFT` plugin. Needed on CHM13 only                    |
 | `--vep_clinvar`              | ClinVar VCF, added as a VEP `--custom` annotation                                                                        |
@@ -245,6 +245,15 @@ opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembl
 | `--vep_revel_tbi`            | Index for `--vep_revel`. Required only when `--vep_revel` is an already-prepared file                                    |
 | `--vep_eve`                  | EVE release zip, or a merged VCF, for the `EVE` plugin. **Not** on by default. GRCh38 only. Default = `null`             |
 | `--vep_eve_tbi`              | Index for `--vep_eve`. Required only when `--vep_eve` is an already-merged VCF. Default = `null`                         |
+
+`--vep_alphamissense_aa` is used as given: unlike REVEL and EVE, the pipeline does not build it from
+the AlphaMissense release. The CHM13 default is a table we host. A replacement must be a bgzipped,
+tab-separated file whose first line is a `#`-prefixed header with at least `gene` (gene symbol),
+`aapos` (1-based residue), `aaref` and `aaalt` (one-letter amino acids), plus the score columns to
+report (by default `am_pathogenicity` and `am_class`; the hosted table also has `uniprot_acc`),
+sorted by gene and position and indexed with `tabix -s 1 -b 2 -e 2 -c "#"`. The hosted table is
+AlphaMissense's `AlphaMissense_aa_substitutions.tsv.gz` with the UniProt accession mapped to a gene
+symbol and the protein variant (e.g. `V2L`) split into those three columns; see `CITATIONS.md`.
 
 #### Minimap2 Options
 
@@ -669,8 +678,8 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
 - **`AlphaMissenseProtein`** (in `assets/vep_plugins/`) keys on gene symbol plus amino-acid
   substitution, using a table built from AlphaMissense's protein-space release. A row is used only
   when both amino acids match what VEP computed for the CHM13 transcript; a position whose
-  reference residue differs reports `aa_mismatch` and no score. The `AlphaMissenseProtein_match` values are listed under
-  [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
+  reference residue differs reports `aa_mismatch` and no score. The `AlphaMissenseProtein_match`
+  values are listed under [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
 
 ### What is not available, and why
 
