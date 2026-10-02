@@ -1209,10 +1209,10 @@ workflow LRSOMATIC {
             .set { tumoronly_savana_input }
         // tumoronly_savana_input: [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
 
-        ch_savana_contigs = channel.value([[:], params.savana_contigs])
+        ch_savana_contigs = channel.value([[:], params.savana_contigs ?: []])
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
-        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf])
+        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,

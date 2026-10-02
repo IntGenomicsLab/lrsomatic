@@ -394,6 +394,16 @@
                 "savana_allele_mapq": {
                     "type": "integer",
                     "description": "Mapping quality threshold for reads counted at a het-SNP site (SAVANA's --allele_mapq, default 5). Intended for test profiles running on downsampled data below that coverage floor."
+                },
+                "savana_contigs": {
+                    "type": "string",
+                    "description": "File of contigs (one per line) SAVANA is restricted to (`--contigs`). Set from `--genome`; without one, SAVANA uses all contigs.",
+                    "hidden": true
+                },
+                "savana_g1000_vcf": {
+                    "type": "string",
+                    "description": "SAVANA's bundled 1000 Genomes SNP set for tumour-only allele counting (`--g1000_vcf`), e.g. `1000g_hg38`. Set from `--genome`.",
+                    "hidden": true
                 }
             }
         },
