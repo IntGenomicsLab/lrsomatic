@@ -78,11 +78,11 @@ process SEVERUS_WHITELIST {
     touch ${prefix}/read_ids.csv
     touch ${prefix}/read_qual.txt
     touch ${prefix}/breakpoints_double.csv
-    echo "" | gzip > ${prefix}/all_SVs/severus_all.vcf.gz
+    echo "" | gzip -n > ${prefix}/all_SVs/severus_all.vcf.gz
     touch ${prefix}/all_SVs/breakpoint_clusters_list.tsv
     touch ${prefix}/all_SVs/breakpoint_clusters.tsv
     touch ${prefix}/all_SVs/plots/severus_0.html
-    echo "" | gzip > ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    echo "" | gzip -n > ${prefix}/somatic_SVs/severus_somatic.vcf.gz
     touch ${prefix}/somatic_SVs/breakpoint_clusters_list.tsv
     touch ${prefix}/somatic_SVs/breakpoint_clusters.tsv
     touch ${prefix}/somatic_SVs/plots/severus_0.html

@@ -170,34 +170,35 @@ output:
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/all_SVs/severus_all.vcf:
-          type: map
+      - ${prefix}/all_SVs/severus_all.vcf.gz:
+          type: file
           description: |
-            VCF file containing somatic and germline structural variants
-          pattern: "${prefix}/all_SVs/severus_all.vcf"
-  all_breakpoints_clusters_list:
+            bgzipped VCF file containing somatic and germline structural variants
+          pattern: "${prefix}/all_SVs/severus_all.vcf.gz"
+          ontologies: []
+  all_breakpoint_clusters_list:
     - - meta:
           type: map
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/all_SVs/breakpoints_clusters_list.tsv:
+      - ${prefix}/all_SVs/breakpoint_clusters_list.tsv:
           type: file
           description: |
             a TSV containing a list of all breakpoint clusters
-          pattern: "${prefix}/all_SVs/breakpoints_clusters_list.tsv"
+          pattern: "${prefix}/all_SVs/breakpoint_clusters_list.tsv"
           ontologies: []
-  all_breakpoints_clusters:
+  all_breakpoint_clusters:
     - - meta:
           type: map
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/all_SVs/breakpoints_clusters.tsv:
+      - ${prefix}/all_SVs/breakpoint_clusters.tsv:
           type: file
           description: |
             TSV file listing meta information in breakpoint clusters
-          pattern: "${prefix}/all_SVs/breakpoints_clusters.tsv"
+          pattern: "${prefix}/all_SVs/breakpoint_clusters.tsv"
           ontologies: []
   all_plots:
     - - meta:
@@ -217,35 +218,35 @@ output:
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/somatic_SVs/severus_somatic.vcf:
+      - ${prefix}/somatic_SVs/severus_somatic.vcf.gz:
           type: file
           description: |
-            VCF file containing somatic structural variants (SV)
-          pattern: "${prefix}/somatic_SVs/severus_all.vcf"
+            bgzipped VCF file containing somatic structural variants (SV)
+          pattern: "${prefix}/somatic_SVs/severus_somatic.vcf.gz"
           ontologies: []
-  somatic_breakpoints_clusters_list:
+  somatic_breakpoint_clusters_list:
     - - meta:
           type: map
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/somatic_SVs/breakpoints_clusters_list.tsv:
+      - ${prefix}/somatic_SVs/breakpoint_clusters_list.tsv:
           type: file
           description: |
             TSV file containing full list of somatic breakpoint clusters
-          pattern: "${prefix}/somatic_SVs/breakpoints_clusters_list.tsv"
+          pattern: "${prefix}/somatic_SVs/breakpoint_clusters_list.tsv"
           ontologies: []
-  somatic_breakpoints_clusters:
+  somatic_breakpoint_clusters:
     - - meta:
           type: map
           description: |
             Groovy Map containing sample information
           pattern: "${prefix}/severus.log"
-      - ${prefix}/somatic_SVs/breakpoints_clusters.tsv:
+      - ${prefix}/somatic_SVs/breakpoint_clusters.tsv:
           type: file
           description: |
             TSV file containing meta information of somatic breakpoint clusters
-          pattern: "${prefix}/somatic_SVs/breakpoints_clusters.tsv"
+          pattern: "${prefix}/somatic_SVs/breakpoint_clusters.tsv"
           ontologies: []
   somatic_plots:
     - - meta:

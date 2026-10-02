@@ -374,7 +374,9 @@
                 },
                 "severus_whitelist_args": {
                     "type": "string",
-                    "description": "Extra arguments for the whitelist Severus run, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Only used with `--severus_whitelist`."
+                    "description": "Extra arguments for the whitelist Severus run, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Only used with `--severus_whitelist`.",
+                    "help_text": "Appended after `--min-support <severus_minsupport> --output-read-ids`, so a later flag wins where Severus allows it. Ignored unless `--severus_whitelist` is set. `--whitelist-single-read` takes `reciprocal` (default), `any` or `off`; `--write-alignments` additionally publishes a `read_alignments` file.",
+                    "fa_icon": "fas fa-terminal"
                 }
             }
         },
