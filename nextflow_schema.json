@@ -843,6 +843,11 @@
                     "description": "AmpliconArchitect data repository for AmpliconClassifier: the directory holding `GRCh38/` or `CHM13/`, or that reference directory itself. Downloaded automatically for GRCh38; CHM13 has no published repo, so without one the classifier is skipped with a warning.",
                     "help_text": "Downloading the GRCh38 repo fetches 1.1 GB and unpacks about 4 GB on every run. Extract `GRCh38.tar.gz` once and pass the directory here to skip both."
                 },
+                "aa_data_repo_url": {
+                    "type": "string",
+                    "description": "URL of the AmpliconArchitect data repository tarball. Set from `--genome`; overriding it drops the genome's default MD5.",
+                    "hidden": true
+                },
                 "aa_data_repo_md5": {
                     "type": "string",
                     "description": "Expected MD5 of the downloaded AmpliconArchitect data repository tarball.",
