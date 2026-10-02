@@ -3,7 +3,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     label 'process_high'
     label 'process_short'
 
-    container "docker.io/google/deepsomatic:1.7.0"
+    container "docker.io/google/deepsomatic:1.10.0"
 
     input:
     tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), val(small_model_calls), val(intervals)
@@ -17,7 +17,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}"),                              emit: vcf_index
     tuple val(meta), path("${prefix}.g.vcf.gz"),                                      emit: gvcf,                  optional: true
     tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}"),                            emit: gvcf_index,            optional: true
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions,  emit: versions_deepsomatic
+    tuple val("${task.process}"), val('deepsomatic'), val('1.10.0'), topic: versions,  emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when
