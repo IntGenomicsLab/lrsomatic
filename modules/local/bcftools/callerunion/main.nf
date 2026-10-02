@@ -21,14 +21,18 @@ process BCFTOOLS_CALLER_UNION {
     script:
     prefix = task.ext.prefix ?: "${meta.id}_union"
     """
-    # One record per CHROM:POS: PASS records first, then the rest; the priority caller wins within each tier.
-    bcftools view --no-version -f PASS ${prio_vcf} -Oz -W=tbi -o prio_pass.vcf.gz
-    bcftools view --no-version -f PASS -T ^prio_pass.vcf.gz ${other_vcf} -Oz -W=tbi -o other_pass.vcf.gz
+    # One record per CHROM:POS, per caller and across callers: PASS first, then the rest; the priority caller wins within each tier.
+    bcftools view --no-version -f PASS ${prio_vcf} -Ou \\
+        | bcftools norm --no-version -d all -Oz -W=tbi -o prio_pass.vcf.gz
+    bcftools view --no-version -f PASS -T ^prio_pass.vcf.gz ${other_vcf} -Ou \\
+        | bcftools norm --no-version -d all -Oz -W=tbi -o other_pass.vcf.gz
     bcftools concat --no-version -a prio_pass.vcf.gz other_pass.vcf.gz -Oz -W=tbi -o pass.vcf.gz
 
-    bcftools view --no-version -e 'FILTER="PASS"' -T ^pass.vcf.gz ${prio_vcf} -Oz -W=tbi -o prio_rest.vcf.gz
+    bcftools view --no-version -e 'FILTER="PASS"' -T ^pass.vcf.gz ${prio_vcf} -Ou \\
+        | bcftools norm --no-version -d all -Oz -W=tbi -o prio_rest.vcf.gz
     bcftools view --no-version -e 'FILTER="PASS"' -T ^pass.vcf.gz ${other_vcf} -Ou \\
-        | bcftools view --no-version -T ^prio_rest.vcf.gz -Oz -W=tbi -o other_rest.vcf.gz
+        | bcftools view --no-version -T ^prio_rest.vcf.gz -Ou \\
+        | bcftools norm --no-version -d all -Oz -W=tbi -o other_rest.vcf.gz
 
     bcftools concat --no-version -a pass.vcf.gz prio_rest.vcf.gz other_rest.vcf.gz -Ou \\
         | bcftools sort -T ./ -Oz -W=tbi -o ${prefix}.vcf.gz

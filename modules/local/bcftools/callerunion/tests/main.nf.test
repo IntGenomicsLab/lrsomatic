@@ -32,7 +32,8 @@ nextflow_process {
                 .findAll { line -> !line.startsWith('#') }
                 .collect { line -> def f = line.split('\t'); "${f[1]}:${f[6]}:${f[7]}" }
 
-            // 200: the other caller's PASS beats the priority LowQual; 300: both non-PASS, priority wins
+            // 200: the other caller's PASS beats the priority LowQual; 300: both non-PASS, priority wins;
+            // 800/900: one caller's two records at one position keep one, PASS first
             assert kept == [
                 '100:PASS:CALLER=clair3',
                 '200:PASS:CALLER=deepvariant',
@@ -40,7 +41,9 @@ nextflow_process {
                 '400:RefCall:CALLER=deepvariant',
                 '500:PASS:CALLER=clair3',
                 '600:LowQual:CALLER=clair3',
-                '700:PASS:CALLER=deepvariant'
+                '700:PASS:CALLER=deepvariant',
+                '800:RefCall:CALLER=clair3',
+                '900:PASS:CALLER=deepvariant'
             ]
         }
     }

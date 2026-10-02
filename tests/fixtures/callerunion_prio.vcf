@@ -11,3 +11,5 @@ chr1	200	.	C	G	5	LowQual	CALLER=clair3	GT	0/1
 chr1	300	.	G	A	5	RefCall	CALLER=clair3	GT	0/0
 chr1	500	.	T	C	30	PASS	CALLER=clair3	GT	1/1
 chr1	600	.	A	G	5	LowQual	CALLER=clair3	GT	0/1
+chr1	800	.	G	GA	5	RefCall	CALLER=clair3	GT	0/0
+chr1	800	.	G	GAA	5	LowQual	CALLER=clair3	GT	0/1

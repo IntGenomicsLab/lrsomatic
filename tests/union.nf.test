@@ -159,12 +159,14 @@ nextflow_pipeline {
                             "${s}: non-alt somatic record carries a phase set"
                     }
                 },
-                // ── 'all' mode keeps one caller's record per position, non-PASS records included ──
+                // ── 'all' mode keeps one record per position, non-PASS records included ──
                 {
                     ['sample1', 'sample2', 'sample3'].each { s ->
-                        def pos = PhasedVcf.records("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz")
-                            .collect { "${it[0]}:${it[1]}" }
-                        assert pos.size() == pos.toUnique().size() : "${s}: two germline records at one position"
+                        ['germline', 'somatic'].each { arm ->
+                            def pos = PhasedVcf.records("$outputDir/${s}/variants/phased/${arm}_smallvariants.vcf.gz")
+                                .collect { "${it[0]}:${it[1]}" }
+                            assert pos.size() == pos.toUnique().size() : "${s}: two ${arm} records at one position"
+                        }
                     }
                 }
             )

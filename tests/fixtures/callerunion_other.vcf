@@ -11,3 +11,5 @@ chr1	200	.	C	A	30	PASS	CALLER=deepvariant	GT	0/1
 chr1	300	.	G	A	5	LowQual	CALLER=deepvariant	GT	0/1
 chr1	400	.	G	T	5	RefCall	CALLER=deepvariant	GT	0/0
 chr1	700	.	C	T	30	PASS	CALLER=deepvariant	GT	0/1
+chr1	900	.	C	CT	5	RefCall	CALLER=deepvariant	GT	./.
+chr1	900	.	C	CTT	30	PASS	CALLER=deepvariant	GT	0/1
