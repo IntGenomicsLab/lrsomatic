@@ -4,7 +4,7 @@ process CORAL_RECONSTRUCT {
 
     // A single unsolvable amplicon should not fail a whole cohort; the subworkflow
     // warns on the missing output rather than letting the report slot go silent.
-    errorStrategy { task.exitStatus in 130..145 ? 'retry' : 'ignore' }
+    errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
 
     container "docker.io/robertaforsyth/coral:3.0.0-chm13-847f3d4"
 
