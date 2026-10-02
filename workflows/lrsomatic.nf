@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -60,6 +61,8 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
+include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 
 
 
@@ -1122,7 +1125,11 @@ workflow LRSOMATIC {
     // SV_VEP below, alongside Severus's SVs.
     //
 
-    savana_somatic_vcf = channel.empty()
+    savana_somatic_vcf          = channel.empty()
+    savana_cna                  = channel.empty()
+    savana_somatic_bedpe        = channel.empty()
+    savana_fitted_purity_ploidy = channel.empty()
+    savana_allele_counts        = channel.empty()
 
     if (!params.skip_savana) {
         // SAVANA reads the HP (haplotype) tag per read and its README recommends phased BAMs,
@@ -1207,6 +1214,15 @@ workflow LRSOMATIC {
             .set { savana_somatic_vcf }
         // savana_somatic_vcf: [meta, vcf]
 
+        // Copy-number products consumed by Padfoot / ReConPlot below. All optional: absent without
+        // an SNP source, and cna/fitted_purity_ploidy absent when SAVANA finds no acceptable fit.
+        TUMORONLY_SAVANA.out.cn_calls.mix(PAIRED_SAVANA.out.cn_calls).set { savana_cna }
+        TUMORONLY_SAVANA.out.somatic_bedpe.mix(PAIRED_SAVANA.out.somatic_bedpe).set { savana_somatic_bedpe }
+        TUMORONLY_SAVANA.out.fitted_purity_ploidy.mix(PAIRED_SAVANA.out.fitted_purity_ploidy).set { savana_fitted_purity_ploidy }
+        TUMORONLY_SAVANA.out.allele_counts.mix(PAIRED_SAVANA.out.allele_counts).set { savana_allele_counts }
+        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_somatic_bedpe: [meta, classified.somatic.bedpe]
+        // savana_fitted_purity_ploidy: [meta, tsv]              savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
+
         if (!params.skip_vep) {
             //
             // MODULE: VEP_SAVANA (ENSEMBLVEP_VEP alias; label: process_medium)
@@ -1271,6 +1287,49 @@ workflow LRSOMATIC {
             .join(WAKHAN.out.solution_dirs)
             .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
+    }
+
+    //
+    // SUBWORKFLOW: PADFOOT_ANNOTATION -- Padfoot SV/CNA annotation per caller pair (Severus + Wakhan, SAVANA)
+    // Padfoot bundles annotations for hg38 and mm10 only; other genomes need --padfoot_gff and --padfoot_rm
+    // (validateInputParameters() warns when this gate is not met).
+    //
+    def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
+    def padfoot_annot_ok = padfootAnnotationOk()
+
+    if (!params.skip_padfoot && padfoot_annot_ok) {
+        PADFOOT_ANNOTATION (
+            SEVERUS.out.somatic_vcf,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.vcf_files,
+            savana_somatic_vcf,
+            savana_cna,
+            ch_fasta,
+            ch_fai,
+            [[:], padfoot_genome,
+             params.padfoot_gff ? file(params.padfoot_gff, checkIfExists: true) : [],
+             params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []]
+        )
+        ch_versions = ch_versions.mix(PADFOOT_ANNOTATION.out.versions)
+    }
+
+    //
+    // SUBWORKFLOW: RECONPLOT_FIGURES -- ReConPlot figures per CN/SV caller pair (ASCAT + Severus, Wakhan + Severus, SAVANA)
+    //
+    if (!params.skip_reconplot) {
+        RECONPLOT_FIGURES (
+            SEVERUS.out.somatic_vcf,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.purityploidy,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.bafs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.bed_files,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_cna,
+            savana_somatic_bedpe,
+            savana_fitted_purity_ploidy,
+            savana_allele_counts,
+            params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
+        )
+        ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
     }
 
     //

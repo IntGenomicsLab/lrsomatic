@@ -34,3 +34,6 @@ pipeline_info/*.{html,json,txt,yml}
 # samtools merge gives sample4's colliding @PG IDs a random suffix, so this BAM's md5 differs every run (reads asserted in tests/clair_only.nf.test)
 sample4/bamfiles/sample4_tumor.bam
 sample4/bamfiles/sample4_tumor.bam.bai
+*/padfoot/*/padfoot.log
+*/reconplot/*/reconplot.log
+*/reconplot/*/{per_chromosome,genome_wide,focus}/*.{pdf,png}

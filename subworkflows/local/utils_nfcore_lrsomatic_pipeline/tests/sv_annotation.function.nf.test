@@ -1,0 +1,141 @@
+nextflow_function {
+
+    name "Test SV annotation / plotting parameter checks"
+    script "../main.nf"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "sv_annotation"
+
+    // Launch-time checks only: nothing is staged and nothing touches the network.
+
+    // --- validateSvAnnotationParams: --reconplot_regions must parse before a 12 h run gets to ReConPlot
+
+    test("validateSvAnnotationParams accepts whole chromosomes and chr:start-end regions") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr8,chr17:30000000-50000000, 22:1_000-2_000'
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateSvAnnotationParams rejects a region whose start is not below its end") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr17:50000000-30000000'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('reconplot_regions') && line.contains('chr17:50000000-30000000') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams rejects a region that is not chr or chr:start-end") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr8,bogus:x-y'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('bogus:x-y') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams ignores --reconplot_regions when ReConPlot is skipped") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = true
+                reconplot_genome  = null
+                reconplot_regions = 'bogus:x-y'
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    // --- padfootGenome / padfootAnnotationOk: one gate, used by the workflow and by validateSvAnnotationParams
+
+    test("padfootGenome infers hg38 from --genome GRCh38") {
+        function "padfootGenome"
+        when { params { genome = 'GRCh38'; padfoot_genome = null } }
+        then { assert function.result == 'hg38' }
+    }
+
+    test("padfootGenome infers chm13 from --genome CHM13 and an explicit --padfoot_genome wins") {
+        function "padfootGenome"
+        when { params { genome = 'CHM13'; padfoot_genome = 'mm10' } }
+        then { assert function.result == 'mm10' }
+    }
+
+    test("padfootGenome is null for a genome without a preset") {
+        function "padfootGenome"
+        when { params { genome = 'GRCm38'; padfoot_genome = null } }
+        then { assert function.result == null }
+    }
+
+    test("padfootAnnotationOk is true on hg38 without extra annotations") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'GRCh38'; padfoot_genome = null; padfoot_gff = null; padfoot_rm = null } }
+        then { assert function.result == true }
+    }
+
+    test("padfootAnnotationOk is false on CHM13 without --padfoot_gff and --padfoot_rm") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'CHM13'; padfoot_genome = null; padfoot_gff = null; padfoot_rm = null } }
+        then { assert function.result == false }
+    }
+
+    test("padfootAnnotationOk is true on CHM13 with both --padfoot_gff and --padfoot_rm") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'CHM13'; padfoot_genome = null; padfoot_gff = '/data/chm13.gff3.gz'; padfoot_rm = '/data/chm13_rm.bed.gz' } }
+        then { assert function.result == true }
+    }
+
+    test("padfootAnnotationOk is false when no preset can be derived, even with both annotation files") {
+        function "padfootAnnotationOk"
+        when { params { genome = 'GRCm38'; padfoot_genome = null; padfoot_gff = '/data/x.gff3.gz'; padfoot_rm = '/data/x_rm.bed.gz' } }
+        then { assert function.result == false }
+    }
+}

@@ -76,6 +76,9 @@ workflow PAIRED_SAVANA {
     )
 
     emit:
-    somatic_vcf = SAVANA_CLASSIFY.out.somatic_vcf  // [meta, vcf]  -- classified somatic SV VCF
-    cn_calls    = SAVANA_CNA.out.cna               // [meta, tsv]  -- segmented absolute copy number
+    somatic_vcf          = SAVANA_CLASSIFY.out.somatic_vcf      // [meta, vcf]    -- classified somatic SV VCF
+    somatic_bedpe        = SAVANA_CLASSIFY.out.somatic_bedpe    // [meta, bedpe]  -- classified somatic SVs in BEDPE (ReConPlot)
+    cn_calls             = SAVANA_CNA.out.cna                   // [meta, tsv]    -- segmented absolute copy number
+    fitted_purity_ploidy = SAVANA_CNA.out.fitted_purity_ploidy  // [meta, tsv]    -- selected purity/ploidy fit (absent when no fit)
+    allele_counts        = SAVANA_CNA.out.allele_counts         // [meta, bed]    -- het-SNP allele counts (ReConPlot BAF track)
 }

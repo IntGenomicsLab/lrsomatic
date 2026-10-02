@@ -239,6 +239,7 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateSvAnnotationParams()
 }
 
 //
@@ -313,6 +314,50 @@ def validateReportGenePanels() {
         .keySet()
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
+//
+def padfootGenome() {
+    return params.padfoot_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
+// Whether Padfoot can annotate on that preset: it bundles annotations for hg38 and mm10 only; any other
+// preset needs both --padfoot_gff and --padfoot_rm, and a null preset disables Padfoot even with them.
+// The workflow gate and validateSvAnnotationParams() both call this, so they cannot drift apart.
+//
+def padfootAnnotationOk() {
+    def genome = padfootGenome()
+    return (genome && ((genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))) as boolean
+}
+
+//
+// Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
+//
+def validateSvAnnotationParams() {
+    if (!params.skip_padfoot && !padfootAnnotationOk()) {
+        log.warn "Padfoot will be skipped: no annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
+            "Set --padfoot_genome hg38|mm10, or set --padfoot_genome together with --padfoot_gff and --padfoot_rm."
+    }
+
+    if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "ReConPlot: genome could not be inferred from '${params.genome}'; falling back to hg38 gene/chromosome annotations. " +
+            "Set --reconplot_genome (hg38, hg19, T2T, mm10, mm39) to override."
+    }
+
+    if (!params.skip_reconplot && params.reconplot_regions) {
+        // Same grammar as the wrapper's parse_regions(): tokens split on commas/semicolons/whitespace,
+        // each `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator).
+        // Regions on contigs without copy-number data are skipped at run time with a warning.
+        def bad = params.reconplot_regions.toString().split(/[,;\s]+/).findAll { tok -> tok }
+            .findAll { tok -> !(tok ==~ /[A-Za-z0-9_.]+/ || tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/) ||
+                              (tok.contains(':') && tok.split(':')[1].split('-').collect { v -> v.replace('_', '') as long }.with { r -> r[0] >= r[1] }) }
+        if (bad) {
+            error("--reconplot_regions: cannot parse ${bad.join(', ')}. Use a comma-separated list of `chr` or `chr:start-end` (start < end), e.g. \"chr8,chr17:30000000-50000000\".")
+        }
     }
 }
 
