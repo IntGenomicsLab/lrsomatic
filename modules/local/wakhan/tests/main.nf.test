@@ -1,0 +1,56 @@
+nextflow_process {
+
+    name "Test Process WAKHAN"
+    script "../main.nf"
+    process "WAKHAN"
+
+    tag "modules"
+    tag "modules_local"
+    tag "wakhan"
+    tag "small"
+
+    // Wakhan needs whole-genome coverage to fit a solution, so only the stub runs in CI. It checks the
+    // output declarations against the 0.5.0 layout, the solution_rank_* link, and the version read from
+    // the image. The inputs are stand-ins: the stub never reads them.
+    test("paired - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:true ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test.paired_end.sorted.bam.bai', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/bam/test2.paired_end.sorted.bam.bai', checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true)
+                ]
+                input[1] = [
+                    [ id:'genome' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ]
+                input[2] = file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            def rank_dir = path(process.out.solution_dirs[0][1].toString())
+
+            assertAll(
+                { assert process.success },
+                // Every declared output channel was filled
+                { assert process.out.findAll { name, ch -> !(name ==~ /\d+/) }.every { name, ch -> ch.size() == 1 } },
+                // The rank link is captured as a directory that resolves to the solution it ranks,
+                // which is how LRSOMATICREPORT finds the per-solution plots
+                { assert rank_dir.fileName.toString() == 'solution_rank_1' },
+                { assert rank_dir.toRealPath().fileName.toString() == 'solution_2.0_0.8_0.9' },
+                { assert rank_dir.resolve('integer_profile.html').toFile().exists() },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}
