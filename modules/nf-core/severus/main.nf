@@ -4,7 +4,8 @@ process SEVERUS {
 
     conda "${moduleDir}/environment.yml"
     // Patched Severus 1.7 (github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration, 6813dee) carries the --whitelist fixes;
-    // without --whitelist its output is identical to stock 1.7. Revert to the biocontainer once KolmogorovLab/Severus carries the fixes.
+    // without --whitelist its VCF records are identical to stock 1.7 (the header adds a WL_RESCUE INFO line). Revert to the biocontainer once
+    // KolmogorovLab/Severus carries the fixes.
     // Conda installs stock bioconda Severus, so --severus_whitelist is refused under conda at startup (utils_nfcore_lrsomatic_pipeline).
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
         'oras://docker.io/amberverhasselt/severus-sif:1.7-whitelist-6813dee':
