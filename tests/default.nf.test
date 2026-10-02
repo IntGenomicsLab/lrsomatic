@@ -25,6 +25,7 @@ nextflow_pipeline {
 
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
                 { //files exist
                     assert file("$launchDir/output/sample1/variants/clair3/merge_output.vcf.gz").exists()
                     assert file("$launchDir/output/sample1/variants/clair3/merge_output.vcf.gz.tbi").exists()
