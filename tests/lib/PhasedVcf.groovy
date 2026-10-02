@@ -21,8 +21,10 @@ class PhasedVcf {
         i >= 0 && i < values.size() ? values[i] : null
     }
 
+    // A record without GT (or without sample columns) is not alt
     static boolean isAlt(List<String> rec) {
-        format(rec, 'GT').split(/[\/|]/).any { it != '0' && it != '.' }
+        def gt = rec.size() > 9 ? format(rec, 'GT') : null
+        gt != null && gt.split(/[\/|]/).any { it != '0' && it != '.' }
     }
 
     // LongPhase cannot take two records at one POS, so each phased arm holds one record per CHROM:POS
