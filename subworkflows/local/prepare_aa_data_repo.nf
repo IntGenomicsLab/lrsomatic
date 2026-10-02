@@ -42,7 +42,8 @@ workflow PREPARE_AA_DATA_REPO {
         // .first(): UNTAR emits a queue channel, and every sample's classifier task
         // needs the same repo -- without this only the first sample would get it.
         ch_data_repo = UNTAR_AA_DATA_REPO.out.untar.first()
-        ch_versions = ch_versions.mix(AADATAREPO_DOWNLOAD.out.versions, UNTAR_AA_DATA_REPO.out.versions)
+        // UNTAR reports its version through the versions topic
+        ch_versions = ch_versions.mix(AADATAREPO_DOWNLOAD.out.versions)
     }
     else {
         // An empty repo runs no classifier tasks; CoRAL reconstruction is unaffected
