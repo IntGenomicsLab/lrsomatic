@@ -248,7 +248,9 @@ workflow LRSOMATIC {
     ch_samplesheet
         .join(basecall_meta)
         .map { meta, bam, basecall_model_meta, kinetics_meta ->
-            def chosen_clair3_model = meta.clair3_model ?: clair3_modelMap.get(basecall_model_meta)
+            // Same unset test as PREPARE_REFERENCE_FILES, so both pick the same model and the combine keys agree
+            def clair3_model_unset = !meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']
+            def chosen_clair3_model = clair3_model_unset ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def chosen_clairSTO_model = meta.clairSTO_model ?: clairs_modelMap.get(basecall_model_meta)
             def chosen_clairS_model = meta.clairS_model ?: clairs_modelMap.get(basecall_model_meta)
             def meta_new =[ id: meta.id,
@@ -276,7 +278,7 @@ workflow LRSOMATIC {
     // Input:  params.fasta, ASCAT file paths, basecall_meta, clair3_modelMap
     // Output: .prepped_fasta           -- [[:], fasta]
     //         .prepped_fai             -- [[:], fai]
-    //         .downloaded_clair3_models-- [meta(id=model_name), model_dir]
+    //         .clair3_models           -- [meta(id=model_name), model_dir or []]  -- [] = bundled with the Clair3 image
     //         .allele_files / .loci_files / .gc_file / .rt_file  -- flat file collections
     //
 
@@ -312,8 +314,8 @@ workflow LRSOMATIC {
     }
     // clairsto_cna_channel: [meta, cna_resource_dir] or [[:], []]  -- [] uses the image's own set
 
-    downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
-    // downloaded_clair3_models: [meta(id=clair3_model_name), model_dir]
+    clair3_models = PREPARE_REFERENCE_FILES.out.clair3_models
+    // clair3_models: [meta(id=clair3_model_name), model_dir or []]  -- [] = bundled with the Clair3 image
 
     ch_nanoplot_pre_txt = channel.empty()
 
@@ -569,7 +571,8 @@ workflow LRSOMATIC {
     //
     SAMTOOLS_MERGE(
         ch_aligned_split.multiple,
-        [[],[],[],[]]
+        [[],[],[],[]],
+        ''  // index_format: indexed separately by SAMTOOLS_INDEX_MERGE
     )
 
     // Index the merged BAM to produce a BAI (SAMTOOLS_MERGE does not create BAI inline)
@@ -579,7 +582,7 @@ workflow LRSOMATIC {
     ch_single_indexed
         .mix(
             SAMTOOLS_MERGE.out.bam
-                .join(SAMTOOLS_INDEX_MERGE.out.bai)
+                .join(SAMTOOLS_INDEX_MERGE.out.index)
         )
         .set { ch_index_minimap }
     // ch_index_minimap: [meta, bam, bai]  -- one aligned BAM + index per sample (all replicates merged)
@@ -740,13 +743,13 @@ workflow LRSOMATIC {
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE
     // Input:  branched_paired_ch.normal -- [meta, bam, bai]  -- normal sample BAMs only
-    //         downloaded_clair3_models  -- [meta(id=model_name), model_dir]
+    //         clair3_models  -- [meta(id=model_name), model_dir or []]
     // Output: .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (Clair3 and/or DeepVariant consensus)
     PAIRED_SMALLVAR_GERMLINE (
         branched_paired_ch.normal,
         ch_fasta,
         ch_fai,
-        downloaded_clair3_models
+        clair3_models
     )
 
     // Merge germline VCFs from paired and tumor-only paths into a single channel
@@ -866,6 +869,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -887,6 +891,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -990,8 +995,6 @@ workflow LRSOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
-    ch_versions = ch_versions.mix(SEVERUS.out.versions)
-
     SEVERUS.out.all_vcf
         .map { meta, vcf ->
             def extra = []
@@ -1017,6 +1020,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
+            [[], []],  // gtf: annotate from the cache
             '',
             vep_custom,
             vep_custom_tbi
@@ -1083,7 +1087,8 @@ workflow LRSOMATIC {
         //
         MOSDEPTH (
             ch_mosdepth_in,
-            ch_fasta
+            ch_fasta,
+            []  // quantize_labels: no --quantize
         )
 
         ch_mosdepth_global = MOSDEPTH.out.global_txt
@@ -1106,7 +1111,7 @@ workflow LRSOMATIC {
 
         BAM_STATS_SAMTOOLS (
             ch_index_minimap, // [meta, bam, bai]
-            ch_fasta
+            ch_fasta.combine(ch_fai).map { meta, fasta, _meta_fai, fai -> [meta, fasta, fai] }.first()
         )
 
         ch_bam_stats = BAM_STATS_SAMTOOLS.out.stats
@@ -1229,6 +1234,7 @@ workflow LRSOMATIC {
                 vep_cache,
                 ch_fasta,
                 [],
+                [[], []],  // gtf: annotate from the cache
                 '',
                 vep_custom,
                 vep_custom_tbi

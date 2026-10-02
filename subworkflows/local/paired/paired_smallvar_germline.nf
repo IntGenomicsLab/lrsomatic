@@ -13,7 +13,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     normal_bams   // [meta, normal_bam, normal_bai]  -- normal sample BAMs from T/N pairs
     fasta         // [[:], fasta]
     fai           // [[:], fai]
-    clair3_models // [meta(id=model_name), model_dir]  -- downloaded Clair3 model directories
+    clair3_models // [meta(id=model_name), model_dir or []]  -- [] = model bundled with the Clair3 image
 
     main:
     germline_vcf = channel.empty()
@@ -22,7 +22,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
     deepvariant_ch = channel.empty()
 
     // COMBINE NORMAL BAMS WITH DOWNLOADED CLAIR3 MODELS
-    // Clair3 requires the model directory path; models are keyed by model name (meta.id)
+    // Models are keyed by model name (meta.id); an empty model_dir makes CLAIR3 use the bundled model
     if(germline_var_keep.contains('clair')) {
 
         // Extract model name from meta.id for combine-by key
@@ -32,7 +32,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
                 return [meta, clair3_model_name, file]
             }
             .set{clair3_models}
-        // clair3_models: [meta(id=model_name), model_name_str, model_dir]
+        // clair3_models: [meta(id=model_name), model_name_str, model_dir or []]
 
         // Emit [meta, clair3_model_name, bam, bai] to use model_name as the combine key
         normal_bams
@@ -99,7 +99,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
         // SUBWORKFLOW: DEEPVARIANT (nf-core)
         // Input:  [meta, bam, bai, []]  -- [] is empty intervals (genome-wide)
         //         fasta / fai
-        //         [[:],[]] x2  -- empty PAR/GFF interval files (not used for WGS)
+        //         [[:],[]] x2  -- no gzi, no PAR regions BED; with_phasing false
         // Output: .vcf       -- [meta, vcf]
         //         .vcf_index -- [meta, tbi]
         //
@@ -124,8 +124,9 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             deepvariant_input_ch,
             fasta,
             fai,
-            [[:],[]],  // PAR regions (not used)
-            [[:],[]]   // GFF annotation (not used)
+            [[:],[]],  // gzi: the FASTA is not bgzipped
+            [[:],[]],  // PAR regions BED (not used)
+            false      // with_phasing: LongPhase phases the calls downstream
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.

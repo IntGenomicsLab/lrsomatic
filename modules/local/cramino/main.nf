@@ -3,9 +3,9 @@ process CRAMINO {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/cramino:1.3.0--h3dc2dae_0':
-        'biocontainers/cramino:1.3.0--h3dc2dae_0' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/cramino:2.0.0--hef77e2b_0' :
+        'biocontainers/cramino:2.0.0--hef77e2b_0' }"
 
     input:
     tuple val(meta), path(bam)
@@ -30,5 +30,6 @@ process CRAMINO {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_cramino.txt
+    touch ${prefix}.arrow
     """
 }
