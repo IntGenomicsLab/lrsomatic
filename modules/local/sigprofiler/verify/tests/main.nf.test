@@ -1,0 +1,79 @@
+nextflow_process {
+
+    name "Test Process SIGPROFILER_VERIFY"
+    script "../main.nf"
+    process "SIGPROFILER_VERIFY"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sigprofiler"
+    tag "sigprofiler_verify"
+    tag "small"
+
+    // No real payload fits in CI (~3 GB per genome), so these tests check the rejection path. The checksum report
+    // lists the chr1 MD5 the image expects, which ties the pinned image to the payload revision its URL serves:
+    // GRCh38 from the AlexandrovLab FTP since 2026-09-25, CHM13-T2T from chm13_release_2026-09.
+
+    test("CHM13-T2T - stale volume is rejected with reinstall instructions") {
+
+        when {
+            process {
+                """
+                input[0] = file("\${projectDir}/tests/fixtures/sigprofiler_stale_volume", checkIfExists: true)
+                input[1] = 'CHM13-T2T'
+                """
+            }
+        }
+
+        then {
+            def report = (process.stdout + process.stderr).join('\n')
+            assertAll(
+                { assert process.failed },
+                { assert report.contains('Reinstall it with --download_sigprofiler_genome') },
+                // T2T-CHM13v2.0 chr1 of the payload rebuilt after SigProfilerMatrixGenerator#251
+                { assert report.contains('8683547ca6e5cbb2afd3633a32e6353a') }
+            )
+        }
+    }
+
+    test("GRCh38 - stale volume is rejected with reinstall instructions") {
+
+        when {
+            process {
+                """
+                input[0] = file("\${projectDir}/tests/fixtures/sigprofiler_stale_volume", checkIfExists: true)
+                input[1] = 'GRCh38'
+                """
+            }
+        }
+
+        then {
+            def report = (process.stdout + process.stderr).join('\n')
+            assertAll(
+                { assert process.failed },
+                { assert report.contains('Reinstall it with --download_sigprofiler_genome') },
+                // GRCh38 chr1 of upstream's corrected payload (the pre-2026-09-25 one is GRCh38_Legacy)
+                { assert report.contains('570ba2c0c11b999a906abd4f854a38be') }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = file("\${projectDir}/tests/fixtures/sigprofiler_stale_volume", checkIfExists: true)
+                input[1] = 'CHM13-T2T'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.verified == [true]
+        }
+    }
+}
