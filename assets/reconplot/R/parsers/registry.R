@@ -89,8 +89,11 @@ run_parsers <- function(args) {
   log_msg("CN source: ", cn_src, "   SV source: ", sv_src)
   for (s in c(cn = cn_src, sv = sv_src)) invisible(get_parser_entry(s))
 
-  args_cn <- args; args_cn$input <- args$cn_input %||% args$input
-  args_sv <- args; args_sv$input <- args$sv_input %||% args$input
+  args_cn <- args; args_cn$input <- args$cn_input %||% args$input %||% args$sv_input
+  args_sv <- args; args_sv$input <- args$sv_input %||% args$input %||% args$cn_input
+  if (is.null(args_cn$input) || is.null(args_sv$input)) {
+    stop("Give --input, or --cn-input and --sv-input, so both parsers have a directory to read.")
+  }
 
   p_cn <- get_parser(cn_src)(args_cn)
   p_sv <- get_parser(sv_src)(args_sv)

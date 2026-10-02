@@ -103,7 +103,7 @@ bedpe_point <- function(start, end) {
   ifelse(end - start == 1, end, start)
 }
 
-savana_read_sv_bedpe <- function(file, min_support = 0) {
+savana_read_sv_bedpe <- function(file, min_support = 0, min_svlen = 0) {
   df <- data.table::fread(file, sep = "\t", header = FALSE, data.table = FALSE)
   if (ncol(df) < 7) stop("SAVANA BEDPE ", basename(file), " has fewer than 7 columns")
   names(df)[1:7] <- c("chrom1", "start1", "end1", "chrom2", "start2", "end2", "name")
@@ -120,10 +120,10 @@ savana_read_sv_bedpe <- function(file, min_support = 0) {
     support = info$support,
     stringsAsFactors = FALSE
   )
-  savana_filter_sv(sv, min_support)
+  savana_filter_sv(sv, min_support, min_svlen)
 }
 
-savana_read_sv_vcf <- function(file, min_support = 0, pass_only = TRUE) {
+savana_read_sv_vcf <- function(file, min_support = 0, min_svlen = 0, pass_only = TRUE) {
   vcf <- vcf_read_records(file, pass_only = pass_only)
   if (is.null(vcf) || nrow(vcf) == 0) return(savana_empty_sv())
 
@@ -144,7 +144,7 @@ savana_read_sv_vcf <- function(file, min_support = 0, pass_only = TRUE) {
     stringsAsFactors = FALSE
   )
   sv <- dedupe_breakend_pairs(sv)   # BND records come in mate pairs
-  savana_filter_sv(sv, min_support)
+  savana_filter_sv(sv, min_support, min_svlen)
 }
 
 savana_empty_sv <- function() {
@@ -153,7 +153,7 @@ savana_empty_sv <- function() {
              svlen = numeric(), support = numeric(), stringsAsFactors = FALSE)
 }
 
-savana_filter_sv <- function(sv, min_support = 0) {
+savana_filter_sv <- function(sv, min_support = 0, min_svlen = 0) {
   n0 <- nrow(sv)
   if (min_support > 0) {
     keep <- is.na(sv$support) | sv$support >= min_support
@@ -163,7 +163,18 @@ savana_filter_sv <- function(sv, min_support = 0) {
     }
     sv <- sv[keep, , drop = FALSE]
   }
-  log_msg(sprintf("  %d SV junctions read (%d after support filter)", n0, nrow(sv)))
+  if (min_svlen > 0 && nrow(sv) > 0) {
+    ## same rule as the Severus parser: a length only means something within a chromosome
+    intra <- sv$chr1 == sv$chr2 & !(sv$strands %in% c("INS", "SBE"))
+    svlen <- if (!is.null(sv$svlen)) suppressWarnings(as.numeric(sv$svlen)) else rep(NA_real_, nrow(sv))
+    span <- ifelse(!is.na(svlen) & svlen > 0, abs(svlen), abs(sv$pos2 - sv$pos1))
+    keep <- !intra | is.na(span) | span >= min_svlen
+    if (any(!keep)) {
+      log_msg(sprintf("  dropped %d junctions: intra-chromosomal span < %g bp", sum(!keep), min_svlen))
+    }
+    sv <- sv[keep, , drop = FALSE]
+  }
+  log_msg(sprintf("  %d SV junctions read (%d after filters)", n0, nrow(sv)))
   rownames(sv) <- NULL
   sv
 }
@@ -228,9 +239,9 @@ parse_savana <- function(args) {
   sv_file <- args$sv_file %||% savana_find_file(dir, sv_format, sample)
   log_msg("  SV file: ", basename(sv_file), " (", sv_format, ")")
   sv <- if (sv_format == "bedpe") {
-    savana_read_sv_bedpe(sv_file, min_support = args$min_support %||% 0)
+    savana_read_sv_bedpe(sv_file, min_support = args$min_support %||% 0, min_svlen = args$min_svlen %||% 0)
   } else {
-    savana_read_sv_vcf(sv_file, min_support = args$min_support %||% 0)
+    savana_read_sv_vcf(sv_file, min_support = args$min_support %||% 0, min_svlen = args$min_svlen %||% 0)
   }
 
   meta <- list(sample = sample, cn_file = cn_file, sv_file = sv_file)

@@ -104,7 +104,7 @@ validate_cn <- function(cn, drop_na_minor = FALSE) {
   }
   ## ReConPlot indexes cnv[, c("chr","start","end","copyNumber","minorAlleleCopyNumber")]
   ## positionally in places, so hand it exactly those columns in that order.
-  cn <- cn[order(cn$chr, cn$start), req, drop = FALSE]
+  cn <- cn[order(match(cn$chr, MAIN_CHROMS), cn$chr, cn$start), req, drop = FALSE]   # chr1, chr2, ... not chr1, chr10
   rownames(cn) <- NULL
   if (nrow(cn) == 0) stop("No usable copy number segments after filtering.")
   cn
@@ -117,7 +117,7 @@ validate_sv <- function(sv, interchrom_as_tra = TRUE) {
     stop("SV table is missing required column(s): ", paste(missing, collapse = ", "))
   }
   sv <- as.data.frame(sv, stringsAsFactors = FALSE)
-  if (nrow(sv) == 0) return(sv[, union(req, names(sv)), drop = FALSE])
+  if (nrow(sv) == 0) return(sv)   # keep the parser's column order, same as the non-empty case
 
   sv$chr1 <- normalize_chrom(sv$chr1)
   sv$chr2 <- normalize_chrom(sv$chr2)
@@ -127,7 +127,7 @@ validate_sv <- function(sv, interchrom_as_tra = TRUE) {
 
   ## single breakends carry no mate; park them on their own locus so the
   ## chromosome filter below does not throw them away.
-  sbe <- sv$strands == "SBE"
+  sbe <- sv$strands %in% "SBE"   # %in%: an NA orientation must not abort, it is dropped below
   if (any(sbe)) {
     sv$chr2[sbe] <- sv$chr1[sbe]
     sv$pos2[sbe] <- sv$pos1[sbe]
@@ -179,6 +179,9 @@ parse_regions <- function(spec, cn, genome = "hg38") {
                       full = TRUE, stringsAsFactors = FALSE))
   }
 
+  ## "chr8:30,000,000-50,000,000": drop thousands separators (a comma between a digit and exactly
+  ## three digits) before the list is split on commas
+  spec <- gsub("(?<=[0-9]),(?=[0-9]{3}([^0-9]|$))", "", spec, perl = TRUE)
   tokens <- unlist(strsplit(spec, "[,;[:space:]]+"))
   tokens <- tokens[nzchar(tokens)]
   out <- lapply(tokens, function(tok) {
@@ -230,6 +233,17 @@ sanitize_regions <- function(regions, cn) {
     return(regions)
   }
   regions$start[is.na(regions$start) | regions$start < 0] <- 0
+  bad <- is.na(regions$end) | !is.finite(regions$end) | regions$end <= regions$start
+  if (any(bad)) {
+    log_msg("  skipping malformed regions (end missing or not after start): ",
+            paste(sprintf("%s:%s-%s", regions$chr[bad], regions$start[bad], regions$end[bad]), collapse = ", "))
+    regions <- regions[!bad, , drop = FALSE]
+  }
+  regions <- unique(regions)
+  if (nrow(regions) == 0) {
+    log_msg("WARNING: no plottable regions left after filtering; nothing will be drawn")
+    return(regions)
+  }
   regions <- regions[order(match(regions$chr, MAIN_CHROMS), regions$start), , drop = FALSE]
   rownames(regions) <- NULL
   regions
@@ -267,4 +281,36 @@ collapse_duplicate_chroms <- function(regions) {
   out <- out[order(match(out$chr, MAIN_CHROMS)), , drop = FALSE]
   rownames(out) <- NULL
   out
+}
+
+## --- gene symbols --------------------------------------------------------
+
+#' Keep only the --genes symbols ReConPlot can draw for this genome.
+#'
+#' ReConPlot looks each symbol up in its internal gene table (gene_coord / gene_coord_<genome>) and
+#' errors when a symbol has more than one row ("the condition has length > 1"), which would lose the
+#' whole focus panel; unknown symbols it ignores silently. Warn and drop both kinds here instead.
+resolve_gene_symbols <- function(genes, genome = "hg38") {
+  genes <- unique(trimws(as.character(genes)))
+  genes <- genes[nzchar(genes)]
+  if (!length(genes)) return(NULL)
+  tbl_name <- if (identical(genome, "hg38")) "gene_coord" else paste0("gene_coord_", genome)
+  tbl <- tryCatch(get(tbl_name, envir = asNamespace("ReConPlot")), error = function(e) NULL)
+  if (is.null(tbl) || !"gene" %in% names(tbl)) {
+    log_msg("  WARNING: ReConPlot has no gene table for genome '", genome, "'; --genes ignored")
+    return(NULL)
+  }
+  counts <- table(tbl$gene)
+  unknown <- genes[!genes %in% names(counts)]
+  dup <- genes[genes %in% names(counts)[counts > 1]]
+  if (length(unknown)) {
+    log_msg("  WARNING: gene(s) unknown to ReConPlot's ", genome, " table, skipped: ", paste(unknown, collapse = ", "))
+  }
+  if (length(dup)) {
+    log_msg("  WARNING: gene symbol(s) with several entries in ReConPlot's ", genome,
+            " table (the package cannot draw them), skipped: ", paste(dup, collapse = ", "))
+  }
+  keep <- setdiff(genes, c(unknown, dup))
+  if (!length(keep)) return(NULL)
+  keep
 }

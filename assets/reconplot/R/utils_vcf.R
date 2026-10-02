@@ -88,8 +88,15 @@ vcf_format_get <- function(format, sample, key) {
 #' emits MATE_ID.
 dedupe_breakend_pairs <- function(sv) {
   if (nrow(sv) == 0) return(sv)
+  ## Mate records of one junction share the caller's ID once the _1/_2 suffix is gone (Severus
+  ## MATE_ID, SAVANA MATEID); the positional key is the fallback for callers without mate IDs and
+  ## must include the orientation (a ++ and a -- junction can share both breakpoints). Insertions
+  ## are single records and are never collapsed, two at one position are two events.
   a <- paste0(sv$chr1, ":", sv$pos1)
   b <- paste0(sv$chr2, ":", sv$pos2)
-  key <- ifelse(a < b, paste(a, b, sep = "|"), paste(b, a, sep = "|"))
-  sv[!duplicated(key), , drop = FALSE]
+  pos_key <- paste(ifelse(a < b, paste(a, b, sep = "|"), paste(b, a, sep = "|")), sv$strands)
+  has_mate <- if (!is.null(sv$has_mate)) sv$has_mate %in% TRUE else rep(FALSE, nrow(sv))
+  key <- ifelse(has_mate, paste0("id:", sv$sv_id), paste0("pos:", pos_key))
+  ins <- sv$strands %in% "INS"
+  sv[ins | !duplicated(key), , drop = FALSE]
 }

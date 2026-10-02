@@ -103,7 +103,7 @@ wakhan_find_file <- function(dir, key, sample = NULL, required = TRUE) {
 
 wakhan_read_hp_bed <- function(file) {
   df <- data.table::fread(file, sep = "\t", header = TRUE, data.table = FALSE,
-                          skip = "#chr\tstart\tend", na.strings = c("NA", "nan", "NaN", ""))
+                          skip = "chr\tstart\tend", na.strings = c("NA", "nan", "NaN", ""))
   names(df) <- sub("^#", "", names(df))
   need <- c("chr", "start", "end", "copynumber_state")
   missing <- setdiff(need, names(df))

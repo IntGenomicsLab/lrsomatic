@@ -93,7 +93,10 @@ plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
     log_msg(sprintf("plotting %s (%d panel%s)", label, nrow(regions),
                     if (nrow(regions) == 1) "" else "s"))
 
-    annotation <- if (!is.null(annotation_fn)) annotation_fn(regions) else NULL
+    annotation <- if (!is.null(annotation_fn)) {
+      tryCatch(annotation_fn(regions),
+               error = function(e) { log_msg("  WARNING: annotation track skipped: ", conditionMessage(e)); NULL })
+    } else NULL
     size <- auto_plot_size(regions, has_annotation = !is.null(annotation))
     w <- width %||% size$width
     h <- height %||% size$height

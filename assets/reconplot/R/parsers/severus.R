@@ -77,6 +77,7 @@ severus_read_vcf <- function(file, min_support = 0, min_svlen = 0,
   end     <- suppressWarnings(as.numeric(vcf_info_get(vcf$info, "END")))
   svlen   <- suppressWarnings(as.numeric(vcf_info_get(vcf$info, "SVLEN")))
   cluster <- vcf_info_get(vcf$info, "CLUSTERID")
+  mate_id <- vcf_info_get(vcf$info, "MATE_ID")
   detail  <- vcf_info_get(vcf$info, "DETAILED_TYPE")
   vntr    <- !is.na(vcf_info_get(vcf$info, "INSIDE_VNTR"))
   support <- suppressWarnings(as.numeric(vcf_format_get(vcf$format, vcf$sample1, "DV")))
@@ -104,10 +105,12 @@ severus_read_vcf <- function(file, min_support = 0, min_svlen = 0,
     support  = support,
     cluster_id = cluster,
     inside_vntr = vntr,
+    has_mate = !is.na(mate_id) & nzchar(mate_id),
     stringsAsFactors = FALSE)
 
   n_records <- nrow(sv)
   sv <- dedupe_breakend_pairs(sv)
+  sv$has_mate <- NULL
   log_msg(sprintf("  %d VCF records -> %d junctions after mate collapsing",
                   n_records, nrow(sv)))
   severus_filter_sv(sv, min_support = min_support, min_svlen = min_svlen,

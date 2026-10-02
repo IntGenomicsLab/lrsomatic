@@ -132,6 +132,10 @@ opt <- parse_args(OptionParser(
 args <- opt
 names(args) <- gsub("-", "_", names(args))
 
+## Fail here, not with "Genome version not recognized" on every panel and zero files written.
+args$genome <- tryCatch(match.arg(args$genome, c("hg38", "hg19", "T2T", "mm10", "mm39")),
+                        error = function(e) stop("--genome must be one of hg38, hg19, T2T, mm10, mm39 (got '", args$genome, "')"))
+
 if (isTRUE(args$list_sources)) {
   print(list_parsers(), right = FALSE)
   quit(status = 0)
@@ -159,8 +163,9 @@ if (nrow(sv) > 0) {
 dir.create(args$outdir, showWarnings = FALSE, recursive = TRUE)
 prefix <- args$prefix %||% meta$sample %||% args$source
 if (isTRUE(args$write_tables)) {
-  data.table::fwrite(cn, file.path(args$outdir, paste0(prefix, ".reconplot_cn.tsv")), sep = "\t")
-  data.table::fwrite(sv, file.path(args$outdir, paste0(prefix, ".reconplot_sv.tsv")), sep = "\t")
+  ## scipen: coordinates and lengths must never come out as 1.2e+08 for downstream parsers
+  data.table::fwrite(cn, file.path(args$outdir, paste0(prefix, ".reconplot_cn.tsv")), sep = "\t", scipen = 50)
+  data.table::fwrite(sv, file.path(args$outdir, paste0(prefix, ".reconplot_sv.tsv")), sep = "\t", scipen = 50)
   log_msg("  wrote harmonised tables to ", args$outdir)
 }
 
@@ -192,6 +197,9 @@ region_sets <- lapply(region_sets, function(x) { rownames(x) <- NULL; x })
 
 ## --- 4. plot ----------------------------------------------------------------
 genes <- if (!is.null(args$genes)) trimws(unlist(strsplit(args$genes, ","))) else NULL
+## ReConPlot errors on a symbol with several rows in its gene table and ignores unknown ones silently;
+## resolve the list first so one bad symbol cannot cost the whole focus panel.
+if (!is.null(genes)) genes <- resolve_gene_symbols(genes, args$genome)
 formats <- trimws(unlist(strsplit(args$format, ",")))
 
 ## --extra lets any remaining ReConPlot() argument through without a dedicated flag
