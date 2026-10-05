@@ -49,8 +49,10 @@ process RECONPLOT {
     // figure at all could be drawn.
     def focus_cmd = args3
         ? """
+    # optional panel: a failure is logged and does not cost the task its other figures
     Rscript ${reconplot_src}/run_reconplot.R ${source_args} --sample ${sample} --prefix ${sample} \\
-        --genome ${genome} --outdir ${prefix}/focus --layout together ${args} ${args3} 2>&1 | tee -a ${prefix}/reconplot.log
+        --genome ${genome} --outdir ${prefix}/focus --layout together ${args} ${args3} 2>&1 | tee -a ${prefix}/reconplot.log \\
+        || echo "WARNING: the focus panel failed; the other figures are kept" | tee -a ${prefix}/reconplot.log
     """
         : ""
 

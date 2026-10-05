@@ -1303,7 +1303,7 @@ workflow LRSOMATIC {
     def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
     def padfoot_annot_ok = padfootAnnotationOk()
     // Padfoot and ReConPlot ship only inside their containers (validateSvAnnotationParams() warns under conda/mamba)
-    def sv_annot_container_ok = !workflow.profile.tokenize(',').intersect(['conda', 'mamba'])
+    def sv_annot_container_ok = workflow.containerEngine != null
 
     if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
         PADFOOT_ANNOTATION (

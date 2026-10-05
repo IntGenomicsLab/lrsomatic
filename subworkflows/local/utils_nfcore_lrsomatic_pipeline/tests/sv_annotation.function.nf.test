@@ -95,6 +95,51 @@ nextflow_function {
         }
     }
 
+    test("validateSvAnnotationParams rejects a --reconplot_regions without any region") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = ' , ; '
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('--reconplot_regions names no region') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams rejects gene symbols that would break the command line") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'GRCh38'
+                skip_padfoot      = true
+                skip_reconplot    = false
+                reconplot_genome  = null
+                reconplot_regions = 'chr8'
+                reconplot_genes   = "MYC,TP53'"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('--reconplot_genes must be a comma-separated list of gene symbols') } }
+            )
+        }
+    }
+
     test("validateSvAnnotationParams rejects a region that is not chr or chr:start-end") {
 
         function "validateSvAnnotationParams"

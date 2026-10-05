@@ -213,6 +213,11 @@ read_regions_file <- function(path) {
 #' Keep only regions that ReConPlot can actually draw (primary contig + CN data).
 sanitize_regions <- function(regions, cn) {
   regions <- as.data.frame(regions, stringsAsFactors = FALSE)
+  if (nrow(regions) == 0) {                 # e.g. --regions ',' (no token at all)
+    log_msg("WARNING: no region given; nothing will be drawn")
+    return(data.frame(chr = character(), start = numeric(), end = numeric(), full = logical(),
+                      stringsAsFactors = FALSE))
+  }
   regions$chr <- normalize_chrom(regions$chr)
   if (is.null(regions$full)) regions$full <- FALSE
 

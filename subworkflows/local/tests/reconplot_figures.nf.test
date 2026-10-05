@@ -50,7 +50,7 @@ nextflow_workflow {
                     [ s2, [ mk('ascat/sample2.tumour_tumourBAF.txt') ] ],
                     [ s3, [ mk('ascat/sample3.tumour_tumourBAF.txt') ] ]
                 )
-                // Wakhan: sample1 has two solutions (solution_1's two HP beds must be picked); sample2 has one HP bed only
+                // Wakhan >= 0.5: sample1 has two ranked solutions (rank 1 must be drawn); sample2 has only a rank-2 profile
                 input[4] = channel.of(
                     [ s1, [ rank('wakhan/sample1/solution_rank_1'), rank('wakhan/sample1/solution_rank_2') ] ],
                     [ s2, [ rank('wakhan/sample2/solution_rank_2') ] ]

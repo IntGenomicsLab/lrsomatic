@@ -684,14 +684,14 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │       └── (same layout)
 ```
 
-| File                      | Description                                                                                                                      |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                            |
-| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                        |
-| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                               |
-| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                    |
-| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`; ReConPlot reads the five coordinate/orientation columns) |
-| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied, and an `ERROR` line for any figure ReConPlot could not draw)   |
+| File                      | Description                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                                                                                            |
+| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                                                                                        |
+| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                                                                                               |
+| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                                                                                    |
+| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`, plus `svtype,detailed_type,cluster_id,inside_vntr` for Severus; ReConPlot reads the five coordinate/orientation columns) |
+| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied, and an `ERROR` line for any figure ReConPlot could not draw)                                                                   |
 
 A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.
 

@@ -39,7 +39,7 @@
                     ]
                 ],
                 "4": [
-                    "versions.yml:md5,736e037d3dcd412939925cdc9420d9da"
+                    "versions.yml:md5,3dca82fbea69d3fab5838b2baf70e4ef"
                 ],
                 "annotated_svs": [
                     [
@@ -78,7 +78,7 @@
                     ]
                 ],
                 "versions": [
-                    "versions.yml:md5,736e037d3dcd412939925cdc9420d9da"
+                    "versions.yml:md5,3dca82fbea69d3fab5838b2baf70e4ef"
                 ]
             }
         ],
@@ -86,7 +86,7 @@
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-09-29T11:49:09.602597326"
+        "timestamp": "2026-10-05T16:22:58.565665503"
     },
     "severus + wakhan - real, RepeatMasker on": {
         "content": [
@@ -110,14 +110,14 @@
             ],
             "padfoot.log",
             [
-                "versions.yml:md5,f26e0f4304b2860f6303c917c0cd442e"
+                "versions.yml:md5,5300b4e844aed47d7e1b82e5ececebcf"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-10-05T14:29:13.745142852"
+        "timestamp": "2026-10-05T16:23:33.743035153"
     },
     "severus + wakhan - stub": {
         "content": [
@@ -159,7 +159,7 @@
                     ]
                 ],
                 "4": [
-                    "versions.yml:md5,736e037d3dcd412939925cdc9420d9da"
+                    "versions.yml:md5,3dca82fbea69d3fab5838b2baf70e4ef"
                 ],
                 "annotated_svs": [
                     [
@@ -198,7 +198,7 @@
                     ]
                 ],
                 "versions": [
-                    "versions.yml:md5,736e037d3dcd412939925cdc9420d9da"
+                    "versions.yml:md5,3dca82fbea69d3fab5838b2baf70e4ef"
                 ]
             }
         ],
@@ -206,7 +206,7 @@
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-09-29T11:49:02.372992799"
+        "timestamp": "2026-10-05T16:22:44.094927262"
     },
     "savana + savana - real, RepeatMasker off": {
         "content": [
@@ -230,14 +230,14 @@
             ],
             "padfoot.log",
             [
-                "versions.yml:md5,f26e0f4304b2860f6303c917c0cd442e"
+                "versions.yml:md5,5300b4e844aed47d7e1b82e5ececebcf"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-10-05T14:30:17.920067653"
+        "timestamp": "2026-10-05T16:24:33.566544027"
     },
     "severus + wakhan - real, custom --gff/--rm (chm13 preset)": {
         "content": [
@@ -260,13 +260,13 @@
                 ]
             ],
             [
-                "versions.yml:md5,f26e0f4304b2860f6303c917c0cd442e"
+                "versions.yml:md5,5300b4e844aed47d7e1b82e5ececebcf"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-10-05T14:29:40.256221365"
+        "timestamp": "2026-10-05T16:24:12.803470668"
     }
 }

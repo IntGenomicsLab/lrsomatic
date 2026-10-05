@@ -7,8 +7,8 @@ process PADFOOT {
     // Dfam 4.0 root and curated-consensus partitions. Padfoot update = new commit in the Dockerfile, rebuild, bump these two tags.
     // Override per site with `process { withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://docker.io/timmy9527/padfoot-repeatmasker-sif:4.2.4-dfam4-padfoot-1748e84'
-        : 'docker.io/timmy9527/padfoot-repeatmasker:4.2.4-dfam4-padfoot-1748e84'}"
+        ? 'oras://docker.io/timmy9527/padfoot-repeatmasker-sif:4.2.4-dfam4-padfoot-1748e84-r2'
+        : 'docker.io/timmy9527/padfoot-repeatmasker:4.2.4-dfam4-padfoot-1748e84-r2'}"
 
     input:
     // ploidy_file: the CN caller's fitted purity/ploidy table (SAVANA *_fitted_purity_ploidy.tsv, Wakhan
@@ -61,6 +61,7 @@ process PADFOOT {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         padfoot: \$(python3 ${padfoot}/padfoot.py --version 2>&1 | tail -1)
+        padfoot_commit: \${PADFOOT_COMMIT:-unknown}
         minimap2: \$(minimap2 --version 2>&1)
         samtools: \$(samtools --version | head -1 | sed 's/samtools //')
         repeatmasker: \$(command -v RepeatMasker >/dev/null && RepeatMasker -v 2>&1 | sed -n 's/^RepeatMasker version //p' || echo 'not available')
@@ -72,11 +73,12 @@ process PADFOOT {
     """
     mkdir -p ${prefix}
     touch ${prefix}/annotated_svs.tsv ${prefix}/by_gene.tsv ${prefix}/padfoot.log
-    printf '%s\n' ${sv_vcf} ${cna_file} ${ploidy_file} > ${prefix}/staged.txt
+    printf '%s\\n' ${sv_vcf} ${cna_file} ${ploidy_file} > ${prefix}/staged.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         padfoot: stub
+        padfoot_commit: stub
         minimap2: stub
         samtools: stub
         repeatmasker: stub

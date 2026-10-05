@@ -110,6 +110,75 @@ nextflow_process {
         }
     }
 
+    test("ascat + severus - real, pipeline arguments with a focus panel") {
+
+        config "./nextflow.pipeline.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            def log_text = path(process.out.log.get(0).get(1)).text
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                // the focus window (thousands separators accepted), the known gene drawn, the unknown one skipped, the BAF track
+                { assert process.out.focus.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19_1.0Mb-1.3Mb.pdf', 'test_chr19_1.0Mb-1.3Mb.png'] },
+                { assert log_text.contains('NOTAGENE') && !log_text.contains('focus panel failed') },
+                { assert snapshot(process.out.tables, process.out.versions).match() }
+            )
+        }
+    }
+
+    test("ascat + severus - real, a failing focus panel keeps the other figures") {
+
+        config "./nextflow.focusfail.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.focus == [] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('focus panel failed') }
+            )
+        }
+    }
+
     test("wakhan + severus - real") {
 
         when {

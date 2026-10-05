@@ -27,7 +27,11 @@ workflow RECONPLOT_FIGURES {
     main:
     ch_versions = channel.empty()
 
-    reconplot_src = channel.value([[id: 'reconplot'], file("${projectDir}/assets/reconplot", type: 'dir', checkIfExists: true)])
+    // The digest of every wrapper file goes into the meta map, so editing any file under assets/reconplot/ invalidates
+    // -resume (a directory input is otherwise cached on its top-level path, size and mtime only)
+    def reconplot_dir    = file("${projectDir}/assets/reconplot", type: 'dir', checkIfExists: true)
+    def reconplot_digest = files("${projectDir}/assets/reconplot/**", type: 'file').sort { f -> f.toString() }.collect { f -> f.text }.join('\n').md5()
+    reconplot_src = channel.value([[id: 'reconplot', digest: reconplot_digest], reconplot_dir])
     // reconplot_src: [meta, dir] -- the wrapper (run_reconplot.R + R/ + VERSION)
 
     severus_sv_files = severus_vcf.map { meta, vcf -> [meta, [vcf]] }

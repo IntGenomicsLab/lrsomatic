@@ -362,7 +362,11 @@ def validateSvAnnotationParams() {
         // `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator, start < end).
         // Regions on contigs without copy-number data are skipped at run time with a warning.
         def spec = params.reconplot_regions.toString().replaceAll(/(?<=[0-9]),(?=[0-9]{3}(?:[^0-9]|$))/, '')
-        def bad = spec.split(/[,;\s]+/).findAll { tok -> tok }.findAll { tok ->
+        def tokens = spec.split(/[,;\s]+/).findAll { tok -> tok }
+        if (!tokens) {
+            error("--reconplot_regions names no region (got \"${params.reconplot_regions}\"). Use a comma-separated list of `chr` or `chr:start-end`.")
+        }
+        def bad = tokens.findAll { tok ->
             if (tok ==~ /[A-Za-z0-9_.]+/) { return false }
             if (!(tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/)) { return true }
             def ends = tok.split(':')[1].split('-').collect { v -> v.replace('_', '') }
@@ -373,16 +377,19 @@ def validateSvAnnotationParams() {
         }
     }
 
-    if (!params.skip_reconplot && params.reconplot_genes && params.reconplot_genes.toString() =~ /\s/) {
-        error("--reconplot_genes must be a comma-separated list of gene symbols without spaces, e.g. \"MYC,TP53\" (got \"${params.reconplot_genes}\").")
+    if (!params.skip_reconplot && params.reconplot_genes && !(params.reconplot_genes.toString() ==~ /[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*/)) {
+        error("--reconplot_genes must be a comma-separated list of gene symbols (letters, digits, '.', '_', '-'), e.g. \"MYC,TP53\" (got \"${params.reconplot_genes}\").")
+    }
+    if (!params.skip_reconplot && !params.reconplot_regions && (params.reconplot_genes || params.reconplot_baf_track)) {
+        log.warn "--reconplot_genes and --reconplot_baf_track only apply to the focus panel, which is drawn only with --reconplot_regions; they are ignored."
     }
     if (!params.skip_reconplot && params.reconplot_format && !(params.reconplot_format.toString() ==~ /(pdf|png)(,(pdf|png))?/)) {
         error("--reconplot_format must be pdf, png or pdf,png (the module collects only *.pdf and *.png figures); got \"${params.reconplot_format}\".")
     }
 
-    // Both tools ship only inside their containers: under -profile conda/mamba the modules would fail hours in
-    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']) && !(params.skip_padfoot && params.skip_reconplot)) {
-        log.warn "Padfoot and ReConPlot need Docker, Singularity or Apptainer and are skipped under -profile conda/mamba " +
+    // Both tools ship only inside their containers: without a container engine (conda/mamba, or none) they would fail
+    if (!workflow.containerEngine && !(params.skip_padfoot && params.skip_reconplot)) {
+        log.warn "Padfoot and ReConPlot need a container engine (Docker, Singularity, Apptainer, ...) and are skipped without one " +
             "(use --skip_padfoot --skip_reconplot to silence this warning)."
     }
 }

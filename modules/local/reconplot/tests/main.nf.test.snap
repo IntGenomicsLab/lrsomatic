@@ -143,6 +143,29 @@
         },
         "timestamp": "2026-10-02T19:57:14.50211104"
     },
+    "ascat + severus - real, pipeline arguments with a focus panel": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    [
+                        "test.reconplot_cn.tsv:md5,8730e463e8b04175a3cab64882c78612",
+                        "test.reconplot_sv.tsv:md5,259f6b60f3a77527f5aa92372109caff"
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,7413f04e600f945d9f333e70177b555c"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.10.7"
+        },
+        "timestamp": "2026-10-05T15:59:11.107421783"
+    },
     "wakhan + severus - real": {
         "content": [
             [

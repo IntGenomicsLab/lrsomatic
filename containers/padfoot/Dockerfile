@@ -11,17 +11,17 @@ ARG DFAM_CONSENSUS_SHA256=ce50a75fe90a5481864cd87792a80564667a4e7f373322730a42a7
 RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
     && micromamba clean --all --yes \
     && export PATH=/opt/conda/envs/padfoot/bin:${PATH} \
-    && mkdir -p /home/mambauser/dfam /tmp/repeatmasker-smoke \
+    && mkdir -p /opt/conda/envs/padfoot/share/dfam /tmp/repeatmasker-smoke \
     && wget --quiet --tries=3 --output-document=/tmp/dfam40.0.h5.gz "${DFAM_URL_BASE}/dfam40.0.h5.gz" \
     && wget --quiet --tries=3 --output-document=/tmp/dfam40.curated.consensus.0.h5.gz "${DFAM_URL_BASE}/dfam40.curated.consensus.0.h5.gz" \
     && gunzip /tmp/dfam40.0.h5.gz /tmp/dfam40.curated.consensus.0.h5.gz \
     && echo "${DFAM_ROOT_SHA256}  /tmp/dfam40.0.h5" | sha256sum --check \
     && echo "${DFAM_CONSENSUS_SHA256}  /tmp/dfam40.curated.consensus.0.h5" | sha256sum --check \
-    && mv /tmp/dfam40.0.h5 /tmp/dfam40.curated.consensus.0.h5 /home/mambauser/dfam/ \
+    && mv /tmp/dfam40.0.h5 /tmp/dfam40.curated.consensus.0.h5 /opt/conda/envs/padfoot/share/dfam/ \
     && FAMDB_CONFIG="$(find /opt/conda/envs/padfoot/share -path '*/famdb-*/famdb.conf' -print -quit)" \
     && test -n "${FAMDB_CONFIG}" \
-    && printf '[famdb]\nFAMDB_DATA_DIR = /home/mambauser/dfam\n' > "${FAMDB_CONFIG}" \
-    && export PATH=/opt/conda/envs/padfoot/bin:${PATH} FAMDB_DATA_DIR=/home/mambauser/dfam \
+    && printf '[famdb]\nFAMDB_DATA_DIR = /opt/conda/envs/padfoot/share/dfam\n' > "${FAMDB_CONFIG}" \
+    && export PATH=/opt/conda/envs/padfoot/bin:${PATH} FAMDB_DATA_DIR=/opt/conda/envs/padfoot/share/dfam \
     && famdb.py info \
     && printf '>smoke\nACGTACGTACGTACGT\n' > /tmp/repeatmasker-smoke/input.fa \
     && RepeatMasker -species human -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
@@ -46,5 +46,9 @@ RUN mkdir -p /opt/padfoot \
 USER $MAMBA_USER
 
 ENV PATH=/opt/conda/envs/padfoot/bin:${PATH}
-ENV FAMDB_DATA_DIR=/home/mambauser/dfam
+# Dfam lives under the conda env, not under /home: a site that binds /home into containers would hide it and
+# RepeatMasker (on by default) would fail
+ENV FAMDB_DATA_DIR=/opt/conda/envs/padfoot/share/dfam
 ENV PADFOOT_HOME=/opt/padfoot
+# reported in versions.yml (Padfoot's own version string does not change between commits)
+ENV PADFOOT_COMMIT=${PADFOOT_COMMIT}

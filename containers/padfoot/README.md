@@ -10,7 +10,7 @@ same tag in `modules/local/padfoot/main.nf` (Docker Hub, like the pipeline's oth
   checksum-verified (Padfoot is not on bioconda; the fork adds SAVANA input support);
 - its runtime dependencies from `containers/padfoot/environment.yml` (Python 3.12, pysam, pandas, biopython, samtools,
   minimap2, bedtools) and RepeatMasker 4.2.4;
-- the Dfam 4.0 root and curated-consensus FamDB partitions (`FAMDB_DATA_DIR=/home/mambauser/dfam`), checksum-verified
+- the Dfam 4.0 root and curated-consensus FamDB partitions (`FAMDB_DATA_DIR=/opt/conda/envs/padfoot/share/dfam`, outside `/home` so a site binding `/home` cannot hide it), checksum-verified
   when the image is built.
 
 The module does not support `-profile conda`: the image ships the tool, not just its dependencies.
@@ -33,6 +33,6 @@ Bump both tags in the `container` directive of `modules/local/padfoot/main.nf`, 
 process { withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' } }
 ```
 
-To update Padfoot, change `PADFOOT_COMMIT` and the tarball checksum in the Dockerfile, rebuild, push both images and bump the tags.
+To update Padfoot, change `PADFOOT_COMMIT` and the tarball checksum in the Dockerfile, rebuild, push both images and bump the tags. A rebuild of the same Padfoot commit (e.g. a Dockerfile change) gets a `-rN` suffix (`...-padfoot-1748e84-r2`); a published tag is never pushed again, so a tag always names one image. `versions.yml` reports the Padfoot commit the image was built from (`padfoot_commit`).
 The Dockerfile verifies the Padfoot tarball and the decompressed Dfam partition checksums, so a changed upstream file fails
 the build rather than silently changing the image.
