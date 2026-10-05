@@ -1308,7 +1308,7 @@ workflow LRSOMATIC {
     if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
         PADFOOT_ANNOTATION (
             SEVERUS.out.somatic_vcf,
-            params.skip_wakhan ? channel.empty() : WAKHAN.out.vcf_files,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
             params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
             savana_somatic_vcf,
             savana_cna,
@@ -1331,7 +1331,7 @@ workflow LRSOMATIC {
             params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
             params.skip_ascat  ? channel.empty() : ASCAT.out.purityploidy,
             params.skip_ascat  ? channel.empty() : ASCAT.out.bafs,
-            params.skip_wakhan ? channel.empty() : WAKHAN.out.bed_files,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
             params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
             savana_cna,
             savana_somatic_bedpe,

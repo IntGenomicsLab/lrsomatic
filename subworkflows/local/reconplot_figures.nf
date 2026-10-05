@@ -16,7 +16,7 @@ workflow RECONPLOT_FIGURES {
     ascat_segments         // [meta, segments.txt]
     ascat_purityploidy     // [meta, purityploidy.txt]
     ascat_bafs             // [meta, [*BAF.txt]]
-    wakhan_bed_files       // [meta, [bed_output/*.bed, ...]]  -- every fitted solution
+    wakhan_solution_dirs   // [meta, [solution_rank_N/, ...]]  -- Wakhan >= 0.5 links each ranked solution's directory
     wakhan_solutions_ranks // [meta, solutions_ranks.tsv]
     savana_cna             // [meta, segmented_absolute_copy_number.tsv]
     savana_bedpe           // [meta, classified.somatic.bedpe]
@@ -53,18 +53,18 @@ workflow RECONPLOT_FIGURES {
 
     //
     // MODULE: RECONPLOT_SEVERUS_WAKHAN (label: process_low)
-    // Input:  [meta, 'wakhan', [HP_1.bed, HP_2.bed, solutions_ranks.tsv], 'severus', [vcf]]
-    //         the two allele-specific segment BEDs of the top-ranked solution (solution_1/)
+    // Input:  [meta, 'wakhan', [integer_profile.bed, solutions_ranks.tsv], 'severus', [vcf]]
+    //         the top-ranked solution's integer profile (solution_rank_1/; one row per segment, both haplotypes)
     //
-    wakhan_bed_files
-        .map { meta, beds ->
-            def hp = [beds].flatten().findAll { bed -> bed.name ==~ /.*_copynumbers_segments_HP_[12]\.bed/ }
-            def best = hp.findAll { bed -> bed.toString().contains('/solution_1/') } ?: hp
-            return [meta, best.unique { bed -> bed.name }]
+    wakhan_solution_dirs
+        .map { meta, dirs ->
+            def best = [dirs].flatten().find { dir -> dir.name == 'solution_rank_1' }
+            def bed = best ? best.resolve('integer_profile.bed') : null
+            return [meta, bed?.exists() ? bed : null]
         }
-        .filter { _meta, beds -> beds.size() == 2 }
+        .filter { _meta, bed -> bed != null }
         .join(wakhan_solutions_ranks)
-        .map { meta, beds, ranks -> [meta, beds + [ranks]] }
+        .map { meta, bed, ranks -> [meta, [bed, ranks]] }
         .join(severus_sv_files)
         .map { meta, cn, sv -> [meta, 'wakhan', cn, 'severus', sv] }
         .set { wakhan_input }

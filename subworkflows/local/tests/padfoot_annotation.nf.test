@@ -36,22 +36,24 @@ nextflow_workflow {
                     [ s1, mk('severus/sample1/severus_somatic.vcf.gz') ],
                     [ s2, mk('severus/sample2/severus_somatic.vcf.gz') ]
                 )
-                // Wakhan: sample1 has two solutions (solution_1 must be picked); sample2 has no integer-CN VCF
+                // Wakhan >= 0.5 ranked solution directories (solution_rank_N/integer_profile.vcf): sample1 has two
+                // (rank 1 must be picked); sample2 has only a rank-2 profile, so no pair forms for it
+                def rank = { String rel -> mk(rel + '/integer_profile.vcf'); return file("\${launchDir}/fixtures/\${rel}") }
                 input[1] = channel.of(
-                    [ s1, [ mk('wakhan/sample1/solution_1/sample1_2.0_1.0_wakhan_cna_integers.vcf'),
-                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_wakhan_cna_subclonals.vcf'),
-                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_wakhan_cna_integers.vcf') ] ],
-                    [ s2, [ mk('wakhan/sample2/solution_1/sample2_2.0_1.0_wakhan_cna_subclonals.vcf') ] ]
+                    [ s1, [ rank('wakhan/sample1/solution_rank_1'), rank('wakhan/sample1/solution_rank_2') ] ],
+                    [ s2, [ rank('wakhan/sample2/solution_rank_2') ] ]
                 )
-                // Wakhan purity/ploidy ranks for sample1 (sample2 has none: the join keeps the pair, Padfoot estimates)
-                input[2] = channel.of([ s1, mk('wakhan/sample1/solutions_ranks.tsv') ])
-                // SAVANA: SVs for sample1 and sample3, a copy-number fit for sample1 only
+                // Wakhan purity/ploidy ranks: sample1, and sample2 without a usable profile -- that row exists only on the
+                // right of the remainder join and must be dropped, not crash the run
+                input[2] = channel.of([ s1, mk('wakhan/sample1/solutions_ranks.tsv') ], [ s2, mk('wakhan/sample2/solutions_ranks.tsv') ])
+                // SAVANA: SVs for sample1 and sample3, a copy-number fit for sample1 only; sample3 also has a fit table
+                // without copy number (right-only in the remainder join)
                 input[3] = channel.of(
                     [ s1, mk('savana/sample1/sample1.classified.somatic.vcf') ],
                     [ s3, mk('savana/sample3/sample3.classified.somatic.vcf') ]
                 )
                 input[4] = channel.of([ s1, mk('savana/sample1/sample1_segmented_absolute_copy_number.tsv') ])
-                input[5] = channel.of([ s1, mk('savana/sample1/sample1_fitted_purity_ploidy.tsv') ])
+                input[5] = channel.of([ s1, mk('savana/sample1/sample1_fitted_purity_ploidy.tsv') ], [ s3, mk('savana/sample3/sample3_fitted_purity_ploidy.tsv') ])
                 input[6] = channel.value([ [:], mk('ref/genome.fasta') ])
                 input[7] = channel.value([ [:], mk('ref/genome.fasta.fai') ])
                 input[8] = channel.value([ [:], 'hg38', [], [] ])
@@ -66,11 +68,11 @@ nextflow_workflow {
 
             assertAll(
                 { assert workflow.success },
-                // sample1 only: sample2 has no integer-CN VCF to pair with
+                // sample1 only: sample2 has no rank-1 integer profile to pair with
                 { assert tasks.count { name -> name.contains('PADFOOT_SEVERUS_WAKHAN') } == 1 },
                 { assert tasks.any { name -> name.contains('PADFOOT_SEVERUS_WAKHAN (sample1:') } },
-                // ... and it received the Severus VCF with solution_1's integer-CN VCF, not solution_2's or the subclonal one
-                { assert staged('sample1/padfoot/severus_wakhan') == ['severus_somatic.vcf.gz', 'sample1_2.0_1.0_wakhan_cna_integers.vcf', 'solutions_ranks.tsv'] },
+                // ... and it received the Severus VCF, the top-ranked integer profile and the ranks
+                { assert staged('sample1/padfoot/severus_wakhan') == ['severus_somatic.vcf.gz', 'integer_profile.vcf', 'solutions_ranks.tsv'] },
                 // sample1 only: sample3 has SAVANA SVs but no copy-number fit
                 { assert tasks.count { name -> name.contains('PADFOOT_SAVANA') } == 1 },
                 { assert tasks.any { name -> name.contains('PADFOOT_SAVANA (sample1:') } },

@@ -27,6 +27,8 @@ nextflow_workflow {
                 // Empty stand-ins carrying the real callers' file names; ReConPlot's stub does not read them
                 def mk = { String rel, String text = '' -> def f = file("\${launchDir}/fixtures/\${rel}"); f.parent.mkdirs(); f.text = text; return f }
                 // ASCAT segments with data; an ASCAT run without a solution writes an empty segments.txt
+                // Wakhan >= 0.5 ranked solution directories holding integer_profile.bed (rank 1 is drawn)
+                def rank = { String rel -> mk(rel + '/integer_profile.bed'); return file("\${launchDir}/fixtures/\${rel}") }
                 def seg = 'sample\\tchr\\tstartpos\\tendpos\\tnMajor\\tnMinor\\nt\\t1\\t1\\t1000\\t1\\t1\\n'
                 def s1 = [ id:'sample1', paired_data:true,  platform:'ont' ]
                 def s2 = [ id:'sample2', paired_data:true,  platform:'pb'  ]
@@ -50,12 +52,8 @@ nextflow_workflow {
                 )
                 // Wakhan: sample1 has two solutions (solution_1's two HP beds must be picked); sample2 has one HP bed only
                 input[4] = channel.of(
-                    [ s1, [ mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_segments_HP_1.bed'),
-                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_segments_HP_2.bed'),
-                            mk('wakhan/sample1/solution_1/sample1_2.0_1.0_copynumbers_subclonal_segments_HP_1.bed'),
-                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_copynumbers_segments_HP_1.bed'),
-                            mk('wakhan/sample1/solution_2/sample1_3.0_0.5_copynumbers_segments_HP_2.bed') ] ],
-                    [ s2, [ mk('wakhan/sample2/solution_1/sample2_2.0_1.0_copynumbers_segments_HP_1.bed') ] ]
+                    [ s1, [ rank('wakhan/sample1/solution_rank_1'), rank('wakhan/sample1/solution_rank_2') ] ],
+                    [ s2, [ rank('wakhan/sample2/solution_rank_2') ] ]
                 )
                 input[5] = channel.of(
                     [ s1, mk('wakhan/sample1/solutions_ranks.tsv') ],
@@ -101,11 +99,10 @@ nextflow_workflow {
                                                                        'sv_input/severus_somatic.vcf.gz'] },
                 { assert staged('sample3/reconplot/severus_ascat') == ['cn_input/sample3.purityploidy.txt', 'cn_input/sample3.segments.txt',
                                                                        'cn_input/sample3.tumour_tumourBAF.txt', 'sv_input/severus_somatic.vcf.gz'] },
-                // Wakhan + Severus: sample1 only, sample2 lacks the second HP bed; solution_1's two HP beds + the ranks, nothing from solution_2 or the subclonal set
+                // Wakhan + Severus: sample1 only (sample2 has only a rank-2 profile); rank 1's integer_profile.bed + the ranks
                 { assert tasks.count { name -> name.contains('RECONPLOT_SEVERUS_WAKHAN') } == 1 },
                 { assert tasks.any { name -> name.contains('RECONPLOT_SEVERUS_WAKHAN (sample1:') } },
-                { assert staged('sample1/reconplot/severus_wakhan') == ['cn_input/sample1_2.0_1.0_copynumbers_segments_HP_1.bed', 'cn_input/sample1_2.0_1.0_copynumbers_segments_HP_2.bed',
-                                                                        'cn_input/solutions_ranks.tsv', 'sv_input/severus_somatic.vcf.gz'] },
+                { assert staged('sample1/reconplot/severus_wakhan') == ['cn_input/integer_profile.bed', 'cn_input/solutions_ranks.tsv', 'sv_input/severus_somatic.vcf.gz'] },
                 // SAVANA: sample1 (with allele counts) and sample3 (without); sample4 has no fit and is dropped
                 { assert tasks.count { name -> name.contains('RECONPLOT_SAVANA') } == 2 },
                 { assert tasks.any { name -> name.contains('RECONPLOT_SAVANA (sample1:') } },

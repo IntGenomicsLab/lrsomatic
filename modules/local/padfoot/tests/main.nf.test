@@ -87,9 +87,9 @@ nextflow_process {
                     [ id:'test', paired_data:'test' ],
                     file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true),
                     'severus',
-                    file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_wakhan_cna_integers.vcf", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solution_rank_1/integer_profile.vcf", checkIfExists: true),
                     'wakhan',
-                    file("${projectDir}/tests/fixtures/padfoot_reconplot/solutions_ranks.tsv", checkIfExists: true)
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solutions_ranks.tsv", checkIfExists: true)
                 ]
                 input[1] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ]
                 input[2] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ]
@@ -115,8 +115,12 @@ nextflow_process {
                 // RepeatMasker classified the Alu copy (Padfoot >= 25fd6d4 keeps the last query's hits; the masked length it
                 // reports is end - begin, i.e. 299 for the 300 bp copy -- an upstream off-by-one, so only the class is asserted)
                 { assert svs_by_id['severus_INS2'][25].startsWith('SINE/Alu:') },
-                // gene copy number is labelled against the fitted ploidy (2.0 -> baseline 1 per haplotype): STK11 sits in the one-copy loss
-                { assert path(process.out.by_gene.get(0).get(1)).readLines().find { l -> l.startsWith('STK11\t') }?.split('\t')?.getAt(4) == 'NEUT' },
+                // by_gene: Padfoot reads a gene's copy number at its start, labelled against the fitted ploidy (2.0 -> 1 per
+                // haplotype); STK11 starts before the internal loss, so its CN is NEUT, and the exon-removing deletion is
+                // reported in its SV columns (unphased: Severus gives no haplotype) with the TSG bonus
+                { def stk11 = path(process.out.by_gene.get(0).get(1)).readLines().find { l -> l.startsWith('STK11\t') }?.split('\t', -1)
+                  assert stk11 && stk11[4] == 'NEUT' && stk11[8] == 'NEUT' && stk11[2] == '6' && stk11[12] == 'HIGH_ONCO' &&
+                      stk11[13].contains('severus_DEL1') && stk11[13].contains('between_exons') },
                 { assert svs_by_id['severus_INS1'][24].startsWith('chr19:118') },
                 { assert path(process.out.by_gene.get(0).get(1)).text.contains('STK11') },
                 { assert path(process.out.log.get(0).get(1)).text.contains('Padfoot completed successfully') },

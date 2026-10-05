@@ -30,7 +30,7 @@ input:
         description: SV input format, `severus` or `savana`
     - cna_file:
         type: file
-        description: CNA file (Wakhan `*_wakhan_cna_integers.vcf` or SAVANA `*_segmented_absolute_copy_number.tsv`)
+        description: CNA file (Wakhan's top-ranked `integer_profile.vcf` or SAVANA `*_segmented_absolute_copy_number.tsv`)
         pattern: "*.{vcf,tsv}"
     - cna_caller:
         type: string

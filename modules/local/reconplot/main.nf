@@ -42,10 +42,6 @@ process RECONPLOT {
     def source_args = cn_source == sv_source
         ? "--source ${cn_source} --input cn_input"
         : "--cn-source ${cn_source} --cn-input cn_input --sv-source ${sv_source} --sv-input sv_input"
-    // Wakhan's parser expects <dir>/solutions_ranks.tsv + <dir>/<solution>/bed_output/*.bed
-    def layout_cmd = cn_source == 'wakhan'
-        ? "mkdir -p cn_input/solution_1/bed_output && mv cn_input/*.bed cn_input/solution_1/bed_output/"
-        : ""
     // The wrapper never fails for "nothing to draw": regions without copy number are skipped with a warning, and a
     // figure ReConPlot cannot render (e.g. R's node stack overflowing on a chromosome with thousands of SVs, since
     // ReConPlot adds one layer per SV) is logged as an ERROR line in reconplot.log and skipped. All figure outputs are
@@ -59,7 +55,6 @@ process RECONPLOT {
         : ""
 
     """
-    ${layout_cmd}
     mkdir -p ${prefix}
 
     Rscript ${reconplot_src}/run_reconplot.R ${source_args} --sample ${sample} --prefix ${sample} \\

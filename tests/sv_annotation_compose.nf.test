@@ -1,0 +1,50 @@
+nextflow_pipeline {
+
+    name "Test pipeline - Padfoot / ReConPlot wiring with every caller on (-preview)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The test profiles skip Wakhan, ASCAT, Padfoot and ReConPlot (no whole-genome caller output on the test data),
+    // so no other pipeline test evaluates how the two subworkflows read those callers' outputs. -preview builds the
+    // whole workflow graph without running a task: an output a module no longer emits (Wakhan 0.5.0 replaced its
+    // per-haplotype BED/VCF outputs) fails here at launch, as it would for a user.
+
+    test("-profile test with Wakhan, ASCAT, Padfoot and ReConPlot on - preview") {
+
+        options "-preview"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_wakhan    = false
+                skip_ascat     = false
+                skip_padfoot   = false
+                skip_reconplot = false
+            }
+        }
+
+        then {
+            assert workflow.success
+        }
+    }
+
+    test("-profile test with Wakhan and ReConPlot on, Padfoot skipped - preview") {
+
+        options "-preview"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_wakhan    = false
+                skip_ascat     = false
+                skip_padfoot   = true
+                skip_reconplot = false
+            }
+        }
+
+        then {
+            assert workflow.success
+        }
+    }
+}

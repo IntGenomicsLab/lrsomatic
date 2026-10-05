@@ -11,8 +11,8 @@ nextflow_process {
     // "small" is what .github/workflows/nf-test.yml selects on for pull_request
     tag "small"
 
-    // Real ASCAT/Wakhan/Severus/SAVANA outputs are not available as public test data; only the I/O contract is
-    // tested here. The three combinations were run end to end on real data through the pipeline.
+    // The stub tests check the I/O contract; the "real" tests below run the wrapper and the ReConPlot package on the
+    // synthetic fixtures in tests/fixtures/padfoot_reconplot.
 
     test("ascat + severus - stub") {
 
@@ -115,13 +115,12 @@ nextflow_process {
         when {
             process {
                 """
-                // bed_output/*.bed files plus solutions_ranks.tsv, as the subworkflow stages them; the module re-creates the solution_1 layout
+                // Wakhan >= 0.5: the top-ranked solution's integer_profile.bed plus solutions_ranks.tsv, as the subworkflow stages them
                 input[0] = [
                     [ id:'test' ],
                     'wakhan',
-                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_copynumbers_segments_HP_1.bed", checkIfExists: true),
-                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_2.0_0.9_0.9_copynumbers_segments_HP_2.bed", checkIfExists: true),
-                      file("${projectDir}/tests/fixtures/padfoot_reconplot/solutions_ranks.tsv", checkIfExists: true) ],
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solution_rank_1/integer_profile.bed", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solutions_ranks.tsv", checkIfExists: true) ],
                     'severus',
                     [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
                 ]
@@ -136,7 +135,7 @@ nextflow_process {
                 { assert process.success },
                 { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
                 { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
-                { assert path(process.out.log.get(0).get(1)).text.contains('Wakhan solution: solution_1') },
+                { assert path(process.out.log.get(0).get(1)).text.contains('Wakhan solution: solution_2.0_0.9_0.9') && path(process.out.log.get(0).get(1)).text.contains('purity=0.9 ploidy=2') },
                 { assert snapshot(
                     process.out.tables,
                     process.out.versions

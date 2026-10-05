@@ -4,7 +4,7 @@ include { PADFOOT as PADFOOT_SAVANA         } from '../../modules/local/padfoot/
 
 //
 // Padfoot annotation of somatic SVs + CNAs, once per caller pair that produced output for a sample:
-// Severus SVs + the top-ranked Wakhan integer-CN VCF, and SAVANA SVs + SAVANA absolute CN, each with the
+// Severus SVs + the top-ranked Wakhan integer profile (VCF), and SAVANA SVs + SAVANA absolute CN, each with the
 // caller's fitted purity/ploidy table so gene copy number is labelled against the tumour ploidy.
 // Pass channel.empty() for a caller that did not run. Padfoot is not on bioconda: it ships inside the
 // module's container (containers/padfoot/), so nothing is downloaded at run time.
@@ -13,7 +13,7 @@ workflow PADFOOT_ANNOTATION {
 
     take:
     severus_vcf            // [meta, severus_somatic.vcf.gz]
-    wakhan_vcf_files       // [meta, [wakhan_cna_*.vcf, ...]]  -- every fitted solution
+    wakhan_solution_dirs   // [meta, [solution_rank_N/, ...]]  -- Wakhan >= 0.5 links each ranked solution's directory
     wakhan_solutions_ranks // [meta, solutions_ranks.tsv]  -- purity/ploidy per solution (rank 1 = solution_1)
     savana_vcf             // [meta, classified.somatic.vcf]
     savana_cna             // [meta, segmented_absolute_copy_number.tsv]
@@ -27,22 +27,24 @@ workflow PADFOOT_ANNOTATION {
 
     //
     // MODULE: PADFOOT_SEVERUS_WAKHAN (label: process_medium)
-    // Input:  [meta, severus_somatic.vcf.gz, 'severus', wakhan_cna_integers.vcf, 'wakhan', solutions_ranks.tsv | []]
+    // Input:  [meta, severus_somatic.vcf.gz, 'severus', solution_rank_1/integer_profile.vcf, 'wakhan', solutions_ranks.tsv | []]
     //
-    // Wakhan writes every fitted solution; solution_1/ holds the top-ranked one
-    wakhan_vcf_files
-        .map { meta, vcfs ->
-            def integers = [vcfs].flatten().findAll { vcf -> vcf.name.endsWith('_wakhan_cna_integers.vcf') }
-            return [meta, integers.find { vcf -> vcf.toString().contains('/solution_1/') } ?: integers[0]]
+    // Wakhan writes every fitted solution; solution_rank_1 links to the top-ranked one, whose integer_profile.vcf
+    // holds the haplotype copy numbers (CN1/CN2) Padfoot reads
+    wakhan_solution_dirs
+        .map { meta, dirs ->
+            def best = [dirs].flatten().find { dir -> dir.name == 'solution_rank_1' }
+            def vcf = best ? best.resolve('integer_profile.vcf') : null
+            return [meta, vcf?.exists() ? vcf : null]
         }
         .filter { _meta, vcf -> vcf != null }
         .set { wakhan_best_cna }
-    // wakhan_best_cna: [meta, wakhan_cna_integers.vcf]
+    // wakhan_best_cna: [meta, integer_profile.vcf]
 
     severus_vcf
         .join(wakhan_best_cna)
         .join(wakhan_solutions_ranks, remainder: true)       // the fit table is optional for Padfoot
-        .filter { _meta, sv, _cna, _ranks -> sv != null }    // drops right-only rows of the remainder join
+        .filter { row -> row[1] != null }                    // right-only rows of the remainder join are [meta, null, ranks]
         .map { meta, sv, cna, ranks -> [meta, sv, 'severus', cna, 'wakhan', ranks ?: []] }
         .set { severus_wakhan_input }
 
@@ -57,7 +59,7 @@ workflow PADFOOT_ANNOTATION {
     savana_vcf
         .join(savana_cna)
         .join(savana_purity_ploidy, remainder: true)
-        .filter { _meta, sv, _cna, _pp -> sv != null }
+        .filter { row -> row[1] != null }   // right-only rows of the remainder join are [meta, null, pp]
         .map { meta, sv, cna, pp -> [meta, sv, 'savana', cna, 'savana', pp ?: []] }
         .set { savana_input }
 

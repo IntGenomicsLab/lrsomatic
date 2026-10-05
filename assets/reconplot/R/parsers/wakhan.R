@@ -1,14 +1,18 @@
 ## ---------------------------------------------------------------------------
 ## parsers/wakhan.R -- Wakhan allele-specific copy number (CN component).
 ##
-## Files consumed:
+## Files consumed, Wakhan >= 0.5 (what the pipeline stages):
+##   integer_profile.bed  -> one row per segment, hp1_/hp2_copynumber_state
+##                           (staged directly, or found in <dir>/solution_rank_1/)
+##   solutions_ranks.tsv  -> purity / ploidy of the ranked solutions
+## Wakhan 0.4 (still read when no integer_profile.bed is found):
 ##   solutions_ranks.tsv                                      -> best solution
 ##   <solution>/bed_output/*_copynumbers_segments_HP_1.bed -> haplotype 1 CN
 ##   <solution>/bed_output/*_copynumbers_segments_HP_2.bed -> haplotype 2 CN
 ##
-## The two haplotype BED files cover the full segmentation. ReConPlot wants
-## total CN plus minor-allele CN, so join HP1/HP2 by segment coordinates and
-## calculate total = HP1 + HP2, minor = min(HP1, HP2).
+## ReConPlot wants total CN plus minor-allele CN: total = HP1 + HP2,
+## minor = min(HP1, HP2). Without phasing (a single copynumber_state column)
+## the minor allele is unknown.
 ## ---------------------------------------------------------------------------
 
 WAKHAN_FILE_PATTERNS <- list(
@@ -21,6 +25,40 @@ wakhan_is_dir <- function(dir) {
   if (is.null(dir) || !dir.exists(dir)) return(FALSE)
   file.exists(file.path(dir, "solutions_ranks.tsv")) ||
     dir.exists(file.path(dir, "solution_1", "bed_output"))
+}
+
+#' Wakhan >= 0.5: the top-ranked solution's merged integer profile, staged directly into `dir` or under
+#' `dir/solution_rank_1/` (a Wakhan output directory).
+wakhan_find_integer_profile <- function(dir) {
+  if (is.null(dir) || !dir.exists(dir)) return(NULL)
+  hits <- c(file.path(dir, "integer_profile.bed"),
+            file.path(dir, "solution_rank_1", "integer_profile.bed"),
+            file.path(dir, "wakhan", "solution_rank_1", "integer_profile.bed"))
+  hits <- hits[file.exists(hits)]
+  if (length(hits)) hits[1] else NULL
+}
+
+wakhan_read_integer_profile <- function(file) {
+  df <- data.table::fread(file, sep = "\t", header = TRUE, data.table = FALSE,
+                          skip = "chr\tstart\tend", na.strings = c("NA", "nan", "NaN", ""))
+  names(df) <- sub("^#", "", names(df))
+  if (all(c("hp1_copynumber_state", "hp2_copynumber_state") %in% names(df))) {
+    hp1 <- suppressWarnings(as.numeric(df$hp1_copynumber_state))
+    hp2 <- suppressWarnings(as.numeric(df$hp2_copynumber_state))
+    total <- hp1 + hp2
+    minor <- pmin(hp1, hp2)
+  } else if ("copynumber_state" %in% names(df)) {        # wakhan --without-phasing
+    total <- suppressWarnings(as.numeric(df$copynumber_state))
+    minor <- rep(NA_real_, nrow(df))
+    log_msg("  unphased Wakhan profile: minor-allele copy number unknown")
+  } else {
+    stop("Wakhan integer profile ", basename(file), " lacks hp1_/hp2_copynumber_state (or copynumber_state)")
+  }
+  for (k in c("chr", "start", "end")) {
+    if (!k %in% names(df)) stop("Wakhan integer profile ", basename(file), " lacks column ", k)
+  }
+  data.frame(chr = df$chr, start = df$start, end = df$end,
+             copyNumber = total, minorAlleleCopyNumber = minor, stringsAsFactors = FALSE)
 }
 
 #' Resolve --input to a Wakhan output directory.
@@ -133,6 +171,27 @@ wakhan_read_cn <- function(hp1_file, hp2_file) {
 }
 
 parse_wakhan <- function(args) {
+  prof <- args$cn_file %||% wakhan_find_integer_profile(args$input)
+  if (!is.null(prof)) {
+    log_msg("  Wakhan integer profile: ", prof)
+    cn <- wakhan_read_integer_profile(prof)
+    ranks_file <- c(file.path(args$input %||% dirname(prof), "solutions_ranks.tsv"),
+                    file.path(dirname(dirname(prof)), "solutions_ranks.tsv"))
+    ranks_file <- ranks_file[file.exists(ranks_file)]
+    ranks <- if (length(ranks_file)) wakhan_read_rank(ranks_file[1]) else NULL
+    meta <- list(sample = args$sample %||% NA_character_, cn_file = prof, cn_caller = "Wakhan",
+                 wakhan_solution = if (!is.null(ranks) && "repository_name" %in% names(ranks)) ranks$repository_name[1] else "solution_rank_1")
+    log_msg("  Wakhan solution: ", meta$wakhan_solution)
+    if (!is.null(ranks)) {
+      if ("cell_purity" %in% names(ranks)) meta$purity <- ranks$cell_purity[1]
+      if ("ploidy" %in% names(ranks)) meta$ploidy <- ranks$ploidy[1]
+      if ("confidence" %in% names(ranks)) meta$wakhan_confidence <- ranks$confidence[1]
+      log_msg(sprintf("  purity=%s ploidy=%s", meta$purity %||% NA, meta$ploidy %||% NA))
+    }
+    return(list(cn = cn, meta = meta, annotation_fn = NULL))
+  }
+
+  ## Wakhan 0.4 layout
   dir <- wakhan_dir(args$input, args$sample)
   sol <- wakhan_solution_dir(dir)
   bed_dir <- file.path(sol$dir, "bed_output")
@@ -159,5 +218,5 @@ parse_wakhan <- function(args) {
 }
 
 register_parser("wakhan", parse_wakhan,
-                "Wakhan allele-specific CN (<solution>/bed_output HP BEDs)",
+                "Wakhan allele-specific CN (>= 0.5 integer_profile.bed; 0.4 <solution>/bed_output HP BEDs)",
                 provides = "cn")

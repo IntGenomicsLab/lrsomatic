@@ -11,7 +11,9 @@ invented but use the exact file layouts, column names and INFO/FORMAT keys the t
   BND   chr19:400,000 <-> 900,000  ++ breakend pair (inversion-like)
   BND   chr19:1,050,000 <-> 1,900,000  +- breakend pair
 Sample name: `test` (pipeline meta.id); Severus/SAVANA tumour column `test_tumor`; ASCAT `test.tumour`;
-Wakhan solution `2.0_0.9_0.9`. Chromosome length of chr19 in headers is the real one (58,617,616).
+Wakhan solution `solution_2.0_0.9_0.9` in the Wakhan 0.5.0 layout (`wakhan/solutions_ranks.tsv`,
+`wakhan/solution_rank_1/integer_profile.{bed,vcf}`; the VCF lists altered segments only, with ##contig lines as in
+0.5.0's). Chromosome length of chr19 in headers is the real one (58,617,616).
 """
 import os, sys
 F = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +32,7 @@ def ref_base(pos):
     return read_slice(pos, pos)
 
 def w(name, lines):
+    os.makedirs(os.path.dirname(os.path.join(F, name)), exist_ok=True)
     with open(os.path.join(F, name), "w") as fh:
         fh.write("\n".join(lines) + "\n")
     print("wrote", name, len(lines), "lines")
@@ -86,10 +89,10 @@ sev_rec = [
 ]
 w("severus_somatic.vcf", sev_hdr + sev_rec)   # bgzipped afterwards
 
-# ---------------------------------------------------------------- Wakhan (solution 2.0_0.9_0.9)
-SOL = "2.0_0.9_0.9"
+# ---------------------------------------------------------------- Wakhan 0.5.0 (solution_2.0_0.9_0.9 = solution_rank_1)
+SOL = "solution_2.0_0.9_0.9"
 wak_hdr = f"""##fileformat=VCFv4.2
-##source=Wakhan_v0.4.2
+##source=Wakhan_v0.5.0
 ##fileDate=2026-10-01
 ##ALT=<ID=CNV,Description="Copy number variant region">
 ##ALT=<ID=DEL,Description="Deletion relative to the reference">
@@ -116,17 +119,19 @@ wak_rec = [
     f"{CHR}\t1215001\twakhan:LOSS:{CHR}:1215001-1223000\tN\t<DEL>\t1000\tPASS\tSVTYPE=CNV;SVLEN=7999;END=1223000;BPS=severus_DEL1\t{WF}\t1/1:1.0:1.0:0.0:0.91:0.91:15.0:0.0",
     f"{CHR}\t1560001\twakhan:GAIN:{CHR}:1560001-1700000\tN\t<DUP>\t1000\tPASS\tSVTYPE=CNV;SVLEN=139999;END=1700000;BPS=severus_DUP1\t{WF}\t0/1:3.0:2.0:1.0:0.88:0.90:30.0:15.0",
 ]
-w(f"test_{SOL}_wakhan_cna_integers.vcf", wak_hdr + wak_rec)
-w("solutions_ranks.tsv", ["repository_name\tdna_purity\tcell_purity\tploidy\tconfidence\tsolution_rank", f"{SOL}\t0.9\t0.9\t2.0\t0.9\t1"])
+w("wakhan/solution_rank_1/integer_profile.vcf", wak_hdr + wak_rec)
+w("wakhan/solutions_ranks.tsv", ["repository_name\tdna_purity\tcell_purity\tploidy\tconfidence\tsolution_rank", f"{SOL}\t0.9\t0.9\t2.0\t0.9\t1"])
+# integer_profile.bed: every segment, both haplotypes on one row (header as written by Wakhan 0.5.0 writers.py)
 bed_hdr = ["#chr: chromosome number", "#start: start address for CN segment", "#end: end address for CN segment",
-           "#coverage: median coverage for this segment", "#copynumber_state: detected copy number state (integer/fraction)",
-           "#confidence: confidence score", "#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file",
-           "#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tsvs_breakpoints_ids"]
-segs = [(0, 1215000, 1, 1, "[]"), (1215001, 1223000, 1, 0, "['severus_DEL1']"), (1223001, 1560000, 1, 1, "[]"),
-        (1560001, 1700000, 2, 1, "['severus_DUP1']"), (1700001, CHR_LEN, 1, 1, "[]")]
-for hp, idx in (("HP_1", 2), ("HP_2", 3)):
-    rows = [f"{CHR}\t{s}\t{e}\t{15.0 * seg[idx]:.2f}\t{float(seg[idx])}\t0.9\t{seg[4]}" for seg in segs for s, e in [(seg[0], seg[1])]]
-    w(f"test_{SOL}_copynumbers_segments_{hp}.bed", bed_hdr + rows)
+           "#hp1_coverage / hp2_coverage: median coverage for this segment, per haplotype",
+           "#hp1_copynumber_state / hp2_copynumber_state: detected copy number state (integer/fraction), per haplotype",
+           "#hp1_confidence / hp2_confidence: confidence score, per haplotype",
+           "#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file (union across haplotypes)",
+           "#chr\tstart\tend\thp1_coverage\thp1_copynumber_state\thp1_confidence\thp2_coverage\thp2_copynumber_state\thp2_confidence\tsvs_breakpoints_ids"]
+segs = [(0, 1215000, 1, 1, ""), (1215001, 1223000, 1, 0, "severus_DEL1"), (1223001, 1560000, 1, 1, ""),
+        (1560001, 1700000, 2, 1, "severus_DUP1"), (1700001, CHR_LEN, 1, 1, "")]
+w("wakhan/solution_rank_1/integer_profile.bed", bed_hdr +
+  [f"{CHR}\t{s0}\t{e0}\t{15.0 * a:.2f}\t{float(a)}\t0.9\t{15.0 * b:.2f}\t{float(b)}\t0.9\t{ids}" for s0, e0, a, b, ids in segs])
 
 # ---------------------------------------------------------------- ASCAT (sample test.tumour; chromosomes without the chr prefix)
 asc = [(1, 1215000, 1, 1), (1215001, 1223000, 1, 0), (1223001, 1560000, 1, 1), (1560001, 1700000, 2, 1), (1700001, CHR_LEN, 1, 1)]

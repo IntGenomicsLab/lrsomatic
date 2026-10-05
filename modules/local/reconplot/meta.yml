@@ -27,7 +27,7 @@ input:
         description: CN parser name understood by the wrapper (`ascat`, `wakhan`, `savana`)
     - cn_files:
         type: file
-        description: Caller output files the CN parser discovers by name (staged into `cn_input/`). For `wakhan`, the two `*_copynumbers_segments_HP_[12].bed` plus `solutions_ranks.tsv`. When `cn_source == sv_source`, also holds the SV files.
+        description: Caller output files the CN parser discovers by name (staged into `cn_input/`). For `wakhan`, the top-ranked solution's `integer_profile.bed` plus `solutions_ranks.tsv`. When `cn_source == sv_source`, also holds the SV files.
     - sv_source:
         type: string
         description: SV parser name understood by the wrapper (`severus`, `savana`)
