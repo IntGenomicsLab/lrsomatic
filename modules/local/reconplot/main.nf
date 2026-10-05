@@ -18,8 +18,8 @@ process RECONPLOT {
     val(genome)                             // hg38 | hg19 | T2T | mm10 | mm39
 
     output:
-    tuple val(meta), path("${prefix}/per_chromosome/*.{pdf,png}"), emit: per_chromosome
-    tuple val(meta), path("${prefix}/genome_wide/*.{pdf,png}")   , emit: genome_wide
+    tuple val(meta), path("${prefix}/per_chromosome/*.{pdf,png}"), emit: per_chromosome, optional: true
+    tuple val(meta), path("${prefix}/genome_wide/*.{pdf,png}")   , emit: genome_wide   , optional: true
     tuple val(meta), path("${prefix}/focus/*.{pdf,png}")         , emit: focus  , optional: true
     tuple val(meta), path("${prefix}/*.reconplot_{cn,sv}.tsv")   , emit: tables
     tuple val(meta), path("${prefix}/reconplot.log")             , emit: log
@@ -46,9 +46,11 @@ process RECONPLOT {
     def layout_cmd = cn_source == 'wakhan'
         ? "mkdir -p cn_input/solution_1/bed_output && mv cn_input/*.bed cn_input/solution_1/bed_output/"
         : ""
-    // The wrapper never fails for "nothing to draw": regions without copy number are skipped with a warning,
-    // and an empty result exits 0. The required per_chromosome/genome_wide outputs still fail the task when a
-    // sample has nothing plottable at all; the optional focus panel is simply absent.
+    // The wrapper never fails for "nothing to draw": regions without copy number are skipped with a warning, and a
+    // figure ReConPlot cannot render (e.g. R's node stack overflowing on a chromosome with thousands of SVs, since
+    // ReConPlot adds one layer per SV) is logged as an ERROR line in reconplot.log and skipped. All figure outputs are
+    // therefore optional, so one undrawable chromosome does not discard the others; the task fails only when no
+    // figure at all could be drawn.
     def focus_cmd = args3
         ? """
     Rscript ${reconplot_src}/run_reconplot.R ${source_args} --sample ${sample} --prefix ${sample} \\
@@ -69,6 +71,12 @@ process RECONPLOT {
         --genome ${genome} --outdir ${prefix}/genome_wide --regions all --layout together \\
         ${args} ${args2} 2>&1 | tee -a ${prefix}/reconplot.log
     ${focus_cmd}
+
+    n_figures=\$( { find ${prefix}/per_chromosome ${prefix}/genome_wide -maxdepth 1 \\( -name '*.pdf' -o -name '*.png' \\) 2>/dev/null || true; } | wc -l )
+    if [ "\$n_figures" -eq 0 ]; then
+        echo "ERROR: ReConPlot drew no figure for ${meta.id} (${prefix}); see ${prefix}/reconplot.log" >&2
+        exit 1
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

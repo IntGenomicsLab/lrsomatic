@@ -25,7 +25,9 @@ nextflow_workflow {
             workflow {
                 """
                 // Empty stand-ins carrying the real callers' file names; ReConPlot's stub does not read them
-                def mk = { String rel -> def f = file("\${launchDir}/fixtures/\${rel}"); f.parent.mkdirs(); f.text = ''; return f }
+                def mk = { String rel, String text = '' -> def f = file("\${launchDir}/fixtures/\${rel}"); f.parent.mkdirs(); f.text = text; return f }
+                // ASCAT segments with data; an ASCAT run without a solution writes an empty segments.txt
+                def seg = 'sample\\tchr\\tstartpos\\tendpos\\tnMajor\\tnMinor\\nt\\t1\\t1\\t1000\\t1\\t1\\n'
                 def s1 = [ id:'sample1', paired_data:true,  platform:'ont' ]
                 def s2 = [ id:'sample2', paired_data:true,  platform:'pb'  ]
                 def s3 = [ id:'sample3', paired_data:false, platform:'ont' ]
@@ -38,10 +40,12 @@ nextflow_workflow {
                     [ s3, mk('severus/sample3/severus_somatic.vcf.gz') ]
                 )
                 // ASCAT for sample1 (paired: tumour + normal BAF) and sample3 (tumour-only: ASCAT runs for it too, tumour BAF only)
-                input[1] = channel.of([ s1, mk('ascat/sample1.segments.txt') ], [ s3, mk('ascat/sample3.segments.txt') ])
-                input[2] = channel.of([ s1, mk('ascat/sample1.purityploidy.txt') ], [ s3, mk('ascat/sample3.purityploidy.txt') ])
+                // ... and sample2, whose ASCAT found no solution (empty segments.txt): its ASCAT pair must not form
+                input[1] = channel.of([ s1, mk('ascat/sample1.segments.txt', seg) ], [ s2, mk('ascat/sample2.segments.txt') ], [ s3, mk('ascat/sample3.segments.txt', seg) ])
+                input[2] = channel.of([ s1, mk('ascat/sample1.purityploidy.txt') ], [ s2, mk('ascat/sample2.purityploidy.txt') ], [ s3, mk('ascat/sample3.purityploidy.txt') ])
                 input[3] = channel.of(
                     [ s1, [ mk('ascat/sample1.tumour_tumourBAF.txt'), mk('ascat/sample1.tumour_normalBAF.txt') ] ],
+                    [ s2, [ mk('ascat/sample2.tumour_tumourBAF.txt') ] ],
                     [ s3, [ mk('ascat/sample3.tumour_tumourBAF.txt') ] ]
                 )
                 // Wakhan: sample1 has two solutions (solution_1's two HP beds must be picked); sample2 has one HP bed only
@@ -91,6 +95,7 @@ nextflow_workflow {
                 { assert tasks.count { name -> name.contains('RECONPLOT_SEVERUS_ASCAT') } == 2 },
                 { assert tasks.any { name -> name.contains('RECONPLOT_SEVERUS_ASCAT (sample1:') } },
                 { assert tasks.any { name -> name.contains('RECONPLOT_SEVERUS_ASCAT (sample3:') } },
+                { assert !tasks.any { name -> name.contains('RECONPLOT_SEVERUS_ASCAT (sample2:') } },   // ASCAT found no solution
                 { assert staged('sample1/reconplot/severus_ascat') == ['cn_input/sample1.purityploidy.txt', 'cn_input/sample1.segments.txt',
                                                                        'cn_input/sample1.tumour_normalBAF.txt', 'cn_input/sample1.tumour_tumourBAF.txt',
                                                                        'sv_input/severus_somatic.vcf.gz'] },

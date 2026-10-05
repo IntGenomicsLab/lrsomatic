@@ -61,6 +61,9 @@ ascat_infer_sample <- function(dir) {
 #'   still using the rounded nMajor/nMinor) or "raw-fractional" (pre-fit
 #'   segmentation using the unrounded nAraw/nBraw)
 ascat_read_cn <- function(file, mode = "segments", sample = NULL) {
+  if (!file.exists(file) || file.info(file)$size == 0 || length(readLines(file, n = 2, warn = FALSE)) < 2) {
+    stop("ASCAT file ", basename(file), " has no segments: ASCAT found no solution for this sample")
+  }
   df <- data.table::fread(file, sep = "\t", header = TRUE, data.table = FALSE,
                           na.strings = c("NA", "nan", "NaN", ""))
   need <- c("chr", "startpos", "endpos", "nMajor", "nMinor")

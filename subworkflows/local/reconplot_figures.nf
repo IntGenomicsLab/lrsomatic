@@ -38,7 +38,9 @@ workflow RECONPLOT_FIGURES {
     // Input:  [meta, 'ascat', [segments.txt, purityploidy.txt, *BAF.txt], 'severus', [vcf]]
     //         the wrapper picks <sample>.tumour_tumourBAF.txt from the BAF tables by name
     //
+    // ASCAT writes an empty segments.txt (and NA purity/ploidy) when it finds no solution: nothing to draw for that pair
     ascat_segments
+        .filter { _meta, seg -> seg.size() > 0 && seg.countLines() > 1 }
         .join(ascat_purityploidy)
         .join(ascat_bafs)
         .map { meta, seg, pp, bafs -> [meta, [seg, pp, bafs].flatten()] }
