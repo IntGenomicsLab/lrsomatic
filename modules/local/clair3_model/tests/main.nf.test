@@ -1,0 +1,41 @@
+nextflow_process {
+
+    name "Test Process CLAIR3_MODEL"
+    script "../main.nf"
+    process "CLAIR3_MODEL"
+
+    tag "modules"
+    tag "modules_local"
+    tag "clair3_model"
+    tag "small"
+
+    // Only the stub runs in CI, because HKU's server is slow and flaky from GitHub runners. It checks that
+    // the output is a directory named after the model, holding the two checkpoints CLAIR3 reads.
+    test("r1041_e82_400bps_sup_v430 - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'r1041_e82_400bps_sup_v430' ],
+                    'https://www.bio8.cs.hku.hk/clair3/clair3_models_rerio_pytorch/r1041_e82_400bps_sup_v430'
+                ]
+                """
+            }
+        }
+
+        then {
+            def model_dir = path(process.out.model[0][1].toString())
+
+            assertAll(
+                { assert process.success },
+                { assert model_dir.fileName.toString() == 'r1041_e82_400bps_sup_v430' },
+                { assert model_dir.resolve('pileup.pt').toFile().exists() },
+                { assert model_dir.resolve('full_alignment.pt').toFile().exists() },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

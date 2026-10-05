@@ -46,7 +46,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     SORT_POST_NORM(BCFTOOLS_NORM.out.vcf)
 
     SORT_POST_NORM.out.vcf
-        .join(SORT_POST_NORM.out.tbi)
+        .join(SORT_POST_NORM.out.index)
         .set { normalized_vcfs }
     // normalized_vcfs: [meta(+caller), vcf.gz, tbi]  -- normalised, sorted per-caller VCF
 
@@ -74,8 +74,12 @@ workflow SMALL_VARIANT_CONSENSUS {
                     def header_lines = []  // no extra header lines
                     def rename_chrs = []   // no chromosome renaming
                     // 'all' mode merges both callers, so unify the AF key; 'consensus' needs no rename.
-                    def new_meta = combine_method == 'all'
-                        ? meta + [rename_to: (prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF')]
+                    // Rename only the other family's VCFs (Clair writes AF, DeepVariant/DeepSomatic VAF):
+                    // bcftools >= 1.24 fails on a rename whose source tag is absent.
+                    def rename_to = prioritize_caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
+                    def caller_tag = meta.caller in ['deepvariant', 'deepsomatic'] ? 'VAF' : 'AF'
+                    def new_meta = combine_method == 'all' && caller_tag != rename_to
+                        ? meta + [rename_to: rename_to]
                         : meta
                 return [ new_meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
              }
@@ -92,7 +96,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     BCFTOOLS_ANNOTATE(annotate_input)
 
     BCFTOOLS_ANNOTATE.out.vcf
-        .join(BCFTOOLS_ANNOTATE.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .join(BCFTOOLS_ANNOTATE.out.index, failOnMismatch: true, failOnDuplicate: true)
         .map { meta, vcf, tbi ->
             def clean_meta = meta.findAll { k, _v -> !(k in ['rename_to', 'split']) }
             return [clean_meta, vcf, tbi]
@@ -201,11 +205,11 @@ workflow SMALL_VARIANT_CONSENSUS {
         //         .tbi -- [meta, tbi]
         //
         BCFTOOLS_NORM_REJOIN(
-            BCFTOOLS_SORT_CONSENSUS.out.vcf.join(BCFTOOLS_SORT_CONSENSUS.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+            BCFTOOLS_SORT_CONSENSUS.out.vcf.join(BCFTOOLS_SORT_CONSENSUS.out.index, failOnMismatch: true, failOnDuplicate: true),
             fasta
         )
         BCFTOOLS_NORM_REJOIN.out.vcf.set{ vcf }
-        BCFTOOLS_NORM_REJOIN.out.tbi.set{ tbi }
+        BCFTOOLS_NORM_REJOIN.out.index.set{ tbi }
         // vcf/tbi: [meta, vcf/tbi]  -- consensus calls from the priority caller, multi-allelics rejoined
     }
     else {

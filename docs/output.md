@@ -675,24 +675,28 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 
 ```
 ├── wakhan
-│   ├── {ploidy}_{purity}_{confidence}
-│   │   ├── bed_output
+│   ├── solution_{ploidy}_{purity}_{confidence}
+│   │   ├── genes
 │   │   │   ├── genes_copynumber_states.bed
-│   │   │   ├── loh_regions.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_1.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_2.bed
-│   │   ├── variation_plots
-│   │   │   ├── chr{1-22,X,Y}_cn.html
-│   │   │   ├── chr{1-22,X,Y}_cn.pdf
-│   │   │   ├── CN_VARIATION_INDEX.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf
+│   │   │   ├── genes_copynumber_states.html
+│   │   │   ├── genes_copynumber_states.pdf
+│   │   ├── integer_profile.bed
+│   │   ├── integer_profile.html
+│   │   ├── integer_profile.pdf
+│   │   ├── integer_profile.vcf
+│   │   ├── subclonal_profile.bed
+│   │   ├── subclonal_profile.html
+│   │   ├── subclonal_profile.pdf
+│   │   ├── subclonal_profile.vcf
+│   │   ├── HiScanner_plots_data.zip
+│   ├── solution_rank_{rank}
 │   ├── coverage_data
-│   │   ├── {0-23}_SNPS.csv
+│   │   ├── {0-23}_SNPs.csv
+│   │   ├── baf.csv
+│   │   ├── cancer_genes_coverage.csv
+│   │   ├── cn_coverage.png
+│   │   ├── cn_peaks.png
+│   │   ├── coverage.csv
 │   │   ├── coverage_ps.csv
 │   │   ├── phase_corrected_coverage.csv
 │   │   ├── pileup_SNPs.csv
@@ -701,53 +705,36 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │   │   ├── chr{1-22,X,Y}.pdf
 │   │   ├── COVERAGE_INDEX.html
 │   ├── phasing_output
-│   │   ├── chr{1-22,X,Y}_phase_correction_0.html
-│   │   ├── chr{1-22,X,Y}_phase_correction_1.html
+│   │   ├── chr{1-22,X,Y}_phase_correction_{0.1,0.2,0.3,1,2}.html
 │   │   ├── chr{1-22,X,Y}_without_phase_correction.html
 │   │   ├── chr{1-22,X,Y}.pdf
-│   │   ├── sample.rephased.vcf.gz
-│   │   ├── sample.rephased.vcf.gz.tbi
+│   │   ├── PHASE_CORRECTION_INDEX.html
+│   │   ├── rephased.vcf.gz
+│   │   ├── rephased.vcf.gz.csi
 │   ├── snps_loh_plots
-│   │   ├── chr{1-22,X,Y}_snps_loh.html
-│   ├── sample_heatmap_ploidy_purity.html
-│   ├── sample_heatmap_ploidy_purity.html.pdf
-│   ├── sample_optimized_peak.html
+│   │   ├── {sample}_genome_snps_ratio_loh.html
+│   ├── {sample}_heatmap_ploidy_purity.html
+│   ├── {sample}_heatmap_ploidy_purity.html.pdf
 │   ├── solutions_ranks.tsv
-
 ```
 
-| File                                                                                                   | Description                                                                                        |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `{ploidy}_{purity}_{confidence}/bed_output/genes_copynumber_states.bed`                                | bed file containing allele specific copy number values with coverage information                   |
-| `{ploidy}_{purity}_{confidence}/bed_output/loh_regions.bed`                                            | bed file containing positions of loss of heterozygosity regions                                    |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_1.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 1               |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_2.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 2               |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.html`                                 | html based plotly plot of copy number and coverage for individual chromosomes                      |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.pdf`                                  | pdf based plotly plot of copy number and coverage for individual chromosomes                       |
-| `{ploidy}_{purity}_{confidence}/variation_plots/CN_VARIATION_INDEX.html`                               | unclear html plot                                                                                  |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.html`               | html plots of copy number variations in highlighted genes                                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf`                | pdf plots of copy number variations in highlighted genes                                           |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html` | genome-wide html copy number plots with coverage information on same axis                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf`  | genome-wide pdf copy number plots with coverage information on same axis                           |
-| `coverage_data/{0-23}_SNP.csv`                                                                         | CSV of coverage data per chromosome                                                                |
-| `coverage_data/coverage_ps.csv`                                                                        | CSV of overall haplotype specific coverage data                                                    |
-| `coverage_data/coverage.csv`                                                                           | CSV of overall coverage data                                                                       |
-| `coverage_data/phase_corrected_coverage.csv`                                                           | CSV of overall phase-corrected coverage data                                                       |
-| `coverage_data/pileup_SNPs.csv`                                                                        | CSV of SNP pileup data                                                                             |
-| `coverage_plots/chr{1-22,X,Y}_cov.html`                                                                | chromosome specific html coverage plots                                                            |
-| `coverage_plots/chr{1-22,X,Y}_cov.pdf`                                                                 | chromosome specific pdf coverage plots                                                             |
-| `coverage_plots/COVERAGE_INDEX.html`                                                                   | unclear html plot                                                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_0.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                                    |
-| `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                                 |
-| `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                                       |
-| `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                                 |
-| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                           | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
-| `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                                             |
-| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                              |
-| `sample_optimized_peak.html`                                                                           | optimization peak plot                                                                             |
-| `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                                          |
+| File                                                                      | Description                                                                                                                                                                                               |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.bed`             | Integer copy-number segments for one purity/ploidy solution, both haplotypes on shared boundaries: coverage, copy-number state and confidence per haplotype, and the IDs of SV breakpoints in the segment |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.vcf`             | The integer copy-number segments as VCF                                                                                                                                                                   |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.html`            | Interactive genome-wide plot of the integer copy-number profile with SV breakpoints (`.pdf`: static version)                                                                                              |
+| `solution_{ploidy}_{purity}_{confidence}/subclonal_profile.*`             | The same for subclonal copy-number states (`.bed`, `.vcf`, `.html`, `.pdf`)                                                                                                                               |
+| `solution_{ploidy}_{purity}_{confidence}/genes/genes_copynumber_states.*` | Copy-number states of the genes of interest (`.bed`) and their plots (`.html`, `.pdf`)                                                                                                                    |
+| `solution_{ploidy}_{purity}_{confidence}/HiScanner_plots_data.zip`        | The solution's profiles, coverage, BAF and breakpoints bundled for the [Wakhan visualisation web viewer](https://wakhan-visualization.github.io/)                                                         |
+| `solution_rank_{rank}`                                                    | The solution of that rank in `solutions_ranks.tsv` (a copy of its `solution_{ploidy}_{purity}_{confidence}` directory)                                                                                    |
+| `coverage_data/*.csv`                                                     | Per-chromosome SNP tables, BAF, haplotype-specific and phase-corrected coverage, and SNP pileups; tumour-only runs also write `{sample}_loh_segments.csv`                                                 |
+| `coverage_data/*.png`                                                     | Copy-number coverage and peak plots                                                                                                                                                                       |
+| `coverage_plots/chr{1-22,X,Y}_cov.html`                                   | Coverage plot per chromosome (`.pdf`: static version); `COVERAGE_INDEX.html` links them                                                                                                                   |
+| `phasing_output/*.html`                                                   | Phase-switch error plots per chromosome, with and without correction; `PHASE_CORRECTION_INDEX.html` links them                                                                                            |
+| `phasing_output/rephased.vcf.gz`                                          | Phase-corrected SNP VCF, with its `.csi` index                                                                                                                                                            |
+| `snps_loh_plots/{sample}_genome_snps_ratio_loh.html`                      | SNP allele ratios and loss-of-heterozygosity regions (tumour-only runs)                                                                                                                                   |
+| `{sample}_heatmap_ploidy_purity.html`                                     | Heatmap of the purity/ploidy fit (`.html.pdf`: static version)                                                                                                                                            |
+| `solutions_ranks.tsv`                                                     | Ranked purity/ploidy solutions; `repository_name` is the solution's directory                                                                                                                             |
 
 </details>
 

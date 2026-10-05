@@ -3,9 +3,9 @@ process SEVERUS {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/severus:1.6--pyhdfd78af_0':
-        'biocontainers/severus:1.6--pyhdfd78af_0' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8f/8fd0858ee067f8b95246e57683a7431bc126929b4203fbda8e315cd94d2570ad/data':
+        'community.wave.seqera.io/library/severus:1.7--d16d59609ef4ee7d' }"
 
     input:
     tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
@@ -20,15 +20,14 @@ process SEVERUS {
     tuple val(meta), path("${prefix}/severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
     tuple val(meta), path("${prefix}/severus_LOH.bed")                          , emit: loh                              , optional: true
     tuple val(meta), path("${prefix}/all_SVs/severus_all.vcf.gz")               , emit: all_vcf                          , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")     , emit: all_breakpoints_clusters_list    , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")          , emit: all_breakpoints_clusters         , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/plots/severus*.html")              , emit: all_plots                        , optional: true
     tuple val(meta), path("${prefix}/somatic_SVs/severus_somatic.vcf.gz")       , emit: somatic_vcf                      , optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
-    path "versions.yml"                                                         , emit: versions
-
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv") , emit: somatic_breakpoints_clusters_list, optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")      , emit: somatic_breakpoints_clusters     , optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/plots/severus*.html")          , emit: somatic_plots                    , optional: true
+    tuple val("${task.process}"), val('severus'), eval("severus --version"), emit: versions_severus, topic: versions
     when:
     task.ext.when == null || task.ext.when
 
@@ -56,11 +55,6 @@ process SEVERUS {
     tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
     bgzip ${prefix}/all_SVs/severus_all.vcf
     tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        severus: \$(severus --version)
-    END_VERSIONS
     """
 
     stub:
@@ -87,10 +81,5 @@ process SEVERUS {
     touch ${prefix}/somatic_SVs/breakpoints_clusters.tsv
     touch ${prefix}/somatic_SVs/plots/severus_0.html
     touch ${prefix}/somatic_SVs/plots/severus_1.html
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        severus: \$(severus --version)
-    END_VERSIONS
     """
 }

@@ -1,0 +1,294 @@
+Changes in component 'nf-core/bcftools/view'
+Changes in 'bcftools/view/environment.yml':
+--- modules/nf-core/bcftools/view/environment.yml
++++ modules/nf-core/bcftools/view/environment.yml
+@@ -5,6 +5,6 @@
+   - bioconda
+ dependencies:
+   # renovate: datasource=conda depName=bioconda/bcftools
+-  - bioconda::bcftools=1.23.1
++  - bioconda::bcftools=1.24
+   # renovate: datasource=conda depName=bioconda/htslib
+-  - bioconda::htslib=1.23.1
++  - bioconda::htslib=1.24
+
+'modules/nf-core/bcftools/view/meta.yml' is unchanged
+Changes in 'bcftools/view/main.nf':
+--- modules/nf-core/bcftools/view/main.nf
++++ modules/nf-core/bcftools/view/main.nf
+@@ -3,9 +3,9 @@
+     label 'process_medium'
+ 
+     conda "${moduleDir}/environment.yml"
+-    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
+-        : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
++    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
++        'https://depot.galaxyproject.org/singularity/bcftools:1.24--h118bc1c_2' :
++        'quay.io/biocontainers/bcftools:1.24--h118bc1c_2' }"
+ 
+     input:
+     tuple val(meta), path(vcf), path(index)
+
+'modules/nf-core/bcftools/view/tests/nextflow.config' is unchanged
+'modules/nf-core/bcftools/view/tests/vcf_gz_index_tbi.config' is unchanged
+'modules/nf-core/bcftools/view/tests/vcf_gz_index.config' is unchanged
+'modules/nf-core/bcftools/view/tests/main.nf.test' is unchanged
+'modules/nf-core/bcftools/view/tests/vcf_gz_index_csi.config' is unchanged
+Changes in 'bcftools/view/tests/main.nf.test.snap':
+--- modules/nf-core/bcftools/view/tests/main.nf.test.snap
++++ modules/nf-core/bcftools/view/tests/main.nf.test.snap
+@@ -24,7 +24,7 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -49,15 +49,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:45:16.225112",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:14.996346377",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_tbi": {
+@@ -85,15 +85,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:44:45.565621",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:02.253704645",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index - stub": {
+@@ -121,7 +121,7 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -146,15 +146,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:45:09.894603",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:11.83333367",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_tbi - stub": {
+@@ -182,7 +182,7 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -207,15 +207,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:45:22.083172",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:18.137743749",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], vcf, tsv, []": {
+@@ -234,15 +234,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-03-20T18:23:19.908213867",
+-        "meta": {
+-            "nf-test": "0.9.4",
+-            "nextflow": "25.10.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:05.56315404",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - stub": {
+@@ -253,15 +253,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-03-20T18:23:28.40103319",
+-        "meta": {
+-            "nf-test": "0.9.4",
+-            "nextflow": "25.10.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:44:08.755172653",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index": {
+@@ -289,15 +289,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:44:32.872424",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:55.775864105",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], []": {
+@@ -316,15 +316,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-03-20T18:22:45.088231326",
+-        "meta": {
+-            "nf-test": "0.9.4",
+-            "nextflow": "25.10.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:52.582744112",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_csi": {
+@@ -352,15 +352,15 @@
+                     [
+                         "BCFTOOLS_VIEW",
+                         "bcftools",
+-                        "1.23.1"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "timestamp": "2026-05-28T14:44:39.144211",
+-        "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.2"
++                        "1.24"
++                    ]
++                ]
++            }
++        ],
++        "timestamp": "2026-10-01T14:43:59.012753902",
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     }
+-}+}
+
+************************************************************

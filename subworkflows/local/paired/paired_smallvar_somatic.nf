@@ -74,7 +74,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.
-        def clairs_vcf = BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.tbi)
+        def clairs_vcf = BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.index)
         if (params.smallvar_filter_pass) {
             CLAIRS_PASS_FILTER ( clairs_vcf, [], [], [] )
             clairs_vcf = CLAIRS_PASS_FILTER.out.vcf
