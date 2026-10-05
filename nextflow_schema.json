@@ -407,20 +407,20 @@
                     "type": "string",
                     "enum": ["hg38", "chm13", "mm10"],
                     "description": "Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default: inferred from `--genome`.",
-                    "help_text": "GRCh38 -> hg38, CHM13 -> chm13. Padfoot bundles gene and repeat annotations for hg38 and mm10 only; chm13 and other presets need `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning."
+                    "help_text": "GRCh38 -> hg38, CHM13 -> chm13. It must describe the same assembly as `--genome`: a different preset on GRCh38 or CHM13 stops the run at start-up. Padfoot bundles gene and repeat annotations for hg38 and mm10 only; chm13 and other presets need `--padfoot_gff` and `--padfoot_rm` for that assembly, otherwise Padfoot is skipped with a warning."
                 },
                 "padfoot_gff": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "help_text": "Custom GFF3 gene annotation for Padfoot. Padfoot bundles annotations for the `hg38` and `mm10` presets only; for any other preset (e.g. `chm13`) pass both `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.",
+                    "help_text": "Custom GENCODE-style GFF3 gene annotation for Padfoot (plain or gzipped), on the same assembly as `--genome`. Padfoot bundles annotations for the `hg38` and `mm10` presets only; for any other preset (e.g. `chm13`) pass both `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.",
                     "description": "Custom GFF3 gene annotation for Padfoot"
                 },
                 "padfoot_rm": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "help_text": "Custom RepeatMasker annotation (`.fa.out` or BED) for Padfoot. Needed together with `--padfoot_gff` for presets other than `hg38`/`mm10`; otherwise Padfoot is skipped with a warning.",
+                    "help_text": "Custom repeat annotation for Padfoot: RepeatMasker `.out` / `.fa.out`, or a BED with chromosome, start, end and repeat class/family (plain or gzipped), on the same assembly as `--genome`. Needed together with `--padfoot_gff` for presets other than `hg38`/`mm10`; otherwise Padfoot is skipped with a warning.",
                     "description": "Custom RepeatMasker annotation (.fa.out / BED) for Padfoot"
                 },
                 "padfoot_run_repeatmasker": {

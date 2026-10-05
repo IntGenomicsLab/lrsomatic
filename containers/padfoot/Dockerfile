@@ -33,8 +33,8 @@ RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
 
 # Padfoot itself is not on bioconda: install the pinned Tim-Yu/Padfoot commit (SAVANA input support) as source
 # under /opt/padfoot, so the PADFOOT module needs no run-time download. Bump = new commit + checksum here, rebuild, push both images, bump the tags.
-ARG PADFOOT_COMMIT=3846215096dc58f1e5c67084b74b56c857097885
-ADD --checksum=sha256:61b9b10f70fd401562b57245480bb7fdf1dec82eb24e8bb15870e00bf8ca8c07 \
+ARG PADFOOT_COMMIT=1748e849f511caa7c90a2379a2e1fd8893b95a1f
+ADD --checksum=sha256:93b1dbbae2f69bea72c47d990d93a2333f592f6e0ec9f893906d043b30a1d6b6 \
     https://github.com/Tim-Yu/Padfoot/archive/${PADFOOT_COMMIT}.tar.gz /tmp/padfoot.tar.gz
 
 USER root

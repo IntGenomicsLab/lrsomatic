@@ -22,3 +22,10 @@ two breakend pairs (`++` and `+-`). Sample name `test`.
 Regenerate with `python3 make_fixtures.py` (the reference slice itself comes from
 `samtools faidx Homo_sapiens_assembly38.fasta chr19:1-2000000 | sed '1s/.*/>chr19/'`, then `samtools faidx`;
 the Severus VCF is `bgzip`ped afterwards).
+
+`custom_annotation/` holds the same chr19 slice's genes and repeats in the formats a user brings for a genome without bundled
+Padfoot annotations (the `--padfoot_gff` / `--padfoot_rm` route, e.g. CHM13): `chr19_1-2Mb.gff3.gz`, a GENCODE-style GFF3 of
+every gene in the slice re-expanded from Padfoot's bundled hg38 table (plus CDS rows, a shorter decoy transcript per
+multi-exon gene and a lncRNA that Padfoot must ignore), and `chr19_1-2Mb_rm.fa.out.gz`, the slice's bundled repeats in
+RepeatMasker `.out` layout. Annotating the fixture SVs with them gives the same genes and repeat classes as the bundled hg38
+annotations.

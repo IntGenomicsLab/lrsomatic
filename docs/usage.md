@@ -404,7 +404,7 @@ Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support n
 
 [Padfoot](https://github.com/KolmogorovLab/Padfoot) annotates somatic SVs and CNAs with gene/exon overlap, repeat context and complex-SV grouping. It is run for every available SV/CNA caller pair, for paired and tumour-only samples alike:
 
-- `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked (`solution_1`) Wakhan integer copy-number VCF (requires Wakhan not skipped)
+- `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked Wakhan solution's integer copy-number profile (`solution_rank_1/integer_profile.vcf`; requires Wakhan not skipped)
 - `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
 
 Padfoot is not distributed on bioconda. The module's image (`docker.io/timmy9527/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
@@ -413,7 +413,7 @@ RepeatMasker (used only to classify the sequence of novel insertions) runs by de
 
 Gene copy number in `by_gene.tsv` is labelled against the tumour ploidy: the module passes the CN caller's fitted purity/ploidy table (Wakhan `solutions_ranks.tsv`, SAVANA `*_fitted_purity_ploidy.tsv`) and Padfoot compares each haplotype's integer copy number with ploidy/2 (SAVANA's fractional major/minor copy numbers are rounded first). Without a fit table Padfoot estimates the ploidy from the profile and says so in `padfoot.log`; segments without a minor-allele estimate are reported as `NA`.
 
-Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` (a GENCODE-style GFF3, plain or gzipped) and `--padfoot_rm` (a RepeatMasker `.out`, or a BED of chromosome, start, end and repeat class), both on the same assembly as `--genome`; otherwise Padfoot is skipped with a warning. `--padfoot_genome` must match `--genome` (hg38 annotations on CHM13 coordinates would be wrong), so a mismatch stops the run at start-up.
 
 | Parameter                    | Description                                                                                                                                                     |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -427,7 +427,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 [ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`docker.io/timmy9527/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
 
 - `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
-- `severus_wakhan/` -- Wakhan top-ranked solution CN + Severus somatic SVs
+- `severus_wakhan/` -- Wakhan top-ranked solution CN (`solution_rank_1/integer_profile.bed`) + Severus somatic SVs
 - `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs
 
 Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track.

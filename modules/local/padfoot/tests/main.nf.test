@@ -135,6 +135,51 @@ nextflow_process {
         }
     }
 
+    test("severus + wakhan - real, custom --gff/--rm (chm13 preset)") {
+
+        // the route for a genome without bundled Padfoot annotations (e.g. CHM13): a GENCODE-style GFF3.gz and a
+        // RepeatMasker .out for the same assembly; on the fixture they must give the bundled hg38 annotation
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data:'test' ],
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true),
+                    'severus',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solution_rank_1/integer_profile.vcf", checkIfExists: true),
+                    'wakhan',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solutions_ranks.tsv", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ]
+                input[2] = [ [ id:'ref' ], file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ]
+                input[3] = [ [:], 'chm13',
+                             file("${projectDir}/tests/fixtures/padfoot_reconplot/custom_annotation/chr19_1-2Mb.gff3.gz", checkIfExists: true),
+                             file("${projectDir}/tests/fixtures/padfoot_reconplot/custom_annotation/chr19_1-2Mb_rm.fa.out.gz", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            def svs = path(process.out.annotated_svs.get(0).get(1)).readLines()
+            def svs_by_id = svs.drop(1).collectEntries { line -> def f = line.split('\t', -1); [(f[0]): f] }
+            def log_text = path(process.out.log.get(0).get(1)).text
+            assertAll(
+                { assert process.success },
+                { assert log_text.contains('Prepared GFF annotations') && log_text.contains('Prepared RepeatMasker annotations') },
+                { assert svs_by_id.keySet() == ['severus_BND1_1', 'severus_BND2_1', 'severus_INS1', 'severus_INS2', 'severus_DEL1', 'severus_DUP1'] as Set },
+                { assert svs_by_id['severus_DEL1'][9] == 'HIGH_ONCO' && svs_by_id['severus_DEL1'][11] == 'STK11' && svs_by_id['severus_DEL1'][20] == 'between_exons' },
+                { assert svs_by_id['severus_INS1'][11] == 'SBNO2' && svs_by_id['severus_INS1'][12] == 'downstream' },
+                // breakpoint repeat classes come from the custom .out (the Alu insertion's site, the DUP's LINE/L2 start)
+                { assert svs_by_id['severus_INS2'][14] == 'SINE/Alu' && svs_by_id['severus_DUP1'][14] == 'LINE/L2' },
+                { assert snapshot(
+                    process.out.annotated_svs,
+                    process.out.by_gene,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
     test("savana + savana - real, RepeatMasker off") {
 
         when {
