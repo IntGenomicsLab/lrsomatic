@@ -18,7 +18,7 @@ The module does not support `-profile conda`: the image ships the tool, not just
 Build and publish from the pipeline root:
 
 ```bash
-TAG=4.2.4-dfam4-padfoot-<padfoot commit>   # e.g. 4.2.4-dfam4-padfoot-25fd6d4
+TAG=4.2.4-dfam4-padfoot-<padfoot commit>   # e.g. 4.2.4-dfam4-padfoot-3846215
 docker build -f containers/padfoot/Dockerfile -t "docker.io/timmy9527/padfoot-repeatmasker:$TAG" .
 docker push "docker.io/timmy9527/padfoot-repeatmasker:$TAG"
 # the SIF twin, built from the image just pushed (by digest, so it is exactly the published image) and published with ORAS

@@ -107,6 +107,10 @@ nextflow_process {
                 { assert svs_by_id.keySet() == ['severus_BND1_1', 'severus_BND2_1', 'severus_INS1', 'severus_INS2', 'severus_DEL1', 'severus_DUP1'] as Set },
                 // the STK11 exon deletion is the high-impact TSG hit; the Alu insertion sits in an ABCA7 intron and maps back to its source
                 { assert svs_by_id['severus_DEL1'][9] == 'HIGH_ONCO' && svs_by_id['severus_DEL1'][11] == 'STK11' },
+                // both ends in STK11 (intron 3 -> exon 10): an exon-removing event, not an annotation of one breakend only
+                { assert svs_by_id['severus_DEL1'][20] == 'between_exons' && svs_by_id['severus_DEL1'][12] == 'intron3' && svs_by_id['severus_DEL1'][17] == 'exon10' },
+                // SBNO2 is on the minus strand, so the templated insertion lies in its 3' flank
+                { assert svs_by_id['severus_INS1'][11] == 'SBNO2' && svs_by_id['severus_INS1'][12] == 'downstream' },
                 { assert svs_by_id['severus_INS2'][11] == 'ABCA7' && svs_by_id['severus_INS2'][24].startsWith('chr19:') },
                 // RepeatMasker classified the Alu copy (Padfoot >= 25fd6d4 keeps the last query's hits; the masked length it
                 // reports is end - begin, i.e. 299 for the 300 bp copy -- an upstream off-by-one, so only the class is asserted)
@@ -154,7 +158,7 @@ nextflow_process {
                 { assert process.success },
                 // SAVANA breakend pairs are reported once under the shared ID; the <INS> record has no sequence to map
                 { assert svs_by_id.keySet() == ['ID_1', 'ID_2', 'ID_3', 'ID_4', 'ID_5'] as Set },
-                { assert svs_by_id['ID_1'][9] == 'HIGH_ONCO' && svs_by_id['ID_1'][11] == 'STK11' },
+                { assert svs_by_id['ID_1'][9] == 'HIGH_ONCO' && svs_by_id['ID_1'][11] == 'STK11' && svs_by_id['ID_1'][20] == 'between_exons' },
                 { assert svs_by_id['ID_1'][7] == '+-' && svs_by_id['ID_2'][7] == '-+' && svs_by_id['ID_4'][7] == '++' && svs_by_id['ID_5'][7] == '--' },
                 // SAVANA copy numbers are rounded before labelling against the fitted ploidy: the gain region is AMP on HP1, the loss NEUT/DEL
                 { assert path(process.out.by_gene.get(0).get(1)).readLines().find { l -> l.startsWith('TCF3\t') }?.split('\t')?.getAt(4) == 'AMP' },

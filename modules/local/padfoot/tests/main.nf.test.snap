@@ -96,7 +96,7 @@
                         "id": "test",
                         "paired_data": "test"
                     },
-                    "annotated_svs.tsv:md5,9f475f923558b350e80357b2ecf035bf"
+                    "annotated_svs.tsv:md5,54ac3095ab253beb505734808e5de700"
                 ]
             ],
             [
@@ -105,7 +105,7 @@
                         "id": "test",
                         "paired_data": "test"
                     },
-                    "by_gene.tsv:md5,6feb2e809b66998c71f92795a68e621c"
+                    "by_gene.tsv:md5,16c385583d88142094c7a58f04d8ebe3"
                 ]
             ],
             "padfoot.log",
@@ -117,7 +117,7 @@
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-10-02T19:58:40.27272395"
+        "timestamp": "2026-10-05T11:40:21.928998457"
     },
     "severus + wakhan - stub": {
         "content": [
@@ -216,7 +216,7 @@
                         "id": "test",
                         "paired_data": "test"
                     },
-                    "annotated_svs.tsv:md5,d3e2afc034cc9ef352b71a4429e1c9b4"
+                    "annotated_svs.tsv:md5,ef1ddb2bfd7bd65eec0cb6fdf9e20431"
                 ]
             ],
             [
@@ -225,7 +225,7 @@
                         "id": "test",
                         "paired_data": "test"
                     },
-                    "by_gene.tsv:md5,d083b557e147fd6efebe12ef7715dcc6"
+                    "by_gene.tsv:md5,54ba7cf8fdb83e6d7cc37af4b339921e"
                 ]
             ],
             "padfoot.log",
@@ -237,6 +237,6 @@
             "nf-test": "0.9.2",
             "nextflow": "25.10.7"
         },
-        "timestamp": "2026-10-02T19:58:57.78479389"
+        "timestamp": "2026-10-05T11:40:36.90738928"
     }
 }

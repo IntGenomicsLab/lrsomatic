@@ -7,8 +7,8 @@ process PADFOOT {
     // Dfam 4.0 root and curated-consensus partitions. Padfoot update = new commit in the Dockerfile, rebuild, bump these two tags.
     // Override per site with `process { withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = ... } }`.
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://docker.io/timmy9527/padfoot-repeatmasker-sif:4.2.4-dfam4-padfoot-25fd6d4'
-        : 'docker.io/timmy9527/padfoot-repeatmasker:4.2.4-dfam4-padfoot-25fd6d4'}"
+        ? 'oras://docker.io/timmy9527/padfoot-repeatmasker-sif:4.2.4-dfam4-padfoot-3846215'
+        : 'docker.io/timmy9527/padfoot-repeatmasker:4.2.4-dfam4-padfoot-3846215'}"
 
     input:
     // ploidy_file: the CN caller's fitted purity/ploidy table (SAVANA *_fitted_purity_ploidy.tsv, Wakhan
