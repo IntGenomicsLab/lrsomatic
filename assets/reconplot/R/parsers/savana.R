@@ -104,7 +104,13 @@ bedpe_point <- function(start, end) {
 }
 
 savana_read_sv_bedpe <- function(file, min_support = 0, min_svlen = 0) {
+  ## SAVANA always writes the file; it is empty for a sample without somatic SVs (copy number is still drawn)
+  if (!file.exists(file) || file.info(file)$size == 0) {
+    log_msg("  SAVANA BEDPE ", basename(file), " is empty: no somatic SVs")
+    return(savana_empty_sv())
+  }
   df <- data.table::fread(file, sep = "\t", header = FALSE, data.table = FALSE)
+  if (nrow(df) == 0) return(savana_empty_sv())
   if (ncol(df) < 7) stop("SAVANA BEDPE ", basename(file), " has fewer than 7 columns")
   names(df)[1:7] <- c("chrom1", "start1", "end1", "chrom2", "start2", "end2", "name")
   info <- savana_split_bedpe_name(df$name)

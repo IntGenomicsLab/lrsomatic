@@ -338,9 +338,17 @@ def padfootAnnotationOk() {
 // Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
 //
 def validateSvAnnotationParams() {
+    // --padfoot_genome must describe the same assembly as --genome: hg38 genes and repeats on CHM13 (T2T) coordinates
+    // would be silently wrong annotations
+    def genome_preset = params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null
+    if (!params.skip_padfoot && genome_preset && params.padfoot_genome && params.padfoot_genome != genome_preset) {
+        error("--padfoot_genome ${params.padfoot_genome} does not match --genome ${params.genome} (expected ${genome_preset}). " +
+            "Padfoot's annotations must be on the same assembly as the alignments.")
+    }
     if (!params.skip_padfoot && !padfootAnnotationOk()) {
-        log.warn "Padfoot will be skipped: no annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
-            "Set --padfoot_genome hg38|mm10, or set --padfoot_genome together with --padfoot_gff and --padfoot_rm."
+        log.warn "Padfoot will be skipped: no bundled annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
+            "Padfoot bundles hg38 and mm10; for any other assembly give gene and repeat annotations for that assembly with " +
+            "--padfoot_gff and --padfoot_rm (and --padfoot_genome for a genome lrsomatic cannot infer)."
     }
 
     if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {

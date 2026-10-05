@@ -27,7 +27,7 @@ RUN micromamba create --yes --name padfoot --file /tmp/environment.yml \
     && RepeatMasker -species human -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
     && test -s /tmp/repeatmasker-smoke/input.fa.out \
     && rm -f /tmp/repeatmasker-smoke/input.fa.* \
-    && RepeatMasker -species "Mus musculus" -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
+    && RepeatMasker -species mus_musculus -dir /tmp/repeatmasker-smoke /tmp/repeatmasker-smoke/input.fa \
     && test -s /tmp/repeatmasker-smoke/input.fa.out \
     && rm -rf /tmp/dfam40.* /tmp/repeatmasker-smoke
 

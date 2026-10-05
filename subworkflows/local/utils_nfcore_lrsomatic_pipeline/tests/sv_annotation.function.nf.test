@@ -54,6 +54,47 @@ nextflow_function {
         }
     }
 
+    test("validateSvAnnotationParams rejects a --padfoot_genome on another assembly than --genome") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'CHM13'
+                skip_padfoot      = false
+                padfoot_genome    = 'hg38'
+                skip_reconplot    = true
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('--padfoot_genome hg38 does not match --genome CHM13') } }
+            )
+        }
+    }
+
+    test("validateSvAnnotationParams accepts --padfoot_genome chm13 with custom annotations on CHM13") {
+
+        function "validateSvAnnotationParams"
+
+        when {
+            params {
+                genome            = 'CHM13'
+                skip_padfoot      = false
+                padfoot_genome    = 'chm13'
+                padfoot_gff       = "${projectDir}/README.md"
+                padfoot_rm        = "${projectDir}/README.md"
+                skip_reconplot    = true
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
     test("validateSvAnnotationParams rejects a region that is not chr or chr:start-end") {
 
         function "validateSvAnnotationParams"
