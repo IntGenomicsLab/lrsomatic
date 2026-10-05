@@ -42,6 +42,9 @@ repos:
     hooks:
       - id: nextflow-lint
         files: '\.nf$|nextflow\.config$'
+        # nf-core component tests are nf-core/modules' own; some include modules this pipeline does not install
+        # (subworkflows/nf-core/deepvariant/tests includes deepvariant/rundeepvariant)
+        exclude: "^(modules|subworkflows)/nf-core/.*/tests/"
         args: ["-output", "json"]
   - repo: local
     hooks:

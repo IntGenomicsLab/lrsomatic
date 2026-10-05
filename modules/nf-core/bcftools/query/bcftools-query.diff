@@ -1,8 +1,34 @@
 Changes in component 'nf-core/bcftools/query'
+Changes in 'bcftools/query/environment.yml':
+--- modules/nf-core/bcftools/query/environment.yml
++++ modules/nf-core/bcftools/query/environment.yml
+@@ -5,6 +5,6 @@
+   - bioconda
+ dependencies:
+   # renovate: datasource=conda depName=bioconda/bcftools
+-  - bioconda::bcftools=1.23.1
++  - bioconda::bcftools=1.24
+   # renovate: datasource=conda depName=bioconda/htslib
+-  - bioconda::htslib=1.23.1
++  - bioconda::htslib=1.24
+
 'modules/nf-core/bcftools/query/meta.yml' is unchanged
 Changes in 'bcftools/query/main.nf':
 --- modules/nf-core/bcftools/query/main.nf
 +++ modules/nf-core/bcftools/query/main.nf
+@@ -3,9 +3,9 @@
+     label 'process_single'
+ 
+     conda "${moduleDir}/environment.yml"
+-    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
+-        : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
++    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
++        'https://depot.galaxyproject.org/singularity/bcftools:1.24--h118bc1c_2' :
++        'quay.io/biocontainers/bcftools:1.24--h118bc1c_2' }"
+ 
+     input:
+     tuple val(meta), path(vcf), path(tbi)
 @@ -14,7 +14,8 @@
      path samples
  
@@ -33,8 +59,7 @@ Changes in 'bcftools/query/main.nf':
      """
  }
 
-'modules/nf-core/bcftools/query/environment.yml' is unchanged
+'modules/nf-core/bcftools/query/tests/nextflow.config' is unchanged
 'modules/nf-core/bcftools/query/tests/main.nf.test' is unchanged
 'modules/nf-core/bcftools/query/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/bcftools/query/tests/nextflow.config' is unchanged
 ************************************************************

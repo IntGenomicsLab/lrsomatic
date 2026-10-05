@@ -1,4 +1,5 @@
 include { SIGPROFILER_INSTALL } from '../../modules/local/sigprofiler/install/main'
+include { SIGPROFILER_VERIFY  } from '../../modules/local/sigprofiler/verify/main'
 
 workflow PREPARE_SIGNATURES {
 
@@ -26,7 +27,16 @@ workflow PREPARE_SIGNATURES {
             if (n_chrom < 24) {
                 error("${tsb_dir} holds ${n_chrom} of the 24 chromosome files of a complete ${genome} install.")
             }
-            sigprofiler_volume = channel.value(file(genome_dir, type: 'dir', checkIfExists: true))
+            //
+            // MODULE: SIGPROFILER_VERIFY (label: process_single) -- checksums once, so a stale payload fails before any sample
+            //
+            def volume_dir = file(genome_dir, type: 'dir', checkIfExists: true)
+            SIGPROFILER_VERIFY (
+                volume_dir,
+                genome
+            )
+            // Hand on the user's directory itself, released only once it has been verified
+            sigprofiler_volume = SIGPROFILER_VERIFY.out.verified.map { _verified -> volume_dir }
         }
         else if (download_genome) {
             //
@@ -41,7 +51,7 @@ workflow PREPARE_SIGNATURES {
         else {
             error("No SigProfilerMatrixGenerator payload for ${genome}: pass --sigprofiler_genome_dir <dir containing tsb/${genome}/>, leave --download_sigprofiler_genome on (the default), or use --skip_signatures.")
         }
-        // sigprofiler_volume: path -- SigProfilerMatrixGenerator volume root (downloaded or validated local)
+        // sigprofiler_volume: path -- SigProfilerMatrixGenerator volume root (downloaded or verified local)
 
     emit:
         volume   = sigprofiler_volume  // path -- volume directory containing tsb/<genome>/

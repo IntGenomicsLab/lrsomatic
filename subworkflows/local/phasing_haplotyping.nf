@@ -159,11 +159,11 @@ workflow PHASING_HAPLOTYPING {
     // Stamp each arm with an INFO provenance flag before the merge; LongPhase keeps it through phasing.
     //
     TAG_SOMATIC (
-        REJOIN_SOMATIC.out.vcf.join(REJOIN_SOMATIC.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+        REJOIN_SOMATIC.out.vcf.join(REJOIN_SOMATIC.out.index, failOnMismatch: true, failOnDuplicate: true),
         'SOMATIC'
     )
     TAG_GERMLINE(
-        REJOIN_GERMLINE.out.vcf.join(REJOIN_GERMLINE.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+        REJOIN_GERMLINE.out.vcf.join(REJOIN_GERMLINE.out.index, failOnMismatch: true, failOnDuplicate: true),
         'GERMLINE'
     )
 
@@ -336,7 +336,7 @@ workflow PHASING_HAPLOTYPING {
     SORT_SOMATIC_PHASED ( CONCAT_SOMATIC_UNPHASED.out.vcf )
 
     SORT_SOMATIC_PHASED.out.vcf
-        .join(SORT_SOMATIC_PHASED.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .join(SORT_SOMATIC_PHASED.out.index, failOnMismatch: true, failOnDuplicate: true)
         .set{ phased_somatic_vcf }
     // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- phased somatic-only VCF (germline removed)
 
@@ -459,13 +459,13 @@ workflow PHASING_HAPLOTYPING {
     //
     // MODULE: SAMTOOLS_INDEX (label: process_medium)
     // Input:  [meta, bam]  -- haplotagged BAM
-    // Output: .bai -- [meta, bai]
+    // Output: .index -- [meta, bai]
     //
     SAMTOOLS_INDEX (
         tumor_normal_hapbams_ch
     )
     tumor_normal_hapbams_ch
-        .join(SAMTOOLS_INDEX.out.bai)
+        .join(SAMTOOLS_INDEX.out.index)
         .set{ tumor_normal_hapbams_ch }
     // tumor_normal_hapbams_ch (final): [meta, bam, bai]  -- haplotagged BAM with index
 

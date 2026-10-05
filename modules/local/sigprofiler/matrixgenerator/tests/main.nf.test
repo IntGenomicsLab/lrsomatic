@@ -1,0 +1,55 @@
+nextflow_process {
+
+    name "Test Process SIGPROFILER_MATRIXGENERATOR"
+    script "../main.nf"
+    process "SIGPROFILER_MATRIXGENERATOR"
+
+    tag "modules"
+    tag "modules_local"
+    tag "sigprofiler"
+    tag "sigprofiler_matrixgenerator"
+    tag "small"
+
+    // No real payload fits in CI (~3 GB per genome), so this runs under -stub. The volume comes from
+    // PREPARE_SIGNATURES and is wired as in workflows/lrsomatic.nf, so every sample must receive it.
+    // The versions eval still runs in the pinned image, so its tag must resolve under each profile.
+
+    test("stub - the verified volume reaches every sample") {
+
+        options "-stub"
+
+        setup {
+            run("PREPARE_SIGNATURES") {
+                script "../../../../../subworkflows/local/prepare_signatures.nf"
+                workflow {
+                    """
+                    input[0] = 'CHM13-T2T'
+                    input[1] = null
+                    input[2] = "\${projectDir}/tests/fixtures/sigprofiler_stub_volume"
+                    input[3] = false
+                    """
+                }
+            }
+        }
+
+        when {
+            process {
+                """
+                def vcf = file("\${projectDir}/tests/fixtures/vcfsplit_indel.vcf", checkIfExists: true)
+                input[0] = channel.of([ [ id:'sample1' ], vcf ], [ [ id:'sample2' ], vcf ])
+                input[1] = PREPARE_SIGNATURES.out.volume.map { volume -> [ [:], volume ] }
+                input[2] = 'CHM13-T2T'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.sbs96.collect { meta, _matrix -> meta.id }.sort() == ['sample1', 'sample2'] },
+                { assert process.out.versions_sigprofilermatrixgenerator.size() == 2 },
+                { assert process.out.versions_sigprofilermatrixgenerator.every { _proc, _tool, version -> version ==~ /\d+\.\d+.*/ } }
+            )
+        }
+    }
+}

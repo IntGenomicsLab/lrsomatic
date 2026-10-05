@@ -190,7 +190,7 @@ workflow TUMORONLY_SMALLVAR {
         //
         // SUBWORKFLOW: DEEPVARIANT (nf-core)
         // Input:  [meta, bam, bai, []]  -- [] = genome-wide (no interval list)
-        //         fasta / fai / [[:],[]] x2  -- empty PAR/GFF
+        //         fasta / fai / [[:],[]] x2  -- no gzi, no PAR regions BED; with_phasing false
         // Output: .vcf       -- [meta, vcf]
         //         .vcf_index -- [meta, tbi]
         //
@@ -206,8 +206,9 @@ workflow TUMORONLY_SMALLVAR {
             deepvariant_input_ch,
             fasta,
             fai,
-            [[:],[]],  // PAR regions (not used)
-            [[:],[]]   // GFF annotation (not used)
+            [[:],[]],  // gzi: the FASTA is not bgzipped
+            [[:],[]],  // PAR regions BED (not used)
+            false      // with_phasing: LongPhase phases the calls downstream
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.
@@ -236,7 +237,7 @@ workflow TUMORONLY_SMALLVAR {
             // Output: .vcf/.index -- [meta, vcf.gz/tbi]  -- DeepSomatic records whose FILTER is neither PASS nor RefCall
             //
             DS_VERDICT_SITES (
-                DS_VERDICT_SPLIT_DS.out.vcf.join(DS_VERDICT_SPLIT_DS.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+                DS_VERDICT_SPLIT_DS.out.vcf.join(DS_VERDICT_SPLIT_DS.out.index, failOnMismatch: true, failOnDuplicate: true),
                 [], [], []
             )
 
@@ -245,9 +246,9 @@ workflow TUMORONLY_SMALLVAR {
             // Copies DeepSomatic's FILTER into INFO/DS_VERDICT on each matching DeepVariant record.
             //
             DS_VERDICT_SPLIT_DV.out.vcf
-                .join(DS_VERDICT_SPLIT_DV.out.tbi,  failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_SITES.out.vcf,     failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_SITES.out.index,   failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SPLIT_DV.out.index, failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SITES.out.vcf,       failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SITES.out.index,     failOnMismatch: true, failOnDuplicate: true)
                 .map { meta, vcf, tbi, annotations, annotations_index ->
                     def columns      = []  // no extra column specs
                     def header_lines = []  // no extra header lines
@@ -263,7 +264,7 @@ workflow TUMORONLY_SMALLVAR {
             // Keeps only the positively-adjudicated germline records (see ext.args in conf/modules.config).
             //
             DS_GERMLINE_SELECT (
-                DS_VERDICT_ANNOTATE.out.vcf.join(DS_VERDICT_ANNOTATE.out.tbi, failOnMismatch: true, failOnDuplicate: true),
+                DS_VERDICT_ANNOTATE.out.vcf.join(DS_VERDICT_ANNOTATE.out.index, failOnMismatch: true, failOnDuplicate: true),
                 [], [], []
             )
 
@@ -277,7 +278,7 @@ workflow TUMORONLY_SMALLVAR {
             )
 
             deepvariant_germline = DS_GERMLINE_REJOIN.out.vcf
-                .join(DS_GERMLINE_REJOIN.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_GERMLINE_REJOIN.out.index, failOnMismatch: true, failOnDuplicate: true)
         }
 
         deepvariant_germline

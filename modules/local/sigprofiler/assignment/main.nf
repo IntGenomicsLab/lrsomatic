@@ -4,8 +4,8 @@ process SIGPROFILER_ASSIGNMENT {
 
     // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-28a9ce8'
-        : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-28a9ce8'}"
+        ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-7894689'
+        : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-7894689'}"
 
     input:
     tuple val(meta), path(sbs96), path(dbs78), path(id83)   // SigProfilerMatrixGenerator matrices; any may be []
