@@ -12,7 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
-include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { validateClairstoCnaResources; validateSampleModels } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
 //
@@ -272,6 +272,12 @@ workflow LRSOMATIC {
     //   meta fields: id, paired_data, type, platform, sex, fiber, replicate,
     //                clair3_model, clairS_model, clairSTO_model, kinetics
     //   bams are grouped per sample (multiple runs merged into a list)
+
+    // Fail fast if a sample's BAMs resolve to different caller models; they key the pairing joins
+    ch_samplesheet
+        .map { meta, _bam -> meta }
+        .collect()
+        .map { metas -> validateSampleModels(metas) }
 
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES -- decompress and index the FASTA, fetch Clair3 models, unpack ASCAT references
@@ -542,7 +548,6 @@ workflow LRSOMATIC {
                             'clair3_model',
                             'clairS_model',
                             'clairSTO_model',
-                            'kinetics',
                             'n_replicates')
             // groupKey: release each sample as soon as its own replicates arrive, not when all samples have
             return [groupKey(new_meta, new_meta.n_replicates), bam, bai]
@@ -626,8 +631,7 @@ workflow LRSOMATIC {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, bam, bai]
         }
         .set{paired_normal_bams}
@@ -643,11 +647,11 @@ workflow LRSOMATIC {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, bam, bai]
         }
-        .join(paired_normal_bams)
+        // failOnMismatch: a tumor/normal meta drift must stop the run, not drop the pair
+        .join(paired_normal_bams, failOnMismatch: true)
         .set { somatic_smallvar_input }
     // somatic_smallvar_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
 
@@ -672,8 +676,7 @@ workflow LRSOMATIC {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
                 def normal_bam = []
                 def normal_bai = []
                 return [new_meta, normal_bam, normal_bai, bam, bai]
@@ -966,8 +969,7 @@ workflow LRSOMATIC {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, bam, bai]
         }
         .map{meta, tumor_bam, tumor_bai->
@@ -1134,7 +1136,7 @@ workflow LRSOMATIC {
         // so build its input from PHASING_HAPLOTYPING's haplotagged BAMs rather than the
         // unphased ones severus_input carries.
         def savana_meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber',
-            'clair3_model', 'clairS_model', 'clairSTO_model', 'kinetics']
+            'clair3_model', 'clairS_model', 'clairSTO_model']
 
         PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch
             .branch { meta, _bam, _bai ->
