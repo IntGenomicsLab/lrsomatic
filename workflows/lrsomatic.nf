@@ -28,6 +28,8 @@ include { NANOPLOT as NANOPLOT_PRE          } from '../modules/nf-core/nanoplot/
 include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/main'
 include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
 include { ASCAT                             } from '../modules/nf-core/ascat/main'
+include { ECDNA                             } from '../subworkflows/local/ecdna'
+include { PREPARE_AA_DATA_REPO              } from '../subworkflows/local/prepare_aa_data_repo'
 include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT                       } from '../modules/local/metaextract/main'
 include { CLAIRSTO_CNA_RESOURCES            } from '../modules/local/clairsto/cna_resources/main'
@@ -115,6 +117,9 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
+    params.coral_ref = getGenomeAttribute('coral_ref')
+    params.ac_ref = getGenomeAttribute('ac_ref')
+    params.aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
 
     // Resolved once here to avoid a HEAD request per default plugin URL, and passed straight to
     // the VEP tasks: conf/modules.config closures do not see a param assigned here.
@@ -132,6 +137,9 @@ workflow LRSOMATIC {
         ? params.somatic_var_keep
         : params.somatic_var_keep.tokenize(',').collect { it.trim() }
 
+    // Without --genome or --clairsto_pon_vcfs ClairS-TO falls back to its bundled GRCh38 PoNs
+    def pon_files = []
+    def pon_flags = []
     if (params.clairsto_pon_vcfs != null) {
         pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {
@@ -201,6 +209,15 @@ workflow LRSOMATIC {
     }
     // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
     build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
+
+    // CoRAL seeds from ASCAT's copy number, so it cannot run without it
+    if (!params.skip_coral && params.skip_ascat) {
+        error("CoRAL seeds from ASCAT's copy-number segments. Remove --skip_ascat, or add --skip_coral.")
+    }
+    // Gurobi needs a licence file; SCIP, the default, needs nothing
+    if (!params.skip_coral && params.coral_solver == 'gurobi_direct' && !params.gurobi_license) {
+        error("--coral_solver gurobi_direct needs a licence: pass --gurobi_license <path to gurobi.lic>, or use the default --coral_solver scip.")
+    }
 
     // A missing set would leave the join below waiting forever, so CLAIRSTO would silently never run
     if (build_clairsto_cna) {
@@ -661,6 +678,8 @@ workflow LRSOMATIC {
 
     ch_ascat_files = channel.empty()
     ascat_tumoronly_ch = channel.empty()
+    ch_ascat_cnvs = channel.empty()
+    ch_ecdna_tumor_bam = channel.empty()
 
     if (!params.skip_ascat) {
         branched_minimap.tumor_only
@@ -714,6 +733,17 @@ workflow LRSOMATIC {
             .join(ASCAT.out.segments_raw, remainder: true)
             .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
+
+        // CoRAL seeds from ASCAT's total copy number. Built from ascat_ch so the meta
+        // key matches ASCAT's output exactly and the joins in ECDNA pair.
+        ch_ascat_cnvs = ASCAT.out.cnvs
+        // ch_ascat_cnvs: [meta, cnvs_txt]
+
+        ch_ecdna_tumor_bam = ascat_ch
+            .map { meta, _normal_bam, _normal_bai, tumor_bam, tumor_bai ->
+                return [meta, tumor_bam, tumor_bai]
+            }
+        // ch_ecdna_tumor_bam: [meta, tumor_bam, tumor_bai]
     }
 
     // SUBWORKFLOW: TUMORONLY_SMALLVAR
@@ -937,13 +967,15 @@ workflow LRSOMATIC {
             params.sigprofiler_genome
         )
 
-        // DBS78 / ID83 matrices are only written when the sample carries such variants
-        SIGPROFILER_MATRIXGENERATOR.out.sbs96
+        // Each matrix is only written when the sample carries such variants; samples with none are dropped
+        SIGPROFILER_MATRIXGENERATOR.out.output_dir
+            .join(SIGPROFILER_MATRIXGENERATOR.out.sbs96, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
-            .map { meta, sbs96, dbs78, id83 -> [meta, sbs96, dbs78 ?: [], id83 ?: []] }
+            .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
+            .map { meta, _output_dir, sbs96, dbs78, id83 -> [meta, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
             .set { sigprofiler_matrices }
-        // sigprofiler_matrices: [meta, sbs96, dbs78 | [], id83 | []]
+        // sigprofiler_matrices: [meta, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
@@ -1187,10 +1219,10 @@ workflow LRSOMATIC {
             .set { tumoronly_savana_input }
         // tumoronly_savana_input: [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
 
-        ch_savana_contigs = channel.value([[:], params.savana_contigs])
+        ch_savana_contigs = channel.value([[:], params.savana_contigs ?: []])
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
-        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf])
+        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,
@@ -1277,6 +1309,44 @@ workflow LRSOMATIC {
             .join(WAKHAN.out.solution_dirs)
             .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
+    }
+
+    //
+    // SUBWORKFLOW: ECDNA -- CoRAL amplicon reconstruction, then AmpliconClassifier
+    // Input:  ch_ecdna_tumor_bam -- [meta, tumor_bam, tumor_bai]
+    //         ch_ascat_cnvs      -- [meta, cnvs_txt]
+    //         ch_fai             -- [[:], fai]
+    // Output: .classification -- [meta, tsv]  -- amplicon_classification_profiles.tsv
+    //
+
+    ch_ecdna_classification = channel.empty()
+
+    if (!params.skip_coral) {
+        // The data repo is only fetched when the classifier will actually use it
+        ch_aa_data_repo = channel.empty()
+        if (!params.skip_ampliconclassifier) {
+            // Overriding the repo or its URL drops the default MD5, which belongs to the published tarball
+            def aa_repo_overridden = params.aa_data_repo || params.aa_data_repo_url != getGenomeAttribute('aa_data_repo_url')
+            PREPARE_AA_DATA_REPO (
+                params.aa_data_repo,
+                params.aa_data_repo_url,
+                params.aa_data_repo_md5 ?: (aa_repo_overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
+            )
+            ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
+            ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)
+        }
+
+        ECDNA (
+            ch_ecdna_tumor_bam,
+            ch_ascat_cnvs,
+            ch_fai,
+            ch_aa_data_repo,
+            params.coral_ref,
+            params.ac_ref
+        )
+
+        ch_ecdna_classification = ECDNA.out.classification
+        // ch_ecdna_classification: [meta, tsv]
     }
 
     //

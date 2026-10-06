@@ -984,4 +984,192 @@ nextflow_function {
             )
         }
     }
+
+    // --- validateCondaSupport: container-only steps fail at launch under conda
+
+    test("validateCondaSupport names every container-only step left on under conda") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = true
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,conda'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains('modkit pileup, mutational signatures') } },
+                { assert function.stdout.any { line -> line.contains('--skip_modkit --skip_signatures') } }
+            )
+        }
+    }
+
+    test("validateCondaSupport passes under conda once those steps are skipped") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = true
+                skip_report = true
+                skip_signatures = true
+            }
+            function {
+                """
+                input[0] = 'mamba'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateCondaSupport ignores container profiles") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = false
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,singularity'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    // --- validateSmallvarCallers: caller lists are checked before workflows/lrsomatic.nf tokenises them
+
+    test("validateSmallvarCallers accepts both callers on each arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair, deepvariant'
+                somatic_var_keep  = 'deepsomatic,clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects an empty germline list") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = ''
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("--germline_var_keep: no caller given") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a trailing comma") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair,'
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("--germline_var_keep: empty entry") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a somatic caller on the germline arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'deepsomatic'
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                // DeepSomatic only adjudicates somatic calls
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("--germline_var_keep: 'deepsomatic' is not a valid caller") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a germline caller on the somatic arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair'
+                somatic_var_keep  = 'deepvariant'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("--somatic_var_keep: 'deepvariant' is not a valid caller") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a duplicated caller") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair'
+                somatic_var_keep  = 'clair, clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("--somatic_var_keep: 'clair' is listed more than once") } }
+            )
+        }
+    }
 }

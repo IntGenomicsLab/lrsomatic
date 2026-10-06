@@ -1,0 +1,38 @@
+nextflow_process {
+
+    name "Test Process AADATAREPO_DOWNLOAD"
+    script "../main.nf"
+    process "AADATAREPO_DOWNLOAD"
+
+    tag "small"
+    tag "modules"
+    tag "modules_local"
+    tag "aadatarepo_download"
+
+    // Stub only: a real run downloads the 1.1 GB repository
+    test("GRCh38 data repo - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'aa_data_repo' ],
+                    'https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/GRCh38.tar.gz',
+                    '2bcd1fdaed027466ed296bf78b2907eb'
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert file(process.out.archive[0][1]).name == 'GRCh38.tar.gz' },
+                { assert snapshot(process.out).match() }
+            )
+        }
+
+    }
+}

@@ -1,0 +1,43 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_CNV_SEEDS.bed:md5,f679880d9757f33af43363b38254f3f0"
+                    ]
+                ],
+                "1": [
+                    [
+                        "CORAL_SEED",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ],
+                "seeds": [
+                    [
+                        {
+                            "id": "sample1"
+                        },
+                        "sample1_CNV_SEEDS.bed:md5,f679880d9757f33af43363b38254f3f0"
+                    ]
+                ],
+                "versions_coral": [
+                    [
+                        "CORAL_SEED",
+                        "coral",
+                        "3.0.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-09-24T09:50:31.018971049"
+    }
+}

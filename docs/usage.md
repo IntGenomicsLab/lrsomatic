@@ -129,7 +129,7 @@ This cache carries gene and transcript models only, so every pathogenicity score
 
 Setting `--vep_genome T2T-CHM13v2.0` by hand, without `--genome CHM13`, resolves no plugin defaults — supply the `--vep_*` paths yourself, or accept VEP without plugin annotation.
 
-For mutational signatures, `--genome CHM13` selects the `CHM13-T2T` SigProfilerMatrixGenerator genome. Its payload is not on the AlexandrovLab FTP yet, so `--download_sigprofiler_genome` fetches it from the IntGenomicsLab Globus collection (`--sigprofiler_genome_url`); see [Mutational Signature Options](#mutational-signature-options).
+For mutational signatures, `--genome CHM13` selects the `CHM13-T2T` SigProfilerMatrixGenerator genome. Its payload is not on the AlexandrovLab FTP yet, so the default download fetches it from the IntGenomicsLab Globus collection (`--sigprofiler_genome_url`); see [Mutational Signature Options](#mutational-signature-options).
 
 For structural variants, the CHM13 panel of normals is a merged panel combining the 1000 Genomes CHM13 panel shipped with SEVERUS and the ASAP cohort, with median confidence intervals per breakpoint. The pipeline exposes it as `--pon_file` and hands it to SEVERUS via that tool's own `--PON` flag; it is downloaded automatically with `--genome CHM13`. GRCh38 continues to use the 1000 Genomes panel shipped with SEVERUS.
 
@@ -139,9 +139,10 @@ When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
 runs DeepVariant on the **tumour** BAM, so on its own those calls mix germline and
 clonal somatic variants. When `deepsomatic` is also in `--somatic_var_keep`, the
 pipeline records DeepSomatic's verdict at each site in `INFO/DS_VERDICT` and keeps
-DeepVariant's `PASS` calls only at sites it calls `GERMLINE` or `PON`, matching multi-allelic
-sites per ALT allele; `RefCall` and sites DeepSomatic never evaluated are dropped, whatever
-`--smallvar_filter_pass` is. Without `deepsomatic`, the DeepVariant germline calls are
+DeepVariant's `PASS` calls only at sites where DeepSomatic's `FILTER` includes `GERMLINE` or `PON`
+(several values are joined with `,`), matching multi-allelic sites per ALT allele; sites
+DeepSomatic calls `PASS` or `RefCall`, or never evaluated, are dropped, whatever
+`--smallvar_filter_pass` is. Without `deepsomatic`, DeepVariant's `PASS` germline calls are
 used without a verdict filter and may include somatic variants. Either way the
 tumour-only germline arm is a tumour-derived proxy, not a call set from normal
 tissue.
@@ -224,27 +225,36 @@ The plugin data is **on by default** on `--genome GRCh38` and `--genome CHM13`; 
 parameter overrides its default, `--skip_vep_plugins` turns the set off, and CADD and EVE are
 opt-in. See [VEP plugins](#vep-plugins) for sizes, licence terms and per-assembly availability.
 
-| Parameter                    | Description                                                                                                              |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `--skip_vep_plugins`         | Annotate with VEP alone, fetching no plugin data. Default = `false`                                                      |
-| `--vep_alphamissense`        | AlphaMissense GRCh38 score file, for the `AlphaMissense` plugin. GRCh38 only                                             |
-| `--vep_alphamissense_tbi`    | Index for `--vep_alphamissense`. Required whenever `--vep_alphamissense` is set                                          |
-| `--vep_alphamissense_aa`     | AlphaMissense protein-space release, or a table already built from it, for the `AlphaMissenseProtein` plugin. CHM13 only |
-| `--vep_alphamissense_aa_tbi` | Index for `--vep_alphamissense_aa`. Required whenever `--vep_alphamissense_aa` is set                                    |
-| `--vep_polyphen_sift_db`     | Ensembl pangenome PolyPhen/SIFT SQLite database, for the `PolyPhen_SIFT` plugin. Needed on CHM13 only                    |
-| `--vep_clinvar`              | ClinVar VCF, added as a VEP `--custom` annotation                                                                        |
-| `--vep_clinvar_tbi`          | Index for `--vep_clinvar`. Required whenever `--vep_clinvar` is set                                                      |
-| `--vep_clinvar_md5`          | Expected MD5 of a remote `--vep_clinvar`, checked after download. Dropped when `--vep_clinvar` is overridden             |
-| `--vep_clinvar_tbi_md5`      | Expected MD5 of the downloaded `--vep_clinvar_tbi`. Set on CHM13 only; dropped when either ClinVar file is overridden    |
-| `--vep_clinvar_fields`       | Comma-separated ClinVar INFO fields to carry through. Default = `"CLNSIG,CLNREVSTAT,CLNDN"`                              |
-| `--vep_cadd_snv`             | CADD SNV score file, for the `CADD` plugin. No default — 81 GB, so opt-in; prefer a local path. GRCh38 only              |
-| `--vep_cadd_snv_tbi`         | Index for `--vep_cadd_snv`. Required whenever `--vep_cadd_snv` is set                                                    |
-| `--vep_cadd_indel`           | CADD indel score file, for the `CADD` plugin. No default — opt-in. GRCh38 only                                           |
-| `--vep_cadd_indel_tbi`       | Index for `--vep_cadd_indel`. Required whenever `--vep_cadd_indel` is set                                                |
-| `--vep_revel`                | REVEL release zip, or a prepared score file, for the `REVEL` plugin. GRCh38 only                                         |
-| `--vep_revel_tbi`            | Index for `--vep_revel`. Required only when `--vep_revel` is an already-prepared file                                    |
-| `--vep_eve`                  | EVE release zip, or a merged VCF, for the `EVE` plugin. **Not** on by default. GRCh38 only. Default = `null`             |
-| `--vep_eve_tbi`              | Index for `--vep_eve`. Required only when `--vep_eve` is an already-merged VCF. Default = `null`                         |
+| Parameter                    | Description                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--skip_vep_plugins`         | Annotate with VEP alone, fetching no plugin data. Default = `false`                                                   |
+| `--vep_alphamissense`        | AlphaMissense GRCh38 score file, for the `AlphaMissense` plugin. GRCh38 only                                          |
+| `--vep_alphamissense_tbi`    | Index for `--vep_alphamissense`. Required whenever `--vep_alphamissense` is set                                       |
+| `--vep_alphamissense_aa`     | Prepared gene-symbol-keyed table for the `AlphaMissenseProtein` plugin (see below). CHM13 only                        |
+| `--vep_alphamissense_aa_tbi` | Index for `--vep_alphamissense_aa`. Required whenever `--vep_alphamissense_aa` is set                                 |
+| `--vep_polyphen_sift_db`     | Ensembl pangenome PolyPhen/SIFT SQLite database, for the `PolyPhen_SIFT` plugin. Needed on CHM13 only                 |
+| `--vep_clinvar`              | ClinVar VCF, added as a VEP `--custom` annotation                                                                     |
+| `--vep_clinvar_tbi`          | Index for `--vep_clinvar`. Required whenever `--vep_clinvar` is set                                                   |
+| `--vep_clinvar_md5`          | Expected MD5 of a remote `--vep_clinvar`, checked after download. Dropped when `--vep_clinvar` is overridden          |
+| `--vep_clinvar_tbi_md5`      | Expected MD5 of the downloaded `--vep_clinvar_tbi`. Set on CHM13 only; dropped when either ClinVar file is overridden |
+| `--vep_clinvar_fields`       | Comma-separated ClinVar INFO fields to carry through. Default = `"CLNSIG,CLNREVSTAT,CLNDN"`                           |
+| `--vep_cadd_snv`             | CADD SNV score file, for the `CADD` plugin. No default — 81 GB, so opt-in; prefer a local path. GRCh38 only           |
+| `--vep_cadd_snv_tbi`         | Index for `--vep_cadd_snv`. Required whenever `--vep_cadd_snv` is set                                                 |
+| `--vep_cadd_indel`           | CADD indel score file, for the `CADD` plugin. No default — opt-in. GRCh38 only                                        |
+| `--vep_cadd_indel_tbi`       | Index for `--vep_cadd_indel`. Required whenever `--vep_cadd_indel` is set                                             |
+| `--vep_revel`                | REVEL release zip, or a prepared score file, for the `REVEL` plugin. GRCh38 only                                      |
+| `--vep_revel_tbi`            | Index for `--vep_revel`. Required only when `--vep_revel` is an already-prepared file                                 |
+| `--vep_eve`                  | EVE release zip, or a merged VCF, for the `EVE` plugin. **Not** on by default. GRCh38 only. Default = `null`          |
+| `--vep_eve_tbi`              | Index for `--vep_eve`. Required only when `--vep_eve` is an already-merged VCF. Default = `null`                      |
+
+`--vep_alphamissense_aa` is used as given: unlike REVEL and EVE, the pipeline does not build it from
+the AlphaMissense release. The CHM13 default is a table we host. A replacement must be a bgzipped,
+tab-separated file whose first line is a `#`-prefixed header with at least `gene` (gene symbol),
+`aapos` (1-based residue), `aaref` and `aaalt` (one-letter amino acids), plus the score columns to
+report (by default `am_pathogenicity` and `am_class`; the hosted table also has `uniprot_acc`),
+sorted by gene and position and indexed with `tabix -s 1 -b 2 -e 2 -c "#"`. The hosted table is
+AlphaMissense's `AlphaMissense_aa_substitutions.tsv.gz` with the UniProt accession mapped to a gene
+symbol and the protein variant (e.g. `V2L`) split into those three columns; see `CITATIONS.md`.
 
 #### Minimap2 Options
 
@@ -373,12 +383,12 @@ Checked at launch:
 
 #### Mutational Signature Options
 
-Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline. Either:
+Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline:
 
-- run once with `--download_sigprofiler_genome`; the payload is installed, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`, or
-- point `--sigprofiler_genome_dir` at an existing SigProfilerMatrixGenerator volume (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run).
+- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`;
+- `--sigprofiler_genome_dir` points at an existing SigProfilerMatrixGenerator volume instead (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run). It takes precedence over the download, so pass it on later runs to skip the ~3 GB fetch.
 
-Running with neither, and without `--skip_signatures`, stops the pipeline at start-up.
+Running with `--download_sigprofiler_genome false` and no `--sigprofiler_genome_dir`, or with a `--genome` that has no SigProfilerMatrixGenerator genome and no `--sigprofiler_genome`, stops the pipeline at start-up unless `--skip_signatures` is set.
 
 A volume passed with `--sigprofiler_genome_dir` is checked once per run against the chromosome checksums of the pipeline's SigProfilerMatrixGenerator (`SIGPROFILER_VERIFY`). If a chromosome file is missing or a checksum differs, the run stops before any sample is processed, and the error says which of the two it found. A genome the image has no checksums for is rejected too.
 
@@ -388,7 +398,7 @@ A volume passed with `--sigprofiler_genome_dir` is checked once per run against 
 | Parameter                                   | Description                                                                                                                                                                                         |
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--sigprofiler_genome_dir`                  | Full path to a SigProfilerMatrixGenerator volume containing `tsb/<sigprofiler_genome>/`. Default = `null`                                                                                           |
-| `--download_sigprofiler_genome`             | A boolean to download and install the genome payload during the run (published to `<outdir>/cache/sigprofiler/volume`). Default = `false`                                                           |
+| `--download_sigprofiler_genome`             | A boolean to download and install the genome payload during the run when no `--sigprofiler_genome_dir` is given (published to `<outdir>/cache/sigprofiler/volume`). Default = `true`                |
 | `--sigprofiler_cosmic_version`              | COSMIC reference signature version fitted by SigProfilerAssignment. Default = `3.6`                                                                                                                 |
 | `--sigprofiler_exclude_signature_subgroups` | Comma-separated SigProfilerAssignment signature subgroups to exclude from the fit, e.g. `"Artifact_signatures,Lymphoid_signatures"` (see the SigProfilerAssignment documentation). Default = `null` |
 | `--sigprofiler_matrix_args`                 | Extra arguments for `SigProfilerMatrixGenerator matrix_generator`. Default = `"--plot"`                                                                                                             |
@@ -418,16 +428,21 @@ VCFs and the mutation burden.
 
 `--smallvar_filter_pass` (`true` by default) restricts the copy of each caller's
 VCF that is handed to the caller consensus, phasing, VEP and the report. In
-tumor-only mode ClairS-TO is unaffected by the setting: `VCFSPLIT` already
-restricts its somatic split to `PASS`, and its germline split is `PASS`-rewritten
-rather than `PASS`-filtered. The per-caller VCFs published under
-`<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
-from the results directory.
+tumor-only mode `VCFSPLIT` always restricts ClairS-TO's somatic split to `PASS`.
+Its germline split takes the `NonSomatic` calls and those Verdict tagged
+`Verdict_Germline`; with the filter on, a `NonSomatic` call is kept only if
+`NonSomatic` is its sole `FILTER` (a `LowQual;NonSomatic` call is dropped), while
+Verdict's germline calls are kept although Verdict marks them `LowQual`. The
+germline split is then `PASS`-rewritten, with the original value kept in
+`INFO/ORIG_FILTER`. The tumour-only DeepVariant germline arm is `PASS`-only
+whatever the setting: through the DeepSomatic verdict when `deepsomatic` is
+selected, and by a `PASS` filter otherwise, so `RefCall` records never enter it.
+The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>` are
+never filtered, so no calls are lost from the results directory.
 
 Set it to `false` to restore the previous unfiltered behaviour: each caller's
-records are passed on with their original `FILTER`. Only the ClairS-TO germline
-split is normalised to `PASS`, with its original value kept in
-`INFO/ORIG_FILTER`.
+records are passed on with their original `FILTER`, except the two tumour-only
+germline arms above, and the ClairS-TO germline split is still `PASS`-rewritten.
 
 `consensus` keeps only alleles called by both callers, using the prioritised
 caller's record. Multi-allelic records are split so each allele can be matched
@@ -435,13 +450,20 @@ across callers, and rejoined before phasing. A multi-allelic call of which only 
 allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
 and its `PL` values for the dropped allele are lost.
 
-`all` keeps the union by position, one caller's record per position: every
-record of the prioritised caller, plus the other caller's records at positions
-where the prioritised caller has none. Where both callers call a position, even
-with different alleles, only the prioritised caller's record is kept. With
-`--smallvar_filter_pass false`, a `PASS` record wins over a non-`PASS` one first,
-so the prioritised caller's `RefCall`/`LowQual` record does not hide the other
-caller's `PASS` call. Records are not split in this mode.
+`all` keeps the union by position, one record per position: the prioritised
+caller's records, plus the other caller's records at positions where the
+prioritised caller has none. Where both callers call a position, even with
+different alleles, only the prioritised caller's record is kept. A `PASS` record
+wins over a non-`PASS` one first, so with `--smallvar_filter_pass false` the
+prioritised caller's `RefCall`/`LowQual` record does not hide the other caller's
+`PASS` call. Within each caller, too, only one record per position is kept: where
+one caller has several (e.g. equivalent indels left-aligned onto one `POS`), a
+`PASS` record is preferred, and among records of equal standing the first in file
+order. Records are not split in this mode.
+
+Whatever the callers and combine mode, each arm is joined to one record per
+position (`bcftools norm -m +any`) before phasing, since LongPhase cannot take two
+records at one `POS`.
 
 #### Germline and somatic provenance
 
@@ -673,9 +695,9 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
   pangenome database covers the HPRC assemblies.
 - **`AlphaMissenseProtein`** (in `assets/vep_plugins/`) keys on gene symbol plus amino-acid
   substitution, using a table built from AlphaMissense's protein-space release. A row is used only
-  when both amino acids match what VEP computed for the CHM13 transcript; otherwise it reports
-  `aa_mismatch` and no score. The `AlphaMissenseProtein_match` values are listed under
-  [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
+  when both amino acids match what VEP computed for the CHM13 transcript; a position whose
+  reference residue differs reports `aa_mismatch` and no score. The `AlphaMissenseProtein_match`
+  values are listed under [plugin fields in `CSQ`](output.md#plugin-fields-in-the-csq-annotation).
 
 ### What is not available, and why
 
@@ -696,6 +718,72 @@ Two of these predictors get there anyway, because they score _proteins_ rather t
 > (`chr1`), while NCBI's ClinVar VCF ships Ensembl-style names (`1`). VEP usually reconciles the two
 > for `--custom` files, but a name it cannot map annotates nothing rather than raising an error, so
 > confirm that `CLNSIG` values appear in an annotated VCF before trusting them.
+
+## ecDNA and focal amplification
+
+CoRAL reconstructs amplicon structures and AmpliconClassifier labels them. Both run by default on
+every tumour sample that has ASCAT calls. CoRAL seeds from ASCAT's copy number, so `--skip_ascat`
+together with CoRAL is rejected at launch: use `--skip_coral` as well, or keep ASCAT.
+
+### Solver
+
+CoRAL's cycle decomposition is a non-convex mixed-integer quadratically-constrained problem. The
+pipeline defaults to `--coral_solver scip`, which is open-source, shipped in the image and needs no
+licence. Gurobi is available with:
+
+```bash
+--coral_solver gurobi_direct --gurobi_license /path/to/gurobi.lic
+```
+
+The licence is mounted into the CoRAL tasks (`--bind` under Singularity/Apptainer, `--volume` under
+Docker/Podman), so give an absolute path; it is never baked into the image. Under Gurobi the
+reconstruction steps are serialised (`maxForks = 1`), because a Web License Service licence caps
+concurrent solver sessions, and the solver uses the task's CPUs. `maxForks` is per process, which
+suffices because only one CoRAL process solves in a run: `CORAL_RECONSTRUCT` by default, or
+`CORAL_CYCLE` with `--coral_run_cycle`, when reconstruction skips decomposition. SCIP runs
+single-threaded.
+
+Gurobi is faster, but on the models this pipeline produces that has not mattered: across 1102 solver
+logs from the earlier standalone cohort, the largest model was 620 rows by 438 columns and the
+slowest single solve took 0.49 s, with no model reaching the time limit. Prefer the default unless
+you have measured a reason not to.
+
+### AmpliconClassifier reference data
+
+AmpliconClassifier reads an AmpliconArchitect data repository at runtime. For `--genome GRCh38` it is
+downloaded automatically (about 1.1 GB) and checked against the MD5 the host publishes
+(`--aa_data_repo_md5`), so a re-published repository fails the run rather than changing results
+silently. The download and its ~4 GB unpack repeat on every run; to avoid both, extract
+`GRCh38.tar.gz` once and pass it:
+
+```bash
+--aa_data_repo /path/to/GRCh38
+```
+
+For `--genome CHM13` there is no published repository. Without `--aa_data_repo` the classifier is
+skipped with a warning and reconstruction still runs:
+
+```bash
+--genome CHM13 --aa_data_repo /path/to/AA_DATA_REPO
+```
+
+`--aa_data_repo` may be the reference directory itself (`GRCh38/`, `CHM13/`) or the directory that
+contains it. `--skip_ampliconclassifier` drops classification explicitly and needs no reference data.
+
+### Tuning
+
+`--coral_gain` (default 6.0) sets the total copy number a segment must reach to seed an amplicon. A
+sample with nothing above it produces an empty seed file and is skipped with a log message rather
+than failing.
+
+`--coral_min_bp_support` defaults to 1.75, the value validated on this lab's cohort. CoRAL's own
+documentation recommends a considerably higher value for WGS, around 10.0; raise it if you see
+spurious breakpoints.
+
+`--coral_run_cycle` moves cycle decomposition into a separate `coral cycle_all` step: reconstruction
+then builds only the breakpoint graphs (`--skip-cycle-decomp`), and the classifier and plots read the
+cycles `cycle_all` writes. It is off by default. `--coral_cycle_decomp_alpha` (default 0.01) applies
+to whichever step decomposes.
 
 ## Core Nextflow arguments
 

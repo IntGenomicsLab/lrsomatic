@@ -358,6 +358,68 @@ The germline/somatic split comes from a panel of normals and from ClairS-TO's Ve
 | `read_qual.txt`                           | file containing quality statistics about identified segements                     |
 | `severus.log`                             | log file                                                                          |
 
+#### `ecdna`
+
+Extrachromosomal DNA and focal amplification. CoRAL reconstructs amplicon structures from the tumour
+BAM, seeded by ASCAT's copy-number segments, and AmpliconClassifier labels each reconstructed
+amplicon (ecDNA, BFB, linear, and so on). Runs on every tumour sample with ASCAT calls; disable with
+`--skip_coral`, or keep reconstruction and drop classification with `--skip_ampliconclassifier`.
+
+A sample with no segment above `--coral_gain` produces an empty seed BED and is skipped with a log
+message rather than failing. CoRAL defaults to the open-source SCIP solver; `--coral_solver
+gurobi_direct` is faster but needs `--gurobi_license`. AmpliconClassifier needs an AmpliconArchitect
+data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13;
+a CHM13 run without one skips classification with a warning. An unseeded sample gets only its seed
+BED: no `reconstruct/` directory, and so no amplicon summary.
+
+With `--coral_run_cycle`, reconstruction builds the breakpoint graphs only, and the cycles and the
+amplicon summary are written to `cycles/` instead, beside copies of the graphs; the classifier and
+the plots then read `cycles/`.
+
+```
+├── ecdna
+│   ├── sample_coral_cn.bed
+│   ├── coral
+│   │   ├── sample_CNV_SEEDS.bed
+│   │   ├── reconstruct
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   ├── sample_amplicon_summary.txt
+│   │   │   └── sample_reconstruct.log
+│   │   ├── cycles                      # --coral_run_cycle only
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   └── sample_amplicon_summary.txt
+│   │   └── plots
+│   │       ├── sample_amplicon1_graph.png
+│   │       └── sample_amplicon1_cycles.png
+│   └── amplicon_classifier
+│       ├── sample_amplicon_classification_profiles.tsv
+│       ├── sample_gene_list.tsv
+│       ├── sample_ecDNA_counts.tsv
+│       ├── sample_result_table.tsv
+│       └── sample_classification_bed_files/
+```
+
+| File                                          | Description                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| `sample_coral_cn.bed`                         | ASCAT's copy number as the BED CoRAL seeds from                    |
+| `sample_CNV_SEEDS.bed`                        | Amplified intervals above `--coral_gain`; empty means no amplicons |
+| `sample_amplicon<N>_graph.txt`                | Breakpoint graph per amplicon, in AmpliconArchitect format         |
+| `sample_amplicon<N>_cycles.txt`               | Decomposed cycles and paths per amplicon                           |
+| `sample_amplicon_summary.txt`                 | Per-run amplicon summary, written by cycle decomposition           |
+| `sample_reconstruct.log`                      | CoRAL reconstruction log, including solver output                  |
+| `cycles/`                                     | `--coral_run_cycle` only: `cycle_all`'s cycles and summary, graphs |
+| `sample_amplicon<N>_{graph,cycles}.png`       | Per-amplicon copy-number and cycle plots                           |
+| `sample_amplicon_classification_profiles.tsv` | The headline call per amplicon: ecDNA+, BFB+, decomposition class  |
+| `sample_gene_list.tsv`                        | Genes intersecting each classified amplicon                        |
+| `sample_ecDNA_counts.tsv`                     | Number of distinct ecDNA species detected                          |
+| `sample_result_table.tsv`                     | Combined per-sample table, the format AmpliconRepository ingests   |
+| `sample_classification_bed_files/`            | Per-feature BED intervals for each classified amplicon             |
+| `sample_result_data.json`                     | The result table as JSON                                           |
+| `sample_feature_*.tsv`, `sample_*_calls.tsv`  | Feature properties, complexity and similarity; FAN, ecDNA context  |
+| `bfbarchitect_outputs/`                       | BFBArchitect reconstructions, only when a BFB is found             |
+
 #### `savana`
 
 SAVANA structural variant and copy-number calling. Runs alongside Severus/ASCAT rather than replacing
@@ -481,6 +543,9 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   │   ├── sample_SV_VEP.vcf.gz
 │   │   ├── sample_SV_VEP_summary.html
 │   │   ├── sample_SV_VEP.vcf.gz.tbi
+│   │   ├── sample_VEP_SAVANA.vcf.gz
+│   │   ├── sample_VEP_SAVANA_summary.html
+│   │   ├── sample_VEP_SAVANA.vcf.gz.tbi
 ```
 
 | File                                        | Description                                                             |
@@ -494,6 +559,9 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_SV_VEP.vcf.gz`                  | Annotated somatic structural variant vcf file                           |
 | `SVs/sample_SV_VEP_summary.html`            | Visual summary of somatic structural variant annotations in html format |
 | `SVs/sample_SV_VEP.vcf.gz.tbi`              | Annotated somatic structural variant vcf index file                     |
+| `SVs/sample_VEP_SAVANA.vcf.gz`              | Annotated SAVANA somatic structural variant vcf file                    |
+| `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
+| `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
 
 </details>
 
@@ -543,12 +611,12 @@ out with `bcftools +split-vep`.
 `AlphaMissenseProtein_match` records how the CHM13 protein-space lookup resolved, and is the field
 to check before trusting — or explaining — a missing score:
 
-| Value         | Meaning                                                                                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gene_aa`     | Matched on gene symbol and both amino acids; `am_pathogenicity` is populated                                                                                                |
-| `aa_mismatch` | The gene and position exist in the table, but the amino acids disagree — the CHM13 protein and the one AlphaMissense was numbered against differ here, so no score is given |
-| `not_found`   | No row for this gene and position                                                                                                                                           |
-| `no_gene`     | VEP produced no gene symbol for the transcript, so no lookup was possible                                                                                                   |
+| Value         | Meaning                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gene_aa`     | Matched on gene symbol and both amino acids; `am_pathogenicity` is populated                                                                                             |
+| `aa_mismatch` | The gene and position exist, but the reference amino acid differs — the CHM13 protein and the one AlphaMissense was numbered against disagree here, so no score is given |
+| `not_found`   | No row for this gene, position and substitution                                                                                                                          |
+| `no_gene`     | VEP produced no gene symbol for the transcript, so no lookup was possible                                                                                                |
 
 Only missense substitutions are looked up at all; anything else carries no `AlphaMissenseProtein_*`
 field rather than a match value.
@@ -713,7 +781,7 @@ Sections:
   - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. Phasing statistics (WhatsHap) are a collapsible block within this section.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
 
 Filtering in the browser:
 

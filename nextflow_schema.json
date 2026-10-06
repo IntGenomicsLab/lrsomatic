@@ -70,12 +70,14 @@
                 "germline_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of germline variant callers to use. Valid values: deepvariant, clair. Example: 'deepvariant,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepvariant)\\s*(,\\s*(clair|deepvariant)\\s*)?$"
                 },
                 "somatic_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of somatic variant callers to use. Valid values: deepsomatic, clair. Example: 'deepsomatic,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepsomatic)\\s*(,\\s*(clair|deepsomatic)\\s*)?$"
                 },
                 "germline_var_combine": {
                     "type": "string",
@@ -481,13 +483,14 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "SigProfilerMatrixGenerator volume directory containing tsb/<sigprofiler_genome>/ (the installed genome payload).",
-                    "help_text": "Create it once with `--download_sigprofiler_genome` (published to `<outdir>/cache/sigprofiler/volume`) or with `SigProfilerMatrixGenerator install <genome> --volume <dir>`, then pass it here on later runs. The volume is checked against the pipeline's SigProfilerMatrixGenerator checksums before any sample is processed. The run stops if files are missing or a checksum differs, which means a corrupted copy or, for GRCh38 and CHM13-T2T volumes installed for lrsomatic < 1.2.0, a superseded payload revision; reinstall it in either case.",
+                    "help_text": "Takes precedence over `--download_sigprofiler_genome`. A run without it downloads the payload and publishes it to `<outdir>/cache/sigprofiler/volume`; pass that (or a `SigProfilerMatrixGenerator install <genome> --volume <dir>` volume) here on later runs. The volume is checked against the pipeline's SigProfilerMatrixGenerator checksums before any sample is processed. The run stops if files are missing or a checksum differs, which means a corrupted copy or, for GRCh38 and CHM13-T2T volumes installed for lrsomatic < 1.2.0, a superseded payload revision; reinstall it in either case.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "download_sigprofiler_genome": {
                     "type": "boolean",
-                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run instead of using --sigprofiler_genome_dir.",
-                    "fa_icon": "fas fa-download"
+                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run when no --sigprofiler_genome_dir is given.",
+                    "fa_icon": "fas fa-download",
+                    "default": true
                 },
                 "sigprofiler_cosmic_version": {
                     "type": "number",
@@ -604,6 +607,14 @@
                 "skip_report": {
                     "type": "boolean",
                     "description": "Skip the final per-sample HTML report"
+                },
+                "skip_coral": {
+                    "type": "boolean",
+                    "description": "Skip CoRAL amplicon reconstruction and AmpliconClassifier."
+                },
+                "skip_ampliconclassifier": {
+                    "type": "boolean",
+                    "description": "Run CoRAL but skip AmpliconClassifier, which avoids needing an AA data repository."
                 }
             }
         },
@@ -756,6 +767,82 @@
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
                 }
             }
+        },
+        "coral_options": {
+            "title": "CoRAL / ecDNA options",
+            "type": "object",
+            "description": "Amplicon reconstruction with CoRAL and classification with AmpliconClassifier.",
+            "default": "",
+            "properties": {
+                "coral_gain": {
+                    "type": "number",
+                    "default": 6.0,
+                    "description": "Minimum total copy number for a segment to seed an amplicon (CoRAL's --gain)."
+                },
+                "coral_min_seed_size": {
+                    "type": "integer",
+                    "default": 100000,
+                    "description": "Minimum seed interval size in bp (CoRAL's --min-seed-size)."
+                },
+                "coral_max_seg_gap": {
+                    "type": "integer",
+                    "default": 300000,
+                    "description": "Largest gap in bp that CoRAL will bridge when merging seed segments (--max-seg-gap)."
+                },
+                "coral_solver": {
+                    "type": "string",
+                    "default": "scip",
+                    "enum": ["scip", "gurobi_direct"],
+                    "description": "Optimiser for CoRAL's non-convex MIQCP cycle decomposition. SCIP is open-source and needs no licence; gurobi_direct is faster but requires --gurobi_license."
+                },
+                "coral_solver_time_limit": {
+                    "type": "integer",
+                    "default": 7200,
+                    "description": "Per-amplicon solver time limit in seconds (CoRAL's --solver-time-limit)."
+                },
+                "coral_global_time_limit": {
+                    "type": "integer",
+                    "default": 21600,
+                    "description": "Per-sample time limit in seconds across all amplicons (CoRAL's --global-time-limit)."
+                },
+                "coral_min_bp_support": {
+                    "type": "number",
+                    "default": 1.75,
+                    "description": "Minimum breakpoint read support (CoRAL's --min-bp-support). CoRAL's own README recommends a much larger value such as 10.0 for WGS; 1.75 matches the setting validated on this cohort."
+                },
+                "coral_run_cycle": {
+                    "type": "boolean",
+                    "description": "Decompose cycles in a separate `coral cycle_all` step: reconstruction then builds the breakpoint graphs only (CoRAL's --skip-cycle-decomp)."
+                },
+                "coral_cycle_decomp_alpha": {
+                    "type": "number",
+                    "default": 0.01,
+                    "description": "Cycle decomposition alpha, balancing copy-number weight against path constraints: CoRAL reconstruct's --cycle-decomp-alpha, or cycle_all's --alpha with --coral_run_cycle."
+                },
+                "coral_plot": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Render CoRAL's per-amplicon graph and cycle plots. Plot failures never fail the run."
+                },
+                "gurobi_license": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to a gurobi.lic, mounted into the CoRAL tasks. Required with --coral_solver gurobi_direct."
+                },
+                "aa_data_repo": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "AmpliconArchitect data repository for AmpliconClassifier: the directory holding `GRCh38/` or `CHM13/`, or that reference directory itself. Downloaded automatically for GRCh38; CHM13 has no published repo, so without one the classifier is skipped with a warning.",
+                    "help_text": "Downloading the GRCh38 repo fetches 1.1 GB and unpacks about 4 GB on every run. Extract `GRCh38.tar.gz` once and pass the directory here to skip both."
+                },
+                "aa_data_repo_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the downloaded AmpliconArchitect data repository tarball.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "The GRCh38 default carries the MD5 the host publishes, and a tarball that does not match fails the run, so the repository cannot change silently. A local --aa_data_repo takes no MD5, and setting --aa_data_repo drops the default."
+                }
+            }
         }
     },
     "allOf": [
@@ -803,6 +890,9 @@
         },
         {
             "$ref": "#/$defs/report_options"
+        },
+        {
+            "$ref": "#/$defs/coral_options"
         },
         {
             "$ref": "#/$defs/skip_options"

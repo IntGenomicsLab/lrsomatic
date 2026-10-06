@@ -13,6 +13,7 @@ repos:
         exclude: |
           (?x)^(
               .*ro-crate-metadata.json$|
+              assets/gene_lists/.*|
               modules/(?!local/).*|
               subworkflows/(?!local/).*|
               .*\.snap$

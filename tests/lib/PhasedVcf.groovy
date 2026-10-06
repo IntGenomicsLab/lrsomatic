@@ -21,8 +21,20 @@ class PhasedVcf {
         i >= 0 && i < values.size() ? values[i] : null
     }
 
+    // A record without GT (or without sample columns) is not alt
     static boolean isAlt(List<String> rec) {
-        format(rec, 'GT').split(/[\/|]/).any { it != '0' && it != '.' }
+        def gt = rec.size() > 9 ? format(rec, 'GT') : null
+        gt != null && gt.split(/[\/|]/).any { it != '0' && it != '.' }
+    }
+
+    // LongPhase cannot take two records at one POS, so each phased arm holds one record per CHROM:POS
+    static void assertOnePerPosition(String outdir, List<String> samples) {
+        samples.each { s ->
+            ['germline', 'somatic'].each { arm ->
+                def pos = records("${outdir}/${s}/variants/phased/${arm}_smallvariants.vcf.gz").collect { "${it[0]}:${it[1]}" }
+                assert pos.size() == pos.toUnique().size() : "${s}: two ${arm} records at one position"
+            }
+        }
     }
 
     // Default-mode checks: both arms all PASS, somatic records all carry SOMATIC, germline not empty
