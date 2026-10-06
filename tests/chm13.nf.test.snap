@@ -80,6 +80,12 @@
                 "NANOPLOT_PRE": {
                     "NanoPlot": "1.48.0"
                 },
+                "REJOIN_GERMLINE": {
+                    "bcftools": 1.24
+                },
+                "REJOIN_SOMATIC": {
+                    "bcftools": 1.24
+                },
                 "SAMTOOLS_FAIDX": {
                     "samtools": 1.24
                 },
@@ -157,10 +163,10 @@
                 }
             }
         ],
-        "timestamp": "2026-10-02T14:18:35.962269271",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "26.04.3"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-06T11:20:28.270939521"
     }
 }
