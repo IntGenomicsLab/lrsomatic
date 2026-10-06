@@ -396,16 +396,6 @@
                 "savana_allele_mapq": {
                     "type": "integer",
                     "description": "Mapping quality threshold for reads counted at a het-SNP site (SAVANA's --allele_mapq, default 5). Intended for test profiles running on downsampled data below that coverage floor."
-                },
-                "savana_contigs": {
-                    "type": "string",
-                    "description": "File of contigs (one per line) SAVANA is restricted to (`--contigs`). Set from `--genome`; without one, SAVANA uses all contigs.",
-                    "hidden": true
-                },
-                "savana_g1000_vcf": {
-                    "type": "string",
-                    "description": "SAVANA's bundled 1000 Genomes SNP set for tumour-only allele counting (`--g1000_vcf`), e.g. `1000g_hg38`. Set from `--genome`.",
-                    "hidden": true
                 }
             }
         },
@@ -844,11 +834,6 @@
                     "format": "directory-path",
                     "description": "AmpliconArchitect data repository for AmpliconClassifier: the directory holding `GRCh38/` or `CHM13/`, or that reference directory itself. Downloaded automatically for GRCh38; CHM13 has no published repo, so without one the classifier is skipped with a warning.",
                     "help_text": "Downloading the GRCh38 repo fetches 1.1 GB and unpacks about 4 GB on every run. Extract `GRCh38.tar.gz` once and pass the directory here to skip both."
-                },
-                "aa_data_repo_url": {
-                    "type": "string",
-                    "description": "URL of the AmpliconArchitect data repository tarball. Set from `--genome`; overriding it drops the genome's default MD5.",
-                    "hidden": true
                 },
                 "aa_data_repo_md5": {
                     "type": "string",

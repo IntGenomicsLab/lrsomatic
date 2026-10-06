@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-- [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `PREPARE_AA_DATA_REPO` no longer reads a `versions` output `UNTAR` does not have, which crashed every default GRCh38 run with CoRAL; overriding `--aa_data_repo_url` (now a hidden param) drops the genome's default MD5 (@robert-a-forsyth).
+- [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `PREPARE_AA_DATA_REPO` no longer reads a `versions` output `UNTAR` does not have, which crashed every default GRCh38 run with CoRAL; overriding `--aa_data_repo_url` drops the genome's default MD5 (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `-profile test_full` starts again: it skips CoRAL and signatures and carries the chr19 SAVANA workarounds from `test` (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `CLAIRSTO_VERDICT_TAG` no longer crashes when ASCAT finds no solution and writes an empty segments table (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - CoRAL and AmpliconClassifier tasks killed again after their last retry are ignored instead of stopping the run (@robert-a-forsyth).

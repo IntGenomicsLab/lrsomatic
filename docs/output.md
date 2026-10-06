@@ -611,12 +611,12 @@ out with `bcftools +split-vep`.
 `AlphaMissenseProtein_match` records how the CHM13 protein-space lookup resolved, and is the field
 to check before trusting — or explaining — a missing score:
 
-| Value         | Meaning                                                                                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gene_aa`     | Matched on gene symbol and both amino acids; `am_pathogenicity` is populated                                                                                                |
-| `aa_mismatch` | The gene and position exist, but the reference amino acid differs — the CHM13 protein and the one AlphaMissense was numbered against disagree here, so no score is given    |
-| `not_found`   | No row for this gene, position and substitution                                                                                                                             |
-| `no_gene`     | VEP produced no gene symbol for the transcript, so no lookup was possible                                                                                                   |
+| Value         | Meaning                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gene_aa`     | Matched on gene symbol and both amino acids; `am_pathogenicity` is populated                                                                                             |
+| `aa_mismatch` | The gene and position exist, but the reference amino acid differs — the CHM13 protein and the one AlphaMissense was numbered against disagree here, so no score is given |
+| `not_found`   | No row for this gene, position and substitution                                                                                                                          |
+| `no_gene`     | VEP produced no gene symbol for the transcript, so no lookup was possible                                                                                                |
 
 Only missense substitutions are looked up at all; anything else carries no `AlphaMissenseProtein_*`
 field rather than a match value.
