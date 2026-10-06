@@ -984,4 +984,53 @@ nextflow_function {
             )
         }
     }
+
+    // --- validateSampleModels: a sample's BAMs must agree on caller models, or the pairing joins drop it
+
+    test("validateSampleModels accepts a pair that differs only in kinetics") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'false'],
+                    [id: 's1', type: 'normal', clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'true']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("validateSampleModels stops on a tumor/normal clair3_model mismatch") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  clair3_model: 'r1041_e82_400bps_sup_v500', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'normal', clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's2', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert function.stdout.any { line -> line.contains("Sample 's1'") && line.contains('clair3_model') } }
+            )
+        }
+    }
 }

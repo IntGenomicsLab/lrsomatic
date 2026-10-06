@@ -330,6 +330,21 @@ def validateInputSamplesheet(input) {
 
     return [ metas[0], bams ]
 }
+
+//
+// Caller models key the tumor/normal and replicate joins, so all BAMs of a sample must agree on them
+//
+def validateSampleModels(metas) {
+    def model_keys = ['clair3_model', 'clairS_model', 'clairSTO_model']
+    metas.groupBy { meta -> meta.id }.each { id, rows ->
+        def differing = model_keys.findAll { key -> rows.collect { meta -> meta[key] }.unique().size() > 1 }
+        if (differing) {
+            def detail = differing.collect { key -> "${key}: ${rows.collect { meta -> "${meta.type}=${meta[key]}" }.join(', ')}" }.join('; ')
+            error("Sample '${id}': its BAMs resolve to different caller models (${detail}). Set ${differing.join(', ')} explicitly in the samplesheet for every row of this sample.")
+        }
+    }
+    return true
+}
 //
 // Get attribute from genome config file e.g. fasta
 //
