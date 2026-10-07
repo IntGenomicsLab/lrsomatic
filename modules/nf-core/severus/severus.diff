@@ -1,10 +1,11 @@
 Changes in component 'nf-core/severus'
+'modules/nf-core/severus/environment.yml' is unchanged
 'modules/nf-core/severus/meta.yml' is unchanged
 Changes in 'severus/main.nf':
 --- modules/nf-core/severus/main.nf
 +++ modules/nf-core/severus/main.nf
 @@ -8,8 +8,8 @@
-         'biocontainers/severus:1.6--pyhdfd78af_0' }"
+         'community.wave.seqera.io/library/severus:1.7--d16d59609ef4ee7d' }"
  
      input:
 -    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf)
@@ -22,19 +23,19 @@ Changes in 'severus/main.nf':
 -    tuple val(meta), path("${prefix}/all_SVs/breakpoints_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
 -    tuple val(meta), path("${prefix}/all_SVs/breakpoints_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
 +    tuple val(meta), path("${prefix}/all_SVs/severus_all.vcf.gz")               , emit: all_vcf                          , optional: true
-+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
-+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
-     tuple val(meta), path("${prefix}/all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
++    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")     , emit: all_breakpoints_clusters_list    , optional: true
++    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")          , emit: all_breakpoints_clusters         , optional: true
+     tuple val(meta), path("${prefix}/all_SVs/plots/severus*.html")              , emit: all_plots                        , optional: true
 -    tuple val(meta), path("${prefix}/somatic_SVs/severus_somatic.vcf")          , emit: somatic_vcf                      , optional: true
 -    tuple val(meta), path("${prefix}/somatic_SVs/breakpoints_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
 -    tuple val(meta), path("${prefix}/somatic_SVs/breakpoints_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
 +    tuple val(meta), path("${prefix}/somatic_SVs/severus_somatic.vcf.gz")       , emit: somatic_vcf                      , optional: true
-+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
-+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
-     tuple val(meta), path("${prefix}/somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
-     path "versions.yml"                                                         , emit: versions
- 
-@@ -39,15 +39,23 @@
++    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv") , emit: somatic_breakpoints_clusters_list, optional: true
++    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")      , emit: somatic_breakpoints_clusters     , optional: true
+     tuple val(meta), path("${prefix}/somatic_SVs/plots/severus*.html")          , emit: somatic_plots                    , optional: true
+     tuple val("${task.process}"), val('severus'), eval("severus --version"), emit: versions_severus, topic: versions
+     when:
+@@ -38,15 +38,23 @@
      def control = control_input ? "--control-bam ${control_input}" : ""
      def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
      def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
@@ -55,12 +56,11 @@ Changes in 'severus/main.nf':
 +    tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
 +    bgzip ${prefix}/all_SVs/severus_all.vcf
 +    tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
+     """
  
-     cat <<-END_VERSIONS > versions.yml
-     "${task.process}":
+     stub:
 
-'modules/nf-core/severus/environment.yml' is unchanged
+'modules/nf-core/severus/tests/nextflow.config' is unchanged
 'modules/nf-core/severus/tests/main.nf.test' is unchanged
 'modules/nf-core/severus/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/severus/tests/nextflow.config' is unchanged
 ************************************************************

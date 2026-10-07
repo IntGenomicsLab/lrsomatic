@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -60,6 +61,8 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
+include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 
 
 
@@ -190,6 +193,15 @@ workflow LRSOMATIC {
     if (params.clairsto_cna_resources && !params.skip_ascat) {
         log.warn("--clairsto_cna_resources is ignored without --skip_ascat: Verdict's germline tagging then comes from ASCAT's purity and copy number.")
     }
+    // Tumour-only DeepVariant germline calls are adjudicated only by DeepSomatic's verdict; warn once if it is not run
+    if (params.germline_var_keep.contains('deepvariant') && !params.somatic_var_keep.contains('deepsomatic')) {
+        ch_samplesheet
+            .filter { meta, _bams -> !meta.paired_data }
+            .first()
+            .subscribe { meta, _bams ->
+                log.warn("Tumour-only samples (e.g. ${meta.id}) use DeepVariant germline calls without DeepSomatic's verdict, so they may include somatic variants. Add 'deepsomatic' to --somatic_var_keep to filter them.")
+            }
+    }
     // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
     build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
 
@@ -239,7 +251,9 @@ workflow LRSOMATIC {
     ch_samplesheet
         .join(basecall_meta)
         .map { meta, bam, basecall_model_meta, kinetics_meta ->
-            def chosen_clair3_model = meta.clair3_model ?: clair3_modelMap.get(basecall_model_meta)
+            // Same unset test as PREPARE_REFERENCE_FILES, so both pick the same model and the combine keys agree
+            def clair3_model_unset = !meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']
+            def chosen_clair3_model = clair3_model_unset ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
             def chosen_clairSTO_model = meta.clairSTO_model ?: clairs_modelMap.get(basecall_model_meta)
             def chosen_clairS_model = meta.clairS_model ?: clairs_modelMap.get(basecall_model_meta)
             def meta_new =[ id: meta.id,
@@ -267,7 +281,7 @@ workflow LRSOMATIC {
     // Input:  params.fasta, ASCAT file paths, basecall_meta, clair3_modelMap
     // Output: .prepped_fasta           -- [[:], fasta]
     //         .prepped_fai             -- [[:], fai]
-    //         .downloaded_clair3_models-- [meta(id=model_name), model_dir]
+    //         .clair3_models           -- [meta(id=model_name), model_dir or []]  -- [] = bundled with the Clair3 image
     //         .allele_files / .loci_files / .gc_file / .rt_file  -- flat file collections
     //
 
@@ -303,8 +317,8 @@ workflow LRSOMATIC {
     }
     // clairsto_cna_channel: [meta, cna_resource_dir] or [[:], []]  -- [] uses the image's own set
 
-    downloaded_clair3_models = PREPARE_REFERENCE_FILES.out.downloaded_clair3_models
-    // downloaded_clair3_models: [meta(id=clair3_model_name), model_dir]
+    clair3_models = PREPARE_REFERENCE_FILES.out.clair3_models
+    // clair3_models: [meta(id=clair3_model_name), model_dir or []]  -- [] = bundled with the Clair3 image
 
     ch_nanoplot_pre_txt = channel.empty()
 
@@ -566,7 +580,8 @@ workflow LRSOMATIC {
     //
     SAMTOOLS_MERGE(
         ch_aligned_split.multiple,
-        ch_fasta.join(ch_fai).map { meta, fasta, fai -> [meta, fasta, fai, []] }.first()
+        ch_fasta.join(ch_fai).map { meta, fasta, fai -> [meta, fasta, fai, []] }.first(),
+        ''  // index_format: indexed separately by SAMTOOLS_INDEX_MERGE
     )
 
     // Index the merged file (SAMTOOLS_MERGE does not index inline)
@@ -576,7 +591,7 @@ workflow LRSOMATIC {
     ch_single_indexed
         .mix(
             SAMTOOLS_MERGE.out.bam.mix(SAMTOOLS_MERGE.out.cram)
-                .join(SAMTOOLS_INDEX_MERGE.out.bai.mix(SAMTOOLS_INDEX_MERGE.out.crai))
+                .join(SAMTOOLS_INDEX_MERGE.out.index)
         )
         .set { ch_index_minimap }
     // ch_index_minimap: [meta, bam, bai]  -- one aligned BAM + index per sample (all replicates merged)
@@ -702,10 +717,11 @@ workflow LRSOMATIC {
         // ascat_tumoronly_ch: [meta, purityploidy, segments]
 
         // All ASCAT files per sample for the report module, which globs by suffix
-        ch_ascat_files = ASCAT.out.segments_raw
-            .mix(ASCAT.out.purityploidy, ASCAT.out.png)
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }
+        // Joined per sample; segments_raw is optional, so it arrives as null when absent
+        ch_ascat_files = ASCAT.out.purityploidy
+            .join(ASCAT.out.png)
+            .join(ASCAT.out.segments_raw, remainder: true)
+            .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
     }
 
@@ -736,13 +752,13 @@ workflow LRSOMATIC {
 
     // SUBWORKFLOW: PAIRED_SMALLVAR_GERMLINE
     // Input:  branched_paired_ch.normal -- [meta, bam, bai]  -- normal sample BAMs only
-    //         downloaded_clair3_models  -- [meta(id=model_name), model_dir]
+    //         clair3_models  -- [meta(id=model_name), model_dir or []]
     // Output: .germline_vcf -- [meta, vcf, tbi]  -- germline SNVs/indels (Clair3 and/or DeepVariant consensus)
     PAIRED_SMALLVAR_GERMLINE (
         branched_paired_ch.normal,
         ch_fasta,
         ch_fai,
-        downloaded_clair3_models
+        clair3_models
     )
 
     // Merge germline VCFs from paired and tumor-only paths into a single channel
@@ -862,6 +878,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -883,6 +900,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             ch_vep_extra_files,
+            [[], []],  // gtf: annotate from the cache
             vep_plugins.args,
             vep_custom,
             vep_custom_tbi
@@ -986,8 +1004,6 @@ workflow LRSOMATIC {
         [[:], params.bed_file, params.pon_file]
     )
 
-    ch_versions = ch_versions.mix(SEVERUS.out.versions)
-
     SEVERUS.out.all_vcf
         .map { meta, vcf ->
             def extra = []
@@ -1013,6 +1029,7 @@ workflow LRSOMATIC {
             vep_cache,
             ch_fasta,
             [],
+            [[], []],  // gtf: annotate from the cache
             '',
             vep_custom,
             vep_custom_tbi
@@ -1079,7 +1096,8 @@ workflow LRSOMATIC {
         //
         MOSDEPTH (
             ch_mosdepth_in,
-            ch_fasta
+            ch_fasta,
+            []  // quantize_labels: no --quantize
         )
 
         ch_mosdepth_global = MOSDEPTH.out.global_txt
@@ -1102,7 +1120,7 @@ workflow LRSOMATIC {
 
         BAM_STATS_SAMTOOLS (
             ch_index_minimap, // [meta, bam, bai]
-            ch_fasta
+            ch_fasta.combine(ch_fai).map { meta, fasta, _meta_fai, fai -> [meta, fasta, fai] }.first()
         )
 
         ch_bam_stats = BAM_STATS_SAMTOOLS.out.stats
@@ -1118,7 +1136,10 @@ workflow LRSOMATIC {
     // SV_VEP below, alongside Severus's SVs.
     //
 
-    savana_somatic_vcf = channel.empty()
+    savana_somatic_vcf          = channel.empty()
+    savana_cna                  = channel.empty()
+    savana_fitted_purity_ploidy = channel.empty()
+    savana_allele_counts        = channel.empty()
 
     if (!params.skip_savana) {
         // SAVANA reads the HP (haplotype) tag per read and its README recommends phased BAMs,
@@ -1203,6 +1224,14 @@ workflow LRSOMATIC {
             .set { savana_somatic_vcf }
         // savana_somatic_vcf: [meta, vcf]
 
+        // Copy-number products consumed by Padfoot / ReConPlot below. All optional: absent without
+        // an SNP source, and cna/fitted_purity_ploidy absent when SAVANA finds no acceptable fit.
+        TUMORONLY_SAVANA.out.cn_calls.mix(PAIRED_SAVANA.out.cn_calls).set { savana_cna }
+        TUMORONLY_SAVANA.out.fitted_purity_ploidy.mix(PAIRED_SAVANA.out.fitted_purity_ploidy).set { savana_fitted_purity_ploidy }
+        TUMORONLY_SAVANA.out.allele_counts.mix(PAIRED_SAVANA.out.allele_counts).set { savana_allele_counts }
+        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_fitted_purity_ploidy: [meta, tsv]
+        // savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
+
         if (!params.skip_vep) {
             //
             // MODULE: VEP_SAVANA (ENSEMBLVEP_VEP alias; label: process_medium)
@@ -1225,6 +1254,7 @@ workflow LRSOMATIC {
                 vep_cache,
                 ch_fasta,
                 [],
+                [[], []],  // gtf: annotate from the cache
                 '',
                 vep_custom,
                 vep_custom_tbi
@@ -1261,11 +1291,59 @@ workflow LRSOMATIC {
         )
 
         // The WAKHAN outputs the report renders: ranked solutions, heatmap, per-solution plots
+        // Joined per sample; all three outputs are required
         ch_wakhan_files = WAKHAN.out.solutions_ranks
-            .mix(WAKHAN.out.heatmap_html, WAKHAN.out.solution_dirs)
-            .groupTuple()
-            .map { meta, files -> [meta, files.flatten()] }  // solution_dirs contributes a list
+            .join(WAKHAN.out.heatmap_html)
+            .join(WAKHAN.out.solution_dirs)
+            .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
+    }
+
+    //
+    // SUBWORKFLOW: PADFOOT_ANNOTATION -- Padfoot SV/CNA annotation per caller pair (Severus + Wakhan, SAVANA)
+    // Padfoot bundles annotations for hg38 and mm10 only; other genomes need --padfoot_gff and --padfoot_rm
+    // (validateInputParameters() warns when this gate is not met).
+    //
+    def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
+    def padfoot_annot_ok = padfootAnnotationOk()
+    // Padfoot and ReConPlot ship only inside their containers (validateSvAnnotationParams() warns under conda/mamba)
+    def sv_annot_container_ok = workflow.containerEngine != null
+
+    if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
+        PADFOOT_ANNOTATION (
+            SEVERUS.out.somatic_vcf,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_somatic_vcf,
+            savana_cna,
+            savana_fitted_purity_ploidy,
+            ch_fasta,
+            ch_fai,
+            [[:], padfoot_genome,
+             params.padfoot_gff ? file(params.padfoot_gff, checkIfExists: true) : [],
+             params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []]
+        )
+        ch_versions = ch_versions.mix(PADFOOT_ANNOTATION.out.versions)
+    }
+
+    //
+    // SUBWORKFLOW: RECONPLOT_FIGURES -- ReConPlot figures per CN/SV caller pair (ASCAT + Severus, Wakhan + Severus, SAVANA)
+    //
+    if (!params.skip_reconplot && sv_annot_container_ok) {
+        RECONPLOT_FIGURES (
+            SEVERUS.out.somatic_vcf,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.purityploidy,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.bafs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_cna,
+            savana_somatic_vcf,     // SV track: SAVANA writes its somatic BEDPE for ONT only, never with --pb
+            savana_fitted_purity_ploidy,
+            savana_allele_counts,
+            params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
+        )
+        ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
     }
 
     //
@@ -1282,13 +1360,19 @@ workflow LRSOMATIC {
             .set { report_id_meta }
         // report_id_meta: [id, meta]
 
-        ch_somatic_vep_vcf
-            .map { meta, vcf -> [meta.id, vcf] }
-            .set { report_vep_ch }
+        // A skipped module leaves an empty leg, and remainder: true then defers every sample to
+        // channel close. One [] per sample keeps each leg matched so samples report independently.
+        def report_empty_slot = { -> report_id_meta.map { id, _meta -> [id, []] } }
 
-        ch_sv_vep_vcf
-            .map { meta, vcf -> [meta.id, vcf] }
-            .set { report_sv_vep_ch }
+        def report_vep_ch = params.skip_vep
+            ? report_empty_slot.call()
+            : ch_somatic_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
+        // report_vep_ch: [id, vcf]
+
+        def report_sv_vep_ch = params.skip_vep
+            ? report_empty_slot.call()
+            : ch_sv_vep_vcf.map { meta, vcf -> [meta.id, vcf] }
+        // report_sv_vep_ch: [id, vcf]
 
         SEVERUS.out.somatic_vcf
             .map { meta, vcf -> [meta.id, vcf] }
@@ -1298,29 +1382,63 @@ workflow LRSOMATIC {
             .map { meta, vcf, _tbi -> [meta.id, vcf] }
             .set { report_somatic_ch }
 
-        ch_ascat_files
-            .map { meta, files -> [meta.id, files] }
-            .set { report_ascat_ch }
+        def report_ascat_ch = params.skip_ascat
+            ? report_empty_slot.call()
+            : ch_ascat_files.map { meta, files -> [meta.id, files] }
+        // report_ascat_ch: [id, [files]]
 
-        ch_wakhan_files
-            .map { meta, files -> [meta.id, files] }
-            .set { report_wakhan_ch }
+        def report_wakhan_ch = params.skip_wakhan
+            ? report_empty_slot.call()
+            : ch_wakhan_files.map { meta, files -> [meta.id, files] }
+        // report_wakhan_ch: [id, [files]]
+
+        // One emission per sample per tool, none optional: mosdepth 2, cramino 1, samtools 2.
+        // Adding another per-sample emission to either mix below must bump this count.
+        def qc_files_per_sample = params.skip_qc
+            ? 0
+            : (params.skip_mosdepth ? 0 : 2) + (params.skip_cramino ? 0 : 1) + (params.skip_bamstats ? 0 : 2)
 
         // Tumor-side QC, keyed by the sample id (= report id)
+        // groupKey: emit a sample's bundle on its own files; toString() restores a plain String key
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'tumor' }
-            .map { meta, f -> [meta.id, f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
             .groupTuple()
-            .set { report_qc_tumor_ch }
+            .map { key, files -> [key.toString(), files] }
+            .set { report_qc_tumor_grouped }
+        // report_qc_tumor_grouped: [id, [qc_file, ...]]
 
         // Normal-side QC (matched mode): a pair shares meta.id, so already keyed by the report id
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
-            .map { meta, f -> [meta.id, f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
             .groupTuple()
-            .set { report_qc_normal_ch }
+            .map { key, files -> [key.toString(), files] }
+            .set { report_qc_normal_grouped }
+        // report_qc_normal_grouped: [id, [qc_file, ...]]  -- paired samples only
+
+        def report_qc_tumor_ch = qc_files_per_sample == 0
+            ? report_empty_slot.call()
+            : report_qc_tumor_grouped
+
+        // Normal-side QC covers paired samples only; meta.paired_data gives the tumor-only arm
+        // its [] up front instead of waiting out channel close for a match that never arrives.
+        report_id_meta
+            .branch { _id, meta ->
+                paired:     meta.paired_data
+                tumor_only: true
+            }
+            .set { report_roster }
+
+        def report_qc_normal_ch = qc_files_per_sample == 0
+            ? report_empty_slot.call()
+            : report_roster.paired
+                .join(report_qc_normal_grouped)
+                .map { id, _meta, files -> [id, files] }
+                .mix(report_roster.tumor_only.map { id, _meta -> [id, []] })
+        // report_qc_normal_ch: [id, [files] | []]  -- full roster
 
         report_id_meta
             .join(report_vep_ch,        remainder: true)

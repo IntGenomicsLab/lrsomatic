@@ -1,4 +1,5 @@
 Changes in component 'nf-core/ensemblvep/vep'
+'modules/nf-core/ensemblvep/vep/environment.yml' is unchanged
 'modules/nf-core/ensemblvep/vep/meta.yml' is unchanged
 Changes in 'ensemblvep/vep/main.nf':
 --- modules/nf-core/ensemblvep/vep/main.nf
@@ -10,18 +11,18 @@ Changes in 'ensemblvep/vep/main.nf':
 +    label 'process_very_high'
  
      conda "${moduleDir}/environment.yml"
-     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-@@ -15,6 +15,9 @@
-     tuple val(meta2), path(cache)
+     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+@@ -16,6 +16,9 @@
      tuple val(meta3), path(fasta)
      path extra_files
+     tuple path(gtf), path(gtf_tbi) // optional: [ path(gtf), path(gtf_tbi) ] -- mutually exclusive with cache
 +    val plugin_args
 +    path custom_vep
 +    path custom_vep_tbi
  
      output:
      tuple val(meta), path("${prefix}.vcf.gz"), emit: vcf, optional: true
-@@ -32,17 +35,27 @@
+@@ -33,6 +36,9 @@
      script:
      def args = task.ext.args ?: ''
      def args2 = task.ext.args2 ?: ''
@@ -31,8 +32,9 @@ Changes in 'ensemblvep/vep/main.nf':
      def file_extension = args.contains("--vcf") ? 'vcf' : args.contains("--json") ? 'json' : args.contains("--tab") ? 'tab' : 'vcf'
      def compress_cmd = args.contains("--compress_output") ? '' : '--compress_output bgzip'
      prefix = task.ext.prefix ?: "${meta.id}"
-     def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
-     def reference = fasta ? "--fasta ${fasta}" : ""
+@@ -44,11 +50,18 @@
+     // unchanged.
+     def annotation_source = gtf ? "--gtf ${gtf}" : "--cache --cache_version ${cache_version} --dir_cache ${dir_cache}"
      def create_index = file_extension == "vcf" ? "tabix ${args2} ${prefix}.${file_extension}.gz" : ""
 +    // Only the first --custom entry is rewritten, so further --custom tracks added through
 +    // ext.args keep their own staged filenames
@@ -50,10 +52,9 @@ Changes in 'ensemblvep/vep/main.nf':
          ${reference} \\
          --assembly ${genome} \\
 
-'modules/nf-core/ensemblvep/vep/environment.yml' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/main.nf.test' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/vcf.config' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/tab.gz.config' is unchanged
-'modules/nf-core/ensemblvep/vep/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/ensemblvep/vep/tests/nextflow.config' is unchanged
+'modules/nf-core/ensemblvep/vep/tests/main.nf.test' is unchanged
+'modules/nf-core/ensemblvep/vep/tests/tab.gz.config' is unchanged
+'modules/nf-core/ensemblvep/vep/tests/vcf.config' is unchanged
+'modules/nf-core/ensemblvep/vep/tests/main.nf.test.snap' is unchanged
 ************************************************************

@@ -19,6 +19,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    ├── methylation
 │    │    └── tumor
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -29,6 +32,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -37,6 +44,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── somatic
@@ -56,6 +64,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── modkit_pileup
 │    │    └── normal
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -74,6 +85,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -83,6 +98,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── germline
@@ -93,6 +109,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 ├── pipeline_info
 └── multiqc
 ```
+
+The `padfoot` and `reconplot` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan` needs `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
 
 ### `ascat`
 
@@ -397,7 +415,7 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 | `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                              |
 | `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                   |
 | `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                       |
-| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format                                         |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)     |
 | `sample.classified.germline.vcf`                | Classified germline SVs                                                        |
 | `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`             |
 | `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                      |
@@ -457,12 +475,12 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── somatic_smallvariants.vcf.gz.tbi
 ```
 
-| File                                | Description                                                      |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags |
-| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                |
-| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags  |
-| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                 |
+| File                                | Description                                                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                                           |
+| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                                          |
+| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags; `0/0` and `./.` records are left unphased |
+| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                                           |
 
 </details>
 
@@ -623,6 +641,68 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 
 </details>
 
+### `padfoot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── padfoot
+│   ├── severus_wakhan
+│   │   ├── annotated_svs.tsv
+│   │   ├── by_gene.tsv
+│   │   └── padfoot.log
+│   └── savana
+│       ├── annotated_svs.tsv
+│       ├── by_gene.tsv
+│       └── padfoot.log
+```
+
+| File                | Description                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotated_svs.tsv` | One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type                     |
+| `by_gene.tsv`       | One row per gene: SV and copy-number impact per haplotype, labelled against the caller's fitted ploidy (`NA` where the caller gave no minor-allele estimate) |
+| `padfoot.log`       | Padfoot log                                                                                                                                                  |
+
+`severus_wakhan/` combines Severus somatic SVs with the top-ranked Wakhan copy-number solution; `savana/` combines SAVANA classified somatic SVs with SAVANA absolute copy number (only present when SAVANA CNA was produced).
+
+</details>
+
+### `reconplot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── reconplot
+│   ├── severus_ascat
+│   │   ├── per_chromosome/sample_chr{1..22,X,Y}.{pdf,png}
+│   │   ├── genome_wide/sample_genome_wide.{pdf,png}
+│   │   ├── focus/sample_<regions>.{pdf,png}
+│   │   ├── sample.reconplot_cn.tsv
+│   │   ├── sample.reconplot_sv.tsv
+│   │   └── reconplot.log
+│   ├── severus_wakhan
+│   │   └── (same layout)
+│   └── savana
+│       └── (same layout)
+```
+
+| File                      | Description                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                                                                                            |
+| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                                                                                        |
+| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                                                                                               |
+| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                                                                                    |
+| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`, plus `svtype,detailed_type,cluster_id,inside_vntr` for Severus; ReConPlot reads the five coordinate/orientation columns) |
+| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied, and an `ERROR` line for any figure ReConPlot could not draw)                                                                   |
+
+A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.
+
+`severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
+
+</details>
+
 ### `wakhan`
 
 <details markdown="1">
@@ -630,24 +710,28 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 
 ```
 ├── wakhan
-│   ├── {ploidy}_{purity}_{confidence}
-│   │   ├── bed_output
+│   ├── solution_{ploidy}_{purity}_{confidence}
+│   │   ├── genes
 │   │   │   ├── genes_copynumber_states.bed
-│   │   │   ├── loh_regions.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_1.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_2.bed
-│   │   ├── variation_plots
-│   │   │   ├── chr{1-22,X,Y}_cn.html
-│   │   │   ├── chr{1-22,X,Y}_cn.pdf
-│   │   │   ├── CN_VARIATION_INDEX.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf
+│   │   │   ├── genes_copynumber_states.html
+│   │   │   ├── genes_copynumber_states.pdf
+│   │   ├── integer_profile.bed
+│   │   ├── integer_profile.html
+│   │   ├── integer_profile.pdf
+│   │   ├── integer_profile.vcf
+│   │   ├── subclonal_profile.bed
+│   │   ├── subclonal_profile.html
+│   │   ├── subclonal_profile.pdf
+│   │   ├── subclonal_profile.vcf
+│   │   ├── HiScanner_plots_data.zip
+│   ├── solution_rank_{rank}
 │   ├── coverage_data
-│   │   ├── {0-23}_SNPS.csv
+│   │   ├── {0-23}_SNPs.csv
+│   │   ├── baf.csv
+│   │   ├── cancer_genes_coverage.csv
+│   │   ├── cn_coverage.png
+│   │   ├── cn_peaks.png
+│   │   ├── coverage.csv
 │   │   ├── coverage_ps.csv
 │   │   ├── phase_corrected_coverage.csv
 │   │   ├── pileup_SNPs.csv
@@ -656,53 +740,36 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │   │   ├── chr{1-22,X,Y}.pdf
 │   │   ├── COVERAGE_INDEX.html
 │   ├── phasing_output
-│   │   ├── chr{1-22,X,Y}_phase_correction_0.html
-│   │   ├── chr{1-22,X,Y}_phase_correction_1.html
+│   │   ├── chr{1-22,X,Y}_phase_correction_{0.1,0.2,0.3,1,2}.html
 │   │   ├── chr{1-22,X,Y}_without_phase_correction.html
 │   │   ├── chr{1-22,X,Y}.pdf
-│   │   ├── sample.rephased.vcf.gz
-│   │   ├── sample.rephased.vcf.gz.tbi
+│   │   ├── PHASE_CORRECTION_INDEX.html
+│   │   ├── rephased.vcf.gz
+│   │   ├── rephased.vcf.gz.csi
 │   ├── snps_loh_plots
-│   │   ├── chr{1-22,X,Y}_snps_loh.html
-│   ├── sample_heatmap_ploidy_purity.html
-│   ├── sample_heatmap_ploidy_purity.html.pdf
-│   ├── sample_optimized_peak.html
+│   │   ├── {sample}_genome_snps_ratio_loh.html
+│   ├── {sample}_heatmap_ploidy_purity.html
+│   ├── {sample}_heatmap_ploidy_purity.html.pdf
 │   ├── solutions_ranks.tsv
-
 ```
 
-| File                                                                                                   | Description                                                                                        |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `{ploidy}_{purity}_{confidence}/bed_output/genes_copynumber_states.bed`                                | bed file containing allele specific copy number values with coverage information                   |
-| `{ploidy}_{purity}_{confidence}/bed_output/loh_regions.bed`                                            | bed file containing positions of loss of heterozygosity regions                                    |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_1.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 1               |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_2.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 2               |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.html`                                 | html based plotly plot of copy number and coverage for individual chromosomes                      |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.pdf`                                  | pdf based plotly plot of copy number and coverage for individual chromosomes                       |
-| `{ploidy}_{purity}_{confidence}/variation_plots/CN_VARIATION_INDEX.html`                               | unclear html plot                                                                                  |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.html`               | html plots of copy number variations in highlighted genes                                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf`                | pdf plots of copy number variations in highlighted genes                                           |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html` | genome-wide html copy number plots with coverage information on same axis                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf`  | genome-wide pdf copy number plots with coverage information on same axis                           |
-| `coverage_data/{0-23}_SNP.csv`                                                                         | CSV of coverage data per chromosome                                                                |
-| `coverage_data/coverage_ps.csv`                                                                        | CSV of overall haplotype specific coverage data                                                    |
-| `coverage_data/coverage.csv`                                                                           | CSV of overall coverage data                                                                       |
-| `coverage_data/phase_corrected_coverage.csv`                                                           | CSV of overall phase-corrected coverage data                                                       |
-| `coverage_data/pileup_SNPs.csv`                                                                        | CSV of SNP pileup data                                                                             |
-| `coverage_plots/chr{1-22,X,Y}_cov.html`                                                                | chromosome specific html coverage plots                                                            |
-| `coverage_plots/chr{1-22,X,Y}_cov.pdf`                                                                 | chromosome specific pdf coverage plots                                                             |
-| `coverage_plots/COVERAGE_INDEX.html`                                                                   | unclear html plot                                                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_0.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                                    |
-| `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                                 |
-| `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                                       |
-| `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                                 |
-| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                           | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
-| `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                                             |
-| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                              |
-| `sample_optimized_peak.html`                                                                           | optimization peak plot                                                                             |
-| `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                                          |
+| File                                                                      | Description                                                                                                                                                                                               |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.bed`             | Integer copy-number segments for one purity/ploidy solution, both haplotypes on shared boundaries: coverage, copy-number state and confidence per haplotype, and the IDs of SV breakpoints in the segment |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.vcf`             | The integer copy-number segments as VCF                                                                                                                                                                   |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.html`            | Interactive genome-wide plot of the integer copy-number profile with SV breakpoints (`.pdf`: static version)                                                                                              |
+| `solution_{ploidy}_{purity}_{confidence}/subclonal_profile.*`             | The same for subclonal copy-number states (`.bed`, `.vcf`, `.html`, `.pdf`)                                                                                                                               |
+| `solution_{ploidy}_{purity}_{confidence}/genes/genes_copynumber_states.*` | Copy-number states of the genes of interest (`.bed`) and their plots (`.html`, `.pdf`)                                                                                                                    |
+| `solution_{ploidy}_{purity}_{confidence}/HiScanner_plots_data.zip`        | The solution's profiles, coverage, BAF and breakpoints bundled for the [Wakhan visualisation web viewer](https://wakhan-visualization.github.io/)                                                         |
+| `solution_rank_{rank}`                                                    | The solution of that rank in `solutions_ranks.tsv` (a copy of its `solution_{ploidy}_{purity}_{confidence}` directory)                                                                                    |
+| `coverage_data/*.csv`                                                     | Per-chromosome SNP tables, BAF, haplotype-specific and phase-corrected coverage, and SNP pileups; tumour-only runs also write `{sample}_loh_segments.csv`                                                 |
+| `coverage_data/*.png`                                                     | Copy-number coverage and peak plots                                                                                                                                                                       |
+| `coverage_plots/chr{1-22,X,Y}_cov.html`                                   | Coverage plot per chromosome (`.pdf`: static version); `COVERAGE_INDEX.html` links them                                                                                                                   |
+| `phasing_output/*.html`                                                   | Phase-switch error plots per chromosome, with and without correction; `PHASE_CORRECTION_INDEX.html` links them                                                                                            |
+| `phasing_output/rephased.vcf.gz`                                          | Phase-corrected SNP VCF, with its `.csi` index                                                                                                                                                            |
+| `snps_loh_plots/{sample}_genome_snps_ratio_loh.html`                      | SNP allele ratios and loss-of-heterozygosity regions (tumour-only runs)                                                                                                                                   |
+| `{sample}_heatmap_ploidy_purity.html`                                     | Heatmap of the purity/ploidy fit (`.html.pdf`: static version)                                                                                                                                            |
+| `solutions_ranks.tsv`                                                     | Ranked purity/ploidy solutions; `repository_name` is the solution's directory                                                                                                                             |
 
 </details>
 

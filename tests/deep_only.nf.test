@@ -44,17 +44,8 @@ nextflow_pipeline {
                     assert !file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
                 },
 
-                // ── Phased VCFs exist and have data ──────────────────────────
-                {
-                    ['sample1', 'sample2', 'sample3'].each { s ->
-                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
-                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
-                        assert germline.exists()
-                        assert somatic.exists()
-                        assert germline.size() > 0
-                        assert somatic.size() > 0
-                    }
-                },
+                // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
+                { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {

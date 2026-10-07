@@ -43,17 +43,17 @@ sample1,tumour3.bam,,pb,male,n
 
 ### Full Description of Samplesheet Columns
 
-| Column           | Description                                                                                                                                                                            |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`         | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `bam_tumor`      | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                          |
-| `bam_normal`     | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                          |
-| `platform`       | A string specifying the platform used for sequencing, can be either `pb` for PacBio sequencing data or `ont` for Oxford Nanopore sequencing data                                       |
-| `sex`            | A string specifying the biological sex of the sample, can either be `m` or `f`                                                                                                         |
-| `fiber`          | A string specifying if the sample has been subjected to Fiber-seq. Can either be `y` or `n`                                                                                            |
-| `clair3_model`   | A string describing which model is to be used for Clair3's small variant calling (_optional_)                                                                                          |
-| `clairSTO_model` | A string describing which model is to be used for ClairS-TO's small variant calling (_optional_)                                                                                       |
-| `clairS_model`   | A string describing which model is to be used for ClairS's small variant calling (_optional_)                                                                                          |
+| Column           | Description                                                                                                                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sample`         | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`).                                                                                                                             |
+| `bam_tumor`      | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                                                                                                                                                      |
+| `bam_normal`     | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                                                                                                                                                      |
+| `platform`       | A string specifying the platform used for sequencing, can be either `pb` for PacBio sequencing data or `ont` for Oxford Nanopore sequencing data                                                                                                                                                                   |
+| `sex`            | A string specifying the biological sex of the sample, can either be `m` or `f`                                                                                                                                                                                                                                     |
+| `fiber`          | A string specifying if the sample has been subjected to Fiber-seq. Can either be `y` or `n`                                                                                                                                                                                                                        |
+| `clair3_model`   | A Clair3 model name (_optional_). Clair3 v2 only reads PyTorch models: names bundled with Clair3 (e.g. `r1041_e82_400bps_sup_v500`, `hifi_revio`) are used from the image, other ONT names are downloaded from [HKU's PyTorch conversion of Rerio](https://www.bio8.cs.hku.hk/clair3/clair3_models_rerio_pytorch/) |
+| `clairSTO_model` | A string describing which model is to be used for ClairS-TO's small variant calling (_optional_)                                                                                                                                                                                                                   |
+| `clairS_model`   | A string describing which model is to be used for ClairS's small variant calling (_optional_)                                                                                                                                                                                                                      |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
@@ -135,6 +135,17 @@ For structural variants, the CHM13 panel of normals is a merged panel combining 
 
 For tumour-only small variants, ClairS-TO separates germline from somatic calls with a panel of normals and with its Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. `--genome CHM13` supplies five CHM13 PON VCFs (gnomAD, dbSNP, 1000 Genomes, CoLoRSdb and ASAP), which **replace** the GRCh38 databases inside the container. Unless `--skip_ascat` is set, purity and copy number come from the pipeline's own ASCAT run (`CLAIRSTO_VERDICT_TAG`); only with `--skip_ascat` does ClairS-TO estimate them itself, from assembly-specific loci, allele and GC content files. A GRCh38 resource set on a CHM13 run leaves germline variants untagged.
 
+When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
+runs DeepVariant on the **tumour** BAM, so on its own those calls mix germline and
+clonal somatic variants. When `deepsomatic` is also in `--somatic_var_keep`, the
+pipeline records DeepSomatic's verdict at each site in `INFO/DS_VERDICT` and keeps
+DeepVariant's `PASS` calls only at sites it calls `GERMLINE` or `PON`, matching multi-allelic
+sites per ALT allele; `RefCall` and sites DeepSomatic never evaluated are dropped, whatever
+`--smallvar_filter_pass` is. Without `deepsomatic`, the DeepVariant germline calls are
+used without a verdict filter and may include somatic variants. Either way the
+tumour-only germline arm is a tumour-derived proxy, not a call set from normal
+tissue.
+
 With `--genome CHM13 --skip_ascat` the pipeline builds a CHM13 resource set from the ASCAT files it already downloads, so no extra setup is needed. LogR correction is GC-only, as ClairS-TO recommends for CHM13: no replication timing file is published for the assembly. Without `--skip_ascat` nothing is built, because the tagging comes from ASCAT's own tables.
 
 To use a resource set of your own — another assembly, or a CHM13 set carrying an `RT_<name>.txt` for replication timing correction — pass `--clairsto_cna_resources` together with `--skip_ascat`. Without `--skip_ascat` it is ignored, with a warning. Expected layout:
@@ -150,6 +161,8 @@ To use a resource set of your own — another assembly, or a CHM13 set carrying 
 Keep one resource set per directory: ClairS-TO derives the per-contig prefix from the single `*chr1.txt` and takes exactly one `GC_*.txt`. The directory must be self-contained, since only the directory itself is staged into the container; materialise symlinked content with `cp -rL`. Both are checked at startup.
 
 If the loci cannot belong to the reference, ClairS-TO disables Verdict with a warning rather than applying the wrong coordinates. On a `--skip_ascat` run, look for `VERDICT CNA RESOURCE DIRECTORY` in the ClairS-TO log to confirm which set was used; otherwise Verdict runs outside ClairS-TO and the tables the tags came from are published next to the VCFs.
+
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot needs nothing extra on CHM13 (`T2T` preset).
 
 ### Pipeline options
 
@@ -169,6 +182,8 @@ If the loci cannot belong to the reference, ClairS-TO disables Verdict with a wa
 | `--skip_mosdepth`      | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_ascat`         | A boolean to skip `ascat`. ClairS-TO's Verdict germline tagging then falls back to Verdict's own purity and copy number estimate, which is still up to 0.14 from ASCAT's on the samples it was measured on — see [Verdict tags](output.md#clairs-to). Default = `false` |
 | `--skip_savana`        | A boolean to skip `savana` (SV + copy-number calling). Default = `false`                                                                                                                                                                                                |
+| `--skip_padfoot`       | A boolean to skip `padfoot` SV/CNA annotation. Default = `false`                                                                                                                                                                                                        |
+| `--skip_reconplot`     | A boolean to skip `reconplot` SV/CNA figures. Default = `false`                                                                                                                                                                                                         |
 | `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                                                                                                           |
 | `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                                                                                                              |
@@ -376,6 +391,11 @@ Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.c
 
 Running with neither, and without `--skip_signatures`, stops the pipeline at start-up.
 
+A volume passed with `--sigprofiler_genome_dir` is checked once per run against the chromosome checksums of the pipeline's SigProfilerMatrixGenerator (`SIGPROFILER_VERIFY`). If a chromosome file is missing or a checksum differs, the run stops before any sample is processed, and the error says which of the two it found. A genome the image has no checksums for is rejected too.
+
+> [!WARNING]
+> GRCh38 and CHM13-T2T payloads installed before this release no longer pass that check. SigProfilerMatrixGenerator corrected how both are encoded, and the payloads it now downloads differ from the earlier ones. Reinstall once with `--download_sigprofiler_genome`, or with `SigProfilerMatrixGenerator install <genome> --volume <dir>` from the same image, and pass the new volume on later runs. Mutation counts and COSMIC fits are unaffected. Only the strand-split matrices (for example SBS288 and SBS384) change, slightly.
+
 | Parameter                                   | Description                                                                                                                                                                                         |
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--sigprofiler_genome_dir`                  | Full path to a SigProfilerMatrixGenerator volume containing `tsb/<sigprofiler_genome>/`. Default = `null`                                                                                           |
@@ -387,18 +407,136 @@ Running with neither, and without `--skip_signatures`, stops the pipeline at sta
 
 Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support not yet in a SigProfiler release: SigProfilerMatrixGenerator from the branch behind [SigProfilerSuite/SigProfilerMatrixGenerator#250](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/pull/250) and SigProfilerAssignment from [ljwharbers/SigProfilerAssignment](https://github.com/ljwharbers/SigProfilerAssignment/tree/chm13-t2t-support), with COSMIC SBS/DBS signatures renormalised to CHM13. ID83 signatures always use the GRCh37 set. Conda is not supported for this step.
 
+#### Padfoot Options
+
+[Padfoot](https://github.com/KolmogorovLab/Padfoot) annotates somatic SVs and CNAs with gene/exon overlap, repeat context and complex-SV grouping. It is run for every available SV/CNA caller pair, for paired and tumour-only samples alike:
+
+- `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked Wakhan solution's integer copy-number profile (`solution_rank_1/integer_profile.vcf`; requires Wakhan not skipped)
+- `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
+
+Padfoot is not distributed on bioconda. The module's image (`docker.io/timmy9527/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
+
+RepeatMasker (used only to classify the sequence of novel insertions) runs by default; the image ships the Dfam 4.0 root and curated-consensus partitions. `--padfoot_run_repeatmasker false` skips it.
+
+Gene copy number in `by_gene.tsv` is labelled against the tumour ploidy: the module passes the CN caller's fitted purity/ploidy table (Wakhan `solutions_ranks.tsv`, SAVANA `*_fitted_purity_ploidy.tsv`) and Padfoot compares each haplotype's integer copy number with ploidy/2 (SAVANA's fractional major/minor copy numbers are rounded first). Without a fit table Padfoot estimates the ploidy from the profile and says so in `padfoot.log`; segments without a minor-allele estimate are reported as `NA`.
+
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` (a GENCODE-style GFF3, plain or gzipped) and `--padfoot_rm` (a RepeatMasker `.out`, or a BED of chromosome, start, end and repeat class), both on the same assembly as `--genome`; otherwise Padfoot is skipped with a warning. `--padfoot_genome` must match `--genome` (hg38 annotations on CHM13 coordinates would be wrong), so a mismatch stops the run at start-up.
+
+| Parameter                    | Description                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                    |
+| `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                         |
+| `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                      |
+| `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions); the image ships the Dfam 4.0 root and curated-consensus partitions. Default = `true` |
+
+#### ReConPlot Options
+
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`docker.io/timmy9527/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
+
+- `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
+- `severus_wakhan/` -- Wakhan top-ranked solution CN (`solution_rank_1/integer_profile.bed`) + Severus somatic SVs
+- `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs (read from `*.classified.somatic.vcf`, which SAVANA writes on every platform; its somatic BEDPE comes from the ONT classifier only)
+
+Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track.
+
+| Parameter                  | Description                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)                                                                                                                                                       |
+| `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                                                                                                                                                                            |
+| `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                                                                                                                                                                              |
+| `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                                                                                                                                                                          |
+| `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"` (syntax checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus panel is produced if none is left). Default = `null` (no focus panel) |
+| `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                                                                                                                                                                         |
+| `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                                                                                                                                                                              |
+| `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                                                                                                                                                                     |
+
+##### Offline and air-gapped systems
+
+Both modules use the same pinned-tag pair as the pipeline's other large custom images (ClairS-TO): a prebuilt SIF (`oras://docker.io/timmy9527/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`docker.io/timmy9527/<name>:<tag>`) otherwise, both on Docker Hub, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
+
+```groovy
+process {
+    withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' }
+    withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/reconplot.sif' }
+}
+```
+
+Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under `containers/`).
+
 #### Variant Filtering and Combining Options
 
 These options control how variants from multiple callers are filtered and merged.
 
-| Parameter                      | Description                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `--germline_var_keep`          | Expression or threshold for retaining germline variants after calling. Default = `null`             |
-| `--somatic_var_keep`           | Expression or threshold for retaining somatic variants after calling. Default = `null`              |
-| `--germline_var_combine`       | Strategy for combining germline variant caller outputs (e.g. union, intersection). Default = `null` |
-| `--somatic_var_combine`        | Strategy for combining somatic variant caller outputs (e.g. union, intersection). Default = `null`  |
-| `--prioritize_caller_germline` | Comma-separated caller priority order used when combining germline calls. Default = `null`          |
-| `--prioritize_caller_somatic`  | Comma-separated caller priority order used when combining somatic calls. Default = `null`           |
+| Parameter                      | Description                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `--germline_var_keep`          | Comma-separated germline callers to run: `deepvariant`, `clair`. Default = `clair`                          |
+| `--somatic_var_keep`           | Comma-separated somatic callers to run: `deepsomatic`, `clair`. Default = `clair`                           |
+| `--germline_var_combine`       | How to combine germline caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`   |
+| `--somatic_var_combine`        | How to combine somatic caller outputs: `consensus` (shared calls only) or `all` (union). Default = `all`    |
+| `--prioritize_caller_germline` | Whose record to use where both germline callers call a variant: `deepvariant` or `clair`. Default = `clair` |
+| `--prioritize_caller_somatic`  | Whose record to use where both somatic callers call a variant: `deepsomatic` or `clair`. Default = `clair`  |
+| `--smallvar_filter_pass`       | Keep only PASS records from each small variant caller downstream. Default = `true`                          |
+
+DeepVariant and DeepSomatic emit a record for every site they evaluate, not only
+for the variants they call, so most of their records are `RefCall`, `GERMLINE` or
+`PON`; Clair3 and ClairS also keep their `LowQual` and `NonSomatic` records. Without
+a `PASS` filter, `*_var_combine = 'all'` would carry all of these into the phased
+VCFs and the mutation burden.
+
+`--smallvar_filter_pass` (`true` by default) restricts the copy of each caller's
+VCF that is handed to the caller consensus, phasing, VEP and the report. In
+tumor-only mode ClairS-TO is unaffected by the setting: `VCFSPLIT` already
+restricts its somatic split to `PASS`, and its germline split is `PASS`-rewritten
+rather than `PASS`-filtered. The per-caller VCFs published under
+`<outdir>/<sample>/variants/<caller>` are never filtered, so no calls are lost
+from the results directory.
+
+Set it to `false` to restore the previous unfiltered behaviour: each caller's
+records are passed on with their original `FILTER`. Only the ClairS-TO germline
+split is normalised to `PASS`, with its original value kept in
+`INFO/ORIG_FILTER`.
+
+`consensus` keeps only alleles called by both callers, using the prioritised
+caller's record. Multi-allelic records are split so each allele can be matched
+across callers, and rejoined before phasing. A multi-allelic call of which only one
+allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
+and its `PL` values for the dropped allele are lost.
+
+`all` keeps the union by position, one caller's record per position: every
+record of the prioritised caller, plus the other caller's records at positions
+where the prioritised caller has none. Where both callers call a position, even
+with different alleles, only the prioritised caller's record is kept. With
+`--smallvar_filter_pass false`, a `PASS` record wins over a non-`PASS` one first,
+so the prioritised caller's `RefCall`/`LowQual` record does not hide the other
+caller's `PASS` call. Records are not split in this mode.
+
+#### Germline and somatic provenance
+
+Germline and somatic small variants are merged into one VCF for somatic phasing,
+because Longphase needs all variant sites in a single file to produce consistent
+phase blocks. The somatic arm is then recovered from the phased result by an
+`INFO/SOMATIC` flag stamped on each arm before the merge, not by position, since a
+germline record at the same coordinate as a somatic call would otherwise be kept.
+Tagging leaves `FILTER` unchanged.
+
+Longphase phases by position, so a germline record at the position of a somatic
+call would lend the somatic record its genotype and phase set. Germline records
+at the position of any somatic call with an alternate genotype are therefore
+left out of somatic phasing. Somatic records without an alternate genotype
+(`0/0` or `./.`, present only with `--smallvar_filter_pass false`) are not
+phased: they are added back to `somatic_smallvariants.vcf.gz` unchanged.
+
+Three INFO fields carry this provenance:
+
+| Field         | Meaning                                                                                                               |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `SOMATIC`     | Record came from the somatic call set                                                                                 |
+| `GERMLINE`    | Record came from the germline call set                                                                                |
+| `ORIG_FILTER` | Original `FILTER` of ClairS-TO germline records, before normalisation to `PASS`. Multiple filters are joined with `,` |
+
+Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
+lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
+`vep/germline/`, and in the unfiltered per-caller VCFs under `variants/<caller>/`.
 
 #### PON Options
 
@@ -696,7 +834,8 @@ To use a different container from the default container or conda environment spe
 The ClairS-TO image is the pipeline's largest custom image (about 3.3 GB as a SIF). Under
 Singularity and Apptainer it is pulled as a prebuilt SIF from Docker Hub,
 `oras://docker.io/ljwharbers/clairs-to-sif:<tag>`; every other engine runs
-`docker.io/ljwharbers/clairs-to:<tag>`. It lives on Docker Hub rather than on ghcr with the
+`docker.io/ljwharbers/clairs-to:<tag>`. The Padfoot and ReConPlot images follow the same arrangement
+(`docker.io/timmy9527/<name>-sif` / `docker.io/timmy9527/<name>`). ClairS-TO lives on Docker Hub rather than on ghcr with the
 pipeline's other custom images because ghcr redirects each download to a signed URL that expires
 at the next 5-minute mark and cuts a stream that is still open then, and Apptainer cannot resume a
 cut download: the SIF failed with `PROTOCOL_ERROR` on any link slower than about 10 MB/s. Docker

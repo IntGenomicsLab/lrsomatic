@@ -1,0 +1,77 @@
+nextflow_process {
+
+    name "Test Process VCFTAG"
+    script "../main.nf"
+    process "VCFTAG"
+
+    tag "modules"
+    tag "modules_local"
+    tag "vcftag"
+    tag "small"
+
+    // Runs for real (no -stub): the tagging is an awk program embedded in the Nextflow script
+    // block, so the escaping only holds if it is actually executed.
+    test("stamps the flag and declares its header without touching FILTER") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/vcftag_input.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = 'SOMATIC'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            // linesGzip is built into nf-test; the .vcf accessor needs an nft-vcf plugin that
+            // nf-test.config does not load, so this reads the records directly.
+            def all    = path(process.out.vcf[0][1]).linesGzip
+            def lines  = all.findAll { line -> !line.startsWith('#') }
+            def header = all.findAll { line -> line.startsWith('##') }.join('\n')
+
+            def filters = lines.collectEntries { l -> def f = l.split('\t'); [ (f[1]): f[6] ] }
+            def infos   = lines.collectEntries { l -> def f = l.split('\t'); [ (f[1]): f[7] ] }
+
+            assertAll(
+                // every input record survives -- tagging must not filter
+                { assert lines.size() == 5 },
+                // the flag is declared, so bcftools can query it downstream
+                { assert header.contains('ID=SOMATIC') },
+                // the flag is stamped exactly once per record, including the one whose INFO was '.'
+                { assert infos.values().every { it.split(';').count('SOMATIC') == 1 } },
+                { assert infos['300'] == 'SOMATIC' },
+                // FILTER is left exactly as the caller emitted it
+                { assert filters == [ '100':'PASS', '200':'NonSomatic', '300':'RefCall', '400':'.', '500':'LowQual;RefCall' ] },
+                // pre-existing INFO is preserved, with the flag appended
+                { assert infos['200'] == 'CALLER=clairs-to;EXISTING;SOMATIC' },
+                { assert infos['500'] == 'CALLER=clair3;EXISTING;SOMATIC' },
+                // VCFTAG no longer adds ORIG_FILTER
+                { assert !all.any { it.contains('ORIG_FILTER') } }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [] ]
+                input[1] = 'GERMLINE'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

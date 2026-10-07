@@ -1,4 +1,5 @@
 Changes in component 'nf-core/longphase/phase'
+'modules/nf-core/longphase/phase/environment.yml' is unchanged
 'modules/nf-core/longphase/phase/meta.yml' is unchanged
 Changes in 'longphase/phase/main.nf':
 --- modules/nf-core/longphase/phase/main.nf
@@ -67,8 +68,7 @@ Changes in 'longphase/phase/main.nf':
      """
  }
 
-'modules/nf-core/longphase/phase/environment.yml' is unchanged
+'modules/nf-core/longphase/phase/tests/nextflow.config' is unchanged
 'modules/nf-core/longphase/phase/tests/main.nf.test' is unchanged
 'modules/nf-core/longphase/phase/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/longphase/phase/tests/nextflow.config' is unchanged
 ************************************************************

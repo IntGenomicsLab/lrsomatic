@@ -3,16 +3,16 @@ process FIBERTOOLSRS_QC {
     label 'process_very_high'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/fibertools-rs:0.8.1--h3b373d1_0':
-        'biocontainers/fibertools-rs:0.8.1--h3b373d1_0' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/fibertools-rs:0.13.1--h270025b_0' :
+        'biocontainers/fibertools-rs:0.13.1--h270025b_0' }"
 
     input:
     tuple val(meta), path(bam)
 
     output:
     tuple val(meta), path("*.txt"), emit: qc_txt
-    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed 's/^fibertools-rs v//; s/\tgit-details.*//'"), topic: versions, emit: versions_fibertoolsrs
+    tuple val("${task.process}"), val('fibertoolsrs'), eval("ft --version |& sed 's/^fibertools-rs v//; s/\t.*//'"), topic: versions, emit: versions_fibertoolsrs
 
     when:
     task.ext.when == null || task.ext.when

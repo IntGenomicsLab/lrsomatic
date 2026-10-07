@@ -32,11 +32,10 @@ workflow PREPARE_VEP_PLUGINS {
     if (prepare.containsKey('vep_revel')) {
         if (prepare['vep_revel'].toString().contains('://')) {
             WGET_REVEL (
-                channel.value([ [ id: 'revel' ], prepare['vep_revel'] ])
+                channel.value([ [ id: 'revel' ], prepare['vep_revel'], 'zip' ])
             )
 
             ch_revel_zip = WGET_REVEL.out.outfile
-            ch_versions = ch_versions.mix(WGET_REVEL.out.versions)
         }
         else {
             ch_revel_zip = channel.value([ [ id: 'revel' ], file(prepare['vep_revel'], checkIfExists: true) ])
@@ -51,7 +50,6 @@ workflow PREPARE_VEP_PLUGINS {
         )
 
         staged << VEPPLUGIN_REVEL.out.files
-        ch_versions = ch_versions.mix(UNZIP_REVEL.out.versions)
     }
 
     //
@@ -62,11 +60,10 @@ workflow PREPARE_VEP_PLUGINS {
     if (prepare.containsKey('vep_eve')) {
         if (prepare['vep_eve'].toString().contains('://')) {
             WGET_EVE (
-                channel.value([ [ id: 'eve' ], prepare['vep_eve'] ])
+                channel.value([ [ id: 'eve' ], prepare['vep_eve'], 'zip' ])
             )
 
             ch_eve_zip = WGET_EVE.out.outfile
-            ch_versions = ch_versions.mix(WGET_EVE.out.versions)
         }
         else {
             ch_eve_zip = channel.value([ [ id: 'eve' ], file(prepare['vep_eve'], checkIfExists: true) ])
@@ -81,7 +78,6 @@ workflow PREPARE_VEP_PLUGINS {
         )
 
         staged << VEPPLUGIN_EVE.out.files
-        ch_versions = ch_versions.mix(UNZIP_EVE.out.versions)
     }
 
     //

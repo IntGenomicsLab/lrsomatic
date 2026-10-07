@@ -8,8 +8,7 @@ include { UNZIP as UNZIP_ALLELES         } from '../../modules/nf-core/unzip/mai
 include { UNZIP as UNZIP_GC              } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_LOCI            } from '../../modules/nf-core/unzip/main'
 include { UNZIP as UNZIP_RT              } from '../../modules/nf-core/unzip/main'
-include { UNTAR                          } from '../../modules/nf-core/untar/main'
-include { WGET                           } from '../../modules/nf-core/wget/main'
+include { CLAIR3_MODEL                    } from '../../modules/local/clair3_model/main'
 
 workflow PREPARE_REFERENCE_FILES {
     take:
@@ -20,7 +19,7 @@ workflow PREPARE_REFERENCE_FILES {
         ascat_loci_rt   // str: path to ASCAT RT correction file (.zip or direct), or null
         clairsto_cna    // bool: also unzip the loci/allele/GC set for ClairS-TO's Verdict module
         basecall_meta   // [meta, basecall_model_str, kinetics_str]  -- from METAEXTRACT per sample
-        clair3_modelMap // Map<basecall_model_str, clair3_model_name>  -- used to resolve download URLs
+        clair3_modelMap // Map<basecall_model_str, clair3_model_name>  -- header basecall model to Clair3 model
 
     main:
         ch_versions = channel.empty()
@@ -40,46 +39,51 @@ workflow PREPARE_REFERENCE_FILES {
             UNZIP_FASTA( [ [:], fasta ])
 
             ch_prepared_fasta = UNZIP_FASTA.out.file
-            ch_versions = ch_versions.mix(UNZIP_FASTA.out.versions)
         } else {
             ch_prepared_fasta = channel.value([ [:], fasta ])
         }
         // ch_prepared_fasta: [[:], fasta_path]  -- empty meta; uncompressed FASTA
 
-        // Clair3 model URLs: explicit clair3_model beats the BAM-header model; PacBio from HKU, ONT from the Nanopore CDN
-        basecall_meta.map { meta, basecall_model_meta, _kinetics_meta ->
-            def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
-            // Key on the downloaded model; keying on the header name let an explicit clair3_model add a duplicate
-            def meta_new = [id: model]
-            def download_prefix = ( basecall_model_meta == 'hifi_revio' ? "https://www.bio8.cs.hku.hk/clair3/clair3_models/" : "https://cdn.oxfordnanoportal.com/software/analysis/models/clair3" )
-            def url = "${download_prefix}/${model}.tar.gz"
-            return [ meta_new, url ]
-        }
-        .unique()  // deduplicate: multiple samples with the same Clair3 model share one download
-        .set{ clair3_model_urls }
-        // clair3_model_urls: [meta(id=clair3_model_name), download_url_str]
-        //   one item per unique Clair3 model needed across all samples
+        // Clair3 models: explicit clair3_model beats the BAM-header model. Clair3 v2 only reads PyTorch models;
+        // the image bundles HKU's models and ONT's recent R10.4.1 ones, anything else is downloaded from
+        // HKU's PyTorch conversions (ONT's Rerio catalogue for r9/r10 names)
+        def clair3_bundled = [
+            'hifi', 'hifi_revio', 'hifi_sequel2', 'ilmn', 'ont', 'ont_guppy5',
+            'r1041_e82_400bps_hac_v410', 'r1041_e82_400bps_hac_v500', 'r1041_e82_400bps_hac_v520',
+            'r1041_e82_400bps_hac_v520_with_mv', 'r1041_e82_400bps_hac_v600', 'r1041_e82_400bps_hac_v600_with_mv',
+            'r1041_e82_400bps_hac_with_mv', 'r1041_e82_400bps_sup_v410', 'r1041_e82_400bps_sup_v430_bacteria_finetuned',
+            'r1041_e82_400bps_sup_v500', 'r1041_e82_400bps_sup_v520', 'r1041_e82_400bps_sup_v520_with_mv',
+            'r1041_e82_400bps_sup_with_mv', 'r941_prom_hac_g360+g422', 'r941_prom_sup_g5014'
+        ]
+        basecall_meta
+            .map { meta, basecall_model_meta, _kinetics_meta ->
+                def model = (!meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']) ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
+                // Key on the model itself; keying on the header name let an explicit clair3_model add a duplicate
+                return model
+            }
+            .unique()  // one entry per Clair3 model needed across all samples
+            .branch { model ->
+                bundled: model in clair3_bundled
+                    return [ [id: model], [] ]
+                download: true
+                    def collection = model ==~ /^r(9|10).*/ ? 'clair3_models_rerio_pytorch' : 'clair3_models_pytorch'
+                    return [ [id: model], "https://www.bio8.cs.hku.hk/clair3/${collection}/${model}" ]
+            }
+            .set { clair3_model_sources }
+        // clair3_model_sources.bundled:  [meta(id=clair3_model_name), []]       -- read from the image
+        // clair3_model_sources.download: [meta(id=clair3_model_name), url_str]  -- model directory URL
 
         //
-        // MODULE: WGET (label: process_single)
-        // Input:  [meta, url_str]  -- model name (id) + download URL
-        // Output: .outfile -- [meta, tarball]  -- downloaded .tar.gz model archive
+        // MODULE: CLAIR3_MODEL (label: process_single)
+        // Input:  [meta, url_str]  -- model name (id) + model directory URL
+        // Output: .model -- [meta, model_dir]  -- pileup.pt and full_alignment.pt
         //
-        WGET ( clair3_model_urls )
+        CLAIR3_MODEL ( clair3_model_sources.download )
 
-        ch_versions = ch_versions.mix(WGET.out.versions)
-
-        //
-        // MODULE: UNTAR (label: process_single)
-        // Input:  WGET.out.outfile -- [meta, tarball]
-        // Output: .untar -- [meta, model_dir]  -- extracted Clair3 model directory
-        //
-        UNTAR (
-            WGET.out.outfile
-        )
-
-        UNTAR.out.untar.set { downloaded_clair3_models }
-        // downloaded_clair3_models: [meta(id=clair3_model_name), model_dir]
+        clair3_model_sources.bundled
+            .mix(CLAIR3_MODEL.out.model)
+            .set { clair3_models }
+        // clair3_models: [meta(id=clair3_model_name), model_dir or []]  -- [] = bundled with the Clair3 image
 
         //
         // MODULE: SAMTOOLS_FAIDX (label: process_single)
@@ -108,7 +112,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_ALLELES(channel.fromPath(file(ascat_alleles)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 allele_files = UNZIP_ALLELES.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // allele_files: [path, path, ...]  -- all per-chromosome allele files collected
-                ch_versions = ch_versions.mix(UNZIP_ALLELES.out.versions)
             } else allele_files = channel.fromPath(ascat_alleles).collect()
 
             // Loci files: per-chromosome SNP loci positions
@@ -118,7 +121,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_LOCI(channel.fromPath(file(ascat_loci)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 loci_files = UNZIP_LOCI.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // loci_files: [path, path, ...]  -- all per-chromosome loci files collected
-                ch_versions = ch_versions.mix(UNZIP_LOCI.out.versions)
             } else loci_files = channel.fromPath(ascat_loci).collect()
 
             // GC correction file: genome-wide GC content per locus (optional)
@@ -128,7 +130,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_GC(channel.fromPath(file(ascat_loci_gc)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 gc_file = UNZIP_GC.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // gc_file: [path, ...]  -- GC correction file(s) collected
-                ch_versions = ch_versions.mix(UNZIP_GC.out.versions)
             } else gc_file = channel.fromPath(ascat_loci_gc).collect()
         }
 
@@ -140,7 +141,6 @@ workflow PREPARE_REFERENCE_FILES {
                 UNZIP_RT(channel.fromPath(file(ascat_loci_rt)).collect().map{ it -> [ [ id:it[0].baseName ], it ] })
                 rt_file = UNZIP_RT.out.unzipped_archive.flatMap { it -> it[1].listFiles() }.collect()
                 // rt_file: [path, ...]  -- RT correction file(s) collected
-                ch_versions = ch_versions.mix(UNZIP_RT.out.versions)
             } else rt_file = channel.fromPath(ascat_loci_rt).collect()
         }
 
@@ -154,7 +154,7 @@ workflow PREPARE_REFERENCE_FILES {
         gc_file       // [path, ...]  -- GC correction file ([] if not provided)
         rt_file       // [path, ...]  -- replication timing correction file ([] if not provided)
 
-        downloaded_clair3_models  // [meta(id=clair3_model_name), model_dir]
+        clair3_models  // [meta(id=clair3_model_name), model_dir or []]  -- [] = bundled with the Clair3 image
 
         versions = ch_versions
 }
