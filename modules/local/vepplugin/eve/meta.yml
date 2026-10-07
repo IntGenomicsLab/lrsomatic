@@ -38,7 +38,7 @@ output:
       - tabix:
           type: string
           description: The tool name
-      - "tabix -h 2>&1 | grep -oP 'Version:\\s*\\K[^\\s]+'":
+      - "tabix -h 2>&1 | sed -n 's/^Version: *\\([^ ]*\\).*/\\1/p' | head -n 1":
           type: string
           description: The command used to generate the version of the tool
 
@@ -50,7 +50,7 @@ topics:
       - tabix:
           type: string
           description: The tool name
-      - "tabix -h 2>&1 | grep -oP 'Version:\\s*\\K[^\\s]+'":
+      - "tabix -h 2>&1 | sed -n 's/^Version: *\\([^ ]*\\).*/\\1/p' | head -n 1":
           type: string
           description: The command used to generate the version of the tool
 
