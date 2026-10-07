@@ -162,6 +162,8 @@ Keep one resource set per directory: ClairS-TO derives the per-contig prefix fro
 
 If the loci cannot belong to the reference, ClairS-TO disables Verdict with a warning rather than applying the wrong coordinates. On a `--skip_ascat` run, look for `VERDICT CNA RESOURCE DIRECTORY` in the ClairS-TO log to confirm which set was used; otherwise Verdict runs outside ClairS-TO and the tables the tags came from are published next to the VCFs.
 
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot needs nothing extra on CHM13 (`T2T` preset).
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -180,6 +182,8 @@ If the loci cannot belong to the reference, ClairS-TO disables Verdict with a wa
 | `--skip_mosdepth`      | A boolean to skip `mosdepth`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_ascat`         | A boolean to skip `ascat`. ClairS-TO's Verdict germline tagging then falls back to Verdict's own purity and copy number estimate, which is still up to 0.14 from ASCAT's on the samples it was measured on — see [Verdict tags](output.md#clairs-to). Default = `false` |
 | `--skip_savana`        | A boolean to skip `savana` (SV + copy-number calling). Default = `false`                                                                                                                                                                                                |
+| `--skip_padfoot`       | A boolean to skip `padfoot` SV/CNA annotation. Default = `false`                                                                                                                                                                                                        |
+| `--skip_reconplot`     | A boolean to skip `reconplot` SV/CNA figures. Default = `false`                                                                                                                                                                                                         |
 | `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                                                                                                           |
 | `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                                                                                                              |
@@ -395,6 +399,62 @@ A volume passed with `--sigprofiler_genome_dir` is checked once per run against 
 | `--sigprofiler_assignment_args`             | Extra arguments for `SigProfilerAssignment cosmic_fit`, e.g. `"--make_plots False"`. Default = `null`                                                                                               |
 
 Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support not yet in a SigProfiler release: SigProfilerMatrixGenerator from the branch behind [SigProfilerSuite/SigProfilerMatrixGenerator#250](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/pull/250) and SigProfilerAssignment from [ljwharbers/SigProfilerAssignment](https://github.com/ljwharbers/SigProfilerAssignment/tree/chm13-t2t-support), with COSMIC SBS/DBS signatures renormalised to CHM13. ID83 signatures always use the GRCh37 set. Conda is not supported for this step.
+
+#### Padfoot Options
+
+[Padfoot](https://github.com/KolmogorovLab/Padfoot) annotates somatic SVs and CNAs with gene/exon overlap, repeat context and complex-SV grouping. It is run for every available SV/CNA caller pair, for paired and tumour-only samples alike:
+
+- `padfoot/severus_wakhan/` -- Severus somatic SVs + the top-ranked Wakhan solution's integer copy-number profile (`solution_rank_1/integer_profile.vcf`; requires Wakhan not skipped)
+- `padfoot/savana/` -- SAVANA classified somatic SVs + SAVANA segmented absolute copy number (requires SAVANA CNA, i.e. an SNP source: the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples on GRCh38/CHM13). Samples without SAVANA CNA are silently skipped.
+
+Padfoot is not distributed on bioconda. The module's image (`docker.io/timmy9527/padfoot-repeatmasker`, recipe in `containers/padfoot/`) ships a pinned commit of the [Tim-Yu/Padfoot](https://github.com/Tim-Yu/Padfoot) fork, which adds SAVANA input support (to be proposed upstream), so nothing is downloaded at run time. Padfoot is therefore not available under `-profile conda`: use Docker, Singularity or Apptainer, or `--skip_padfoot`.
+
+RepeatMasker (used only to classify the sequence of novel insertions) runs by default; the image ships the Dfam 4.0 root and curated-consensus partitions. `--padfoot_run_repeatmasker false` skips it.
+
+Gene copy number in `by_gene.tsv` is labelled against the tumour ploidy: the module passes the CN caller's fitted purity/ploidy table (Wakhan `solutions_ranks.tsv`, SAVANA `*_fitted_purity_ploidy.tsv`) and Padfoot compares each haplotype's integer copy number with ploidy/2 (SAVANA's fractional major/minor copy numbers are rounded first). Without a fit table Padfoot estimates the ploidy from the profile and says so in `padfoot.log`; segments without a minor-allele estimate are reported as `NA`.
+
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For other genomes (e.g. CHM13) provide `--padfoot_gff` (a GENCODE-style GFF3, plain or gzipped) and `--padfoot_rm` (a RepeatMasker `.out`, or a BED of chromosome, start, end and repeat class), both on the same assembly as `--genome`; otherwise Padfoot is skipped with a warning. `--padfoot_genome` must match `--genome` (hg38 annotations on CHM13 coordinates would be wrong), so a mismatch stops the run at start-up.
+
+| Parameter                    | Description                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--padfoot_genome`           | Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default = `null` (inferred from `--genome`)                                                                    |
+| `--padfoot_gff`              | Custom GFF3 gene annotation. Default = `null` (bundled)                                                                                                         |
+| `--padfoot_rm`               | Custom RepeatMasker annotation. Default = `null` (bundled)                                                                                                      |
+| `--padfoot_run_repeatmasker` | Run RepeatMasker on inserted sequences (repeat class of novel insertions); the image ships the Dfam 4.0 root and curated-consensus partitions. Default = `true` |
+
+#### ReConPlot Options
+
+[ReConPlot](https://github.com/cortes-ciriano-lab/ReConPlot) rearrangement + copy-number figures are generated through the wrapper shipped in `assets/reconplot/` (vendored from [Tim-Yu/ReConPlot](https://github.com/Tim-Yu/ReConPlot)) for every CN/SV caller pair available for a sample, into `reconplot/<pair>/`: The ReConPlot R package (not on conda) ships inside the module's image (`docker.io/timmy9527/reconplot`, recipe in `containers/reconplot/`), so nothing is downloaded at run time and the module is not available under `-profile conda`.
+
+- `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
+- `severus_wakhan/` -- Wakhan top-ranked solution CN (`solution_rank_1/integer_profile.bed`) + Severus somatic SVs
+- `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs (read from `*.classified.somatic.vcf`, which SAVANA writes on every platform; its somatic BEDPE comes from the ONT classifier only)
+
+Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track.
+
+| Parameter                  | Description                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--reconplot_genome`       | ReConPlot genome preset (`hg38`, `hg19`, `T2T`, `mm10`, `mm39`). Default = `null` (inferred from `--genome`)                                                                                                                                                       |
+| `--reconplot_max_cn`       | Copy-number axis ceiling. Default = `8`                                                                                                                                                                                                                            |
+| `--reconplot_min_svlen`    | Drop intra-chromosomal SVs shorter than this (bp); translocations kept. Default = `0`                                                                                                                                                                              |
+| `--reconplot_exclude_vntr` | Drop Severus SVs flagged inside a VNTR. Default = `false`                                                                                                                                                                                                          |
+| `--reconplot_regions`      | Regions for an extra `focus/` panel, e.g. `"chr8,chr17:30000000-50000000"` (syntax checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus panel is produced if none is left). Default = `null` (no focus panel) |
+| `--reconplot_genes`        | Comma-separated HUGO symbols labelled on the focus panel. Default = `null`                                                                                                                                                                                         |
+| `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                                                                                                                                                                              |
+| `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                                                                                                                                                                     |
+
+##### Offline and air-gapped systems
+
+Both modules use the same pinned-tag pair as the pipeline's other large custom images (ClairS-TO): a prebuilt SIF (`oras://docker.io/timmy9527/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`docker.io/timmy9527/<name>:<tag>`) otherwise, both on Docker Hub, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
+
+```groovy
+process {
+    withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' }
+    withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/reconplot.sif' }
+}
+```
+
+Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under `containers/`).
 
 #### Variant Filtering and Combining Options
 
@@ -767,7 +827,8 @@ To use a different container from the default container or conda environment spe
 The ClairS-TO image is the pipeline's largest custom image (about 3.3 GB as a SIF). Under
 Singularity and Apptainer it is pulled as a prebuilt SIF from Docker Hub,
 `oras://docker.io/ljwharbers/clairs-to-sif:<tag>`; every other engine runs
-`docker.io/ljwharbers/clairs-to:<tag>`. It lives on Docker Hub rather than on ghcr with the
+`docker.io/ljwharbers/clairs-to:<tag>`. The Padfoot and ReConPlot images follow the same arrangement
+(`docker.io/timmy9527/<name>-sif` / `docker.io/timmy9527/<name>`). ClairS-TO lives on Docker Hub rather than on ghcr with the
 pipeline's other custom images because ghcr redirects each download to a signed URL that expires
 at the next 5-minute mark and cuts a stream that is still open then, and Apptainer cannot resume a
 cut download: the SIF failed with `PROTOCOL_ERROR` on any link slower than about 10 MB/s. Docker

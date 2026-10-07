@@ -10,12 +10,14 @@ repos:
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        # the Wakhan fixtures keep the caller's empty last column (a trailing tab) byte for byte
         exclude: |
           (?x)^(
               .*ro-crate-metadata.json$|
               modules/(?!local/).*|
               subworkflows/(?!local/).*|
-              .*\.snap$
+              .*\.snap$|
+              tests/fixtures/padfoot_reconplot/wakhan/.*
           )$
       - id: end-of-file-fixer
         exclude: |

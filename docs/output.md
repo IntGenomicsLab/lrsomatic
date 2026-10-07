@@ -19,6 +19,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    ├── methylation
 │    │    └── tumor
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -29,6 +32,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -37,6 +44,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── somatic
@@ -56,6 +64,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── modkit_pileup
 │    │    └── normal
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -74,6 +85,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -83,6 +98,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── germline
@@ -93,6 +109,8 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 ├── pipeline_info
 └── multiqc
 ```
+
+The `padfoot` and `reconplot` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan` needs `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
 
 ### `ascat`
 
@@ -393,7 +411,7 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 | `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                              |
 | `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                   |
 | `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                       |
-| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format                                         |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)     |
 | `sample.classified.germline.vcf`                | Classified germline SVs                                                        |
 | `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`             |
 | `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                      |
@@ -616,6 +634,68 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                 | The reference signatures used for the fit and their spectra                                                                                        |
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`             | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                |
 | `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                            | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                         |
+
+</details>
+
+### `padfoot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── padfoot
+│   ├── severus_wakhan
+│   │   ├── annotated_svs.tsv
+│   │   ├── by_gene.tsv
+│   │   └── padfoot.log
+│   └── savana
+│       ├── annotated_svs.tsv
+│       ├── by_gene.tsv
+│       └── padfoot.log
+```
+
+| File                | Description                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotated_svs.tsv` | One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type                     |
+| `by_gene.tsv`       | One row per gene: SV and copy-number impact per haplotype, labelled against the caller's fitted ploidy (`NA` where the caller gave no minor-allele estimate) |
+| `padfoot.log`       | Padfoot log                                                                                                                                                  |
+
+`severus_wakhan/` combines Severus somatic SVs with the top-ranked Wakhan copy-number solution; `savana/` combines SAVANA classified somatic SVs with SAVANA absolute copy number (only present when SAVANA CNA was produced).
+
+</details>
+
+### `reconplot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── reconplot
+│   ├── severus_ascat
+│   │   ├── per_chromosome/sample_chr{1..22,X,Y}.{pdf,png}
+│   │   ├── genome_wide/sample_genome_wide.{pdf,png}
+│   │   ├── focus/sample_<regions>.{pdf,png}
+│   │   ├── sample.reconplot_cn.tsv
+│   │   ├── sample.reconplot_sv.tsv
+│   │   └── reconplot.log
+│   ├── severus_wakhan
+│   │   └── (same layout)
+│   └── savana
+│       └── (same layout)
+```
+
+| File                      | Description                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                                                                                            |
+| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                                                                                        |
+| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                                                                                               |
+| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                                                                                    |
+| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`, plus `svtype,detailed_type,cluster_id,inside_vntr` for Severus; ReConPlot reads the five coordinate/orientation columns) |
+| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied, and an `ERROR` line for any figure ReConPlot could not draw)                                                                   |
+
+A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.
+
+`severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
 
 </details>
 

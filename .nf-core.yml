@@ -30,6 +30,9 @@ lint:
     - validation.help.afterText
     - validation.summary.beforeText
     - validation.summary.afterText
+  # a -preview run publishes nothing, so this test asserts on the workflow graph instead of a versions.yml snapshot
+  nf_test_content:
+    - tests/sv_annotation_compose.nf.test
 nf_core_version: 4.1.0
 repository_type: pipeline
 template:
