@@ -33,29 +33,29 @@ nextflow_workflow {
 
                 // Severus somatic SVs for both paired samples
                 input[0] = channel.of(
-                    [ s1, mk('severus/sample1/severus_somatic.vcf.gz') ],
-                    [ s2, mk('severus/sample2/severus_somatic.vcf.gz') ]
+                    [ s1, mk.call('severus/sample1/severus_somatic.vcf.gz') ],
+                    [ s2, mk.call('severus/sample2/severus_somatic.vcf.gz') ]
                 )
                 // Wakhan >= 0.5 ranked solution directories (solution_rank_N/integer_profile.vcf): sample1 has two
                 // (rank 1 must be picked); sample2 has only a rank-2 profile, so no pair forms for it
-                def rank = { String rel -> mk(rel + '/integer_profile.vcf'); return file("\${launchDir}/fixtures/\${rel}") }
+                def rank = { String rel -> mk.call(rel + '/integer_profile.vcf'); return file("\${launchDir}/fixtures/\${rel}") }
                 input[1] = channel.of(
-                    [ s1, [ rank('wakhan/sample1/solution_rank_1'), rank('wakhan/sample1/solution_rank_2') ] ],
-                    [ s2, [ rank('wakhan/sample2/solution_rank_2') ] ]
+                    [ s1, [ rank.call('wakhan/sample1/solution_rank_1'), rank.call('wakhan/sample1/solution_rank_2') ] ],
+                    [ s2, [ rank.call('wakhan/sample2/solution_rank_2') ] ]
                 )
                 // Wakhan purity/ploidy ranks: sample1, and sample2 without a usable profile -- that row exists only on the
                 // right of the remainder join and must be dropped, not crash the run
-                input[2] = channel.of([ s1, mk('wakhan/sample1/solutions_ranks.tsv') ], [ s2, mk('wakhan/sample2/solutions_ranks.tsv') ])
+                input[2] = channel.of([ s1, mk.call('wakhan/sample1/solutions_ranks.tsv') ], [ s2, mk.call('wakhan/sample2/solutions_ranks.tsv') ])
                 // SAVANA: SVs for sample1 and sample3, a copy-number fit for sample1 only; sample3 also has a fit table
                 // without copy number (right-only in the remainder join)
                 input[3] = channel.of(
-                    [ s1, mk('savana/sample1/sample1.classified.somatic.vcf') ],
-                    [ s3, mk('savana/sample3/sample3.classified.somatic.vcf') ]
+                    [ s1, mk.call('savana/sample1/sample1.classified.somatic.vcf') ],
+                    [ s3, mk.call('savana/sample3/sample3.classified.somatic.vcf') ]
                 )
-                input[4] = channel.of([ s1, mk('savana/sample1/sample1_segmented_absolute_copy_number.tsv') ])
-                input[5] = channel.of([ s1, mk('savana/sample1/sample1_fitted_purity_ploidy.tsv') ], [ s3, mk('savana/sample3/sample3_fitted_purity_ploidy.tsv') ])
-                input[6] = channel.value([ [:], mk('ref/genome.fasta') ])
-                input[7] = channel.value([ [:], mk('ref/genome.fasta.fai') ])
+                input[4] = channel.of([ s1, mk.call('savana/sample1/sample1_segmented_absolute_copy_number.tsv') ])
+                input[5] = channel.of([ s1, mk.call('savana/sample1/sample1_fitted_purity_ploidy.tsv') ], [ s3, mk.call('savana/sample3/sample3_fitted_purity_ploidy.tsv') ])
+                input[6] = channel.value([ [:], mk.call('ref/genome.fasta') ])
+                input[7] = channel.value([ [:], mk.call('ref/genome.fasta.fai') ])
                 input[8] = channel.value([ [:], 'hg38', [], [] ])
                 """
             }

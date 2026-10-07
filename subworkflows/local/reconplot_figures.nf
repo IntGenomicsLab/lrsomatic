@@ -19,7 +19,7 @@ workflow RECONPLOT_FIGURES {
     wakhan_solution_dirs   // [meta, [solution_rank_N/, ...]]  -- Wakhan >= 0.5 links each ranked solution's directory
     wakhan_solutions_ranks // [meta, solutions_ranks.tsv]
     savana_cna             // [meta, segmented_absolute_copy_number.tsv]
-    savana_bedpe           // [meta, classified.somatic.bedpe]
+    savana_vcf             // [meta, classified.somatic.vcf]  -- every platform; SAVANA writes a BEDPE for ONT only
     savana_purity_ploidy   // [meta, fitted_purity_ploidy.tsv]
     savana_allele_counts   // [meta, allele_counts_hetSNPs.bed]  -- absent without an SNP source
     genome                 // ReConPlot genome preset: hg38, hg19, T2T, mm10 or mm39
@@ -78,16 +78,18 @@ workflow RECONPLOT_FIGURES {
 
     //
     // MODULE: RECONPLOT_SAVANA (label: process_low)
-    // Input:  [meta, 'savana', [cna.tsv, somatic.bedpe, fitted_purity_ploidy.tsv, allele_counts.bed], 'savana', []]
-    //         single-source mode; allele_counts is optional, and a sample with allele counts but no CN fit
+    // Input:  [meta, 'savana', [cna.tsv, somatic.vcf, fitted_purity_ploidy.tsv, allele_counts.bed], 'savana', []]
+    //         single-source mode; the SVs come from the classified somatic VCF, which SAVANA writes on every
+    //         platform (its somatic BEDPE comes from the ONT model classifier only, never from --pb)
+    //         allele_counts is optional, and a sample with allele counts but no CN fit
     //         only exists on the right of the remainder join ([meta, null, bed]) and is dropped
     //
     savana_cna
-        .join(savana_bedpe)
+        .join(savana_vcf)
         .join(savana_purity_ploidy)
         .join(savana_allele_counts, remainder: true)
         .filter { row -> row[1] != null }
-        .map { meta, cna, bedpe, pp, hetsnp -> [meta, 'savana', [cna, bedpe, pp, hetsnp].findAll { f -> f != null }, 'savana', []] }
+        .map { meta, cna, sv_vcf, pp, hetsnp -> [meta, 'savana', [cna, sv_vcf, pp, hetsnp].findAll { f -> f != null }, 'savana', []] }
         .set { savana_input }
 
     RECONPLOT_SAVANA( savana_input, reconplot_src, genome )

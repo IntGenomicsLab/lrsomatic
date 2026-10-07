@@ -3,8 +3,8 @@
 ##
 ## Files consumed (all optional except the first two):
 ##   <sample>_segmented_absolute_copy_number.tsv  -> CN track
-##   <sample>.classified.somatic.bedpe            -> SV track (default)
-##   <sample>.classified.somatic.vcf              -> SV track (--sv-format vcf)
+##   <sample>.classified.somatic.bedpe            -> SV track (--sv-format bedpe, or auto when present)
+##   <sample>.classified.somatic.vcf              -> SV track (--sv-format vcf, or auto without a BEDPE)
 ##   <sample>_fitted_purity_ploidy.tsv            -> purity/ploidy for the title
 ##   <sample>_allele_counts_hetSNPs.bed           -> optional BAF annotation track
 ##
@@ -241,7 +241,18 @@ parse_savana <- function(args) {
   log_msg("  CN file: ", basename(cn_file))
   cn <- savana_read_cn(cn_file)
 
-  sv_format <- match.arg(args$sv_format %||% "bedpe", c("bedpe", "vcf"))
+  ## SAVANA writes the somatic BEDPE only from its model classifier (ONT); `--pb` and custom-parameter runs write the
+  ## classified somatic VCF alone, so `auto` falls back to the VCF. Both describe the same junctions.
+  sv_format <- match.arg(args$sv_format %||% "auto", c("auto", "bedpe", "vcf"))
+  if (sv_format == "auto") {
+    sv_format <- if (!is.null(args$sv_file)) {
+      if (grepl("\\.vcf(\\.gz)?$", args$sv_file)) "vcf" else "bedpe"
+    } else if (!is.null(dir) && is.null(savana_find_file(dir, "bedpe", sample, required = FALSE))) {
+      "vcf"
+    } else {
+      "bedpe"
+    }
+  }
   sv_file <- args$sv_file %||% savana_find_file(dir, sv_format, sample)
   log_msg("  SV file: ", basename(sv_file), " (", sv_format, ")")
   sv <- if (sv_format == "bedpe") {

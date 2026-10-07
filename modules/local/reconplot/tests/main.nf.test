@@ -239,6 +239,47 @@ nextflow_process {
                 { assert process.success },
                 { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
                 { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('test_tumor.classified.somatic.bedpe (bedpe)') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    // SAVANA writes its somatic BEDPE only from the ONT model classifier; with --pb (PacBio) the classified somatic VCF
+    // is the only SV file, so the wrapper must fall back to it
+    test("savana single source - real, VCF only (PacBio)") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_fitted_purity_ploidy.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_allele_counts_hetSNPs.bed", checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('test_tumor.classified.somatic.vcf (vcf)') },
+                // the same five junctions as the BEDPE test (same CN table); only the insertion's second position differs,
+                // since SAVANA's BEDPE adds 1 bp to it
+                { assert path(process.out.tables.get(0).get(1).find { f -> file(f).name.endsWith('reconplot_sv.tsv') }).readLines().size() == 6 },
                 { assert snapshot(
                     process.out.tables,
                     process.out.versions

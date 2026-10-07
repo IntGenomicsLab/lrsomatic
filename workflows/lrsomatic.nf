@@ -1132,7 +1132,6 @@ workflow LRSOMATIC {
 
     savana_somatic_vcf          = channel.empty()
     savana_cna                  = channel.empty()
-    savana_somatic_bedpe        = channel.empty()
     savana_fitted_purity_ploidy = channel.empty()
     savana_allele_counts        = channel.empty()
 
@@ -1222,11 +1221,10 @@ workflow LRSOMATIC {
         // Copy-number products consumed by Padfoot / ReConPlot below. All optional: absent without
         // an SNP source, and cna/fitted_purity_ploidy absent when SAVANA finds no acceptable fit.
         TUMORONLY_SAVANA.out.cn_calls.mix(PAIRED_SAVANA.out.cn_calls).set { savana_cna }
-        TUMORONLY_SAVANA.out.somatic_bedpe.mix(PAIRED_SAVANA.out.somatic_bedpe).set { savana_somatic_bedpe }
         TUMORONLY_SAVANA.out.fitted_purity_ploidy.mix(PAIRED_SAVANA.out.fitted_purity_ploidy).set { savana_fitted_purity_ploidy }
         TUMORONLY_SAVANA.out.allele_counts.mix(PAIRED_SAVANA.out.allele_counts).set { savana_allele_counts }
-        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_somatic_bedpe: [meta, classified.somatic.bedpe]
-        // savana_fitted_purity_ploidy: [meta, tsv]              savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
+        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_fitted_purity_ploidy: [meta, tsv]
+        // savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
 
         if (!params.skip_vep) {
             //
@@ -1334,7 +1332,7 @@ workflow LRSOMATIC {
             params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
             params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
             savana_cna,
-            savana_somatic_bedpe,
+            savana_somatic_vcf,     // SV track: SAVANA writes its somatic BEDPE for ONT only, never with --pb
             savana_fitted_purity_ploidy,
             savana_allele_counts,
             params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')

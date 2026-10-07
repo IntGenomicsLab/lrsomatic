@@ -411,7 +411,7 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 | `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                              |
 | `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                   |
 | `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                       |
-| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format                                         |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)     |
 | `sample.classified.germline.vcf`                | Classified germline SVs                                                        |
 | `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`             |
 | `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                      |

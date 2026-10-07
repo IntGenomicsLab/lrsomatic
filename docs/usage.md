@@ -428,7 +428,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. For othe
 
 - `severus_ascat/` -- ASCAT allele-specific CN + Severus somatic SVs
 - `severus_wakhan/` -- Wakhan top-ranked solution CN (`solution_rank_1/integer_profile.bed`) + Severus somatic SVs
-- `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs
+- `savana/` -- SAVANA absolute CN + SAVANA classified somatic SVs (read from `*.classified.somatic.vcf`, which SAVANA writes on every platform; its somatic BEDPE comes from the ONT classifier only)
 
 Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/` (all chromosomes in one strip), the harmonised CN/SV tables, and, when `--reconplot_regions` is set, a `focus/` multi-panel figure with optional gene labels and BAF track.
 
