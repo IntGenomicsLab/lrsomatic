@@ -3,9 +3,12 @@ process LONGPHASE_MODCALL {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
+    // 2.0.2, not 2.0.1: 2.0.1 read its region iterator with sam_itr_multi_next, which on CRAM input returns
+    // fewer reads, differently every run (~28 % fewer sites genome-wide on a PacBio pair); 2.0.2 reads
+    // CRAM like BAM and is deterministic. The script needs only longphase, so the plain biocontainer
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/83/83fce1d397cf71705cc096fc0e0e52f7013bdd471ef68ee53ae765688e5c439c/data':
-        'community.wave.seqera.io/library/longphase_samtools:8c61296cae7a5fc0' }"
+        'https://depot.galaxyproject.org/singularity/longphase:2.0.2--h4e109e1_0':
+        'quay.io/biocontainers/longphase:2.0.2--h4e109e1_0' }"
 
     input:
     tuple val(meta), path(bam), path(bai)

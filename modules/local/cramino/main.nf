@@ -9,6 +9,7 @@ process CRAMINO {
 
     input:
     tuple val(meta), path(bam)
+    tuple val(meta2), path(fasta)   // [[:], []] for BAM/uBAM input
 
     output:
     tuple val(meta), path("*.txt"), emit: txt
@@ -21,9 +22,10 @@ process CRAMINO {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def reference = fasta ? "--reference ${fasta}" : ''
 
     """
-    cramino $args $bam --arrow ${prefix}.arrow > ${prefix}_cramino.txt
+    cramino $args $reference $bam --arrow ${prefix}.arrow > ${prefix}_cramino.txt
     """
 
     stub:

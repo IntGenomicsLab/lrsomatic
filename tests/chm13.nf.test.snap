@@ -50,10 +50,10 @@
                     "longphase": "2.0.1"
                 },
                 "LONGPHASE_MODCALL_GERMLINE": {
-                    "longphase": "2.0.1"
+                    "longphase": "2.0.2"
                 },
                 "LONGPHASE_MODCALL_SOMATIC": {
-                    "longphase": "2.0.1"
+                    "longphase": "2.0.2"
                 },
                 "LONGPHASE_PHASE_GERMLINE": {
                     "longphase": "2.0.1"
@@ -157,7 +157,7 @@
                 }
             }
         ],
-        "timestamp": "2026-10-02T14:18:35.962269271",
+        "timestamp": "2026-10-07T15:24:59.880483762",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

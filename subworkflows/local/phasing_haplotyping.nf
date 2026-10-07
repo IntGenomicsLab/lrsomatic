@@ -444,7 +444,7 @@ workflow PHASING_HAPLOTYPING {
     //
     // MODULE: SAMTOOLS_INDEX (label: process_medium)
     // Input:  [meta, bam]  -- haplotagged BAM
-    // Output: .index -- [meta, bai]
+    // Output: .index -- [meta, index]  -- .bai or .crai, whichever matches the haplotag output format
     //
     SAMTOOLS_INDEX (
         tumor_normal_hapbams_ch

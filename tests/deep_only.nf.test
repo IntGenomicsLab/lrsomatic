@@ -12,6 +12,9 @@ nextflow_pipeline {
                 outdir              = "$outputDir"
                 germline_var_keep   = 'deepvariant'
                 somatic_var_keep    = 'deepsomatic'
+                // The one test on BAM (the others run the CRAM default); DeepVariant/DeepSomatic make_examples are
+                // 13-14x slower on CRAM on the thin chr19 test data only, so this also keeps the test short
+                aligned_format      = 'bam'
             }
         }
 
