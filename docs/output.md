@@ -376,6 +376,8 @@ The germline/somatic split comes from a panel of normals and from ClairS-TO's Ve
 | `read_qual.txt`                           | file containing quality statistics about identified segements                     |
 | `severus.log`                             | log file                                                                          |
 
+With `--severus_whitelist` the same files are published here. Passing `--write-alignments` through `--severus_whitelist_args` adds a `read_alignments` file.
+
 #### `savana`
 
 SAVANA structural variant and copy-number calling. Runs alongside Severus/ASCAT rather than replacing

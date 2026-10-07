@@ -21,9 +21,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                     [],
                     [],
+                    [],
                     []
-                    ]
-                input[1] = [[],[]]
+                ]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -60,9 +62,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
+                    [],
                     []
                 ]
-                input[1] = [[],[]]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -103,8 +107,10 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
+                    []
                 ]
-                input[1] = [[],[]]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -145,11 +151,14 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
+                    []
                 ]
                 input[1] = [
                     [ id:'bed'], // meta map
-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true)
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true),
+                    []
                 ]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -189,9 +198,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     [],
                     [],
+                    [],
                     []
-                    ]
-                input[1] = [[],[]]
+                ]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }

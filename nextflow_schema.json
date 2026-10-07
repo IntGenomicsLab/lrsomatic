@@ -369,6 +369,21 @@
                 "severus_minsupport": {
                     "type": "integer",
                     "default": 3
+                },
+                "severus_whitelist": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed$",
+                    "description": "BED file of regions in which Severus reports every SV (Severus' --whitelist). Passed to Severus as --whitelist; its VCFs feed SV VEP, Wakhan and the report as usual. Not available under Conda.",
+                    "help_text": "Inside the whitelisted regions the patched build skips the read-quality, minimum-support and VNTR filters, and keeps single-read junctions only when a reciprocal or independently supported junction corroborates them. Use it for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "severus_whitelist_args": {
+                    "type": "string",
+                    "description": "Extra arguments for the whitelist Severus run, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Only used with `--severus_whitelist`.",
+                    "help_text": "Appended after `--min-support <severus_minsupport> --output-read-ids`, so a later flag wins where Severus allows it. Ignored unless `--severus_whitelist` is set. `--whitelist-single-read` takes `reciprocal` (default), `any` or `off`; `--write-alignments` additionally publishes a `read_alignments` file.",
+                    "fa_icon": "fas fa-terminal"
                 }
             }
         },

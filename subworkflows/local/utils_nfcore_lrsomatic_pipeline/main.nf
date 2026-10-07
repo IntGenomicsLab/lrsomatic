@@ -240,6 +240,16 @@ def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
     validateSvAnnotationParams()
+    validateSeverusWhitelist()
+}
+
+//
+// The --whitelist fixes exist only in the patched Severus image; bioconda's severus would run the unfixed whitelist logic
+//
+def validateSeverusWhitelist() {
+    if (params.severus_whitelist && workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error("--severus_whitelist: not supported under Conda/Mamba, which installs stock Severus without the whitelist fixes. Use Docker / Singularity / Apptainer, or run without --severus_whitelist.")
+    }
 }
 
 //
