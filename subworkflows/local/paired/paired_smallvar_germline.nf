@@ -1,4 +1,6 @@
 // IMPORT MODULES
+include { BCFTOOLS_VIEW as CLAIR3_PASS_FILTER      } from '../../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
 include { CLAIR3                    } from '../../../modules/local/clair3/main.nf'
 
 // IMPORT SUBWORKFLOWS
@@ -30,7 +32,7 @@ workflow PAIRED_SMALLVAR_GERMLINE {
                 return [meta, clair3_model_name, file]
             }
             .set{clair3_models}
-        // clair3_models: [meta(id=model_name), model_name_str, model_dir]
+        // clair3_models: [meta(id=model_name), model_name_str, model_dir or []]
 
         // Emit [meta, clair3_model_name, bam, bai] to use model_name as the combine key
         normal_bams
@@ -73,8 +75,15 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             fai
         )
 
-        CLAIR3.out.vcf
-            .join(CLAIR3.out.tbi)
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def clair3_vcf = CLAIR3.out.vcf.join(CLAIR3.out.tbi)
+        if (params.smallvar_filter_pass) {
+            CLAIR3_PASS_FILTER ( clair3_vcf, [], [], [] )
+            clair3_vcf = CLAIR3_PASS_FILTER.out.vcf
+                .join(CLAIR3_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
+
+        clair3_vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clair3']
                 return [new_meta, vcf, tbi]
@@ -120,8 +129,15 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             false      // with_phasing: LongPhase phases the calls downstream
         )
 
-        DEEPVARIANT.out.vcf
-            .join(DEEPVARIANT.out.vcf_index)
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
+        if (params.smallvar_filter_pass) {
+            DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
+            deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
+                .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
+
+        deepvariant_vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepvariant']
                 return [new_meta, vcf, tbi]

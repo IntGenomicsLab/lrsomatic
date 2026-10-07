@@ -14,6 +14,9 @@
                 "CLAIR3": {
                     "clair3": "2.0.3"
                 },
+                "CLAIR3_PASS_FILTER": {
+                    "bcftools": 1.24
+                },
                 "CLAIRS": {
                     "clairs": "0.5.1"
                 },
@@ -23,11 +26,20 @@
                 "CLAIRSTO_CNA_RESOURCES": {
                     "coreutils": 9.5
                 },
+                "CLAIRS_PASS_FILTER": {
+                    "bcftools": 1.24
+                },
+                "CONCAT_SOMATIC_UNPHASED": {
+                    "bcftools": 1.24
+                },
                 "CRAMINO_POST": {
                     "cramino": "2.0.0"
                 },
                 "CRAMINO_PRE": {
                     "cramino": "2.0.0"
+                },
+                "GERMLINE_ANCHORS": {
+                    "bcftools": 1.22
                 },
                 "GERMLINE_VEP": {
                     "ensemblvep": 116.1,
@@ -92,15 +104,30 @@
                 "SEVERUS": {
                     "severus": 1.7
                 },
+                "SOMATIC_ALT": {
+                    "bcftools": 1.24
+                },
+                "SOMATIC_NONALT": {
+                    "bcftools": 1.24
+                },
                 "SOMATIC_VEP": {
                     "ensemblvep": 116.1,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
+                "SORT_SOMATIC_PHASED": {
+                    "bcftools": 1.24
+                },
                 "SV_VEP": {
                     "ensemblvep": 116.1,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
                 },
                 "UNZIP_ALLELES": {
                     "7za": 16.02
@@ -130,7 +157,7 @@
                 }
             }
         ],
-        "timestamp": "2026-10-01T12:30:55.360918966",
+        "timestamp": "2026-10-02T14:18:35.962269271",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

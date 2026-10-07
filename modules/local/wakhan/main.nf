@@ -41,7 +41,7 @@ process WAKHAN {
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
     // Whole directories, not the plots inside: every solution's plot has the same basename,
     // and LRSOMATICREPORT resolves them by rank directory
-    tuple val(meta), path("solution_rank_*", type: 'dir')                       , emit: solution_dirs,   optional: true
+    tuple val(meta), path("solution_rank_*", type: 'dir')                       , emit: solution_dirs
     tuple val("${task.process}"), val('wakhan'), eval("wakhan --version 2>/dev/null | sed 's/^wakhan //'"), topic: versions, emit: versions_wakhan
 
     when:

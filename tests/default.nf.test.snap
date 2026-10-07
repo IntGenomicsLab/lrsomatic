@@ -14,17 +14,29 @@
                 "CLAIR3": {
                     "clair3": "2.0.3"
                 },
+                "CLAIR3_PASS_FILTER": {
+                    "bcftools": 1.24
+                },
                 "CLAIRS": {
                     "clairs": "0.5.1"
                 },
                 "CLAIRSTO": {
                     "clairsto": "0.5.1"
                 },
+                "CLAIRS_PASS_FILTER": {
+                    "bcftools": 1.24
+                },
+                "CONCAT_SOMATIC_UNPHASED": {
+                    "bcftools": 1.24
+                },
                 "CRAMINO_POST": {
                     "cramino": "2.0.0"
                 },
                 "CRAMINO_PRE": {
                     "cramino": "2.0.0"
+                },
+                "GERMLINE_ANCHORS": {
+                    "bcftools": 1.22
                 },
                 "GERMLINE_VEP": {
                     "ensemblvep": 116.1,
@@ -89,15 +101,30 @@
                 "SEVERUS": {
                     "severus": 1.7
                 },
+                "SOMATIC_ALT": {
+                    "bcftools": 1.24
+                },
+                "SOMATIC_NONALT": {
+                    "bcftools": 1.24
+                },
                 "SOMATIC_VEP": {
                     "ensemblvep": 116.1,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
+                "SORT_SOMATIC_PHASED": {
+                    "bcftools": 1.24
+                },
                 "SV_VEP": {
                     "ensemblvep": 116.1,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
+                },
+                "TAG_GERMLINE": {
+                    "bcftools": 1.2
+                },
+                "TAG_SOMATIC": {
+                    "bcftools": 1.2
                 },
                 "UNZIP_FASTA": {
                     "pigz": 2.8
@@ -563,38 +590,38 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
-                "sample1_normal.bam:md5,048f08d29b55d8352224295b889f748a",
-                "sample1_normal.bam.bai:md5,d675b3b997669343a362227ea98233fb",
-                "sample1_tumor.bam:md5,961791e0fb8ecc155369f2d06de93145",
-                "sample1_tumor.bam.bai:md5,204e60109507f94447ca333cb0ce6c15",
+                "sample1_normal.bam:md5,9f778338336c41085b8d0f626f4ed3e3",
+                "sample1_normal.bam.bai:md5,51a07b9bb493578602f1db320fd9e778",
+                "sample1_tumor.bam:md5,8b74c0425ca53674a3f29b27d33f811a",
+                "sample1_tumor.bam.bai:md5,0e3fce541093eb470c1b0d98f44f120e",
                 "sample1_normal.flagstat:md5,1c41ea9923945501eb7e41f83a90502d",
                 "sample1_normal.idxstats:md5,902e503387799123ea59255e3fca172c",
                 "sample1_normal.stats:md5,d79e3c68505d39cf29641dfdf5849ef1",
                 "sample1_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample1_tumor.stats:md5,fb77e8b2b144fe4c525e944a61757ef9",
-                "sample1_whatshap_stats.gtf:md5,eff050a68e36e778b06e0ec19435c569",
-                "sample1_whatshap_stats.log:md5,76b73731f74fe32ef2d11f6bb0a0f71a",
-                "sample1_whatshap_stats.tsv:md5,f566ae25b3c5a8f7e94b3d6c1b0417f8",
+                "sample1_whatshap_stats.gtf:md5,36bda647c08358df0eac0be321c24b20",
+                "sample1_whatshap_stats.log:md5,938f792fd22bb658a2c7cb1b7653035f",
+                "sample1_whatshap_stats.tsv:md5,cf8917be389dfef1344eeb6b7e99c7c5",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,003e4e80ec4233315762233e5f1ec0d8",
                 "read_qual.txt:md5,92321a03aae1168fdce8ea921b635036",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample2_normal.bam:md5,52ad7baf2b6a51050e44a833e34887b1",
-                "sample2_normal.bam.bai:md5,7837d6f36b290325a2bfb734bf43d4f9",
-                "sample2_tumor.bam:md5,270970f65fa2f864ac58a3930468e8e6",
-                "sample2_tumor.bam.bai:md5,2d0b660cbd45a8b10a1387c0550ff28a",
+                "sample2_normal.bam:md5,6e365c15fcf3e0364d84d2508fb6f011",
+                "sample2_normal.bam.bai:md5,50b28bcf99f53a752b98c6cace435346",
+                "sample2_tumor.bam:md5,748962c469b51be5a293d46ce035196c",
+                "sample2_tumor.bam.bai:md5,ff56a626f3a59fcf6235a973d2755a7d",
                 "sample2_normal.flagstat:md5,714d0cc0c213e2640e54a16f3d0e6e7e",
                 "sample2_normal.idxstats:md5,72eb83bb11748dc863fef1a0a5497e4b",
                 "sample2_normal.stats:md5,1aeade21dc682b0c5ca284214e6fc4d0",
                 "sample2_tumor.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2_tumor.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
                 "sample2_tumor.stats:md5,a156fe81f4c6a120357f9e32afcc00ef",
-                "sample2_whatshap_stats.gtf:md5,0fd298e41db3761772e7526d8b7362bc",
-                "sample2_whatshap_stats.log:md5,a45e24194baf1cf124d0594900ae31dc",
-                "sample2_whatshap_stats.tsv:md5,a35b75635f6437df936dc1307b542f94",
+                "sample2_whatshap_stats.gtf:md5,a6c8a814e6a959cefa93d228486e14f1",
+                "sample2_whatshap_stats.log:md5,3b0b688b6cc26640b56b7df6fd206135",
+                "sample2_whatshap_stats.tsv:md5,31f4d9c3228d60ac463695ca19d05f3a",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,ab7ccd32508029426ca1365053fdc23b",
@@ -617,7 +644,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-01T12:29:14.143316046",
+        "timestamp": "2026-10-02T14:18:20.049462179",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

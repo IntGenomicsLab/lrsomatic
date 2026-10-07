@@ -8,7 +8,7 @@ process BCFTOOLS_VIEW {
         'biocontainers/bcftools:1.24--h118bc1c_2' }"
 
     input:
-    tuple val(meta), path(vcf), path(tbi), path(targets), path(targets_tbi)
+    tuple val(meta), path(vcf), path(tbi)
 
     output:
     tuple val(meta), path("*.vcf.gz"),  emit: vcf
@@ -23,7 +23,6 @@ process BCFTOOLS_VIEW {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     bcftools view \\
-        -T ${targets} \\
         -Oz \\
         -W=tbi \\
         ${args} \\

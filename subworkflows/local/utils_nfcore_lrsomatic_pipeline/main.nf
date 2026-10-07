@@ -239,6 +239,7 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateSvAnnotationParams()
     validateSeverusWhitelist()
 }
 
@@ -323,6 +324,83 @@ def validateReportGenePanels() {
         .keySet()
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
+//
+def padfootGenome() {
+    return params.padfoot_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
+// Whether Padfoot can annotate on that preset: it bundles annotations for hg38 and mm10 only; any other
+// preset needs both --padfoot_gff and --padfoot_rm, and a null preset disables Padfoot even with them.
+// The workflow gate and validateSvAnnotationParams() both call this, so they cannot drift apart.
+//
+def padfootAnnotationOk() {
+    def genome = padfootGenome()
+    return (genome && ((genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))) as boolean
+}
+
+//
+// Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
+//
+def validateSvAnnotationParams() {
+    // --padfoot_genome must describe the same assembly as --genome: hg38 genes and repeats on CHM13 (T2T) coordinates
+    // would be silently wrong annotations
+    def genome_preset = params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null
+    if (!params.skip_padfoot && genome_preset && params.padfoot_genome && params.padfoot_genome != genome_preset) {
+        error("--padfoot_genome ${params.padfoot_genome} does not match --genome ${params.genome} (expected ${genome_preset}). " +
+            "Padfoot's annotations must be on the same assembly as the alignments.")
+    }
+    if (!params.skip_padfoot && !padfootAnnotationOk()) {
+        log.warn "Padfoot will be skipped: no bundled annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
+            "Padfoot bundles hg38 and mm10; for any other assembly give gene and repeat annotations for that assembly with " +
+            "--padfoot_gff and --padfoot_rm (and --padfoot_genome for a genome lrsomatic cannot infer)."
+    }
+
+    if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "ReConPlot: genome could not be inferred from '${params.genome}'; falling back to hg38 gene/chromosome annotations. " +
+            "Set --reconplot_genome (hg38, hg19, T2T, mm10, mm39) to override."
+    }
+
+    if (!params.skip_reconplot && params.reconplot_regions) {
+        // Same grammar as the wrapper's parse_regions(): thousands separators inside numbers are dropped
+        // first (`chr8:30,000,000-50,000,000`), then tokens split on commas/semicolons/whitespace, each
+        // `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator, start < end).
+        // Regions on contigs without copy-number data are skipped at run time with a warning.
+        def spec = params.reconplot_regions.toString().replaceAll(/(?<=[0-9]),(?=[0-9]{3}(?:[^0-9]|$))/, '')
+        def tokens = spec.split(/[,;\s]+/).findAll { tok -> tok }
+        if (!tokens) {
+            error("--reconplot_regions names no region (got \"${params.reconplot_regions}\"). Use a comma-separated list of `chr` or `chr:start-end`.")
+        }
+        def bad = tokens.findAll { tok ->
+            if (tok ==~ /[A-Za-z0-9_.]+/) { return false }
+            if (!(tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/)) { return true }
+            def ends = tok.split(':')[1].split('-').collect { v -> v.replace('_', '') }
+            return !ends.every { v -> v && v.isLong() } || (ends[0] as long) >= (ends[1] as long)
+        }
+        if (bad) {
+            error("--reconplot_regions: cannot parse ${bad.join(', ')}. Use a comma-separated list of `chr` or `chr:start-end` (start < end), e.g. \"chr8,chr17:30000000-50000000\".")
+        }
+    }
+
+    if (!params.skip_reconplot && params.reconplot_genes && !(params.reconplot_genes.toString() ==~ /[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*/)) {
+        error("--reconplot_genes must be a comma-separated list of gene symbols (letters, digits, '.', '_', '-'), e.g. \"MYC,TP53\" (got \"${params.reconplot_genes}\").")
+    }
+    if (!params.skip_reconplot && !params.reconplot_regions && (params.reconplot_genes || params.reconplot_baf_track)) {
+        log.warn "--reconplot_genes and --reconplot_baf_track only apply to the focus panel, which is drawn only with --reconplot_regions; they are ignored."
+    }
+    if (!params.skip_reconplot && params.reconplot_format && !(params.reconplot_format.toString() ==~ /(pdf|png)(,(pdf|png))?/)) {
+        error("--reconplot_format must be pdf, png or pdf,png (the module collects only *.pdf and *.png figures); got \"${params.reconplot_format}\".")
+    }
+
+    // Both tools ship only inside their containers: without a container engine (conda/mamba, or none) they would fail
+    if (!workflow.containerEngine && !(params.skip_padfoot && params.skip_reconplot)) {
+        log.warn "Padfoot and ReConPlot need a container engine (Docker, Singularity, Apptainer, ...) and are skipped without one " +
+            "(use --skip_padfoot --skip_reconplot to silence this warning)."
     }
 }
 
