@@ -9,6 +9,7 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -36,10 +37,7 @@ include { METAEXTRACT                       } from '../modules/local/metaextract
 include { CLAIRSTO_CNA_RESOURCES            } from '../modules/local/clairsto/cna_resources/main'
 include { WAKHAN                            } from '../modules/local/wakhan/main'
 include { LRSOMATICREPORT                   } from '../modules/local/lrsomaticreport/main'
-include { FIBERTOOLSRS_PREDICTM6A           } from '../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE                 } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES          } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsrs/qc'
+include { FIBERSEQ                          } from '../subworkflows/local/fiberseq'
 include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
@@ -401,135 +399,13 @@ workflow LRSOMATIC {
     rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
 
     //
-    // MODULE: FIBERTOOLSRS_PREDICTM6A
+    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling on the unaligned BAMs, per replicate
     //
-    // predict m6a in unaligned bam
-
     if (!params.skip_fiber) {
-        // Fiber-seq runs per replicate on the unaligned BAMs; replicates are merged after alignment
-        if (!params.skip_normalfiber){
-            // Process all samples (including normals) for fiber-seq
-            ubams = ch_samplesheet
-        }
-        else {
-            // Skip fiber-seq processing for normal samples; set aside normals to re-join later
+        FIBERSEQ (
             ch_samplesheet
-            .branch { meta, _bams ->
-                normal: meta.type == "normal"
-                tumor: meta.type == "tumor"
-                }
-            .set { ch_ubams_normal_branching }
-            // ch_ubams_normal_branching.normal: [meta, bam]  -- normal samples (held out)
-            // ch_ubams_normal_branching.tumor:  [meta, bam]  -- tumor samples only
-
-            normal_bams = ch_ubams_normal_branching.normal
-            ubams = ch_ubams_normal_branching.tumor
-        }
-            // Branch by sequencing platform: PacBio needs m6A prediction, ONT does not
-            ubams
-            .branch{ meta, _bams ->
-                pacBio: meta.platform == "pb"
-                ont: meta.platform == "ont"
-            }
-            .set{ch_ubams_pacbio_ont_branching}
-        // ch_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
-        // ch_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
-
-        pacbio_bams = ch_ubams_pacbio_ont_branching.pacBio
-        // Branch PacBio samples: only those with kinetics tags can have m6A predicted
-        pacbio_bams
-            .branch{meta, _bams ->
-                kinetics: meta.kinetics == "true"
-                noKinetics: meta.kinetics == "false"
-            }
-            .set{pacbio_bams}
-        // pacbio_bams.kinetics:   [meta, bam]  -- PacBio with kinetics (mm/ml tags); m6A predictable
-        // pacbio_bams.noKinetics: [meta, bam]  -- PacBio without kinetics; skip PREDICTM6A
-
-        if (!params.skip_m6a) {
-            //
-            // MODULE: FIBERTOOLSRS_PREDICTM6A (label: process_high)
-            // Input:  [meta, bam]  -- PacBio BAM with kinetics tags
-            // Output: .bam -- [meta, bam]  -- BAM with m6A (MM/ML) tags added
-            //
-            FIBERTOOLSRS_PREDICTM6A (
-                pacbio_bams.kinetics
-            )
-            // Merge PacBio with and without kinetics: both now have (or skip) m6A tags
-            pacbio_bams.noKinetics
-                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-                .set{predicted_bams}
-        }
-        else {
-            pacbio_bams.noKinetics
-                .mix(pacbio_bams.kinetics)
-                .set{predicted_bams}
-        }
-        // predicted_bams: [meta, bam]  -- all PacBio samples (m6A tags present where applicable)
-
-        // Re-merge ONT and PacBio before fiber-seq branching
-        ch_ubams_pacbio_ont_branching.ont
-            .mix(predicted_bams)
-            .set{fiber_branch}
-        // fiber_branch (pre-split): [meta, bam]  -- all samples (ONT + PacBio, with m6A if applicable)
-
-        // Branch on fiber-seq flag: only fiber-seq samples get nucleosome/FIRE calling
-        fiber_branch
-            .branch{ meta, _bams ->
-                fiber: meta.fiber == "y"
-                nonFiber: meta.fiber == "n"
-            }
-            .set{fiber_branch}
-        // fiber_branch.fiber:    [meta, bam]  -- fiber-seq samples → nucleosome + FIRE calling
-        // fiber_branch.nonFiber: [meta, bam]  -- non-fiber samples → passed through unchanged
-
-        //
-        // MODULE: FIBERTOOLSRS_NUCLEOSOMES (label: process_high)
-        // Input:  [meta, bam]  -- fiber-seq BAM (with m6A tags for PacBio)
-        // Output: .bam -- [meta, bam]  -- BAM with nucleosome footprint tags added
-        //
-
-        FIBERTOOLSRS_NUCLEOSOMES (
-            fiber_branch.fiber
         )
-
-        //
-        // MODULE: FIBERTOOLSRS_FIRE (label: process_high)
-        // Input:  FIBERTOOLSRS_NUCLEOSOMES.out.bam -- [meta, bam]  -- BAM with nucleosome tags
-        // Output: .bam -- [meta, bam]  -- BAM with FIRE (Fiber-seq Inferred Regulatory Elements) tags
-        //
-
-        FIBERTOOLSRS_FIRE (
-            FIBERTOOLSRS_NUCLEOSOMES.out.bam
-        )
-
-        if (!params.skip_normalfiber){
-            // Re-merge fiber and non-fiber samples after FIRE annotation
-            fiber_branch.nonFiber
-            .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_ubams}
-        }
-        else {
-            // Re-merge fiber, non-fiber, and held-out normal samples
-            fiber_branch.nonFiber
-            .mix(normal_bams)
-            .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_ubams}
-        }
-        // ch_ubams (updated): [meta_with_replicate, bam]  -- all samples per-replicate;
-        //   fiber-seq samples now carry nucleosome + FIRE tags; m6A tags for PacBio fiber-seq
-
-        if(!params.skip_qc) {
-            //
-            // MODULE: FIBERTOOLSRS_QC (label: process_medium)
-            // Input:  FIBERTOOLSRS_FIRE.out.bam -- [meta, bam]  -- annotated fiber-seq BAM
-            // Output: QC reports for fiber-seq signal (written to outdir)
-            //
-
-            FIBERTOOLSRS_QC (
-                FIBERTOOLSRS_FIRE.out.bam
-            )
-        }
+        ch_ubams = FIBERSEQ.out.bams
     }
     //
     // MODULE: MINIMAP2_ALIGN (label: process_high) -- once per replicate; @RG encodes sample, type and replicate
@@ -1341,12 +1217,10 @@ workflow LRSOMATIC {
         // The data repo is only fetched when the classifier will actually use it
         ch_aa_data_repo = channel.empty()
         if (!params.skip_ampliconclassifier) {
-            // Overriding the repo or its URL drops the default MD5, which belongs to the published tarball
-            def aa_repo_overridden = params.aa_data_repo || params.aa_data_repo_url != getGenomeAttribute('aa_data_repo_url')
             PREPARE_AA_DATA_REPO (
                 params.aa_data_repo,
                 params.aa_data_repo_url,
-                params.aa_data_repo_md5 ?: (aa_repo_overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
+                aaDataRepoMd5()
             )
             ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
             ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)

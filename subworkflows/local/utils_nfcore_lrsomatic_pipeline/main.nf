@@ -477,6 +477,14 @@ def getGenomeAttribute(attribute) {
 }
 
 //
+// AmpliconArchitect data repo MD5: --aa_data_repo_md5 wins; overriding the repo or its URL drops the genome default
+//
+def aaDataRepoMd5() {
+    def overridden = params.aa_data_repo || params.aa_data_repo_url != getGenomeAttribute('aa_data_repo_url')
+    return params.aa_data_repo_md5 ?: (overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
+}
+
+//
 // Resolve a VEP plugin resource: an explicit --vep_* wins, else the per-assembly default
 //
 def vepPluginResource(name) {

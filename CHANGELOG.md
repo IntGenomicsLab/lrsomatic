@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - Moved the fiber-seq steps into a `FIBERSEQ` subworkflow and the AmpliconArchitect MD5 default into `aaDataRepoMd5()`, because with dev merged the `LRSOMATIC` workflow body exceeded the 65,535-character limit on a compiled string and failed to compile; behaviour is unchanged (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `--download_sigprofiler_genome` now defaults to `true`, so a run without `--sigprofiler_genome_dir` installs the SigProfiler genome instead of stopping at launch; a given directory still wins (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - Every small-variant path now rejoins each arm to one record per position (`bcftools norm -m +any`) before Longphase, which cannot take two records at one position; single-caller runs previously passed an SNV and an indel at the same base (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - In tumour-only mode with `--smallvar_filter_pass`, ClairS-TO germline calls that fail another filter (e.g. `LowQual;NonSomatic`) are dropped unless Verdict tags them germline; DeepVariant germline calls are `PASS`-filtered whenever DeepSomatic is not selected, so `RefCall` records never enter the germline arm (@robert-a-forsyth).
