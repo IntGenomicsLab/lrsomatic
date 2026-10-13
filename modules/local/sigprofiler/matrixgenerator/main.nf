@@ -14,7 +14,7 @@ process SIGPROFILER_MATRIXGENERATOR {
     val(genome)                         // SigProfilerMatrixGenerator genome name, e.g. GRCh38 or CHM13-T2T
 
     output:
-    tuple val(meta), path("output/SBS/*.SBS96.all")  , emit: sbs96
+    tuple val(meta), path("output/SBS/*.SBS96.all")  , emit: sbs96    , optional: true
     tuple val(meta), path("output/DBS/*.DBS78.all")  , emit: dbs78    , optional: true
     tuple val(meta), path("output/ID/*.ID83.all")    , emit: id83     , optional: true
     tuple val(meta), path("output")                  , emit: output_dir

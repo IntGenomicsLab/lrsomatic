@@ -9,9 +9,11 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources; validateSampleModels } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -28,15 +30,14 @@ include { NANOPLOT as NANOPLOT_PRE          } from '../modules/nf-core/nanoplot/
 include { NANOPLOT as NANOPLOT_POST         } from '../modules/nf-core/nanoplot/main'
 include { MOSDEPTH                          } from '../modules/nf-core/mosdepth/main'
 include { ASCAT                             } from '../modules/nf-core/ascat/main'
+include { ECDNA                             } from '../subworkflows/local/ecdna'
+include { PREPARE_AA_DATA_REPO              } from '../subworkflows/local/prepare_aa_data_repo'
 include { SEVERUS                           } from '../modules/nf-core/severus/main.nf'
 include { METAEXTRACT                       } from '../modules/local/metaextract/main'
 include { CLAIRSTO_CNA_RESOURCES            } from '../modules/local/clairsto/cna_resources/main'
 include { WAKHAN                            } from '../modules/local/wakhan/main'
 include { LRSOMATICREPORT                   } from '../modules/local/lrsomaticreport/main'
-include { FIBERTOOLSRS_PREDICTM6A           } from '../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE                 } from '../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES          } from '../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC                   } from '../modules/local/fibertoolsrs/qc'
+include { FIBERSEQ                          } from '../subworkflows/local/fiberseq'
 include { ENSEMBLVEP_VEP as SOMATIC_VEP     } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as GERMLINE_VEP    } from '../modules/nf-core/ensemblvep/vep/main.nf'
 include { ENSEMBLVEP_VEP as SV_VEP          } from '../modules/nf-core/ensemblvep/vep/main.nf'
@@ -60,6 +61,8 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
+include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 
 
 
@@ -115,6 +118,9 @@ workflow LRSOMATIC {
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
+    params.coral_ref = getGenomeAttribute('coral_ref')
+    params.ac_ref = getGenomeAttribute('ac_ref')
+    params.aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
 
     // Resolved once here to avoid a HEAD request per default plugin URL, and passed straight to
     // the VEP tasks: conf/modules.config closures do not see a param assigned here.
@@ -132,6 +138,9 @@ workflow LRSOMATIC {
         ? params.somatic_var_keep
         : params.somatic_var_keep.tokenize(',').collect { it.trim() }
 
+    // Without --genome or --clairsto_pon_vcfs ClairS-TO falls back to its bundled GRCh38 PoNs
+    def pon_files = []
+    def pon_flags = []
     if (params.clairsto_pon_vcfs != null) {
         pon_files = params.clairsto_pon_vcfs.split(',').collect { f -> file(f.trim()) }
         if (params.clairsto_pon_flags != null) {
@@ -201,6 +210,15 @@ workflow LRSOMATIC {
     }
     // CHM13 has no ascat_loci_rt attribute, so the built set is GC-only by construction
     build_clairsto_cna = clairsto_cna_dir == null && params.genome == 'CHM13' && params.skip_ascat
+
+    // CoRAL seeds from ASCAT's copy number, so it cannot run without it
+    if (!params.skip_coral && params.skip_ascat) {
+        error("CoRAL seeds from ASCAT's copy-number segments. Remove --skip_ascat, or add --skip_coral.")
+    }
+    // Gurobi needs a licence file; SCIP, the default, needs nothing
+    if (!params.skip_coral && params.coral_solver == 'gurobi_direct' && !params.gurobi_license) {
+        error("--coral_solver gurobi_direct needs a licence: pass --gurobi_license <path to gurobi.lic>, or use the default --coral_solver scip.")
+    }
 
     // A missing set would leave the join below waiting forever, so CLAIRSTO would silently never run
     if (build_clairsto_cna) {
@@ -387,135 +405,13 @@ workflow LRSOMATIC {
     rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
 
     //
-    // MODULE: FIBERTOOLSRS_PREDICTM6A
+    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling on the unaligned BAMs, per replicate
     //
-    // predict m6a in unaligned bam
-
     if (!params.skip_fiber) {
-        // Fiber-seq runs per replicate on the unaligned BAMs; replicates are merged after alignment
-        if (!params.skip_normalfiber){
-            // Process all samples (including normals) for fiber-seq
-            ubams = ch_samplesheet
-        }
-        else {
-            // Skip fiber-seq processing for normal samples; set aside normals to re-join later
+        FIBERSEQ (
             ch_samplesheet
-            .branch { meta, _bams ->
-                normal: meta.type == "normal"
-                tumor: meta.type == "tumor"
-                }
-            .set { ch_ubams_normal_branching }
-            // ch_ubams_normal_branching.normal: [meta, bam]  -- normal samples (held out)
-            // ch_ubams_normal_branching.tumor:  [meta, bam]  -- tumor samples only
-
-            normal_bams = ch_ubams_normal_branching.normal
-            ubams = ch_ubams_normal_branching.tumor
-        }
-            // Branch by sequencing platform: PacBio needs m6A prediction, ONT does not
-            ubams
-            .branch{ meta, _bams ->
-                pacBio: meta.platform == "pb"
-                ont: meta.platform == "ont"
-            }
-            .set{ch_ubams_pacbio_ont_branching}
-        // ch_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
-        // ch_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
-
-        pacbio_bams = ch_ubams_pacbio_ont_branching.pacBio
-        // Branch PacBio samples: only those with kinetics tags can have m6A predicted
-        pacbio_bams
-            .branch{meta, _bams ->
-                kinetics: meta.kinetics == "true"
-                noKinetics: meta.kinetics == "false"
-            }
-            .set{pacbio_bams}
-        // pacbio_bams.kinetics:   [meta, bam]  -- PacBio with kinetics (mm/ml tags); m6A predictable
-        // pacbio_bams.noKinetics: [meta, bam]  -- PacBio without kinetics; skip PREDICTM6A
-
-        if (!params.skip_m6a) {
-            //
-            // MODULE: FIBERTOOLSRS_PREDICTM6A (label: process_high)
-            // Input:  [meta, bam]  -- PacBio BAM with kinetics tags
-            // Output: .bam -- [meta, bam]  -- BAM with m6A (MM/ML) tags added
-            //
-            FIBERTOOLSRS_PREDICTM6A (
-                pacbio_bams.kinetics
-            )
-            // Merge PacBio with and without kinetics: both now have (or skip) m6A tags
-            pacbio_bams.noKinetics
-                .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-                .set{predicted_bams}
-        }
-        else {
-            pacbio_bams.noKinetics
-                .mix(pacbio_bams.kinetics)
-                .set{predicted_bams}
-        }
-        // predicted_bams: [meta, bam]  -- all PacBio samples (m6A tags present where applicable)
-
-        // Re-merge ONT and PacBio before fiber-seq branching
-        ch_ubams_pacbio_ont_branching.ont
-            .mix(predicted_bams)
-            .set{fiber_branch}
-        // fiber_branch (pre-split): [meta, bam]  -- all samples (ONT + PacBio, with m6A if applicable)
-
-        // Branch on fiber-seq flag: only fiber-seq samples get nucleosome/FIRE calling
-        fiber_branch
-            .branch{ meta, _bams ->
-                fiber: meta.fiber == "y"
-                nonFiber: meta.fiber == "n"
-            }
-            .set{fiber_branch}
-        // fiber_branch.fiber:    [meta, bam]  -- fiber-seq samples → nucleosome + FIRE calling
-        // fiber_branch.nonFiber: [meta, bam]  -- non-fiber samples → passed through unchanged
-
-        //
-        // MODULE: FIBERTOOLSRS_NUCLEOSOMES (label: process_high)
-        // Input:  [meta, bam]  -- fiber-seq BAM (with m6A tags for PacBio)
-        // Output: .bam -- [meta, bam]  -- BAM with nucleosome footprint tags added
-        //
-
-        FIBERTOOLSRS_NUCLEOSOMES (
-            fiber_branch.fiber
         )
-
-        //
-        // MODULE: FIBERTOOLSRS_FIRE (label: process_high)
-        // Input:  FIBERTOOLSRS_NUCLEOSOMES.out.bam -- [meta, bam]  -- BAM with nucleosome tags
-        // Output: .bam -- [meta, bam]  -- BAM with FIRE (Fiber-seq Inferred Regulatory Elements) tags
-        //
-
-        FIBERTOOLSRS_FIRE (
-            FIBERTOOLSRS_NUCLEOSOMES.out.bam
-        )
-
-        if (!params.skip_normalfiber){
-            // Re-merge fiber and non-fiber samples after FIRE annotation
-            fiber_branch.nonFiber
-            .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_ubams}
-        }
-        else {
-            // Re-merge fiber, non-fiber, and held-out normal samples
-            fiber_branch.nonFiber
-            .mix(normal_bams)
-            .mix(FIBERTOOLSRS_FIRE.out.bam)
-            .set{ch_ubams}
-        }
-        // ch_ubams (updated): [meta_with_replicate, bam]  -- all samples per-replicate;
-        //   fiber-seq samples now carry nucleosome + FIRE tags; m6A tags for PacBio fiber-seq
-
-        if(!params.skip_qc) {
-            //
-            // MODULE: FIBERTOOLSRS_QC (label: process_medium)
-            // Input:  FIBERTOOLSRS_FIRE.out.bam -- [meta, bam]  -- annotated fiber-seq BAM
-            // Output: QC reports for fiber-seq signal (written to outdir)
-            //
-
-            FIBERTOOLSRS_QC (
-                FIBERTOOLSRS_FIRE.out.bam
-            )
-        }
+        ch_ubams = FIBERSEQ.out.bams
     }
     //
     // MODULE: MINIMAP2_ALIGN (label: process_high) -- once per replicate; @RG encodes sample, type and replicate
@@ -665,6 +561,8 @@ workflow LRSOMATIC {
 
     ch_ascat_files = channel.empty()
     ascat_tumoronly_ch = channel.empty()
+    ch_ascat_cnvs = channel.empty()
+    ch_ecdna_tumor_bam = channel.empty()
 
     if (!params.skip_ascat) {
         branched_minimap.tumor_only
@@ -717,6 +615,17 @@ workflow LRSOMATIC {
             .join(ASCAT.out.segments_raw, remainder: true)
             .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
+
+        // CoRAL seeds from ASCAT's total copy number. Built from ascat_ch so the meta
+        // key matches ASCAT's output exactly and the joins in ECDNA pair.
+        ch_ascat_cnvs = ASCAT.out.cnvs
+        // ch_ascat_cnvs: [meta, cnvs_txt]
+
+        ch_ecdna_tumor_bam = ascat_ch
+            .map { meta, _normal_bam, _normal_bai, tumor_bam, tumor_bai ->
+                return [meta, tumor_bam, tumor_bai]
+            }
+        // ch_ecdna_tumor_bam: [meta, tumor_bam, tumor_bai]
     }
 
     // SUBWORKFLOW: TUMORONLY_SMALLVAR
@@ -940,13 +849,15 @@ workflow LRSOMATIC {
             params.sigprofiler_genome
         )
 
-        // DBS78 / ID83 matrices are only written when the sample carries such variants
-        SIGPROFILER_MATRIXGENERATOR.out.sbs96
+        // Each matrix is only written when the sample carries such variants; samples with none are dropped
+        SIGPROFILER_MATRIXGENERATOR.out.output_dir
+            .join(SIGPROFILER_MATRIXGENERATOR.out.sbs96, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
-            .map { meta, sbs96, dbs78, id83 -> [meta, sbs96, dbs78 ?: [], id83 ?: []] }
+            .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
+            .map { meta, _output_dir, sbs96, dbs78, id83 -> [meta, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
             .set { sigprofiler_matrices }
-        // sigprofiler_matrices: [meta, sbs96, dbs78 | [], id83 | []]
+        // sigprofiler_matrices: [meta, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
@@ -986,15 +897,17 @@ workflow LRSOMATIC {
     //   normal_bam/bai are empty lists [] for tumor-only samples
 
     //
-    // MODULE: SEVERUS (label: process_high)
+    // MODULE: SEVERUS (label: process_medium)
     // Input:  severus_input -- [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, vcf, tbi]
     //         [[:], bed_file, pon_file]  -- optional target BED and panel-of-normals for SV filtering
-    // Output: .all_vcf -- [meta, vcf]  -- all somatic SVs (sniffles2 format)
+    //         [[:], whitelist]  -- optional (--severus_whitelist): regions in which every SV is reported
+    // Output: .all_vcf / .somatic_vcf -- [meta, vcf.gz]  -- all and somatic SVs
     //
 
     SEVERUS (
         severus_input,
-        [[:], params.bed_file, params.pon_file]
+        [[:], params.bed_file, params.pon_file],
+        [[:], params.severus_whitelist ? file(params.severus_whitelist, checkIfExists: true) : []]
     )
 
     SEVERUS.out.all_vcf
@@ -1129,7 +1042,10 @@ workflow LRSOMATIC {
     // SV_VEP below, alongside Severus's SVs.
     //
 
-    savana_somatic_vcf = channel.empty()
+    savana_somatic_vcf          = channel.empty()
+    savana_cna                  = channel.empty()
+    savana_fitted_purity_ploidy = channel.empty()
+    savana_allele_counts        = channel.empty()
 
     if (!params.skip_savana) {
         // SAVANA reads the HP (haplotype) tag per read and its README recommends phased BAMs,
@@ -1189,10 +1105,10 @@ workflow LRSOMATIC {
             .set { tumoronly_savana_input }
         // tumoronly_savana_input: [meta, tumor_bam, tumor_bai, phased_vcf, phased_tbi]
 
-        ch_savana_contigs = channel.value([[:], params.savana_contigs])
+        ch_savana_contigs = channel.value([[:], params.savana_contigs ?: []])
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
-        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf])
+        ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,
@@ -1213,6 +1129,14 @@ workflow LRSOMATIC {
             .mix(PAIRED_SAVANA.out.somatic_vcf)
             .set { savana_somatic_vcf }
         // savana_somatic_vcf: [meta, vcf]
+
+        // Copy-number products consumed by Padfoot / ReConPlot below. All optional: absent without
+        // an SNP source, and cna/fitted_purity_ploidy absent when SAVANA finds no acceptable fit.
+        TUMORONLY_SAVANA.out.cn_calls.mix(PAIRED_SAVANA.out.cn_calls).set { savana_cna }
+        TUMORONLY_SAVANA.out.fitted_purity_ploidy.mix(PAIRED_SAVANA.out.fitted_purity_ploidy).set { savana_fitted_purity_ploidy }
+        TUMORONLY_SAVANA.out.allele_counts.mix(PAIRED_SAVANA.out.allele_counts).set { savana_allele_counts }
+        // savana_cna: [meta, segmented_absolute_copy_number.tsv]  savana_fitted_purity_ploidy: [meta, tsv]
+        // savana_allele_counts: [meta, allele_counts_hetSNPs.bed]
 
         if (!params.skip_vep) {
             //
@@ -1279,6 +1203,89 @@ workflow LRSOMATIC {
             .join(WAKHAN.out.solution_dirs)
             .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
         // ch_wakhan_files: [meta, [file_or_dir, ...]]
+    }
+
+    //
+    // SUBWORKFLOW: ECDNA -- CoRAL amplicon reconstruction, then AmpliconClassifier
+    // Input:  ch_ecdna_tumor_bam -- [meta, tumor_bam, tumor_bai]
+    //         ch_ascat_cnvs      -- [meta, cnvs_txt]
+    //         ch_fai             -- [[:], fai]
+    // Output: .classification -- [meta, tsv]  -- amplicon_classification_profiles.tsv
+    //
+
+    ch_ecdna_classification = channel.empty()
+
+    if (!params.skip_coral) {
+        // The data repo is only fetched when the classifier will actually use it
+        ch_aa_data_repo = channel.empty()
+        if (!params.skip_ampliconclassifier) {
+            PREPARE_AA_DATA_REPO (
+                params.aa_data_repo,
+                params.aa_data_repo_url,
+                aaDataRepoMd5()
+            )
+            ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
+            ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)
+        }
+
+        ECDNA (
+            ch_ecdna_tumor_bam,
+            ch_ascat_cnvs,
+            ch_fai,
+            ch_aa_data_repo,
+            params.coral_ref,
+            params.ac_ref
+        )
+
+        ch_ecdna_classification = ECDNA.out.classification
+        // ch_ecdna_classification: [meta, tsv]
+    }
+
+    //
+    // SUBWORKFLOW: PADFOOT_ANNOTATION -- Padfoot SV/CNA annotation per caller pair (Severus + Wakhan, SAVANA)
+    // Padfoot bundles annotations for hg38 and mm10 only; other genomes need --padfoot_gff and --padfoot_rm
+    // (validateInputParameters() warns when this gate is not met).
+    //
+    def padfoot_genome   = padfootGenome()        // shared with validateSvAnnotationParams(), see the utils subworkflow
+    def padfoot_annot_ok = padfootAnnotationOk()
+    // Padfoot and ReConPlot ship only inside their containers (validateSvAnnotationParams() warns under conda/mamba)
+    def sv_annot_container_ok = workflow.containerEngine != null
+
+    if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
+        PADFOOT_ANNOTATION (
+            SEVERUS.out.somatic_vcf,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_somatic_vcf,
+            savana_cna,
+            savana_fitted_purity_ploidy,
+            ch_fasta,
+            ch_fai,
+            [[:], padfoot_genome,
+             params.padfoot_gff ? file(params.padfoot_gff, checkIfExists: true) : [],
+             params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []]
+        )
+        ch_versions = ch_versions.mix(PADFOOT_ANNOTATION.out.versions)
+    }
+
+    //
+    // SUBWORKFLOW: RECONPLOT_FIGURES -- ReConPlot figures per CN/SV caller pair (ASCAT + Severus, Wakhan + Severus, SAVANA)
+    //
+    if (!params.skip_reconplot && sv_annot_container_ok) {
+        RECONPLOT_FIGURES (
+            SEVERUS.out.somatic_vcf,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.purityploidy,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.bafs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solutions_ranks,
+            savana_cna,
+            savana_somatic_vcf,     // SV track: SAVANA writes its somatic BEDPE for ONT only, never with --pb
+            savana_fitted_purity_ploidy,
+            savana_allele_counts,
+            params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
+        )
+        ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
     }
 
     //
