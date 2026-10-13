@@ -848,23 +848,21 @@ workflow LRSOMATIC {
 
         // Each matrix is only written when the sample carries such variants; samples with none are dropped
         SIGPROFILER_MATRIXGENERATOR.out.output_dir
-            .join(SIGNATURES_BCFTOOLS_VIEW.out.vcf)
             .join(SIGPROFILER_MATRIXGENERATOR.out.sbs96, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
-            .filter { _meta, _output_dir, _vcf, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
-            .map { meta, _output_dir, vcf, sbs96, dbs78, id83 -> [meta, vcf, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
-            .set { sigprofiler_inputs }
-        // sigprofiler_inputs: [meta, vcf, sbs96 | [], dbs78 | [], id83 | []]
+            .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
+            .map { meta, output_dir, sbs96, dbs78, id83 -> [meta, output_dir, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
+            .set { sigprofiler_matrices }
+        // sigprofiler_matrices: [meta, output_dir, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
-        // Input:  [meta, vcf, sbs96, dbs78, id83], [[:], volume], genome name, COSMIC version
+        // Input:  [meta, output_dir, sbs96, dbs78, id83], genome name, COSMIC version
         // Output: per-sample Assignment_Solution directories with activities, per-mutation probabilities, statistics and plots
         //
         SIGPROFILER_ASSIGNMENT (
-            sigprofiler_inputs,
-            sigprofiler_volume,
+            sigprofiler_matrices,
             params.sigprofiler_genome,
             params.sigprofiler_cosmic_version
         )

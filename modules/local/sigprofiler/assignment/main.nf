@@ -8,10 +8,9 @@ process SIGPROFILER_ASSIGNMENT {
         : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-7894689'}"
 
     input:
-    tuple val(meta), path(vcf), path(sbs96), path(dbs78), path(id83)   // VCF to fit, plus its SigProfilerMatrixGenerator matrices (any may be []) deciding which contexts are fitted
-    tuple val(meta2), path(volume, stageAs: 'genome_volume')           // SigProfilerMatrixGenerator volume containing tsb/<genome>/
-    val(genome)                                                        // genome build, e.g. GRCh38 or CHM13-T2T
-    val(cosmic_version)                                                // COSMIC version, e.g. 3.6
+    tuple val(meta), path(spmg_output, stageAs: 'spmg/output'), path(sbs96), path(dbs78), path(id83)   // MatrixGenerator output dir and matrices (any may be [])
+    val(genome)                                                                                         // genome build for the COSMIC reference signatures, e.g. GRCh38 or CHM13-T2T
+    val(cosmic_version)                                                                                 // COSMIC version, e.g. 3.6
 
     output:
     tuple val(meta), path("*/SBS96")                                                                              , emit: sbs96                     , optional: true
@@ -30,29 +29,24 @@ process SIGPROFILER_ASSIGNMENT {
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // SigProfilerMatrixGenerator names the sample from the file name up to the first '.'
-    def sample = meta.id.toString().replaceAll(/[^A-Za-z0-9_-]/, '_')
-    def reader = vcf.name.endsWith('.gz') ? 'gzip -cd' : 'cat'
-    // VCF input is required for per-mutation probabilities; each context gets its own input dir for the internal matrix run
-    // collapse_to_SBS96 defaults to True, which SigProfilerAssignment refuses for DBS78 and ID83
-    def fits = [[sbs96, 'SBS96', '96', 'True'], [dbs78, 'DBS78', 'DINUC', 'False'], [id83, 'ID83', 'ID', 'False']]
-        .findAll { matrix, _ctx, _context_type, _collapse -> matrix }
-        .collect { matrix, ctx, context_type, collapse ->
+    // SBS matrices are collapsed to SBS96 for the fit; DBS78 and ID83 must not be
+    // (SigProfilerAssignment refuses collapse_to_SBS96 for non-SBS contexts).
+    def fits = [[sbs96, 'SBS96', 'True', '96'], [dbs78, 'DBS78', 'False', '78'], [id83, 'ID83', 'False', '83']]
+        .findAll { matrix, _ctx, _collapse, _m -> matrix }
+        .collect { matrix, ctx, collapse, m ->
             """
     if [ "\$(matrix_total ${matrix})" -gt 0 ]; then
-        mkdir -p input_${ctx}
-        ${reader} ${vcf} > input_${ctx}/${sample}.vcf
         SigProfilerAssignment cosmic_fit \\
-            input_${ctx}/ \\
+            ${matrix} \\
             ${prefix}/${ctx} \\
-            --input_type vcf \\
-            --context_type ${context_type} \\
-            --collapse_to_SBS96 ${collapse} \\
+            --input_type matrix \\
             --genome_build ${genome} \\
             --cosmic_version ${cosmic_version} \\
-            --export_probabilities_per_mutation True \\
+            --collapse_to_SBS96 ${collapse} \\
+            --volume spa_volume \\
             --cpu ${task.cpus} \\
             ${args}
+        python per_mutation.py ${prefix}/${ctx} ${m}
     else
         echo "${ctx}: no mutations in ${matrix}, skipping COSMIC fit" >&2
     fi
@@ -65,14 +59,24 @@ process SIGPROFILER_ASSIGNMENT {
         awk -F'\\t' 'NR > 1 { for (i = 2; i <= NF; i++) s += \$i } END { printf "%d\\n", s }' "\$1"
     }
 
-    # Symlink the genome payload into a local volume so the tool never writes into the shared reference dir
-    mkdir -p ${prefix} volume/tsb plot_templates
-    ln -s "\$(readlink -f ${volume})/tsb/${genome}" volume/tsb/${genome}
-    # cosmic_fit ignores --volume, so the genome and template dirs are set through the environment
-    export SIGPROFILERMATRIXGENERATOR_VOLUME="\$PWD/volume"
-    export SIGPROFILERASSIGNMENT_VOLUME="\$PWD/volume"
+    # cosmic_fit exports per-mutation probabilities only from VCF input, so join the fit with MatrixGenerator's seqinfo
+    cat > per_mutation.py <<'PY'
+    import os, sys
+    import pandas as pd
+    from SigProfilerAssignment.decompose_subroutines import probabilities_per_mutation
+    fit, m = sys.argv[1:]
+    activities = os.path.join(fit, "Assignment_Solution", "Activities")
+    probs = pd.read_csv(os.path.join(activities, "Decomposed_MutationType_Probabilities.txt"), sep="\\t", index_col=0)
+    out = os.path.join(activities, "Decomposed_Mutation_Probabilities")
+    os.makedirs(out, exist_ok=True)
+    # same index and sort as SigProfilerAssignment's own VCF-mode export
+    for df, sample in zip(*probabilities_per_mutation(probs, "spmg", m)):
+        df.set_index("Sample Names").sort_values(by=["Chr", "Pos"]).to_csv(os.path.join(out, f"Decomposed_Mutation_Probabilities_{sample}.txt"), sep="\\t")
+    PY
+
     # sigProfilerPlotting caches templates in its read-only package dir unless this points elsewhere
-    export SIGPROFILERPLOTTING_VOLUME="\$PWD/plot_templates"
+    mkdir -p ${prefix} spa_volume
+    export SIGPROFILERPLOTTING_VOLUME="\$PWD/spa_volume"
     ${fits}
     """
 

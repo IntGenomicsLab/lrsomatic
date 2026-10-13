@@ -1,0 +1,7 @@
+sample1	X	167829	Q:A[GC>TA]C	1
+sample1	X	170855	Q:A[TG>GA]C	1
+sample1	X	172584	Q:A[AC>CG]C	1
+sample1	X	173196	Q:A[AT>CA]C	1
+sample1	X	176743	Q:A[AC>CG]C	1
+sample1	X	180567	Q:A[TG>GA]C	1
+sample1	X	182498	Q:A[CC>TA]C	1
