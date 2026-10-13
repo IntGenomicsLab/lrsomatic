@@ -38,15 +38,56 @@ nextflow_process {
                 // PASS records go to the somatic arm untouched
                 { assert col(somatic, 6) == [ '100':'PASS', '150':'PASS' ] },
                 // NonSomatic or Verdict_Germline records go to the germline arm, FILTER normalised to PASS
-                { assert col(germline, 6) == [ '200':'PASS', '250':'PASS', '300':'PASS', '400':'PASS' ] },
+                { assert col(germline, 6) == [ '200':'PASS', '250':'PASS', '300':'PASS', '400':'PASS', '600':'PASS' ] },
                 { assert col(germline, 7)['200'] == 'ORIG_FILTER=NonSomatic' },
                 { assert col(germline, 7)['250'] == 'SB=1;Verdict_Germline;ORIG_FILTER=LowQual' },
                 // a multi-valued FILTER is stored comma-separated, since ';' is illegal in an INFO value
                 { assert col(germline, 7)['300'] == 'CALLER=clairs-to;ORIG_FILTER=LowQual,NonSomatic' },
                 // a pre-existing ORIG_FILTER is kept, not duplicated or overwritten
                 { assert col(germline, 7)['400'] == 'CALLER=clairs-to;ORIG_FILTER=RefCall' },
+                // with no ext.args (PASS filter off) a failed NonSomatic call is kept
+                { assert col(germline, 7)['600'] == 'CALLER=clairs-to;ORIG_FILTER=NonSomatic,RefCall' },
                 { assert gHeader.count { it.startsWith('##INFO=<ID=ORIG_FILTER,') } == 1 },
                 { assert snapshot(somatic, germline, process.out.versions_bcftools).match() }
+            )
+        }
+    }
+
+    // The ext.args conf/modules.config sets under --smallvar_filter_pass
+    test("PASS filter on - keeps germline calls filtered only as NonSomatic, or Verdict germline") {
+
+        config "./filter_pass.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/vcfsplit_snv.vcf", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/vcfsplit_indel.vcf", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def records  = { f -> path(f).linesGzip.findAll { line -> !line.startsWith('#') } }
+            def somatic  = records(process.out.somatic_vcf[0][1])
+            def germline = records(process.out.germline_vcf[0][1])
+
+            def col = { recs, i -> recs.collectEntries { l -> def f = l.split('\t'); [ (f[1]): f[i] ] } }
+
+            assertAll(
+                // The somatic arm is unchanged
+                { assert col(somatic, 6) == [ '100':'PASS', '150':'PASS' ] },
+                // 300 (LowQual;NonSomatic) and 600 (NonSomatic;RefCall) failed another filter, so they are dropped
+                { assert col(germline, 6).keySet() == [ '200', '250', '400' ] as Set },
+                // Verdict marks its germline calls LowQual; 250 is kept on its Verdict_Germline flag
+                { assert col(germline, 7)['250'] == 'SB=1;Verdict_Germline;ORIG_FILTER=LowQual' },
+                { assert col(germline, 7)['200'] == 'ORIG_FILTER=NonSomatic' },
+                { assert snapshot(somatic, germline).match() }
             )
         }
     }

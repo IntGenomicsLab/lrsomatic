@@ -202,6 +202,11 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/severus/severus.diff"
                     },
+                    "untar": {
+                        "branch": "master",
+                        "git_sha": "447f7bc0fa41dfc2400c8cad4c0291880dc060cf",
+                        "installed_by": ["modules"]
+                    },
                     "unzip": {
                         "branch": "master",
                         "git_sha": "1c43a7e22f04cf19c9f9d3de7e7e5a3addd9382a",

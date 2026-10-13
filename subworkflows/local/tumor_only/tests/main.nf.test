@@ -107,4 +107,96 @@ nextflow_workflow {
             )
         }
     }
+
+    // No verdict to drop RefCall 0/0 records, so the PASS filter runs regardless of --smallvar_filter_pass
+    test("PASS filter off, DeepSomatic not selected - DeepVariant's germline arm is still PASS-filtered") {
+
+        options "-stub"
+
+        when {
+            params {
+                skip_ascat           = true
+                smallvar_filter_pass = false
+                germline_var_keep    = 'deepvariant'
+                somatic_var_keep     = 'clair'
+            }
+            workflow {
+                """
+                def stand_ins = "\${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures"
+                // Distinct files only because Nextflow refuses two staged inputs of the same name
+                def bam   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true)
+                def bai   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr2.txt", checkIfExists: true)
+                def fasta = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true)
+                def fai   = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr2.txt", checkIfExists: true)
+                def pon   = file("\${stand_ins}/gc/GC_G1000_hg38.txt", checkIfExists: true)
+                def meta = [ id:'sample3', paired_data:false, type:'tumor', clairSTO_model:'hifi' ]
+
+                input[0] = channel.of([ meta, bam, bai ])
+                input[1] = channel.value([ [:], fasta ])
+                input[2] = channel.value([ [:], fai ])
+                input[3] = channel.value([ [ pon ], [ 'True' ] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], [] ])
+                input[6] = channel.empty()
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('DEEPVARIANT_PASS_FILTER') } },
+                { assert !processes.any { name -> name.contains('DS_GERMLINE_SELECT') } },
+                { assert workflow.out.germline_vcf.size() == 1 }
+            )
+        }
+    }
+
+    // DS_GERMLINE_SELECT keeps only DeepVariant PASS records, so no separate PASS filter runs
+    test("PASS filter off, DeepSomatic selected - the verdict selection keeps DeepVariant PASS calls instead") {
+
+        options "-stub"
+
+        when {
+            params {
+                skip_ascat           = true
+                smallvar_filter_pass = false
+                germline_var_keep    = 'deepvariant'
+                somatic_var_keep     = 'deepsomatic'
+            }
+            workflow {
+                """
+                def stand_ins = "\${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures"
+                // Distinct files only because Nextflow refuses two staged inputs of the same name
+                def bam   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true)
+                def bai   = file("\${stand_ins}/loci/G1000_loci_CHM13_chr2.txt", checkIfExists: true)
+                def fasta = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true)
+                def fai   = file("\${stand_ins}/alleles/G1000_alleles_CHM13_chr2.txt", checkIfExists: true)
+                def pon   = file("\${stand_ins}/gc/GC_G1000_hg38.txt", checkIfExists: true)
+                def meta = [ id:'sample3', paired_data:false, type:'tumor', clairSTO_model:'hifi' ]
+
+                input[0] = channel.of([ meta, bam, bai ])
+                input[1] = channel.value([ [:], fasta ])
+                input[2] = channel.value([ [:], fai ])
+                input[3] = channel.value([ [ pon ], [ 'True' ] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], [] ])
+                input[6] = channel.empty()
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('DS_GERMLINE_SELECT') } },
+                { assert !processes.any { name -> name.contains('DEEPVARIANT_PASS_FILTER') } },
+                { assert workflow.out.germline_vcf.size() == 1 }
+            )
+        }
+    }
 }

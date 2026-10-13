@@ -86,7 +86,7 @@
                 "DS_VERDICT_ANNOTATE": {
                     "bcftools": 1.24
                 },
-                "DS_VERDICT_QUERY": {
+                "DS_VERDICT_SITES": {
                     "bcftools": 1.24
                 },
                 "DS_VERDICT_SPLIT_DS": {
@@ -136,6 +136,12 @@
                 },
                 "NANOPLOT_PRE": {
                     "NanoPlot": "1.48.0"
+                },
+                "REJOIN_GERMLINE": {
+                    "bcftools": 1.24
+                },
+                "REJOIN_SOMATIC": {
+                    "bcftools": 1.24
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": 1.24
@@ -725,10 +731,10 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-02T14:27:43.864109448",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "26.04.3"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-06T11:13:19.254341842"
     }
 }

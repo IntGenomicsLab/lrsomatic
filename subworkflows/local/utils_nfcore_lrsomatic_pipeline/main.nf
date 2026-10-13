@@ -239,8 +239,54 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateCondaSupport(workflow.profile)
+    validateSmallvarCallers()
     validateSvAnnotationParams()
     validateSeverusWhitelist()
+}
+
+//
+// Fail at launch, not mid-run, when a step whose tool ships only in its container would run under conda/mamba
+//
+def validateCondaSupport(profile) {
+    if (!profile || profile.tokenize(',').intersect(['conda', 'mamba']).isEmpty()) {
+        return
+    }
+    def steps = [
+        [!params.skip_modkit,     'modkit pileup',         '--skip_modkit'],
+        [!params.skip_report,     'the lrsomatic report',  '--skip_report'],
+        [!params.skip_signatures, 'mutational signatures', '--skip_signatures'],
+    ].findAll { enabled, _name, _flag -> enabled }
+    if (steps) {
+        error("Conda/mamba cannot run ${steps.collect { it[1] }.join(', ')}: these tools ship only in their containers. Use Docker / Singularity / Apptainer, or add ${steps.collect { it[2] }.join(' ')}.")
+    }
+}
+
+//
+// Validate --germline_var_keep / --somatic_var_keep before workflows/lrsomatic.nf tokenises them
+//
+def validateSmallvarCallers() {
+    def allowed = [germline_var_keep: ['clair', 'deepvariant'], somatic_var_keep: ['clair', 'deepsomatic']]
+    allowed.each { name, valid ->
+        def value = params[name]
+        def callers = value instanceof List
+            ? value.collect { it.toString().trim() }
+            : (value == null ? [] : value.toString().split(',', -1).collect { it.trim() })
+        if (!callers || callers.every { !it }) {
+            error("--${name}: no caller given. Choose one or more of: ${valid.join(', ')}.")
+        }
+        if (callers.any { !it }) {
+            error("--${name}: empty entry in '${value}'. Give a comma-separated list of: ${valid.join(', ')}.")
+        }
+        def unknown = callers.findAll { !(it in valid) }.unique()
+        if (unknown) {
+            error("--${name}: '${unknown.join("', '")}' is not a valid caller. Choose one or more of: ${valid.join(', ')}.")
+        }
+        def duplicates = callers.countBy { it }.findAll { _caller, count -> count > 1 }.keySet()
+        if (duplicates) {
+            error("--${name}: '${duplicates.join("', '")}' is listed more than once in '${value}'.")
+        }
+    }
 }
 
 //
@@ -428,6 +474,14 @@ def getGenomeAttribute(attribute) {
         }
     }
     return null
+}
+
+//
+// AmpliconArchitect data repo MD5: --aa_data_repo_md5 wins; overriding the repo or its URL drops the genome default
+//
+def aaDataRepoMd5() {
+    def overridden = params.aa_data_repo || params.aa_data_repo_url != getGenomeAttribute('aa_data_repo_url')
+    return params.aa_data_repo_md5 ?: (overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
 }
 
 //

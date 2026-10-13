@@ -15,7 +15,7 @@ include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subwork
 include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DS      } from '../../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DV      } from '../../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_NORM     as DS_GERMLINE_REJOIN       } from '../../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_QUERY    as DS_VERDICT_QUERY         } from '../../../modules/nf-core/bcftools/query/main'
+include { BCFTOOLS_VIEW     as DS_VERDICT_SITES         } from '../../../modules/nf-core/bcftools/view/main'
 include { BCFTOOLS_ANNOTATE as DS_VERDICT_ANNOTATE      } from '../../../modules/nf-core/bcftools/annotate/main'
 include { BCFTOOLS_VIEW     as DS_GERMLINE_SELECT       } from '../../../modules/nf-core/bcftools/view/main'
 
@@ -212,8 +212,9 @@ workflow TUMORONLY_SMALLVAR {
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.
+        // Tumour-only germline is PASS-only: DS_GERMLINE_SELECT enforces it under the verdict, this filter otherwise.
         def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        if (params.smallvar_filter_pass) {
+        if (params.smallvar_filter_pass || !somatic_var_keep.contains('deepsomatic')) {
             DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
             deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
                 .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
@@ -231,23 +232,23 @@ workflow TUMORONLY_SMALLVAR {
             DS_VERDICT_SPLIT_DV ( deepvariant_vcf, fasta )
 
             //
-            // MODULE: DS_VERDICT_QUERY (BCFTOOLS_QUERY alias, label: process_single)
+            // MODULE: DS_VERDICT_SITES (BCFTOOLS_VIEW alias, label: process_medium)
             // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF (split), before its PASS filter
-            // Output: .output/.index -- [meta, tsv.gz/tbi]  -- CHROM POS REF ALT FILTER, non-PASS/RefCall rows only
+            // Output: .vcf/.index -- [meta, vcf.gz/tbi]  -- DeepSomatic records whose FILTER is neither PASS nor RefCall
             //
-            DS_VERDICT_QUERY (
+            DS_VERDICT_SITES (
                 DS_VERDICT_SPLIT_DS.out.vcf.join(DS_VERDICT_SPLIT_DS.out.index, failOnMismatch: true, failOnDuplicate: true),
                 [], [], []
             )
 
             //
             // MODULE: DS_VERDICT_ANNOTATE (BCFTOOLS_ANNOTATE alias, label: process_medium)
-            // Stamps INFO/DS_VERDICT on each DeepVariant record from the DeepSomatic verdict table.
+            // Copies DeepSomatic's FILTER into INFO/DS_VERDICT on each matching DeepVariant record.
             //
             DS_VERDICT_SPLIT_DV.out.vcf
-                .join(DS_VERDICT_SPLIT_DV.out.index,  failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_QUERY.out.output, failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_QUERY.out.index,  failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SPLIT_DV.out.index, failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SITES.out.vcf,       failOnMismatch: true, failOnDuplicate: true)
+                .join(DS_VERDICT_SITES.out.index,     failOnMismatch: true, failOnDuplicate: true)
                 .map { meta, vcf, tbi, annotations, annotations_index ->
                     def columns      = []  // no extra column specs
                     def header_lines = []  // no extra header lines

@@ -113,7 +113,8 @@ nextflow_process {
                     file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/snv.vcf.gz", checkIfExists: true),
                     file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz", checkIfExists: true),
                     file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.no_solution.purityploidy.txt", checkIfExists: true),
-                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.segments.txt", checkIfExists: true)
+                    // ASCAT writes an empty segments table when it finds no solution
+                    file("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/sample3.no_solution.segments.txt", checkIfExists: true)
                 ]
                 """
             }
@@ -126,7 +127,7 @@ nextflow_process {
                 { assert path(process.out.indel_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz").linesGzip },
                 // A purity of 0 must not reach Verdict, which would take it literally
                 { assert process.out.purity_ploidy == [] },
-                { assert path(process.out.cna[0][1]).readLines().size() == 4 }
+                { assert path(process.out.cna[0][1]).readLines() == ['Sample\tChromosome\tStartPosition\tEndPosition\tnMajor\tnMinor'] }
             )
         }
     }

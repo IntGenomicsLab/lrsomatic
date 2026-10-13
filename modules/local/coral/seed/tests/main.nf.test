@@ -1,0 +1,41 @@
+nextflow_process {
+
+    name "Test Process CORAL_SEED"
+    script "../main.nf"
+    process "CORAL_SEED"
+
+    tag "modules"
+    tag "modules_local"
+    tag "coral"
+    tag "coral_seed"
+    tag "small"
+
+    // Stub only: seeding needs a real BAM, since CoRAL reads chromosome sizes from its header.
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'sample1' ],
+                    file("\${projectDir}/modules/local/ascattocoralbed/tests/fixtures/sample1.cnvs.txt", checkIfExists: true),
+                    file('sample1.bam'),
+                    file('sample1.bam.bai')
+                ]
+                input[1] = 't2t'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // Non-empty, so the subworkflow's empty-seed branch is not taken
+                { assert path(process.out.seeds[0][1]).readLines().size() == 1 },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

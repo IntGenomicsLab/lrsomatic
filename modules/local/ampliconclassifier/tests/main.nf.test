@@ -1,0 +1,35 @@
+nextflow_process {
+
+    name "Test Process AMPLICONCLASSIFIER"
+    script "../main.nf"
+    process "AMPLICONCLASSIFIER"
+
+    tag "modules"
+    tag "modules_local"
+    tag "ampliconclassifier"
+    tag "small"
+
+    // Stub only: the real tool needs a BAM, a solver and, for the classifier, a ~1 GB data repo.
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'sample1' ], file('reconstruct') ]
+                input[1] = [ [:], file('aa_data_repo') ]
+                input[2] = 'CHM13'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.classification[0][1].toString().endsWith('_amplicon_classification_profiles.tsv') },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

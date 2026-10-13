@@ -25,7 +25,7 @@ input:
           e.g. `[ id:'sample1' ]`
     - sbs96:
         type: file
-        description: SBS96 matrix from SigProfilerMatrixGenerator
+        description: SBS96 matrix from SigProfilerMatrixGenerator (optional, may be [])
         pattern: "*.SBS96.all"
     - dbs78:
         type: file

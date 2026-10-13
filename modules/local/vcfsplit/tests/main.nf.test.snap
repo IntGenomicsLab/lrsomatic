@@ -1,4 +1,22 @@
 {
+    "PASS filter on - keeps germline calls filtered only as NonSomatic, or Verdict germline": {
+        "content": [
+            [
+                "chr1\t100\t.\tA\tC\t30\tPASS\tCALLER=clairs-to\tGT:DP\t0/1:20",
+                "chr1\t150\t.\tAT\tA\t30\tPASS\tCALLER=clairs-to\tGT:DP\t0/1:22"
+            ],
+            [
+                "chr1\t200\t.\tG\tT\t20\tPASS\tORIG_FILTER=NonSomatic\tGT:DP\t0/1:18",
+                "chr1\t250\t.\tG\tGA\t25\tPASS\tSB=1;Verdict_Germline;ORIG_FILTER=LowQual\tGT:DP\t0/1:19",
+                "chr1\t400\t.\tC\tG\t15\tPASS\tCALLER=clairs-to;ORIG_FILTER=RefCall\tGT:DP\t0/1:14"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-02T14:19:21.080812146"
+    },
     "splits on the verdict and keeps the original FILTER in INFO/ORIG_FILTER": {
         "content": [
             [
@@ -9,7 +27,8 @@
                 "chr1\t200\t.\tG\tT\t20\tPASS\tORIG_FILTER=NonSomatic\tGT:DP\t0/1:18",
                 "chr1\t250\t.\tG\tGA\t25\tPASS\tSB=1;Verdict_Germline;ORIG_FILTER=LowQual\tGT:DP\t0/1:19",
                 "chr1\t300\t.\tT\tA\t5\tPASS\tCALLER=clairs-to;ORIG_FILTER=LowQual,NonSomatic\tGT:DP\t0/1:9",
-                "chr1\t400\t.\tC\tG\t15\tPASS\tCALLER=clairs-to;ORIG_FILTER=RefCall\tGT:DP\t0/1:14"
+                "chr1\t400\t.\tC\tG\t15\tPASS\tCALLER=clairs-to;ORIG_FILTER=RefCall\tGT:DP\t0/1:14",
+                "chr1\t600\t.\tA\tG\t3\tPASS\tCALLER=clairs-to;ORIG_FILTER=NonSomatic,RefCall\tGT:DP\t0/0:6"
             ],
             [
                 [
@@ -19,10 +38,10 @@
                 ]
             ]
         ],
-        "timestamp": "2026-10-02T14:12:00.796126259",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "26.04.3"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-05T18:56:52.233347849"
     }
 }

@@ -53,14 +53,29 @@ def main():
     except (ValueError, IndexError):
         sys.exit(f"[ERROR] {args.purityploidy} is not an ASCAT purityploidy table: {header} / {values}")
 
+    cna_header = 'Sample\tChromosome\tStartPosition\tEndPosition\tnMajor\tnMinor\n'
+    if not purity > 0:
+        # No solution: ASCAT leaves segments.txt empty, but the CNA table is a required output
+        with open(args.cna_out, 'w') as out:
+            out.write(cna_header)
+        print(f"[WARNING] ASCAT found no purity/ploidy solution ({purity}, {ploidy}); "
+              f"not writing {args.purity_out}, so Verdict tags nothing.", file=sys.stderr)
+        return
+
     contigs = vcf_contigs(args.vcf)
     unmatched = set()
     n_segments = 0
+    names = ('chr', 'startpos', 'endpos', 'nMajor', 'nMinor')
     with open(args.segments) as fp, open(args.cna_out, 'w') as out:
+        out.write(cna_header)
         header = fp.readline().rstrip('\n').split('\t')
-        col = {name: header.index(name) for name in ('chr', 'startpos', 'endpos', 'nMajor', 'nMinor')}
-        out.write('Sample\tChromosome\tStartPosition\tEndPosition\tnMajor\tnMinor\n')
-        for line in fp:
+        # An empty or headerless segments table means no segments
+        col = {name: header.index(name) for name in names} if all(n in header for n in names) else None
+        if col is None:
+            print(f"[WARNING] {args.segments} has no ASCAT segments header; writing no segments.", file=sys.stderr)
+        for line in (fp if col else ()):
+            if not line.strip():
+                continue
             fields = line.rstrip('\n').split('\t')
             chrom = spell_like_vcf(fields[col['chr']], contigs)
             if contigs and chrom not in contigs:
@@ -72,10 +87,6 @@ def main():
         print(f"[WARNING] {len(unmatched)} ASCAT contig(s) are not in the VCF header and will match no variant: "
               f"{', '.join(sorted(unmatched))}", file=sys.stderr)
 
-    if not purity > 0:
-        print(f"[WARNING] ASCAT found no purity/ploidy solution ({purity}, {ploidy}); "
-              f"not writing {args.purity_out}, so Verdict tags nothing.", file=sys.stderr)
-        return
     with open(args.purity_out, 'w') as out:
         out.write('Sample\tPurity\tPloidy\tGoodnessOfFit\n')
         out.write(f'{args.sample}\t{purity}\t{ploidy}\tNA\n')
