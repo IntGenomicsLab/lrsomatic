@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "sigprofiler_assignment"
-description: Fit COSMIC reference mutational signatures to SBS96, DBS78 and ID83 matrices with SigProfilerAssignment
+description: Fit COSMIC reference mutational signatures to the SBS96, DBS78 and ID83 contexts of a VCF with SigProfilerAssignment, exporting per-mutation signature probabilities
 keywords:
   - mutational signatures
   - cosmic
@@ -23,18 +23,28 @@ input:
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1' ]`
+    - vcf:
+        type: file
+        description: Somatic small-variant VCF to fit (plain or bgzipped); VCF input is required for per-mutation probabilities
+        pattern: "*.{vcf,vcf.gz}"
     - sbs96:
         type: file
-        description: SBS96 matrix from SigProfilerMatrixGenerator (optional, may be [])
+        description: SBS96 matrix of the VCF from SigProfilerMatrixGenerator; the context is fitted only when present and non-empty (optional, may be [])
         pattern: "*.SBS96.all"
     - dbs78:
         type: file
-        description: DBS78 matrix from SigProfilerMatrixGenerator (optional, may be [])
+        description: DBS78 matrix of the VCF; gates the DBS78 fit (optional, may be [])
         pattern: "*.DBS78.all"
     - id83:
         type: file
-        description: ID83 matrix from SigProfilerMatrixGenerator (optional, may be [])
+        description: ID83 matrix of the VCF; gates the ID83 fit (optional, may be [])
         pattern: "*.ID83.all"
+  - - meta2:
+        type: map
+        description: Groovy Map (empty)
+    - volume:
+        type: directory
+        description: SigProfilerMatrixGenerator volume containing tsb/<genome>/
   - genome:
       type: string
       description: |
@@ -77,6 +87,14 @@ output:
         type: file
         description: Signature activity (mutation count per signature) tables, one per fitted matrix type
         pattern: "*/*/Assignment_Solution/Activities/*_Activities.txt"
+  probabilities_per_mutation:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt":
+        type: file
+        description: Per-mutation probability of each assigned signature (Sample Names, Chr, Pos, MutationType, one column per signature), one per fitted context
+        pattern: "*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt"
   versions_sigprofilerassignment:
     - - ${task.process}:
           type: string

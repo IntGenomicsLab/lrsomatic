@@ -677,7 +677,9 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │           │   │   │   ├── Assignment_Solution_Activities.txt
 │           │   │   │   ├── Assignment_Solution_Activity_Plots.pdf
 │           │   │   │   ├── Assignment_Solution_TMB_plot.pdf
-│           │   │   │   └── Decomposed_MutationType_Probabilities.txt
+│           │   │   │   ├── Decomposed_MutationType_Probabilities.txt
+│           │   │   │   └── Decomposed_Mutation_Probabilities
+│           │   │   │       └── Decomposed_Mutation_Probabilities_<sample>.txt
 │           │   │   ├── Signatures
 │           │   │   │   ├── Assignment_Solution_Signatures.txt
 │           │   │   │   └── SBS_96_plots_Assignment_Solution.pdf
@@ -691,19 +693,21 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │               └── ...
 ```
 
-| File                                                                                     | Description                                                                                                                                        |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `matrices/output/SBS/sample.SBS96.all`                                                   | SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside |
-| `matrices/output/DBS/sample.DBS78.all`                                                   | DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)                                                                            |
-| `matrices/output/ID/sample.ID83.all`                                                     | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                   |
-| `matrices/output/plots/*.pdf`                                                            | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                |
-| `matrices/output/vcf_files/`                                                             | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                            |
-| `matrices/output/logs/*`                                                                 | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                 |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt` | Number of mutations attributed to every COSMIC signature                                                                                           |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`            | Activity bar plots and tumour mutational burden plot                                                                                               |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                 | The reference signatures used for the fit and their spectra                                                                                        |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`             | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                |
-| `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                            | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                         |
+| File                                                                                                              | Description                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matrices/output/SBS/sample.SBS96.all`                                                                            | SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside |
+| `matrices/output/DBS/sample.DBS78.all`                                                                            | DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)                                                                            |
+| `matrices/output/ID/sample.ID83.all`                                                                              | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                   |
+| `matrices/output/plots/*.pdf`                                                                                     | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                |
+| `matrices/output/vcf_files/`                                                                                      | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                            |
+| `matrices/output/logs/*`                                                                                          | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                 |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt`                          | Number of mutations attributed to every COSMIC signature                                                                                           |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt` | Probability of each signature per mutation class                                                                                                   |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/`        | Probability of each signature for every individual mutation (Chr, Pos, MutationType), e.g. to attribute a driver mutation to a signature           |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`                                     | Activity bar plots and tumour mutational burden plot                                                                                               |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                                          | The reference signatures used for the fit and their spectra                                                                                        |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`                                      | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                |
+| `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                                                     | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                         |
 
 </details>
 
