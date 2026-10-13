@@ -360,8 +360,7 @@ workflow TUMORONLY_SMALLVAR {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, vcf, tbi]
         }
         .set{somatic_vcf}
@@ -375,8 +374,7 @@ workflow TUMORONLY_SMALLVAR {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, vcf, tbi]
         }
         .set{germline_vcf}
