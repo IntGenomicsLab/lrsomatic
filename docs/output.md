@@ -36,6 +36,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── severus_ascat
 │    │   ├── severus_wakhan
 │    │   └── savana
+│    ├── shatterseek
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -89,6 +93,10 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │   ├── severus_ascat
 │    │   ├── severus_wakhan
 │    │   └── savana
+│    ├── shatterseek
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── signatures
 │    │   ├── assignment
 │    │   └── matrices
@@ -110,7 +118,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 └── multiqc
 ```
 
-The `padfoot` and `reconplot` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan` needs `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
+The `padfoot`, `reconplot` and `shatterseek` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`, `--skip_shatterseek`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan` needs `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
 
 ### `ascat`
 
@@ -766,6 +774,70 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.
 
 `severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
+
+</details>
+
+### `shatterseek`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── shatterseek
+│   ├── severus_ascat
+│   │   ├── sample.shatterseek.tsv
+│   │   ├── sample.shatterseek_sv_input.tsv
+│   │   ├── sample.shatterseek_cn_input.tsv
+│   │   ├── plots/sample_chr<N>.pdf
+│   │   └── shatterseek.log
+│   ├── severus_wakhan
+│   │   └── (same layout)
+│   └── savana
+│       └── (same layout)
+```
+
+| File                                   | Description                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `sample.shatterseek.tsv`               | One row per chromosome (chr1-22, chrX): the largest cluster of interleaved SVs, the statistical criteria and the confidence tiers |
+| `sample.shatterseek_{sv,cn}_input.tsv` | The SV and copy-number tables exactly as given to ShatterSeek (Ensembl chromosome names, integer copy number)                     |
+| `plots/*.pdf`                          | ShatterSeek figure (ideogram, SVs, copy number, summary) for every chromosome with a confidence tier (optional)                   |
+| `shatterseek.log`                      | Wrapper log: files read, SVs dropped and why, copy numbers rounded, the tiers called                                              |
+
+[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs a fork ([robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support)) whose statistics follow the definitions in the PCAWG Supplementary Note; they differ from upstream ShatterSeek:
+
+| Column                                                 | Meaning                                                                                                                                                |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `start`, `end`, `clusterSize`                          | Span and number of intra-chromosomal SVs of the chromosome's largest cluster (one cluster; NA/0 without one)                                           |
+| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                              |
+| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                                 |
+| `pval_fragment_joins`                                  | Chi-square test of the cluster's four SV types against equal proportions. Chromothripsis expects random joins, so this should **not** be significant   |
+| `chr_breakpoint_enrichment`                            | One-sided binomial test: more breakpoints on this chromosome than its share of the genome predicts (hg38: non-N bases; chm13: length)                  |
+| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov test of the gaps between consecutive breakpoints (chromosome / cluster) against an exponential; significant = clustered breakpoints |
+| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                      |
+| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes                                                                          |
+| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                           |
+| `HC1`, `HC2`, `HC3`, `LC1`                             | PCAWG confidence tiers met (see below)                                                                                                                 |
+| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any HC), `low` (LC1 only) or `none`                                                                         |
+
+The tiers use the PCAWG cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail:
+
+| Tier | Interleaved intra SVs | Other                         | Oscillating CN segments (2 states) | Fragment joins | Enrichment or exponential test |
+| ---- | --------------------- | ----------------------------- | ---------------------------------- | -------------- | ------------------------------ |
+| HC1  | ≥ 6                   |                               | ≥ 7                                | q > 0.2        | q ≤ 0.2                        |
+| HC2  | ≥ 3                   | ≥ 4 translocations            | ≥ 7                                | q > 0.2        |                                |
+| HC3  |                       | ≥ 40 SVs incl. translocations |                                    | q > 0.2        |                                |
+| LC1  | ≥ 6                   |                               | 4-6                                | q > 0.2        | q ≤ 0.2                        |
+
+Points to keep in mind when reading the calls:
+
+- PCAWG applied HC3 only to osteosarcomas, leiomyosarcomas and liposarcomas, where amplification erodes the oscillating pattern; here it applies to every tumour. Drop it with `ext.args = '--no-hc3'`.
+- PCAWG corrected the P values once across every chromosome of all 2,658 tumours; within one sample the correction covers 23 chromosomes. The raw P values are kept, so a cohort-wide correction can be recomputed from the summaries (each row carries `sample`, `cn_source` and `sv_source`).
+- The cut-offs were set by visual inspection of PCAWG's short-read consensus calls. Long-read callers report many small SVs, whose two breakpoints a few hundred bp apart make the exponential test significant on most chromosomes; intra-chromosomal SVs shorter than `--shatterseek_min_svlen` (default 150 bp) are therefore left out, and raising it tests larger rearrangements only.
+- ShatterSeek does not mask centromeres or satellite arrays. A cluster spanning a centromere or heterochromatin block (e.g. chr16 q11.2, chr1 q12, chr9 q12) is more likely mapping artefact than chromothripsis; check the figure.
+- Tumour-only Severus calls include germline SVs that the panel of normals did not remove.
+- Insertions and single breakends are not used, nor are SVs touching chrY, the mitochondrion or unplaced contigs. SAVANA's absolute copy number and fractional Wakhan states are rounded to integers, and neighbouring segments with equal copy number are merged, because ShatterSeek counts copy-number states row by row.
+
+Tier cut-offs, the q/P choice and SV filters can be changed with `ext.args` on `.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)` (see `Rscript assets/shatterseek/run_shatterseek.R --help`). A sample ShatterSeek cannot process is skipped without stopping the run.
 
 </details>
 

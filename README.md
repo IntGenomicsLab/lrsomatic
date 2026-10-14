@@ -72,6 +72,10 @@ c. Somatic SV and CNA functional annotation ([`Padfoot`](https://github.com/Kolm
 
 a. Rearrangement and copy-number figures per CN/SV caller pair ([`ReConPlot`](https://github.com/cortes-ciriano-lab/ReConPlot))
 
+**6) Chromothripsis:**
+
+a. Chromothripsis calls with PCAWG confidence tiers per CN/SV caller pair ([`ShatterSeek`](https://github.com/parklab/ShatterSeek))
+
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
 
@@ -114,7 +118,7 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations and ReConPlot figures go to `padfoot/` and `reconplot/`, one subfolder per caller pair. See the [output documentation](/docs/output.md).
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations, ReConPlot figures and ShatterSeek chromothripsis calls go to `padfoot/`, `reconplot/` and `shatterseek/`, one subfolder per caller pair. See the [output documentation](/docs/output.md).
 
 Example output directory structure:
 
@@ -133,6 +137,10 @@ Example output directory structure:
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
 │    ├── reconplot
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
+│    ├── shatterseek
 │    │   ├── savana
 │    │   ├── severus_ascat
 │    │   └── severus_wakhan
@@ -166,6 +174,10 @@ Example output directory structure:
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
 │    ├── reconplot
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
+│    ├── shatterseek
 │    │   ├── savana
 │    │   ├── severus_ascat
 │    │   └── severus_wakhan
