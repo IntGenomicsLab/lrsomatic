@@ -14,6 +14,7 @@ include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { shatterseekGenome      } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -63,6 +64,7 @@ include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_on
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
+include { SHATTERSEEK_CHROMOTHRIPSIS      } from '../subworkflows/local/shatterseek_chromothripsis'
 
 
 
@@ -1284,6 +1286,21 @@ workflow LRSOMATIC {
             params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
         )
         ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
+    }
+
+    //
+    // SUBWORKFLOW: SHATTERSEEK_CHROMOTHRIPSIS -- ShatterSeek chromothripsis tiers per CN/SV caller pair (same pairs as ReConPlot)
+    //
+    if (!params.skip_shatterseek && sv_annot_container_ok && shatterseekGenome()) {
+        SHATTERSEEK_CHROMOTHRIPSIS (
+            SEVERUS.out.somatic_vcf,
+            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
+            savana_cna,
+            savana_somatic_vcf,
+            shatterseekGenome()
+        )
+        ch_versions = ch_versions.mix(SHATTERSEEK_CHROMOTHRIPSIS.out.versions)
     }
 
     //

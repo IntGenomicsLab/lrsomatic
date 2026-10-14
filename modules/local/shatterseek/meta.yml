@@ -1,0 +1,103 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "shatterseek"
+description: Chromothripsis calls with ShatterSeek (robert-a-forsyth fork with chm13 support and corrected statistics), labelled with the PCAWG high/low-confidence tiers, from ASCAT/Wakhan/SAVANA copy number and Severus/SAVANA SVs.
+keywords:
+  - chromothripsis
+  - structural-variation
+  - copy-number
+  - somatic
+  - long-read
+tools:
+  - "shatterseek":
+      description: "ShatterSeek: detection of chromothripsis from SV and copy-number calls"
+      homepage: "https://github.com/parklab/ShatterSeek"
+      documentation: "https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support"
+      tool_dev_url: "https://github.com/robert-a-forsyth/ShatterSeek"
+      doi: "10.1038/s41588-019-0576-7"
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - cn_source:
+        type: string
+        description: CN parser name (`ascat`, `wakhan`, `savana`)
+    - cn_files:
+        type: file
+        description: Caller output files the CN parser discovers by name (staged into `cn_input/`). ASCAT `segments.txt`; Wakhan's top-ranked `integer_profile.bed`; SAVANA's segmented CN table plus its classified somatic VCF.
+    - sv_source:
+        type: string
+        description: SV parser name (`severus`, `savana`)
+    - sv_files:
+        type: file
+        description: SV caller output files (staged into `sv_input/`); empty list when `cn_source == sv_source`
+  - - meta2:
+        type: map
+        description: Groovy Map for the wrapper source
+    - shatterseek_src:
+        type: directory
+        description: ShatterSeek wrapper directory (`assets/shatterseek`, contains `run_shatterseek.R` and `VERSION`)
+  - - meta3:
+        type: map
+        description: Groovy Map for the parser source
+    - reconplot_src:
+        type: directory
+        description: ReConPlot wrapper directory (`assets/reconplot`), whose `R/` parsers read the caller output
+  - - genome:
+        type: string
+        description: ShatterSeek genome (`hg38`, `chm13`, `hg19`)
+
+output:
+  - summary:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/${meta.id}.shatterseek.tsv":
+          type: file
+          description: One row per chromosome (1-22, X) with the cluster, the statistical criteria, BH q-values, the PCAWG tiers (HC1, HC2, HC3, LC1) and chromothripsis_confidence
+          pattern: "*.shatterseek.tsv"
+  - inputs:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/${meta.id}.shatterseek_{sv,cn}_input.tsv":
+          type: file
+          description: The exact SV and copy-number tables given to ShatterSeek
+          pattern: "*.shatterseek_{sv,cn}_input.tsv"
+  - plots:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/plots/*.pdf":
+          type: file
+          description: ShatterSeek figure for each chromosome with a confidence tier (optional)
+          pattern: "*.pdf"
+  - log:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/shatterseek.log":
+          type: file
+          description: Wrapper log (parsing, dropped SVs, tiers)
+          pattern: "shatterseek.log"
+  - staged:
+      - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "${prefix}/staged.txt":
+          type: file
+          description: Stub runs only -- the CN and SV file names the task received, asserted on by the subworkflow tests (optional)
+          pattern: "staged.txt"
+  - versions:
+      - versions.yml:
+          type: file
+          description: File containing software versions
+          pattern: "versions.yml"
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

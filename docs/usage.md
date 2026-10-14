@@ -163,7 +163,7 @@ Keep one resource set per directory: ClairS-TO derives the per-contig prefix fro
 
 If the loci cannot belong to the reference, ClairS-TO disables Verdict with a warning rather than applying the wrong coordinates. On a `--skip_ascat` run, look for `VERDICT CNA RESOURCE DIRECTORY` in the ClairS-TO log to confirm which set was used; otherwise Verdict runs outside ClairS-TO and the tables the tags came from are published next to the VCFs.
 
-Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot needs nothing extra on CHM13 (`T2T` preset).
+Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot (`T2T` preset) and ShatterSeek (`chm13`) need nothing extra on CHM13.
 
 ### Pipeline options
 
@@ -185,6 +185,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--
 | `--skip_savana`        | A boolean to skip `savana` (SV + copy-number calling). Default = `false`                                                                                                                                                                                                |
 | `--skip_padfoot`       | A boolean to skip `padfoot` SV/CNA annotation. Default = `false`                                                                                                                                                                                                        |
 | `--skip_reconplot`     | A boolean to skip `reconplot` SV/CNA figures. Default = `false`                                                                                                                                                                                                         |
+| `--skip_shatterseek`   | A boolean to skip `shatterseek` chromothripsis calling. Default = `false`                                                                                                                                                                                               |
 | `--skip_bamstats`      | A boolean to skip `bamstats`. Default = `false`                                                                                                                                                                                                                         |
 | `--skip_wakhan`        | A boolean to skip `wakhan`. Default = `false`                                                                                                                                                                                                                           |
 | `--skip_vep`           | A boolean to skip `vep`. Default = `false`                                                                                                                                                                                                                              |
@@ -457,6 +458,23 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 | `--reconplot_baf_track`    | Add a het-SNP BAF track to the focus panel (ASCAT and SAVANA only). Default = `false`                                                                                                                                                                              |
 | `--reconplot_format`       | Output formats: `pdf`, `png` or `pdf,png`. Default = `pdf,png`                                                                                                                                                                                                     |
 
+#### ShatterSeek Options
+
+[ShatterSeek](https://github.com/parklab/ShatterSeek) chromothripsis calls are made for every CN/SV caller pair available for a sample (`severus_ascat`, `severus_wakhan`, `savana`, the same pairs as ReConPlot), into `shatterseek/<pair>/`, and each chromosome's cluster is labelled with the PCAWG high/low-confidence tiers (see [output](output.md#shatterseek)). The pipeline runs a fork, [robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support), with T2T-CHM13 support and the statistical criteria corrected to the PCAWG definitions; it ships inside the module's image (`docker.io/robertaforsyth/shatterseek`, recipe in `containers/shatterseek/`), so the module is not available under `-profile conda`. The callers are read by the same parsers as ReConPlot (`assets/reconplot/R/parsers`), through the wrapper in `assets/shatterseek/`.
+
+| Parameter                 | Description                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `--shatterseek_genome`    | ShatterSeek genome (`hg38`, `chm13`, `hg19`). Default = `null` (inferred from `--genome`; skipped with a warning otherwise) |
+| `--shatterseek_min_svlen` | Drop intra-chromosomal SVs shorter than this (bp) before ShatterSeek; translocations kept. Default = `150`                  |
+
+Tier cut-offs (`--min-sv-hc1`, `--min-osc-hc`, `--min-sv-hc2`, `--min-tra-hc2`, `--min-sv-hc3`, `--min-osc-lc`, `--max-osc-lc`, `--no-hc3`), the significance level (`--alpha`, default 0.2), q-values or raw P values (`--use q|p`) and the other SV filters (`--min-support`, `--exclude-vntr`) are wrapper options, set through `ext.args` (keep `--min-svlen` in it, or use `--shatterseek_min_svlen`, since `ext.args` replaces the pipeline's value):
+
+```groovy
+process {
+    withName: '.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { ext.args = '--min-svlen 150 --no-hc3' }
+}
+```
+
 ##### Offline and air-gapped systems
 
 Both modules use the same pinned-tag pair as the pipeline's other large custom images (ClairS-TO): a prebuilt SIF (`oras://docker.io/timmy9527/<name>-sif:<tag>`) under Singularity/Apptainer and the Docker image (`docker.io/timmy9527/<name>:<tag>`) otherwise, both on Docker Hub, so `nf-core pipelines download --container-system singularity` stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:
@@ -465,8 +483,11 @@ Both modules use the same pinned-tag pair as the pipeline's other large custom i
 process {
     withName: '.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/padfoot-repeatmasker.sif' }
     withName: '.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/reconplot.sif' }
+    withName: '.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)' { container = '/path/to/shatterseek.sif' }
 }
 ```
+
+ShatterSeek has no SIF twin: like CoRAL, its Docker image is used under every engine (Singularity/Apptainer convert it when pulling).
 
 Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under `containers/`).
 
