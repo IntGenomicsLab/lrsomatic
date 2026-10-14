@@ -1,0 +1,6 @@
+chromosome	start	end	segment_id	bin_count	sum_of_bin_lengths	weight	copyNumber	minorAlleleCopyNumber	meanBAF	no_hetSNPs
+chr19	1	1215000	chr19_seg1	121	1215000	121.0	2.0	1.0	0.5	400
+chr19	1215001	1223000	chr19_seg2	1	8000	1.0	1.0	0.0	1.0	5
+chr19	1223001	1560000	chr19_seg3	34	337000	34.0	2.0	1.0	0.5	120
+chr19	1560001	1700000	chr19_seg4	14	140000	14.0	3.0	1.0	0.667	50
+chr19	1700001	58617616	chr19_seg5	5692	56917616	5692.0	2.0	1.0	0.5	18000

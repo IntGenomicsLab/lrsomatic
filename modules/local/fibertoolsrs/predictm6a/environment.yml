@@ -4,4 +4,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - "bioconda::fibertools-rs=0.6.2"
+  # renovate: datasource=conda depName=bioconda/fibertools-rs
+  - bioconda::fibertools-rs=0.13.1

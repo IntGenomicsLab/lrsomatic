@@ -1,5 +1,6 @@
 //
-// Reshape the VEP plugin releases that ship as zip archives (REVEL and EVE)
+// Reshape the VEP plugin releases that ship as zip archives (REVEL and EVE), and download a remote
+// ClinVar once so the VEP tasks never stage it from its host themselves
 //
 
 include { UNZIP as UNZIP_REVEL } from '../../modules/nf-core/unzip/main.nf'
@@ -8,6 +9,7 @@ include { WGET as WGET_REVEL   } from '../../modules/nf-core/wget/main'
 include { WGET as WGET_EVE     } from '../../modules/nf-core/wget/main'
 include { VEPPLUGIN_REVEL      } from '../../modules/local/vepplugin/revel/main.nf'
 include { VEPPLUGIN_EVE        } from '../../modules/local/vepplugin/eve/main.nf'
+include { VEPPLUGIN_CLINVAR    } from '../../modules/local/vepplugin/clinvar/main.nf'
 
 workflow PREPARE_VEP_PLUGINS {
 
@@ -30,11 +32,10 @@ workflow PREPARE_VEP_PLUGINS {
     if (prepare.containsKey('vep_revel')) {
         if (prepare['vep_revel'].toString().contains('://')) {
             WGET_REVEL (
-                channel.value([ [ id: 'revel' ], prepare['vep_revel'] ])
+                channel.value([ [ id: 'revel' ], prepare['vep_revel'], 'zip' ])
             )
 
             ch_revel_zip = WGET_REVEL.out.outfile
-            ch_versions = ch_versions.mix(WGET_REVEL.out.versions)
         }
         else {
             ch_revel_zip = channel.value([ [ id: 'revel' ], file(prepare['vep_revel'], checkIfExists: true) ])
@@ -49,7 +50,6 @@ workflow PREPARE_VEP_PLUGINS {
         )
 
         staged << VEPPLUGIN_REVEL.out.files
-        ch_versions = ch_versions.mix(UNZIP_REVEL.out.versions)
     }
 
     //
@@ -60,11 +60,10 @@ workflow PREPARE_VEP_PLUGINS {
     if (prepare.containsKey('vep_eve')) {
         if (prepare['vep_eve'].toString().contains('://')) {
             WGET_EVE (
-                channel.value([ [ id: 'eve' ], prepare['vep_eve'] ])
+                channel.value([ [ id: 'eve' ], prepare['vep_eve'], 'zip' ])
             )
 
             ch_eve_zip = WGET_EVE.out.outfile
-            ch_versions = ch_versions.mix(WGET_EVE.out.versions)
         }
         else {
             ch_eve_zip = channel.value([ [ id: 'eve' ], file(prepare['vep_eve'], checkIfExists: true) ])
@@ -79,7 +78,24 @@ workflow PREPARE_VEP_PLUGINS {
         )
 
         staged << VEPPLUGIN_EVE.out.files
-        ch_versions = ch_versions.mix(UNZIP_EVE.out.versions)
+    }
+
+    //
+    // MODULE: VEPPLUGIN_CLINVAR (label: process_single)
+    // Input:  the ClinVar VCF and index URLs, and the MD5s pinning them (either may be null)
+    // Output: .files -- the VCF and its index, under the VCF's own basename
+    // One download per run: a foreign file is re-checked on its host by GERMLINE_VEP and SOMATIC_VEP
+    // for every sample, and NCBI answers the burst a multi-sample run sends with 503
+    //
+    if (prepare.containsKey('vep_clinvar')) {
+        def clinvar = prepare['vep_clinvar']
+
+        VEPPLUGIN_CLINVAR (
+            channel.value([ clinvar.vcf, clinvar.tbi, clinvar.md5, clinvar.tbi_md5 ])
+        )
+
+        staged << VEPPLUGIN_CLINVAR.out.files
+        ch_versions = ch_versions.mix(VEPPLUGIN_CLINVAR.out.versions)
     }
 
     // Value channel read by both VEP tasks; ifEmpty carries the no-plugins case, since collect() emits nothing then

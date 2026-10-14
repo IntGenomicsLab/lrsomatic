@@ -19,6 +19,9 @@ nextflow_pipeline {
         then {
             assertAll(
                 { assert workflow.success},
+
+                // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
+                { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
                 { //files exist
                     assert file("$outputDir/sample1/variants/clair3/merge_output.vcf.gz").exists()
                     assert file("$outputDir/sample1/variants/clairs/indel.vcf.gz").exists()

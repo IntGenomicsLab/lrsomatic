@@ -24,7 +24,7 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -49,15 +49,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:45:16.225112",
+        "timestamp": "2026-10-01T14:44:14.996346377",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_tbi": {
@@ -85,15 +85,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:44:45.565621",
+        "timestamp": "2026-10-01T14:44:02.253704645",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index - stub": {
@@ -121,7 +121,7 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -146,15 +146,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:45:09.894603",
+        "timestamp": "2026-10-01T14:44:11.83333367",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_tbi - stub": {
@@ -182,7 +182,7 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ],
                 "index": [
@@ -207,15 +207,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:45:22.083172",
+        "timestamp": "2026-10-01T14:44:18.137743749",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], vcf, tsv, []": {
@@ -234,15 +234,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-03-20T18:23:19.908213867",
+        "timestamp": "2026-10-01T14:44:05.56315404",
         "meta": {
             "nf-test": "0.9.4",
-            "nextflow": "25.10.2"
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - stub": {
@@ -253,15 +253,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-03-20T18:23:28.40103319",
+        "timestamp": "2026-10-01T14:44:08.755172653",
         "meta": {
             "nf-test": "0.9.4",
-            "nextflow": "25.10.2"
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index": {
@@ -289,15 +289,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:44:32.872424",
+        "timestamp": "2026-10-01T14:43:55.775864105",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], []": {
@@ -316,15 +316,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-03-20T18:22:45.088231326",
+        "timestamp": "2026-10-01T14:43:52.582744112",
         "meta": {
             "nf-test": "0.9.4",
-            "nextflow": "25.10.2"
+            "nextflow": "26.04.3"
         }
     },
     "sarscov2 - [vcf, tbi], [], [], [] - vcf_gz_index_csi": {
@@ -352,15 +352,15 @@
                     [
                         "BCFTOOLS_VIEW",
                         "bcftools",
-                        "1.23.1"
+                        "1.24"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-05-28T14:44:39.144211",
+        "timestamp": "2026-10-01T14:43:59.012753902",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.2"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     }
 }

@@ -3,13 +3,18 @@ process SEVERUS {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/severus:1.6--pyhdfd78af_0':
-        'biocontainers/severus:1.6--pyhdfd78af_0' }"
+    // Patched Severus 1.7 (github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration, 6813dee) carries the --whitelist fixes;
+    // without --whitelist its VCF records are identical to stock 1.7 (the header adds a WL_RESCUE INFO line). Revert to the biocontainer once
+    // KolmogorovLab/Severus carries the fixes.
+    // Conda installs stock bioconda Severus, so --severus_whitelist is refused under conda at startup (utils_nfcore_lrsomatic_pipeline).
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'oras://docker.io/amberverhasselt/severus-sif:1.7-whitelist-6813dee':
+        'docker.io/amberverhasselt/severus:1.7-whitelist-6813dee' }"
 
     input:
     tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
     tuple val(meta2), path(bed), path(pon_path)
+    tuple val(meta3), path(whitelist)
 
     output:
     tuple val(meta), path("${prefix}/severus.log")                              , emit: log
@@ -20,15 +25,14 @@ process SEVERUS {
     tuple val(meta), path("${prefix}/severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
     tuple val(meta), path("${prefix}/severus_LOH.bed")                          , emit: loh                              , optional: true
     tuple val(meta), path("${prefix}/all_SVs/severus_all.vcf.gz")               , emit: all_vcf                          , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")    , emit: all_breakpoints_clusters_list    , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")         , emit: all_breakpoints_clusters         , optional: true
-    tuple val(meta), path("${prefix}/all_SVs/plots/severus_*.html")             , emit: all_plots                        , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters_list.tsv")     , emit: all_breakpoints_clusters_list    , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/breakpoint_clusters.tsv")          , emit: all_breakpoints_clusters         , optional: true
+    tuple val(meta), path("${prefix}/all_SVs/plots/severus*.html")              , emit: all_plots                        , optional: true
     tuple val(meta), path("${prefix}/somatic_SVs/severus_somatic.vcf.gz")       , emit: somatic_vcf                      , optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv"), emit: somatic_breakpoints_clusters_list, optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")     , emit: somatic_breakpoints_clusters     , optional: true
-    tuple val(meta), path("${prefix}/somatic_SVs/plots/severus_*.html")         , emit: somatic_plots                    , optional: true
-    path "versions.yml"                                                         , emit: versions
-
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters_list.tsv") , emit: somatic_breakpoints_clusters_list, optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/breakpoint_clusters.tsv")      , emit: somatic_breakpoints_clusters     , optional: true
+    tuple val(meta), path("${prefix}/somatic_SVs/plots/severus*.html")          , emit: somatic_plots                    , optional: true
+    tuple val("${task.process}"), val('severus'), eval("severus --version"), emit: versions_severus, topic: versions
     when:
     task.ext.when == null || task.ext.when
 
@@ -40,6 +44,7 @@ process SEVERUS {
     def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
     def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
     def pon = pon_path && (!control_input) ? "--PON ${pon_path}" : ""
+    def whitelist_bed = whitelist ? "--whitelist ${whitelist}" : ""
 
     """
     severus \\
@@ -50,17 +55,13 @@ process SEVERUS {
         $pon \\
         $control \\
         $phasing_vcf \\
+        $whitelist_bed \\
         --out-dir ${prefix}
 
     bgzip ${prefix}/somatic_SVs/severus_somatic.vcf
     tabix -p vcf ${prefix}/somatic_SVs/severus_somatic.vcf.gz
     bgzip ${prefix}/all_SVs/severus_all.vcf
     tabix -p vcf ${prefix}/all_SVs/severus_all.vcf.gz
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        severus: \$(severus --version)
-    END_VERSIONS
     """
 
     stub:
@@ -87,10 +88,5 @@ process SEVERUS {
     touch ${prefix}/somatic_SVs/breakpoints_clusters.tsv
     touch ${prefix}/somatic_SVs/plots/severus_0.html
     touch ${prefix}/somatic_SVs/plots/severus_1.html
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        severus: \$(severus --version)
-    END_VERSIONS
     """
 }

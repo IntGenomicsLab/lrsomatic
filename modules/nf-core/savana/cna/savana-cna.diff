@@ -1,4 +1,7 @@
-Changes in module 'nf-core/savana/cna'
+Changes in component 'nf-core/savana/cna'
+'modules/nf-core/savana/cna/environment.yml' is unchanged
+'modules/nf-core/savana/cna/meta.yml' is unchanged
+Changes in 'savana/cna/main.nf':
 --- modules/nf-core/savana/cna/main.nf
 +++ modules/nf-core/savana/cna/main.nf
 @@ -39,14 +39,12 @@
@@ -17,4 +20,7 @@ Changes in module 'nf-core/savana/cna'
        --sample ${prefix} \\
        --cna_threads ${task.cpus} \\
 
+'modules/nf-core/savana/cna/tests/nextflow.config' is unchanged
+'modules/nf-core/savana/cna/tests/main.nf.test' is unchanged
+'modules/nf-core/savana/cna/tests/main.nf.test.snap' is unchanged
 ************************************************************

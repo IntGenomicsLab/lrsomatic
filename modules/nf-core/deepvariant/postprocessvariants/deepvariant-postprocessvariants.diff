@@ -3,15 +3,16 @@ Changes in component 'nf-core/deepvariant/postprocessvariants'
 Changes in 'deepvariant/postprocessvariants/main.nf':
 --- modules/nf-core/deepvariant/postprocessvariants/main.nf
 +++ modules/nf-core/deepvariant/postprocessvariants/main.nf
-@@ -1,6 +1,6 @@
+@@ -1,6 +1,7 @@
  process DEEPVARIANT_POSTPROCESSVARIANTS {
      tag "$meta.id"
 -    label 'process_medium'
 +    label 'process_high'
++    label 'process_short'
  
      //Conda is not supported at the moment
-     container "docker.io/google/deepvariant:1.9.0"
-@@ -14,8 +14,8 @@
+     container "docker.io/google/deepvariant:1.10.0"
+@@ -14,8 +15,8 @@
      output:
      tuple val(meta), path("${prefix}.vcf.gz")             , emit: vcf
      tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}")   , emit: vcf_index
@@ -22,7 +23,13 @@ Changes in 'deepvariant/postprocessvariants/main.nf':
      tuple val("${task.process}"), val('deepvariant'), eval("/opt/deepvariant/bin/run_deepvariant --version | sed 's/^.*version //'"), topic: versions, emit: versions_deepvariant
  
      when:
-@@ -32,14 +32,17 @@
+@@ -27,19 +28,22 @@
+         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
+     }
+     def args = task.ext.args ?: ''
+-    prefix = task.ext.prefix ?: "${meta.id}"
++    prefix = task.ext.prefix ?: "${meta.id}_germline"
+ 
      def regions = intervals ? "--regions ${intervals}" : ""
      def variant_calls_tfrecord_name = variant_calls_tfrecord_files[0].name.replaceFirst(/-\d{5}-of-\d{5}/, "")
  
@@ -47,21 +54,28 @@ Changes in 'deepvariant/postprocessvariants/main.nf':
  
      // The following block determines whether the small model was used, and if so, adds the variant calls from it
      // to the argument --small_model_cvo_records.
-@@ -62,10 +65,10 @@
+@@ -80,8 +84,8 @@
          --ref "${fasta}" \\
          --infile "${variant_calls_tfrecord_name}" \\
          --outfile "${prefix}.vcf.gz" \\
 -        --nonvariant_site_tfrecord_path "${gvcf_tfrecords_logical_name}" \\
 -        --gvcf_outfile "${prefix}.g.vcf.gz" \\
 +        --sample_name ${prefix} \\
++        ${gvcf_arg} \\
          ${regions} \\
          ${small_model_arg} \\
-+        ${gvcf_arg} \\
-         --cpus $task.cpus
- 
+         ${phased_inputs_arg} \\
+@@ -94,7 +98,7 @@
+     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
+     }
+-    prefix = task.ext.prefix ?: "${meta.id}"
++    prefix = task.ext.prefix ?: "${meta.id}_germline"
      """
+     echo "" | gzip > ${prefix}.vcf.gz
+     touch ${prefix}.vcf.gz.tbi
 
+'modules/nf-core/deepvariant/postprocessvariants/tests/nextflow.config' is unchanged
 'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test' is unchanged
 'modules/nf-core/deepvariant/postprocessvariants/tests/main.nf.test.snap' is unchanged
-'modules/nf-core/deepvariant/postprocessvariants/tests/nextflow.config' is unchanged
 ************************************************************

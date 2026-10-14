@@ -1,19 +1,20 @@
 Changes in component 'nf-core/ascat'
+'modules/nf-core/ascat/environment.yml' is unchanged
 'modules/nf-core/ascat/meta.yml' is unchanged
 Changes in 'ascat/main.nf':
 --- modules/nf-core/ascat/main.nf
 +++ modules/nf-core/ascat/main.nf
-@@ -1,211 +1,189 @@
+@@ -1,212 +1,189 @@
  process ASCAT {
 -    tag "${meta.id}"
 +    tag "$meta.id"
      label 'process_medium'
  
      conda "${moduleDir}/environment.yml"
--    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+-    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
 -        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4c/4cf02c7911ee5e974ce7db978810770efbd8d872ff5ab3462d2a11bcf022fab5/data'
 -        : 'community.wave.seqera.io/library/ascat_cancerit-allelecount:c3e8749fa4af0e99'}"
-+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
++    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
 +        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4c/4cf02c7911ee5e974ce7db978810770efbd8d872ff5ab3462d2a11bcf022fab5/data':
 +        'community.wave.seqera.io/library/ascat_cancerit-allelecount:c3e8749fa4af0e99' }"
  
@@ -42,7 +43,8 @@ Changes in 'ascat/main.nf':
 -    tuple val(meta), path("*png"),                        emit: png
 -    tuple val(meta), path("*purityploidy.txt"),           emit: purityploidy
 -    tuple val(meta), path("*segments.txt"),               emit: segments
--    path "versions.yml",                                  emit: versions
+-    tuple val("${task.process}"), val('bioconductor-ascat'), eval('Rscript -e "library(ASCAT); cat(as.character(packageVersion(\'ASCAT\')))"'), topic: versions, emit: versions_ascat
+-    tuple val("${task.process}"), val('alleleCounter'), eval("alleleCounter --version"), topic: versions, emit: versions_allelecounter
 +    tuple val(meta), path("*alleleFrequencies_chr*.txt"),      emit: allelefreqs
 +    tuple val(meta), path("*BAF.txt"),                         emit: bafs
 +    tuple val(meta), path("*cnvs.txt"),                        emit: cnvs
@@ -90,6 +92,8 @@ Changes in 'ascat/main.nf':
 -        additional_allelecounter_arg = ""
 -    }
 -
+-    """
+-    Rscript - <<'EOF'
 +    def args           = task.ext.args        ?: ''
 +    def prefix         = task.ext.prefix      ?: "${meta.id}"
 +    def gender         = args.gender          ?  "$args.gender" :        "NULL"
@@ -113,8 +117,8 @@ Changes in 'ascat/main.nf':
 +    def normal_name                      = input_normal                       ? ",normalname = '${prefix}.normal'" : ""
 +    def longread_bins                    = args.longread_bins                 ? ",loci_binsize = $args.longread_bins" : ""
 +    def allele_counter_flags             = args.allele_counter_flags          ? ",additional_allelecounter_flags = '$args.allele_counter_flags'" : ""
-     """
-     #!/usr/bin/env Rscript
++    """
++    #!/usr/bin/env Rscript
      library(RColorBrewer)
      library(ASCAT)
      options(bitmapType='cairo')
@@ -363,30 +367,26 @@ Changes in 'ascat/main.nf':
      summary <- tryCatch({
              matrix(c(ascat.output[["aberrantcellfraction"]], ascat.output[["ploidy"]]), ncol=2, byrow=TRUE)}, error = function(err) {
                  # error handler picks up where error was generated
-@@ -214,46 +192,48 @@
+@@ -215,32 +192,48 @@
          }
      )
      colnames(summary) <- c("AberrantCellFraction","Ploidy")
 -    write.table(summary, file=paste0("${prefix}",".purityploidy.txt"), sep="\t", quote=F, row.names=F, col.names=T)
 -
 -    write.table(QC, file=paste0("${prefix}", ".metrics.txt"), sep="\t", quote=F, row.names=F)
--
--    # Version export
+-    EOF
 +    write.table(summary, file=paste0("$prefix",".purityploidy.txt"), sep="\t", quote=F, row.names=F, col.names=T)
 +
 +    write.table(QC, file=paste0("$prefix", ".metrics.txt"), sep="\t", quote=F, row.names=F)
 +
 +    # version export
-     f <- file("versions.yml","w")
-     alleleCounter_version = system(paste("alleleCounter --version"), intern = T)
--    ascat_version = as.character(packageVersion('ASCAT'))
--    writeLines(paste0('"', "${task.process}", '"', ":"), f)
++    f <- file("versions.yml","w")
++    alleleCounter_version = system(paste("alleleCounter --version"), intern = T)
 +    ascat_version = sessionInfo()\$otherPkgs\$ASCAT\$Version
 +    writeLines(paste0('"', "$task.process", '"', ":"), f)
 +    writeLines(paste("    alleleCounter:", alleleCounter_version), f)
-     writeLines(paste("    ascat:", ascat_version), f)
--    writeLines(paste("    alleleCounter:", alleleCounter_version), f)
-     close(f)
++    writeLines(paste("    ascat:", ascat_version), f)
++    close(f)
 +
      """
  
@@ -411,12 +411,6 @@ Changes in 'ascat/main.nf':
 -    touch ${prefix}.tumour_normalLogR.txt
 -    touch ${prefix}.tumour_tumourBAF.txt
 -    touch ${prefix}.tumour_tumourLogR.txt
--
--    cat <<-END_VERSIONS > versions.yml
--    "${task.process}":
--        bioconductor-ascat: \$(Rscript -e "library(ASCAT); cat(as.character(packageVersion('ASCAT')))")
--        alleleCounter: \$(alleleCounter --version)
--    END_VERSIONS
 -    """
 +    echo stub > ${prefix}.after_correction.gc_rt.test.tumour.germline.png
 +    echo stub > ${prefix}.after_correction.gc_rt.test.tumour.tumour.png
@@ -446,51 +440,7 @@ Changes in 'ascat/main.nf':
 +
  }
 
-'modules/nf-core/ascat/environment.yml' is unchanged
-Changes in 'ascat/tests/main.nf.test':
---- modules/nf-core/ascat/tests/main.nf.test
-+++ modules/nf-core/ascat/tests/main.nf.test
-@@ -55,6 +55,7 @@
-                     process.out.png.collect{it[1].collect{file(it).name}},
-                     process.out.purityploidy,
-                     process.out.segments,
-+                    process.out.segments_raw,
-                     process.out.versions,
-                     path(process.out.versions[0]).yaml
-                 ).match() }
-@@ -109,6 +110,7 @@
-                     process.out.png.collect{it[1].collect{file(it).name}},
-                     process.out.purityploidy,
-                     process.out.segments,
-+                    process.out.segments_raw,
-                     process.out.versions,
-                     path(process.out.versions[0]).yaml
-                 ).match() }
-@@ -163,6 +165,7 @@
-                     process.out.png.collect{it[1].collect{file(it).name}},
-                     process.out.purityploidy,
-                     process.out.segments,
-+                    process.out.segments_raw,
-                     process.out.versions,
-                     path(process.out.versions[0]).yaml
-                 ).match() }
-@@ -218,6 +221,7 @@
-                     process.out.png.collect{it[1].collect{file(it).name}},
-                     process.out.purityploidy,
-                     process.out.segments,
-+                    process.out.segments_raw,
-                     process.out.versions,
-                     path(process.out.versions[0]).yaml
-                 ).match() }
-@@ -296,6 +300,7 @@
-                     process.out.png.collect{it[1].collect{file(it).name}},
-                     process.out.purityploidy,
-                     process.out.segments,
-+                    process.out.segments_raw,
-                     process.out.versions,
-                     path(process.out.versions[0]).yaml
-                 ).match() }
-
-'modules/nf-core/ascat/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/ascat/tests/nextflow.config' is unchanged
+'modules/nf-core/ascat/tests/main.nf.test' is unchanged
+'modules/nf-core/ascat/tests/main.nf.test.snap' is unchanged
 ************************************************************

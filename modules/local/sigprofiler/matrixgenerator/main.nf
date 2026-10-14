@@ -4,8 +4,8 @@ process SIGPROFILER_MATRIXGENERATOR {
 
     // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-28a9ce8'
-        : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-28a9ce8'}"
+        ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-7894689'
+        : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-7894689'}"
 
     input:
     tuple val(meta), path(vcf)          // somatic small-variant VCF (plain or bgzipped)
@@ -14,7 +14,7 @@ process SIGPROFILER_MATRIXGENERATOR {
     val(genome)                         // SigProfilerMatrixGenerator genome name, e.g. GRCh38 or CHM13-T2T
 
     output:
-    tuple val(meta), path("output/SBS/*.SBS96.all")  , emit: sbs96
+    tuple val(meta), path("output/SBS/*.SBS96.all")  , emit: sbs96    , optional: true
     tuple val(meta), path("output/DBS/*.DBS78.all")  , emit: dbs78    , optional: true
     tuple val(meta), path("output/ID/*.ID83.all")    , emit: id83     , optional: true
     tuple val(meta), path("output")                  , emit: output_dir

@@ -58,116 +58,86 @@ input:
         pattern: "*.{fasta,fa,fna}"
 
 output:
-  genes_genome_html:
+  integer_profile_html:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genes_genome.html":
+    - "solution_*_*_*/integer_profile.html":
         type: file
-        description: Genes genome HTML plot
-        pattern: "*/*_genes_genome.html"
-  genes_genome_pdf:
+        description: Per-solution integer copy-number profile plot (HTML)
+        pattern: "solution_*_*_*/integer_profile.html"
+  integer_profile_pdf:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genes_genome.pdf":
+    - "solution_*_*_*/integer_profile.pdf":
         type: file
-        description: Genes genome PDF plot
-        pattern: "*/*_genes_genome.pdf"
-  breakpoints_html:
+        description: Per-solution integer copy-number profile plot (PDF)
+        pattern: "solution_*_*_*/integer_profile.pdf"
+  integer_profile:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_breakpoints.html":
+    - "solution_*_*_*/integer_profile.{bed,vcf}":
         type: file
-        description: Genome copy numbers with breakpoints HTML plot
-        pattern: "*/*_genome_copynumbers_breakpoints.html"
-  breakpoints_pdf:
+        description: Per-solution integer copy-number segments, both haplotypes boundary-aligned (BED and VCF)
+        pattern: "solution_*_*_*/integer_profile.{bed,vcf}"
+  subclonal_profile_html:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_breakpoints.pdf":
+    - "solution_*_*_*/subclonal_profile.html":
         type: file
-        description: Genome copy numbers with breakpoints PDF plot
-        pattern: "*/*_genome_copynumbers_breakpoints.pdf"
-  breakpoints_subclonal_html:
+        description: Per-solution subclonal copy-number profile plot (HTML)
+        pattern: "solution_*_*_*/subclonal_profile.html"
+  subclonal_profile_pdf:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_breakpoints_subclonal.html":
+    - "solution_*_*_*/subclonal_profile.pdf":
         type: file
-        description: Genome copy numbers with subclonal breakpoints HTML plot
-        pattern: "*/*_genome_copynumbers_breakpoints_subclonal.html"
-  breakpoints_subclonal_pdf:
+        description: Per-solution subclonal copy-number profile plot (PDF)
+        pattern: "solution_*_*_*/subclonal_profile.pdf"
+  subclonal_profile:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_breakpoints_subclonal.pdf":
+    - "solution_*_*_*/subclonal_profile.{bed,vcf}":
         type: file
-        description: Genome copy numbers with subclonal breakpoints PDF plot
-        pattern: "*/*_genome_copynumbers_breakpoints_subclonal.pdf"
-  copynumbers_details_html:
+        description: Per-solution subclonal copy-number segments (BED and VCF)
+        pattern: "solution_*_*_*/subclonal_profile.{bed,vcf}"
+  genes:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_details.html":
+    - "solution_*_*_*/genes/genes_copynumber_states.*":
         type: file
-        description: Genome copy numbers details HTML plot
-        pattern: "*/*_genome_copynumbers_details.html"
-  copynumbers_details_pdf:
+        description: Per-solution gene copy-number states (BED, HTML and PDF)
+        pattern: "solution_*_*_*/genes/genes_copynumber_states.*"
+  hiscanner_zip:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "*/*_genome_copynumbers_details.pdf":
+    - "solution_*_*_*/HiScanner_plots_data.zip":
         type: file
-        description: Genome copy numbers details PDF plot
-        pattern: "*/*_genome_copynumbers_details.pdf"
-  bed_files:
-    - meta:
-        type: map
-        description: |
-          Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-    - "*/bed_output/*.bed":
-        type: file
-        description: BED output files
-        pattern: "*/bed_output/*.bed"
-  variation_plots:
-    - meta:
-        type: map
-        description: |
-          Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-    - "*/variation_plots/*.html":
-        type: file
-        description: Variation plots HTML files
-        pattern: "*/variation_plots/*.html"
-  vcf_files:
-    - meta:
-        type: map
-        description: |
-          Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-    - "*/vcf_output/*_wakhan_cna_*.vcf":
-        type: file
-        description: Wakhan CNA VCF files
-        pattern: "*/vcf_output/*_wakhan_cna_*.vcf"
+        description: Per-solution bundle for the Wakhan visualisation web viewer
+        pattern: "solution_*_*_*/HiScanner_plots_data.zip"
   heatmap_html:
     - meta:
         type: map
@@ -176,7 +146,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "*_heatmap_ploidy_purity.html":
         type: file
-        description: Heatmap ploidy purity HTML plot
+        description: Ploidy/purity heatmap (HTML)
         pattern: "*_heatmap_ploidy_purity.html"
   heatmap_pdf:
     - meta:
@@ -186,18 +156,8 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "*_heatmap_ploidy_purity.html.pdf":
         type: file
-        description: Heatmap ploidy purity PDF plot
+        description: Ploidy/purity heatmap (PDF)
         pattern: "*_heatmap_ploidy_purity.html.pdf"
-  optimized_peak_html:
-    - meta:
-        type: map
-        description: |
-          Groovy Map containing sample information
-          e.g. `[ id:'sample1', single_end:false ]`
-    - "*_optimized_peak.html":
-        type: file
-        description: Optimized peak HTML plot
-        pattern: "*_optimized_peak.html"
   coverage_csv:
     - meta:
         type: map
@@ -206,8 +166,18 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "coverage_data/*.csv":
         type: file
-        description: Coverage data CSV files
+        description: Coverage, BAF and SNP tables
         pattern: "coverage_data/*.csv"
+  coverage_png:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "coverage_data/*.png":
+        type: file
+        description: Copy-number coverage and peak plots
+        pattern: "coverage_data/*.png"
   coverage_plots_html:
     - meta:
         type: map
@@ -216,7 +186,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "coverage_plots/*.html":
         type: file
-        description: Coverage plots HTML files
+        description: Per-chromosome coverage plots (HTML)
         pattern: "coverage_plots/*.html"
   coverage_plots_pdf:
     - meta:
@@ -226,7 +196,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "coverage_plots/*.pdf":
         type: file
-        description: Coverage plots PDF files
+        description: Per-chromosome coverage plots (PDF)
         pattern: "coverage_plots/*.pdf"
   phasing_html:
     - meta:
@@ -236,7 +206,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "phasing_output/*.html":
         type: file
-        description: Phasing output HTML plots
+        description: Phase-correction plots (HTML)
         pattern: "phasing_output/*.html"
   phasing_pdf:
     - meta:
@@ -246,7 +216,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "phasing_output/*.pdf":
         type: file
-        description: Phasing output PDF plots
+        description: Phase-correction plots (PDF)
         pattern: "phasing_output/*.pdf"
   rephased_vcf:
     - meta:
@@ -254,20 +224,20 @@ output:
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "phasing_output/*.rephased.vcf.gz":
+    - "phasing_output/*rephased.vcf.gz":
         type: file
-        description: Rephased VCF file
-        pattern: "phasing_output/*.rephased.vcf.gz"
+        description: Phase-corrected VCF
+        pattern: "phasing_output/*rephased.vcf.gz"
   rephased_vcf_index:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - "phasing_output/*.rephased.vcf.gz.csi":
+    - "phasing_output/*rephased.vcf.gz.csi":
         type: file
-        description: Rephased VCF index file
-        pattern: "phasing_output/*.rephased.vcf.gz.csi"
+        description: Index of the phase-corrected VCF
+        pattern: "phasing_output/*rephased.vcf.gz.csi"
   snps_loh_plot:
     - meta:
         type: map
@@ -276,7 +246,7 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "snps_loh_plots/*_genome_snps_ratio_loh.html":
         type: file
-        description: SNPs LOH plot HTML file
+        description: SNP ratio / LOH plot (tumour-only runs)
         pattern: "snps_loh_plots/*_genome_snps_ratio_loh.html"
   solutions_ranks:
     - meta:
@@ -286,31 +256,39 @@ output:
           e.g. `[ id:'sample1', single_end:false ]`
     - "solutions_ranks.tsv":
         type: file
-        description: Solutions ranks TSV file
+        description: Ranked ploidy/purity solutions
         pattern: "solutions_ranks.tsv"
+  solution_dirs:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "solution_rank_*":
+        type: directory
+        description: Ranked solution directories (links to solution_<ploidy>_<purity>_<confidence>)
   versions_wakhan:
     - - ${task.process}:
           type: string
-          description: The process the versions were collected from
+          description: The name of the process
       - wakhan:
           type: string
-          description: The tool name
-      - "0.2.0":
-          type: string
-          description: The version of wakhan
+          description: The name of the tool
+      - wakhan --version 2>/dev/null | sed 's/^wakhan //':
+          type: eval
+          description: The expression to obtain the version of the tool
 
 topics:
   versions:
     - - ${task.process}:
           type: string
-          description: The process the versions were collected from
+          description: The name of the process
       - wakhan:
           type: string
-          description: The tool name
-      - "0.2.0":
-          type: string
-          description: The version of wakhan
-
+          description: The name of the tool
+      - wakhan --version 2>/dev/null | sed 's/^wakhan //':
+          type: eval
+          description: The expression to obtain the version of the tool
 authors:
   - "@ljwharbers"
 maintainers:

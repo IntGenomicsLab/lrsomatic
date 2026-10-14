@@ -1,0 +1,6 @@
+sample	chr	startpos	endpos	nMajor	nMinor
+test.tumour	19	1	1215000	1	1
+test.tumour	19	1215001	1223000	1	0
+test.tumour	19	1223001	1560000	1	1
+test.tumour	19	1560001	1700000	2	1
+test.tumour	19	1700001	58617616	1	1

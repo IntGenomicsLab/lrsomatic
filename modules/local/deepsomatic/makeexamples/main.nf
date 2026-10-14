@@ -4,7 +4,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     label 'process_long'
 
     //Conda is not supported at the moment
-    container params.use_gpu ? "docker.io/google/deepsomatic:1.7.0-gpu" : "docker.io/google/deepsomatic:1.7.0"
+    container params.use_gpu ? "docker.io/google/deepsomatic:1.10.0-gpu" : "docker.io/google/deepsomatic:1.10.0"
 
     input:
     tuple val(meta), path(normal_input), path(normal_index), path(tumor_input), path(tumor_index)
@@ -17,7 +17,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")         , emit: examples
     tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf, optional:true
     tuple val(meta), path("${prefix}_call_variant_outputs.tfrecord-*-of-*.gz", arity: "0..*")   , emit: small_model_calls
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
+    tuple val("${task.process}"), val('deepsomatic'), val('1.10.0'), topic: versions, emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when

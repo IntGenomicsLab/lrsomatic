@@ -1,0 +1,49 @@
+{
+    "r1041_e82_400bps_sup_v430 - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "r1041_e82_400bps_sup_v430"
+                        },
+                        [
+                            "full_alignment.pt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "pileup.pt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        "CLAIR3_MODEL",
+                        "wget",
+                        "1.21.4"
+                    ]
+                ],
+                "model": [
+                    [
+                        {
+                            "id": "r1041_e82_400bps_sup_v430"
+                        },
+                        [
+                            "full_alignment.pt:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "pileup.pt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "versions_wget": [
+                    [
+                        "CLAIR3_MODEL",
+                        "wget",
+                        "1.21.4"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-02T11:54:19.260206521",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

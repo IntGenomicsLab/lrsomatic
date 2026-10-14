@@ -1,0 +1,56 @@
+nextflow_process {
+
+    name "Test Process BCFTOOLS_EXCLUDE_SITES"
+    script "../main.nf"
+    process "BCFTOOLS_EXCLUDE_SITES"
+
+    tag "modules"
+    tag "modules_local"
+    tag "bcftools_exclude_sites"
+    tag "small"
+
+    test("drops records at mask positions by position only") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/excludesites_input.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/excludesites_input.vcf.gz.tbi", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/excludesites_mask.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/excludesites_mask.vcf.gz.tbi", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def positions = path(process.out.vcf[0][1]).linesGzip
+                .findAll { line -> !line.startsWith('#') }
+                .collect { line -> line.split('\t')[1] }
+
+            // 100 and 200 go despite different alleles; 102 stays although it lies inside the mask's deletion
+            assert positions == [ '102', '300' ]
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [], [], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

@@ -18,6 +18,10 @@
 
   > Cheng J, Novati G, Pan J, Bycroft C, Žemgulytė A, Applebaum T, Pritzel A, Wong LH, Zielinski M, Sargeant T, Schneider RG, Senior AW, Jumper J, Hassabis D, Kohli P, Avsec Ž. Accurate proteome-wide missense variant effect prediction with AlphaMissense. Science. 2023 Sep 22;381(6664):eadg7492. doi: 10.1126/science.adg7492.
 
+- [AmpliconClassifier](https://doi.org/10.1038/s41586-023-05937-5)
+
+  > Luebeck, J., Ng, A.W.T., Galipeau, P.C. et al. Extrachromosomal DNA in the cancerous transformation of Barrett's oesophagus. Nature 616, 798-805 (2023). https://doi.org/10.1038/s41586-023-05937-5
+
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
 
   > Van Loo P, Nordgard SH, Lingjærde OC, Russnes HG, Rye IH, Sun W, Weigman VJ, Marynen P, Zetterberg A, Naume B, Perou CM, Børresen-Dale AL, Kristensen VN. Allele-specific copy number analysis of tumors. Proc Natl Acad Sci U S A. 2010 Sep 28;107(39):16910-5. doi: 10.1073/pnas.1009843107. Epub 2010 Sep 13. PubMed PMID: 20837533; PubMed Central PMCID: PMC2947907.
@@ -46,9 +50,17 @@
 
   > Landrum MJ, Lee JM, Benson M, Brown GR, Chao C, Chitipiralla S, Gu B, Hart J, Hoffman D, Jang W, Karapetyan K, Katz K, Liu C, Maddipatla Z, Malheiro A, McDaniel K, Ovetsky M, Riley G, Zhou G, Holmes JB, Kattman BL, Maglott DR. ClinVar: improving access to variant interpretations and supporting evidence. Nucleic Acids Res. 2018 Jan 4;46(D1):D1062-D1067. doi: 10.1093/nar/gkx1153.
 
+- [CoRAL](https://doi.org/10.1101/gr.279131.124)
+
+  > Zhu, K., Jones, M.G., Luebeck, J. et al. CoRAL accurately resolves extrachromosomal DNA genome structures with long-read sequencing. Genome Res. 34, 1344-1354 (2024). https://doi.org/10.1101/gr.279131.124
+
 - [cramino](https://github.com/wdecoster/cramino)
 
   > De Coster W. cramino: A fast and simple tool for quality control of long read sequencing data [Software]. GitHub. https://github.com/wdecoster/cramino
+
+- [Dfam](https://pubmed.ncbi.nlm.nih.gov/33436076/)
+
+  > Storer J, Hubley R, Rosen J, Wheeler TJ, Smit AF. The Dfam community resource of transposable element families, sequence models, and genome annotations. Mob DNA. 2021 Jan 11;12(1):2. doi: 10.1186/s13100-020-00230-y. PubMed PMID: 33436076; PubMed Central PMCID: PMC7805199.
 
 - [Ensembl VEP](https://pubmed.ncbi.nlm.nih.gov/27268795/)
 
@@ -61,6 +73,10 @@
 - [fibertools-rs](https://doi.org/10.1101/gr.279095.124)
 
   > Jha, A., Bohaczuk, S. C., Mao, Y., Ranchalis, J., Mallory, B. J., Min, A. T., Hamm, M. O., Swanson, E., Dubocanin, D., Finkbeiner, C., Li, T., Whittington, D., Noble, W. S., Stergachis, A. B., & Vollger, M. R. (2024). DNA-m6A calling and integrated long-read epigenetic and genetic analysis with fibertools. Genome Research.
+
+- [ggplot2](https://ggplot2.tidyverse.org)
+
+  > Wickham H. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016. ISBN 978-3-319-24277-4. https://ggplot2.tidyverse.org
 
 - [LongPhase](https://pubmed.ncbi.nlm.nih.gov/35104333/)
 
@@ -90,9 +106,25 @@
 
   > De Coster W, Rademakers R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics. 2023 May 4;39(5):btad311. doi: 10.1093/bioinformatics/btad311. PubMed PMID: 37171891; PubMed Central PMCID: PMC10196664.
 
+- [Padfoot](https://github.com/KolmogorovLab/Padfoot)
+
+  > Functional annotation of somatic structural variants and copy number alterations from long-read cancer genomes [Software]. GitHub. https://github.com/KolmogorovLab/Padfoot
+
 - [PolyPhen-2](https://doi.org/10.1038/nmeth0410-248)
 
   > Adzhubei IA, Schmidt S, Peshkin L, Ramensky VE, Gerasimova A, Bork P, Kondrashov AS, Sunyaev SR. A method and server for predicting damaging missense mutations. Nat Methods. 2010 Apr;7(4):248-9. doi: 10.1038/nmeth0410-248.
+
+- [R](https://www.R-project.org/)
+
+  > R Core Team. R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna, Austria. https://www.R-project.org/
+
+- [ReConPlot](https://pubmed.ncbi.nlm.nih.gov/38058190/)
+
+  > Espejo Valle-Inclán J, Cortés-Ciriano I. ReConPlot: an R package for the visualization and interpretation of genomic rearrangements. Bioinformatics. 2023 Dec 1;39(12):btad719. doi: 10.1093/bioinformatics/btad719. PubMed PMID: 38058190; PubMed Central PMCID: PMC10710371.
+
+- [RepeatMasker](https://www.repeatmasker.org/)
+
+  > Smit AFA, Hubley R, Green P. RepeatMasker Open-4.0 [Software]. https://www.repeatmasker.org/
 
 - [REVEL](https://doi.org/10.1016/j.ajhg.2016.08.016)
 

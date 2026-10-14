@@ -1,0 +1,290 @@
+nextflow_process {
+
+    name "Test Process RECONPLOT"
+    script "../main.nf"
+    process "RECONPLOT"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_local"
+    tag "reconplot"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // The stub tests check the I/O contract; the "real" tests below run the wrapper and the ReConPlot package on the
+    // synthetic fixtures in tests/fixtures/padfoot_reconplot.
+
+    test("ascat + severus - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true) ],
+                    'severus',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ],     file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    test("savana single source - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.bed', checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ],     file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+    // The "real" tests run the wrapper and the ReConPlot package on the synthetic fixtures in tests/fixtures/padfoot_reconplot
+    // (the same invented chr19 events as the PADFOOT tests, in every CN caller's own file layout). Figures are not
+    // snapshotted (PDF/PNG bytes are not stable across platforms); the harmonised CN/SV tables are.
+
+    test("ascat + severus - real") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                // one chromosome in the fixtures -> one per-chromosome and one genome-wide figure, PDF + PNG each
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.focus == [] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('CN file: test.segments.txt') && path(process.out.log.get(0).get(1)).text.contains('purity=0.9') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    test("ascat + severus - real, pipeline arguments with a focus panel") {
+
+        config "./nextflow.pipeline.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            def log_text = path(process.out.log.get(0).get(1)).text
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                // the focus window (thousands separators accepted), the known gene drawn, the unknown one skipped, the BAF track
+                { assert process.out.focus.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19_1.0Mb-1.3Mb.pdf', 'test_chr19_1.0Mb-1.3Mb.png'] },
+                { assert log_text.contains('NOTAGENE') && !log_text.contains('focus panel failed') },
+                { assert snapshot(process.out.tables, process.out.versions).match() }
+            )
+        }
+    }
+
+    test("ascat + severus - real, a failing focus panel keeps the other figures") {
+
+        config "./nextflow.focusfail.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'ascat',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test.segments.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.purityploidy.txt", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test.tumour_tumourBAF.txt", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.focus == [] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('focus panel failed') }
+            )
+        }
+    }
+
+    test("wakhan + severus - real") {
+
+        when {
+            process {
+                """
+                // Wakhan >= 0.5: the top-ranked solution's integer_profile.bed plus solutions_ranks.tsv, as the subworkflow stages them
+                input[0] = [
+                    [ id:'test' ],
+                    'wakhan',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solution_rank_1/integer_profile.bed", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solutions_ranks.tsv", checkIfExists: true) ],
+                    'severus',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true) ]
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('Wakhan solution: solution_2.0_0.9_0.9') && path(process.out.log.get(0).get(1)).text.contains('purity=0.9 ploidy=2') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    test("savana single source - real") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.bedpe", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_fitted_purity_ploidy.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_allele_counts_hetSNPs.bed", checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('test_tumor.classified.somatic.bedpe (bedpe)') },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
+    // SAVANA writes its somatic BEDPE only from the ONT model classifier; with --pb (PacBio) the classified somatic VCF
+    // is the only SV file, so the wrapper must fall back to it
+    test("savana single source - real, VCF only (PacBio)") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_fitted_purity_ploidy.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_allele_counts_hetSNPs.bed", checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert path(process.out.log.get(0).get(1)).text.contains('test_tumor.classified.somatic.vcf (vcf)') },
+                // the same five junctions as the BEDPE test (same CN table); only the insertion's second position differs,
+                // since SAVANA's BEDPE adds 1 bp to it
+                { assert path(process.out.tables.get(0).get(1).find { f -> file(f).name.endsWith('reconplot_sv.tsv') }).readLines().size() == 6 },
+                { assert snapshot(
+                    process.out.tables,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+}

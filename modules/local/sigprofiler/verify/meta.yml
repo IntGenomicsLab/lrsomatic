@@ -1,0 +1,58 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "sigprofiler_verify"
+description: Check a user-supplied SigProfilerMatrixGenerator volume against the chromosome checksums of the pipeline's SigProfilerMatrixGenerator, so a stale or damaged payload fails before any sample is processed
+keywords:
+  - mutational signatures
+  - reference genome
+  - sigprofiler
+  - checksum
+tools:
+  - "sigprofilermatrixgenerator":
+      description: "SigProfilerMatrixGenerator creates mutational matrices for all types of somatic mutations"
+      homepage: "https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator"
+      documentation: "https://sigprofilersuite.github.io/SigProfilerMatrixGenerator/"
+      tool_dev_url: "https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator"
+      doi: "10.1186/s12864-019-6041-2"
+      licence: ["BSD-2-Clause"]
+
+input:
+  - volume:
+      type: directory
+      description: SigProfilerMatrixGenerator volume containing tsb/<genome>/ (e.g. from --sigprofiler_genome_dir)
+  - genome:
+      type: string
+      description: SigProfilerMatrixGenerator genome name, e.g. GRCh38 or CHM13-T2T
+
+output:
+  verified:
+    - "true":
+        type: boolean
+        description: Emitted once the volume's chromosome files match the registered checksums; the task fails otherwise
+  versions_sigprofilermatrixgenerator:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - sigprofilermatrixgenerator:
+          type: string
+          description: The tool name
+      - 'python -c ''import importlib.metadata as m; print(m.version("SigProfilerMatrixGenerator"))''':
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - sigprofilermatrixgenerator:
+          type: string
+          description: The tool name
+      - 'python -c ''import importlib.metadata as m; print(m.version("SigProfilerMatrixGenerator"))''':
+          type: string
+          description: The command used to generate the version of the tool
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

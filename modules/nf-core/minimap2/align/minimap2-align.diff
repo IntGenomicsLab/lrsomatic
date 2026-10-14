@@ -1,4 +1,5 @@
 Changes in component 'nf-core/minimap2/align'
+'modules/nf-core/minimap2/align/environment.yml' is unchanged
 'modules/nf-core/minimap2/align/meta.yml' is unchanged
 Changes in 'minimap2/align/main.nf':
 --- modules/nf-core/minimap2/align/main.nf
@@ -12,7 +13,6 @@ Changes in 'minimap2/align/main.nf':
      // Note: the versions here need to match the versions used in the mulled container below and minimap2/index
      conda "${moduleDir}/environment.yml"
 
-'modules/nf-core/minimap2/align/environment.yml' is unchanged
 'modules/nf-core/minimap2/align/tests/main.nf.test' is unchanged
 'modules/nf-core/minimap2/align/tests/main.nf.test.snap' is unchanged
 ************************************************************

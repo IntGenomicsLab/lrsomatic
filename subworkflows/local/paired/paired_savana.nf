@@ -9,7 +9,7 @@ workflow PAIRED_SAVANA {
     tumor_normal_input // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, phased_germline_tbi]
     fasta              // [[:], fasta]
     fai                // [[:], fai]
-    contigs             // [[:], contigs]  -- one contig per line, restricts SAVANA to canonical chromosomes
+    contigs            // [[:], contigs]  -- one contig per line, restricts SAVANA to canonical chromosomes
 
     main:
     // .first() re-establishes a value channel: fasta/fai are singletons reused for every sample,
@@ -52,7 +52,7 @@ workflow PAIRED_SAVANA {
     // filters out germline/artefact junctions before they inform CNA binning.
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, snp_vcf, [], breakpoints]
     //         [[:], fasta, fai]
-    //         contigs / blacklist / g1000_vcf ([]/[]/[]: snp_vcf takes priority in paired mode)
+    //         contigs / blacklist / g1000_vcf (contigs/[]/[]: snp_vcf takes priority in paired mode)
     //
     tumor_normal_input
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, _phased_tbi ->
@@ -70,12 +70,14 @@ workflow PAIRED_SAVANA {
     SAVANA_CNA (
         savana_cna_input,
         ch_fasta_fai,
-        [],  // contigs -- SAVANA_CNA's own module doesn't take a genome-aware contigs file; test profile scopes it via ext.args instead
+        contigs.map { _meta, contigs_file -> contigs_file },  // same contigs as SAVANA_RUN; [] without --genome
         [],  // blacklist (unused)
         []   // g1000_vcf (unused -- snp_vcf takes priority in paired mode)
     )
 
     emit:
-    somatic_vcf = SAVANA_CLASSIFY.out.somatic_vcf  // [meta, vcf]  -- classified somatic SV VCF
-    cn_calls    = SAVANA_CNA.out.cna               // [meta, tsv]  -- segmented absolute copy number
+    somatic_vcf          = SAVANA_CLASSIFY.out.somatic_vcf      // [meta, vcf]    -- classified somatic SV VCF
+    cn_calls             = SAVANA_CNA.out.cna                   // [meta, tsv]    -- segmented absolute copy number
+    fitted_purity_ploidy = SAVANA_CNA.out.fitted_purity_ploidy  // [meta, tsv]    -- selected purity/ploidy fit (absent when no fit)
+    allele_counts        = SAVANA_CNA.out.allele_counts         // [meta, bed]    -- het-SNP allele counts (ReConPlot BAF track)
 }

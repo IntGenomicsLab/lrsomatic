@@ -4,4 +4,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - "bioconda::cramino=1.0.0"
+  # renovate: datasource=conda depName=bioconda/cramino
+  - bioconda::cramino=2.0.0

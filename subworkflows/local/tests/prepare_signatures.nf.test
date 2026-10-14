@@ -1,0 +1,73 @@
+nextflow_workflow {
+
+    name "Test Workflow PREPARE_SIGNATURES"
+    script "../prepare_signatures.nf"
+    workflow "PREPARE_SIGNATURES"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "prepare_signatures"
+    tag "sigprofiler"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // The pipeline tests all set skip_signatures, so these are the only PR coverage of this subworkflow.
+    // Run under -stub: what is tested is which branch runs and what it hands on as the volume.
+
+    test("--sigprofiler_genome_dir - the user's volume is verified and handed on") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = 'CHM13-T2T'
+                input[1] = null
+                input[2] = "\${projectDir}/tests/fixtures/sigprofiler_stub_volume"
+                input[3] = false
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('SIGPROFILER_VERIFY') } },
+                { assert !processes.any { name -> name.contains('SIGPROFILER_INSTALL') } },
+                // the directory itself, not a staged copy
+                { assert workflow.out.volume.size() == 1 },
+                { assert workflow.out.volume[0].toString().endsWith('tests/fixtures/sigprofiler_stub_volume') }
+            )
+        }
+    }
+
+    test("--download_sigprofiler_genome - the payload is installed") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = 'CHM13-T2T'
+                input[1] = 'https://example.org/CHM13-T2T.tar.gz'
+                input[2] = null
+                input[3] = true
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('SIGPROFILER_INSTALL') } },
+                { assert !processes.any { name -> name.contains('SIGPROFILER_VERIFY') } },
+                { assert workflow.out.volume.size() == 1 },
+                { assert workflow.out.volume[0].toString().endsWith('volume') }
+            )
+        }
+    }
+}

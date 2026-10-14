@@ -28,11 +28,11 @@ workflow PREPARE_ANNOTATION {
 			// vep_download_info: [[:], genome_str, species_str, cache_version_int]
 
 			ENSEMBLVEP_DOWNLOAD (
-				vep_download_info
+				vep_download_info,
+				false  // preflight_check: skip the CHECKSUMS lookup
 			)
 
 			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache
-			ch_versions = ch_versions.mix(ENSEMBLVEP_DOWNLOAD.out.versions)
 
 		}
 		else {

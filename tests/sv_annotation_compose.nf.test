@@ -1,0 +1,62 @@
+nextflow_pipeline {
+
+    name "Test pipeline - Padfoot / ReConPlot wiring with every caller on (-preview)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The test profiles skip Wakhan, ASCAT, Padfoot and ReConPlot (no whole-genome caller output on the test data),
+    // so no other pipeline test evaluates how the two subworkflows are wired in. -preview builds the whole workflow
+    // graph without running a task, which catches launch errors (e.g. an output a module no longer emits), and
+    // -with-dag writes that graph, whose process nodes ( v12(["NAME"]) ) show which steps the run would contain: a
+    // regression that silently drops Padfoot or ReConPlot (a gate wrongly false, a skip flag ignored) fails here too.
+
+    test("-profile test with Wakhan, ASCAT, Padfoot and ReConPlot on - preview") {
+
+        options "-preview -with-dag dag.mmd"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_wakhan    = false
+                skip_ascat     = false
+                skip_padfoot   = false
+                skip_reconplot = false
+            }
+        }
+
+        then {
+            def processes = (path("$launchDir/dag.mmd").text =~ /\(\["([A-Z0-9_]+)"\]\)/).collect { m -> m[1] } as Set
+            assertAll(
+                { assert workflow.success },
+                { assert processes.containsAll(['SEVERUS', 'WAKHAN', 'ASCAT']) },
+                { assert processes.containsAll(['PADFOOT_SEVERUS_WAKHAN', 'PADFOOT_SAVANA']) },
+                { assert processes.containsAll(['RECONPLOT_SEVERUS_ASCAT', 'RECONPLOT_SEVERUS_WAKHAN', 'RECONPLOT_SAVANA']) }
+            )
+        }
+    }
+
+    test("-profile test with Wakhan and ReConPlot on, Padfoot skipped - preview") {
+
+        options "-preview -with-dag dag.mmd"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_wakhan    = false
+                skip_ascat     = false
+                skip_padfoot   = true
+                skip_reconplot = false
+            }
+        }
+
+        then {
+            def processes = (path("$launchDir/dag.mmd").text =~ /\(\["([A-Z0-9_]+)"\]\)/).collect { m -> m[1] } as Set
+            assertAll(
+                { assert workflow.success },
+                { assert !processes.any { name -> name.startsWith('PADFOOT_') } },
+                { assert processes.containsAll(['RECONPLOT_SEVERUS_ASCAT', 'RECONPLOT_SEVERUS_WAKHAN', 'RECONPLOT_SAVANA']) }
+            )
+        }
+    }
+}
