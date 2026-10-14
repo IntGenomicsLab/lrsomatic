@@ -14,6 +14,8 @@ include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subwork
 // Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
 include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DS      } from '../../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DV      } from '../../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_SORT     as DS_VERDICT_SORT_DS       } from '../../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_SORT     as DS_VERDICT_SORT_DV       } from '../../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_NORM     as DS_GERMLINE_REJOIN       } from '../../../modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_VIEW     as DS_VERDICT_SITES         } from '../../../modules/nf-core/bcftools/view/main'
 include { BCFTOOLS_ANNOTATE as DS_VERDICT_ANNOTATE      } from '../../../modules/nf-core/bcftools/annotate/main'
@@ -232,12 +234,19 @@ workflow TUMORONLY_SMALLVAR {
             DS_VERDICT_SPLIT_DV ( deepvariant_vcf, fasta )
 
             //
+            // MODULES: DS_VERDICT_SORT_DS / DS_VERDICT_SORT_DV (BCFTOOLS_SORT aliases, label: process_medium)
+            // Left-alignment can move records behind their neighbours, so re-sort and index after the split.
+            //
+            DS_VERDICT_SORT_DS ( DS_VERDICT_SPLIT_DS.out.vcf )
+            DS_VERDICT_SORT_DV ( DS_VERDICT_SPLIT_DV.out.vcf )
+
+            //
             // MODULE: DS_VERDICT_SITES (BCFTOOLS_VIEW alias, label: process_medium)
             // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF (split), before its PASS filter
             // Output: .vcf/.index -- [meta, vcf.gz/tbi]  -- DeepSomatic records whose FILTER is neither PASS nor RefCall
             //
             DS_VERDICT_SITES (
-                DS_VERDICT_SPLIT_DS.out.vcf.join(DS_VERDICT_SPLIT_DS.out.index, failOnMismatch: true, failOnDuplicate: true),
+                DS_VERDICT_SORT_DS.out.vcf.join(DS_VERDICT_SORT_DS.out.index, failOnMismatch: true, failOnDuplicate: true),
                 [], [], []
             )
 
@@ -245,8 +254,8 @@ workflow TUMORONLY_SMALLVAR {
             // MODULE: DS_VERDICT_ANNOTATE (BCFTOOLS_ANNOTATE alias, label: process_medium)
             // Copies DeepSomatic's FILTER into INFO/DS_VERDICT on each matching DeepVariant record.
             //
-            DS_VERDICT_SPLIT_DV.out.vcf
-                .join(DS_VERDICT_SPLIT_DV.out.index, failOnMismatch: true, failOnDuplicate: true)
+            DS_VERDICT_SORT_DV.out.vcf
+                .join(DS_VERDICT_SORT_DV.out.index, failOnMismatch: true, failOnDuplicate: true)
                 .join(DS_VERDICT_SITES.out.vcf,       failOnMismatch: true, failOnDuplicate: true)
                 .join(DS_VERDICT_SITES.out.index,     failOnMismatch: true, failOnDuplicate: true)
                 .map { meta, vcf, tbi, annotations, annotations_index ->

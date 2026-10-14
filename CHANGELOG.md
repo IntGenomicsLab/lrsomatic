@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
+- Fixed `DS_VERDICT_SPLIT_DS` / `DS_VERDICT_SPLIT_DV` failing with `Unsorted positions` on real data: `bcftools norm` left-aligns while splitting, which can put a record behind its neighbour, so indexing straight from norm aborted. The split no longer indexes; new `DS_VERDICT_SORT_DS` / `DS_VERDICT_SORT_DV` steps sort and index it, as the consensus path already does (@robert-a-forsyth).
 - [#223](https://github.com/IntGenomicsLab/lrsomatic/pull/223) - Fixed the Severus input channel (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `PREPARE_AA_DATA_REPO` no longer reads a `versions` output `UNTAR` does not have, which crashed every default GRCh38 run with CoRAL; overriding `--aa_data_repo_url` drops the genome's default MD5 (@robert-a-forsyth).
 - [#205](https://github.com/IntGenomicsLab/lrsomatic/pull/205) - `-profile test_full` starts again: it skips CoRAL and signatures and carries the chr19 SAVANA workarounds from `test` (@robert-a-forsyth).
