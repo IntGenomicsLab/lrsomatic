@@ -8,9 +8,7 @@
                     "modkit/dmr": {
                         "branch": "add-modkit-dmr",
                         "git_sha": "fbbd19f488dcc8cb0318e92c895a431b791a237f",
-                        "installed_by": [
-                            "modules"
-                        ],
+                        "installed_by": ["modules"],
                         "patch": "modules/nf-core/modkit/dmr/modkit-dmr.diff"
                     }
                 }
@@ -105,9 +103,7 @@
                     "htslib/bgziptabix": {
                         "branch": "master",
                         "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "longphase/haplotag": {
                         "branch": "master",
