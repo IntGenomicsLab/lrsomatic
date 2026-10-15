@@ -608,7 +608,7 @@
                 "sigprofiler_matrix_args": {
                     "type": "string",
                     "default": "--plot",
-                    "description": "Extra arguments for `SigProfilerMatrixGenerator matrix_generator` (e.g. `--plot --tsb_stat`).",
+                    "description": "Extra arguments for `SigProfilerMatrixGenerator matrix_generator` (e.g. `--plot --tsb_stat`). `--bed_file`, `--exome` and `--seqInfo False` are not supported.",
                     "fa_icon": "fas fa-terminal"
                 },
                 "sigprofiler_assignment_args": {

@@ -1,0 +1,5 @@
+sample1	1	177427	Q:A[AT>CC]C	1
+sample1	1	181089	Q:A[TT>CC]C	1
+sample1	1	183479	Q:A[CT>AG]C	1
+sample1	1	184736	Q:A[TT>AG]C	1
+sample1	1	186388	Q:A[CC>AT]C	1
