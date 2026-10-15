@@ -18,6 +18,8 @@ jobs:
 
       - name: Run prek
         uses: j178/prek-action@5337cb91e0fa35a7ff31b9ca345126d8bbbcdf16 # v2
+        with:
+          cache: "false"
 
   nf-core:
     runs-on: ubuntu-latest
