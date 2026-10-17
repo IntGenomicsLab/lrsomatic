@@ -193,6 +193,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--
 | `--skip_normalfiber`   | A boolean to skip fibertools processing for the normal sample. Default = `false`                                                                                                                                                                                        |
 | `--skip_modcall`       | A boolean to skip Longphase `modcall`, the 5mC base-modification calling whose VCF is used as extra evidence during phasing. Unrelated to the modkit pileup (see `--skip_modkit`). Default = `false`                                                                    |
 | `--skip_modkit`        | A boolean to skip the modkit pileup step. Default = `false`                                                                                                                                                                                                             |
+| `--skip_dmr`           | A boolean to skip haplotype differential methylation region (DMR) calling. Only takes effect when `--modkit_phased` is also set; has no effect otherwise. Default = `false`                                                                                             |
 | `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                                                                                                        |
 | `--skip_signatures`    | A boolean to skip mutational signature analysis (SigProfilerMatrixGenerator + SigProfilerAssignment). Default = `false`                                                                                                                                                 |
 | `--skip_report`        | A boolean to skip the final per-sample HTML report. Default = `false`                                                                                                                                                                                                   |
@@ -205,6 +206,18 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--
 | `--modkit_phased` | Run `modkit pileup --phased` on the Longphase-haplotagged BAMs, producing `_hp1`, `_hp2` and `_combined` bedMethyl files per sample. The pileup then requires small-variant calling, phasing and haplotagging to have succeeded for the sample. Default = `false`                                                                  |
 
 The pileup runs a patched modkit 0.6.4 image (`ghcr.io/ljwharbers/modkit`, `linux/amd64` only, built from [ljwharbers/modkit@pacbio-conflict-fix](https://github.com/ljwharbers/modkit/tree/pacbio-conflict-fix)): stock modkit drops PacBio HiFi reads whose 5mC and 5hmC probabilities sum above 1 and returns empty `--cpg` pileups on them ([nanoporetech/modkit#612](https://github.com/nanoporetech/modkit/issues/612)). Conda and `arm64` are not supported for this step; use `--skip_modkit` there.
+
+#### DMR options:
+
+With `--modkit_phased` set, haplotype differential methylation region (DMR) calling runs automatically unless `--skip_dmr` is given: `modkit dmr pair` compares methylation between the `_hp1`/`_hp2` bedMethyl pileups over CpG islands covered in both haplotypes, and the result is annotated with its nearest gene.
+
+| Parameter                | Description                                                                                                                                                                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--skip_dmr`             | Skip DMR calling. Only takes effect when `--modkit_phased` is also set. Default = `false`                                                                                                                                              |
+| `--dmr_cpg_islands_bed`  | CpG-islands BED to restrict DMR calling to. Has a built-in default for `--genome GRCh38`/`CHM13`; required as an explicit override for any other genome. Default = `null` (built-in default for GRCh38/CHM13)                          |
+| `--dmr_gencode_gene_bed` | Gene-model BED used to annotate each DMR call with its nearest gene. Has a built-in default for `--genome GRCh38`/`CHM13`; required as an explicit override for any other genome. Default = `null` (built-in default for GRCh38/CHM13) |
+
+On any other genome, DMR is skipped with a `log.warn` (not a hard failure) unless both BEDs are supplied explicitly. `--modkit_args`'s default only requests 5mC calls; since real ONT SUP-basecalled data also calls 5hmC at the same sites, the pileup feeding DMR automatically also requests 5hmC when `--modkit_phased` is set and `--skip_dmr` is not — `modkit dmr pair` otherwise rejects bedMethyl rows carrying an unrequested modification code. This only changes the pileup used internally for DMR; the published `modkit_pileup` bedMethyl files reflect `--modkit_args` exactly as given.
 
 #### LONGPHASE options:
 
