@@ -2,18 +2,6 @@
     "name": "IntGenomicsLab/lrsomatic",
     "homePage": "https://github.com/IntGenomicsLab/lrsomatic",
     "repos": {
-        "https://github.com/YannVRB/modules.git": {
-            "modules": {
-                "nf-core": {
-                    "modkit/dmr": {
-                        "branch": "add-modkit-dmr",
-                        "git_sha": "fbbd19f488dcc8cb0318e92c895a431b791a237f",
-                        "installed_by": ["modules"],
-                        "patch": "modules/nf-core/modkit/dmr/modkit-dmr.diff"
-                    }
-                }
-            }
-        },
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
@@ -126,6 +114,12 @@
                         "branch": "master",
                         "git_sha": "135d883a43b1a2324b4112cd270cf22e20835533",
                         "installed_by": ["modules"]
+                    },
+                    "modkit/dmr": {
+                        "branch": "master",
+                        "git_sha": "0f9aa70f68367b17b2a92043ff9614aa5792d73f",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/modkit/dmr/modkit-dmr.diff"
                     },
                     "modkit/pileup": {
                         "branch": "master",
