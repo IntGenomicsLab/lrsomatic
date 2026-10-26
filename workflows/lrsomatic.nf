@@ -116,12 +116,11 @@ workflow LRSOMATIC {
     params.savana_contigs = getGenomeAttribute('savana_contigs')
     params.savana_g1000_vcf = getGenomeAttribute('savana_g1000_vcf')
     // An explicit --dmr_cpg_islands_bed/--dmr_gencode_gene_bed wins over the per-genome
-    // default (getGenomeAttribute alone would silently clobber it, same as every other
-    // getGenomeAttribute-assigned param above -- these two are the only ones a user is
-    // expected to override directly, since GRCh38/CHM13 are the only genomes with a built-in
-    // default and any other genome needs its own values).
-    params.dmr_cpg_islands_bed = params.dmr_cpg_islands_bed ?: getGenomeAttribute('dmr_cpg_islands_bed')
-    params.dmr_gencode_gene_bed = params.dmr_gencode_gene_bed ?: getGenomeAttribute('dmr_gencode_gene_bed')
+    // default. Resolved into locals, not params: both are declared in nextflow.config, and
+    // Nextflow ignores reassigning a param a config already defines (even as null), so
+    // `params.dmr_* = ...` here would never pick up the genome default.
+    def dmr_cpg_islands_bed = params.dmr_cpg_islands_bed ?: getGenomeAttribute('dmr_cpg_islands_bed')
+    def dmr_gencode_gene_bed = params.dmr_gencode_gene_bed ?: getGenomeAttribute('dmr_gencode_gene_bed')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
@@ -717,13 +716,13 @@ workflow LRSOMATIC {
         // the run failing when they are not (e.g. a custom --fasta with no --genome, or a
         // --genome this pipeline doesn't ship DMR references for).
         if (params.modkit_phased && !params.skip_dmr) {
-            if (params.dmr_cpg_islands_bed && params.dmr_gencode_gene_bed) {
+            if (dmr_cpg_islands_bed && dmr_gencode_gene_bed) {
                 DMR (
                     MODKIT_PILEUP.out.bedgz,
                     ch_fasta,
                     ch_fai,
-                    file(params.dmr_cpg_islands_bed, checkIfExists: true),
-                    file(params.dmr_gencode_gene_bed, checkIfExists: true)
+                    file(dmr_cpg_islands_bed, checkIfExists: true),
+                    file(dmr_gencode_gene_bed, checkIfExists: true)
                 )
                 ch_versions = ch_versions.mix(DMR.out.versions)
             }
