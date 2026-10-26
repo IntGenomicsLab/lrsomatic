@@ -905,31 +905,47 @@ workflow LRSOMATIC {
         )
     }
 
-    // SEVERUS input: tumor-only and paired samples with their phased germline VCF; [] normal BAM/BAI = tumor-only mode
-    branched_minimap.tumor_only
-        .map{ meta, bam, bai ->
-            def new_meta = meta.subMap('id',
-                            'paired_data',
-                            'platform',
-                            'sex',
-                            'fiber',
-                            'clair3_model',
-                            'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
-            return[new_meta, bam, bai]
+    // SEVERUS input: tumor-only and paired samples with their phased germline VCF; [] normal BAM/BAI = tumor-only mode.
+    // Severus, Wakhan and SAVANA read the HP (haplotype) tag per read, so build it from
+    // PHASING_HAPLOTYPING's haplotagged BAMs rather than the unphased minimap2 BAMs.
+    def sv_meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber',
+        'clair3_model', 'clairS_model', 'clairSTO_model', 'kinetics']
+
+    PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch
+        .branch { meta, _bam, _bai ->
+            tumor_only:    !meta.paired_data
+            paired_tumor:  meta.paired_data && meta.type == 'tumor'
+            paired_normal: meta.paired_data && meta.type == 'normal'
         }
-        .map{meta, tumor_bam, tumor_bai->
+        .set { branched_hapbams }
+
+    branched_hapbams.tumor_only
+        .map { meta, bam, bai ->
             def normal_bam = []
             def normal_bai = []
-            return [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+            return [meta.subMap(sv_meta_keys), bam, bai, normal_bam, normal_bai]
         }
-        // Mix with paired T/N input (which already has normal BAM/BAI from somatic_smallvar_input)
-        .mix(somatic_smallvar_input)
+        .set { tumoronly_hapbams }
+
+    branched_hapbams.paired_tumor
+        .map { meta, bam, bai -> return [meta.subMap(sv_meta_keys), bam, bai] }
+        .set { paired_tumor_hapbams }
+
+    branched_hapbams.paired_normal
+        .map { meta, bam, bai -> return [meta.subMap(sv_meta_keys), bam, bai] }
+        .set { paired_normal_hapbams }
+
+    paired_tumor_hapbams
+        .join(paired_normal_hapbams)
+        .set { paired_hapbams }
+    // paired_hapbams: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
+
+    tumoronly_hapbams
+        .mix(paired_hapbams)
         // Attach phased germline VCF (used by SEVERUS for phased SV calling)
         .join(PHASING_HAPLOTYPING.out.phased_germline_vcf)
         .set{severus_input}
-    // severus_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, phased_germline_tbi]
+    // severus_input: [meta, tumor_hapbam, tumor_bai, normal_hapbam, normal_bai, phased_germline_vcf, phased_germline_tbi]
     //   normal_bam/bai are empty lists [] for tumor-only samples
 
     //
@@ -1084,55 +1100,14 @@ workflow LRSOMATIC {
     savana_allele_counts        = channel.empty()
 
     if (!params.skip_savana) {
-        // SAVANA reads the HP (haplotype) tag per read and its README recommends phased BAMs,
-        // so build its input from PHASING_HAPLOTYPING's haplotagged BAMs rather than the
-        // unphased ones severus_input carries.
-        def savana_meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber',
-            'clair3_model', 'clairS_model', 'clairSTO_model', 'kinetics']
-
-        PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch
-            .branch { meta, _bam, _bai ->
-                tumor_only:    !meta.paired_data
-                paired_tumor:  meta.paired_data && meta.type == 'tumor'
-                paired_normal: meta.paired_data && meta.type == 'normal'
-            }
-            .set { branched_savana_hapbams }
-
-        branched_savana_hapbams.tumor_only
-            .map { meta, bam, bai ->
-                def normal_bam = []
-                def normal_bai = []
-                return [meta.subMap(savana_meta_keys), bam, bai, normal_bam, normal_bai]
-            }
-            .set { savana_tumoronly_hapbams }
-
-        branched_savana_hapbams.paired_tumor
-            .map { meta, bam, bai -> return [meta.subMap(savana_meta_keys), bam, bai] }
-            .set { savana_paired_tumor_hapbams }
-
-        branched_savana_hapbams.paired_normal
-            .map { meta, bam, bai -> return [meta.subMap(savana_meta_keys), bam, bai] }
-            .set { savana_paired_normal_hapbams }
-
-        savana_paired_tumor_hapbams
-            .join(savana_paired_normal_hapbams)
-            .set { savana_paired_hapbams }
-        // savana_paired_hapbams: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai]
-
-        savana_tumoronly_hapbams
-            .mix(savana_paired_hapbams)
-            .join(PHASING_HAPLOTYPING.out.phased_germline_vcf)
-            .set { savana_input }
-        // savana_input: [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, phased_germline_tbi]
-        //   normal_bam/bai are [] for tumor-only samples
-
-        savana_input
+        // SAVANA shares severus_input: haplotagged BAMs with the phased germline VCF
+        severus_input
             .branch { meta, _tumor_bam, _tumor_bai, normal_bam, _normal_bai, _phased_vcf, _phased_tbi ->
                 tumor_only: !normal_bam
                 paired: normal_bam
             }
             .set { branched_savana_input }
-        // branched_savana_input.tumor_only / .paired: same 7-tuple shape as savana_input
+        // branched_savana_input.tumor_only / .paired: same 7-tuple shape as severus_input
 
         branched_savana_input.tumor_only
             .map { meta, tumor_bam, tumor_bai, _normal_bam, _normal_bai, phased_vcf, phased_tbi ->
