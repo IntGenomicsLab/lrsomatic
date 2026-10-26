@@ -728,9 +728,10 @@ workflow LRSOMATIC {
                 ch_versions = ch_versions.mix(DMR.out.versions)
             }
             else {
+                def genome_desc = params.genome ? "--genome '${params.genome}'" : "a custom --fasta with no --genome"
                 log.warn(
                     "--modkit_phased is set but DMR is being skipped: --dmr_cpg_islands_bed/" +
-                    "--dmr_gencode_gene_bed have no default for --genome '${params.genome}' " +
+                    "--dmr_gencode_gene_bed have no default for ${genome_desc} " +
                     "(only GRCh38/CHM13 ship one). Pass both explicitly to enable DMR calling, " +
                     "or set --skip_dmr to silence this warning."
                 )

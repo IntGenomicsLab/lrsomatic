@@ -283,6 +283,8 @@ With `--modkit_phased` set (and `--skip_dmr` not set), haplotype differential me
 | `{tumor,normal}/dmr/sample.log`             | `modkit dmr pair`'s own debug log, published for troubleshooting (e.g. the `invalid-bedmethyl-data` class of failure) without needing `-resume`. The intermediate raw `modkit dmr pair` BED is not published, since this file supersedes it.                                                                                                                                                                                                                             |
 | `{tumor,normal}/dmr/sample.nearestGene.bed` | Each `modkit dmr pair` DMR call (17 columns — chrom/start/end, haplotype-vs-haplotype methylation counts/fractions and the difference score; see `modkit dmr pair --help` for the full column list), joined via `bedtools closest -D b -t first` to its nearest gene from `--dmr_gencode_gene_bed` (that gene's own BED6: chrom/start/end/name/score/strand), followed by the signed distance to that gene (relative to the gene's own strand; negative means upstream). |
 
+DMR runs `modkit dmr pair --base C`, which counts every modification on C as modified. The pileup feeding it requests both 5mC and 5hmC (see `--modkit_args` in the usage docs), so the methylation fractions and the difference score describe 5mC and 5hmC combined, not 5mC alone.
+
 </details>
 
 ### `variants`

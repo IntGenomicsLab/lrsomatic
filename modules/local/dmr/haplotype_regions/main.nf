@@ -32,9 +32,9 @@ process DMR_HAPLOTYPE_REGIONS {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     // Minimum valid coverage (bedMethyl column 10, Nvalid_cov) for a position to count as
-    // "covered" -- 1 preserves the previous any-depth behaviour; override via ext.args to
+    // "covered" -- 1 preserves the previous any-depth behaviour; set ext.min_valid_coverage to
     // require more.
-    def min_valid_coverage = task.ext.args ?: 1
+    def min_valid_coverage = task.ext.min_valid_coverage ?: 1
     """
     cut -f1,2 ${fai} > genome.txt
 
