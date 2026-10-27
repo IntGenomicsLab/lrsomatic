@@ -61,6 +61,7 @@ include { PAIRED_SMALLVAR_GERMLINE        } from '../subworkflows/local/paired/p
 include { PHASING_HAPLOTYPING             } from '../subworkflows/local/phasing_haplotyping'
 include { TUMORONLY_SAVANA                } from '../subworkflows/local/tumor_only/tumoronly_savana'
 include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/paired_savana'
+include { DMR                             } from '../subworkflows/local/dmr'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 
@@ -114,6 +115,9 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.savana_contigs = getGenomeAttribute('savana_contigs')
     params.savana_g1000_vcf = getGenomeAttribute('savana_g1000_vcf')
+    // Locals, not params: reassigning a param declared in nextflow.config is a no-op
+    def dmr_cpg_islands_bed = params.dmr_cpg_islands_bed ?: getGenomeAttribute('dmr_cpg_islands_bed')
+    def dmr_gencode_gene_bed = params.dmr_gencode_gene_bed ?: getGenomeAttribute('dmr_gencode_gene_bed')
     params.vep_genome = getGenomeAttribute('vep_genome')
     params.vep_species = getGenomeAttribute('vep_species')
     params.sigprofiler_genome = getGenomeAttribute('sigprofiler_genome')
@@ -698,6 +702,31 @@ workflow LRSOMATIC {
             : ch_index_minimap
         // ch_modkit_input: [meta, bam, bai]  -- BAM to pile up; meta.type selects the publish directory
         MODKIT_PILEUP(ch_modkit_input, ch_fasta, ch_fai, [[:],[]])
+
+        //
+        // SUBWORKFLOW: DMR
+        // hp1 vs hp2 methylation; BEDs default only for GRCh38/CHM13, otherwise warn and skip
+        if (params.modkit_phased && !params.skip_dmr) {
+            if (dmr_cpg_islands_bed && dmr_gencode_gene_bed) {
+                DMR (
+                    MODKIT_PILEUP.out.bedgz,
+                    ch_fasta,
+                    ch_fai,
+                    file(dmr_cpg_islands_bed, checkIfExists: true),
+                    file(dmr_gencode_gene_bed, checkIfExists: true)
+                )
+                ch_versions = ch_versions.mix(DMR.out.versions)
+            }
+            else {
+                def genome_desc = params.genome ? "--genome '${params.genome}'" : "a custom --fasta with no --genome"
+                log.warn(
+                    "--modkit_phased is set but DMR is being skipped: --dmr_cpg_islands_bed/" +
+                    "--dmr_gencode_gene_bed have no default for ${genome_desc} " +
+                    "(only GRCh38/CHM13 ship one). Pass both explicitly to enable DMR calling, " +
+                    "or set --skip_dmr to silence this warning."
+                )
+            }
+        }
     }
 
     // Prepare phased VCFs for VEP: add empty 'extra' list required by ENSEMBLVEP_VEP
