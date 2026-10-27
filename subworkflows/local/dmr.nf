@@ -91,12 +91,25 @@ workflow DMR {
     )
     ch_versions = ch_versions.mix(DMR_HAPLOTYPE_REGIONS.out.versions)
 
+    // modkit dmr pair exits with an error on an empty regions file, e.g. a BAM without
+    // MM/ML tags gives empty pileups and so no island covered in both haplotypes. Skip
+    // those samples instead of failing the run.
+    DMR_HAPLOTYPE_REGIONS.out.regions_bed
+        .filter { meta, regions_bed ->
+            if (regions_bed.size() == 0) {
+                log.warn("DMR: no CpG island is covered in both haplotypes for ${meta.id} (${meta.type}); skipping modkit dmr pair")
+                return false
+            }
+            return true
+        }
+        .set { nonempty_regions_bed }
+
     //
     // MODULE: MODKIT_DMR (label: process_medium)
     // Compare methylation between the two haplotypes over the restricted regions.
     //
     dmr_haplotype_input
-        .join(DMR_HAPLOTYPE_REGIONS.out.regions_bed)
+        .join(nonempty_regions_bed)
         .multiMap { meta, hp1_bedgz, hp1_tbi, hp2_bedgz, hp2_tbi, regions_bed ->
             hp1: [meta, hp1_bedgz, hp1_tbi]
             hp2: [meta, hp2_bedgz, hp2_tbi]

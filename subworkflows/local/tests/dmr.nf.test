@@ -95,4 +95,44 @@ nextflow_workflow {
             )
         }
     }
+
+    test("no CpG island covered in both haplotypes -> sample skipped, run succeeds") {
+
+        when {
+            workflow {
+                """
+                // An island on a contig the BAM has no reads on: DMR_HAPLOTYPE_REGIONS writes an
+                // empty regions BED, which modkit dmr pair would reject.
+                def cpg_islands_bed = Channel.of('chr1\\t0\\t1000')
+                    .collectFile(name: 'cpg_islands.bed', newLine: true)
+
+                def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
+                    .collectFile(name: 'gencode_gene.bed', newLine: true)
+
+                input[0] = MODKIT_PILEUP.out.bedgz
+                input[1] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ])
+                input[2] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ])
+                input[3] = cpg_islands_bed
+                input[4] = gencode_gene_bed
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('DMR_HAPLOTYPE_REGIONS') } },
+                { assert !processes.any { name -> name.contains('MODKIT_DMR') } },
+                { assert workflow.out.nearest_gene_bed.size() == 0 }
+            )
+        }
+    }
 }
