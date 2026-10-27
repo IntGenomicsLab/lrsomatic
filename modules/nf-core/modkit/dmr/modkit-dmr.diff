@@ -7,7 +7,7 @@ Changes in 'modkit/dmr/main.nf':
 @@ -2,10 +2,13 @@
      tag "${meta.id}"
      label 'process_medium'
-
+ 
 -    conda "${moduleDir}/environment.yml"
 -    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
 -        ? 'https://depot.galaxyproject.org/singularity/ont-modkit:0.6.1--hcdda2d0_0'
@@ -19,12 +19,12 @@ Changes in 'modkit/dmr/main.nf':
 +    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
 +        ? 'oras://ghcr.io/ljwharbers/modkit-sif:0.6.4-pacbiofix-6e0afa2'
 +        : 'ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2'}"
-
+ 
      input:
      tuple val(meta), path(bedmethyl_a), path(bedmethyl_a_tbi)
 @@ -22,6 +25,10 @@
      task.ext.when == null || task.ext.when
-
+ 
      script:
 +    // Exit if running this module with -profile conda / -profile mamba
 +    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
@@ -33,4 +33,116 @@ Changes in 'modkit/dmr/main.nf':
      def args = task.ext.args ?: ''
      def prefix = task.ext.prefix ?: "${meta.id}"
      def regions = regions_bed ? "-r ${regions_bed}" : ''
+
+'modules/nf-core/modkit/dmr/tests/nextflow.config' is unchanged
+Changes in 'modkit/dmr/tests/main.nf.test':
+--- modules/nf-core/modkit/dmr/tests/main.nf.test
++++ modules/nf-core/modkit/dmr/tests/main.nf.test
+@@ -21,12 +21,16 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true)
+                 ]
++                // lrsomatic's patched modkit/pileup takes fasta and fai as separate inputs
+                 input[1] = [
+                     [ id: 'test_ref' ],
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true),
++                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
++                ]
++                input[2] = [
++                    [ id: 'test_ref' ],
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                 ]
+-                input[2] = [[],[]]
++                input[3] = [[:],[]]
+                 """
+             }
+         }
+
+Changes in 'modkit/dmr/tests/main.nf.test.snap':
+--- modules/nf-core/modkit/dmr/tests/main.nf.test.snap
++++ modules/nf-core/modkit/dmr/tests/main.nf.test.snap
+@@ -6,7 +6,7 @@
+                     {
+                         "id": "test"
+                     },
+-                    "test.bed:md5,c57c0b35ce975dbafa19f3b4b5604dec"
++                    "test.bed:md5,88e4b55db4eaf1e77382a81bf89f361c"
+                 ]
+             ],
+             {
+@@ -14,16 +14,16 @@
+                     [
+                         "MODKIT_DMR",
+                         "modkit",
+-                        "0.6.1"
++                        "0.6.4"
+                     ]
+                 ]
+             }
+         ],
++        "timestamp": "2026-10-26T13:39:52.386460283",
+         "meta": {
+-            "nf-test": "0.9.0",
+-            "nextflow": "25.10.2"
+-        },
+-        "timestamp": "2026-09-29T11:00:29.834449326"
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
++        }
+     },
+     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], [], fasta": {
+         "content": [
+@@ -32,7 +32,7 @@
+                     {
+                         "id": "test"
+                     },
+-                    "test.bed:md5,e1ed04436fd4aee1c05fa4a612846417"
++                    "test.bed:md5,64d0d1131027300a5d9766bf29c35c67"
+                 ]
+             ],
+             {
+@@ -40,16 +40,16 @@
+                     [
+                         "MODKIT_DMR",
+                         "modkit",
+-                        "0.6.1"
++                        "0.6.4"
+                     ]
+                 ]
+             }
+         ],
++        "timestamp": "2026-10-26T13:40:10.750011704",
+         "meta": {
+-            "nf-test": "0.9.0",
+-            "nextflow": "25.10.2"
+-        },
+-        "timestamp": "2026-09-29T11:00:38.70209544"
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
++        }
+     },
+     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta - stub": {
+         "content": [
+@@ -66,15 +66,15 @@
+                     [
+                         "MODKIT_DMR",
+                         "modkit",
+-                        "0.6.1"
++                        "0.6.4"
+                     ]
+                 ]
+             }
+         ],
++        "timestamp": "2026-10-26T13:40:27.769775341",
+         "meta": {
+-            "nf-test": "0.9.0",
+-            "nextflow": "25.10.2"
+-        },
+-        "timestamp": "2026-09-29T11:00:46.52021922"
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
++        }
+     }
+-}+}
+
 ************************************************************

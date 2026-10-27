@@ -21,12 +21,16 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true)
                 ]
+                // lrsomatic's patched modkit/pileup takes fasta and fai as separate inputs
                 input[1] = [
                     [ id: 'test_ref' ],
-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ]
+                input[2] = [
+                    [ id: 'test_ref' ],
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
                 ]
-                input[2] = [[],[]]
+                input[3] = [[:],[]]
                 """
             }
         }

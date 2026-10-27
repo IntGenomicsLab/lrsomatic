@@ -6,7 +6,7 @@
                     {
                         "id": "test"
                     },
-                    "test.bed:md5,c57c0b35ce975dbafa19f3b4b5604dec"
+                    "test.bed:md5,88e4b55db4eaf1e77382a81bf89f361c"
                 ]
             ],
             {
@@ -14,16 +14,16 @@
                     [
                         "MODKIT_DMR",
                         "modkit",
-                        "0.6.1"
+                        "0.6.4"
                     ]
                 ]
             }
         ],
+        "timestamp": "2026-10-26T13:39:52.386460283",
         "meta": {
-            "nf-test": "0.9.0",
-            "nextflow": "25.10.2"
-        },
-        "timestamp": "2026-09-29T11:00:29.834449326"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], [], fasta": {
         "content": [
@@ -32,7 +32,7 @@
                     {
                         "id": "test"
                     },
-                    "test.bed:md5,e1ed04436fd4aee1c05fa4a612846417"
+                    "test.bed:md5,64d0d1131027300a5d9766bf29c35c67"
                 ]
             ],
             {
@@ -40,16 +40,16 @@
                     [
                         "MODKIT_DMR",
                         "modkit",
-                        "0.6.1"
+                        "0.6.4"
                     ]
                 ]
             }
         ],
+        "timestamp": "2026-10-26T13:40:10.750011704",
         "meta": {
-            "nf-test": "0.9.0",
-            "nextflow": "25.10.2"
-        },
-        "timestamp": "2026-09-29T11:00:38.70209544"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
     },
     "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta - stub": {
         "content": [
@@ -66,15 +66,15 @@
                     [
                         "MODKIT_DMR",
                         "modkit",
-                        "0.6.1"
+                        "0.6.4"
                     ]
                 ]
             }
         ],
+        "timestamp": "2026-10-26T13:40:27.769775341",
         "meta": {
-            "nf-test": "0.9.0",
-            "nextflow": "25.10.2"
-        },
-        "timestamp": "2026-09-29T11:00:46.52021922"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
     }
 }
