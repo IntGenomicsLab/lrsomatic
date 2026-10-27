@@ -11,21 +11,13 @@ nextflow_workflow {
     // "small" is what .github/workflows/nf-test.yml selects on for pull_request
     tag "small"
 
-    // Real (not stub), public, non-confidential coverage of the full haplotype-DMR chain:
-    // MODKIT_PILEUP (--phased) -> HTSLIB_BGZIPTABIX -> DMR_HAPLOTYPE_REGIONS -> MODKIT_DMR ->
-    // DMR_NEAREST_GENE. Uses the same public, phased nf-core/test-datasets BAM already used by
-    // modkit/pileup's and modkit/dmr's own module tests -- no new fixture needed. cpg_islands_bed
-    // reuses the exact chr22:0-40001 region modkit/dmr's own module test already proves has real
-    // dual-haplotype coverage; gencode_gene_bed is a small synthetic gene entry over the same span
-    // for DMR_NEAREST_GENE to annotate against.
+    // Full DMR chain on the public phased nanopore BAM, with a synthetic chr22 island and gene
     setup {
         run("MODKIT_PILEUP") {
             script "../../../modules/nf-core/modkit/pileup/main.nf"
             process {
                 """
-                // lrsomatic's vendored modkit/pileup takes fasta/fai as separate 2-tuples plus
-                // a bed-region tuple -- 4 inputs, not the 3-tuple/3-input shape upstream
-                // nf-core/modules now uses. Matches its real call in workflows/lrsomatic.nf.
+                // lrsomatic's patched pileup takes fasta and fai separately, plus a bed tuple
                 input[0] = [
                     [ id: 'test', type: 'tumor' ],
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
@@ -56,9 +48,7 @@ nextflow_workflow {
                 def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
                     .collectFile(name: 'gencode_gene.bed', newLine: true)
 
-                // DMR's internal fasta.first()/fai.first() need real single-emission value
-                // channels -- a bare list literal here is a 2-item queue channel (meta, then
-                // path, as separate emissions), and .first() would silently take just the meta.
+                // Value channels: DMR calls .first() on fasta/fai
                 input[0] = MODKIT_PILEUP.out.bedgz
                 input[1] = channel.value([
                     [ id: 'test_ref' ],

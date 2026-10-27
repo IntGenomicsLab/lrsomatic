@@ -115,10 +115,7 @@ workflow LRSOMATIC {
     params.bed_file = getGenomeAttribute('bed_file')
     params.savana_contigs = getGenomeAttribute('savana_contigs')
     params.savana_g1000_vcf = getGenomeAttribute('savana_g1000_vcf')
-    // An explicit --dmr_cpg_islands_bed/--dmr_gencode_gene_bed wins over the per-genome
-    // default. Resolved into locals, not params: both are declared in nextflow.config, and
-    // Nextflow ignores reassigning a param a config already defines (even as null), so
-    // `params.dmr_* = ...` here would never pick up the genome default.
+    // Locals, not params: reassigning a param declared in nextflow.config is a no-op
     def dmr_cpg_islands_bed = params.dmr_cpg_islands_bed ?: getGenomeAttribute('dmr_cpg_islands_bed')
     def dmr_gencode_gene_bed = params.dmr_gencode_gene_bed ?: getGenomeAttribute('dmr_gencode_gene_bed')
     params.vep_genome = getGenomeAttribute('vep_genome')
@@ -707,14 +704,8 @@ workflow LRSOMATIC {
         MODKIT_PILEUP(ch_modkit_input, ch_fasta, ch_fai, [[:],[]])
 
         //
-        // SUBWORKFLOW: DMR (label: process_medium)
-        // Differential methylation between a sample's two haplotypes. Only possible when
-        // --modkit_phased produced hp1/hp2 bedMethyl in the first place; --skip_dmr additionally
-        // turns it off on top of that. dmr_cpg_islands_bed/dmr_gencode_gene_bed have a built-in
-        // default only for --genome GRCh38/CHM13 (see getGenomeAttribute() above) -- any other
-        // genome needs both supplied explicitly, and DMR is skipped with a warning rather than
-        // the run failing when they are not (e.g. a custom --fasta with no --genome, or a
-        // --genome this pipeline doesn't ship DMR references for).
+        // SUBWORKFLOW: DMR
+        // hp1 vs hp2 methylation; BEDs default only for GRCh38/CHM13, otherwise warn and skip
         if (params.modkit_phased && !params.skip_dmr) {
             if (dmr_cpg_islands_bed && dmr_gencode_gene_bed) {
                 DMR (

@@ -16,10 +16,7 @@ workflow DMR {
     main:
     ch_versions = channel.empty()
 
-    // Pick the hp1/hp2 pair out of MODKIT_PILEUP's glob-collected output list (which also
-    // includes a _combined file when --modkit_phased is set). An unphased run's single
-    // unsuffixed file matches neither pattern, so it's dropped by the filter below --
-    // defence in depth alongside the modkit_phased gate on the caller's side.
+    // Keep the hp1/hp2 pair; unphased output has neither and is dropped
     modkit_bedgz
         .map { meta, files ->
             def flist = files instanceof List ? files : [files]
@@ -33,10 +30,7 @@ workflow DMR {
 
     //
     // MODULE: HTSLIB_BGZIPTABIX (label: process_low)
-    // Tabix-index each haplotype's bedMethyl -- modkit dmr pair requires a .tbi alongside each
-    // bgzip input. The bedMethyl is already bgzip-compressed (modkit pileup --bgzf), so this
-    // only adds the index. hp1/hp2 are tagged onto meta and mixed into one call, then split
-    // back apart below.
+    // Tabix-index each haplotype (already bgzipped by modkit --bgzf)
     //
     haplotype_bedmethyl
         .flatMap { meta, hp1, hp2 ->
@@ -91,9 +85,7 @@ workflow DMR {
     )
     ch_versions = ch_versions.mix(DMR_HAPLOTYPE_REGIONS.out.versions)
 
-    // modkit dmr pair exits with an error on an empty regions file, e.g. a BAM without
-    // MM/ML tags gives empty pileups and so no island covered in both haplotypes. Skip
-    // those samples instead of failing the run.
+    // modkit dmr pair fails on an empty regions file: skip those samples
     DMR_HAPLOTYPE_REGIONS.out.regions_bed
         .filter { meta, regions_bed ->
             if (regions_bed.size() == 0) {
@@ -117,9 +109,6 @@ workflow DMR {
         }
         .set { modkit_dmr_input }
 
-    // MODKIT_DMR's fai input only avoids rebuilding the index on every task -- see the
-    // module's own script comment. fasta/fai are each a single [[:], path] value channel
-    // (take: comments above), so .first() on each stays correct after the join.
     fasta.first()
         .combine(fai.first())
         .map { meta, fasta_file, _meta2, fai_file -> [meta, fasta_file, fai_file] }
