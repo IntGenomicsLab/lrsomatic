@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "aadatarepo_download"
+description: Download the AmpliconArchitect data repository tarball that AmpliconClassifier reads, checked against a pinned MD5
+keywords:
+  - ecdna
+  - ampliconclassifier
+  - download
+tools:
+  - "wget":
+      description: "GNU Wget is a free software package for retrieving files using HTTP, HTTPS, FTP and FTPS"
+      homepage: "https://www.gnu.org/software/wget/"
+      documentation: "https://www.gnu.org/software/wget/manual/wget.html"
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing an id for the data repository
+    - url:
+        type: string
+        description: URL of the data repository tarball; its basename becomes the output name
+    - md5:
+        type: string
+        description: |
+          Expected MD5 of the tarball. When set, a download that does not match fails
+          the task. May be null, in which case the repository is not verified.
+
+output:
+  archive:
+    - - meta:
+          type: map
+          description: Groovy Map containing an id for the data repository
+      - "${archive_name}":
+          type: file
+          description: The data repository tarball
+          pattern: "*.tar.gz"
+  versions:
+    - versions.yml:
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

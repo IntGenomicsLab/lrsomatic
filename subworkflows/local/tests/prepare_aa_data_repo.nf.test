@@ -1,0 +1,66 @@
+nextflow_workflow {
+
+    name "Test Subworkflow PREPARE_AA_DATA_REPO"
+    script "../prepare_aa_data_repo.nf"
+    workflow "PREPARE_AA_DATA_REPO"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "prepare_aa_data_repo"
+    tag "small"
+
+    // Stub-only: the real repository is a ~1.1 GB download
+    test("-stub - downloads and unpacks the repository from a URL") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = null
+                input[1] = 'https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/GRCh38.tar.gz'
+                input[2] = '2bcd1fdaed027466ed296bf78b2907eb'
+                """
+            }
+        }
+
+        then {
+            def names = workflow.trace.tasks().collect { it.name.split(' ')[0] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert names.contains('PREPARE_AA_DATA_REPO:AADATAREPO_DOWNLOAD') },
+                { assert names.contains('PREPARE_AA_DATA_REPO:UNTAR_AA_DATA_REPO') },
+                { assert workflow.out.data_repo.size() == 1 },
+                { assert workflow.out.data_repo[0][0] == [ id:'aa_data_repo' ] },
+                { assert workflow.out.versions.size() == 1 }
+            )
+        }
+    }
+
+    test("-stub - a local repository is used without downloading") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = "\${projectDir}/modules/local/ascattocoralbed/tests/fixtures"
+                input[1] = 'https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/GRCh38.tar.gz'
+                input[2] = null
+                """
+            }
+        }
+
+        then {
+            def names = workflow.trace.tasks().collect { it.name.split(' ')[0] }
+
+            assertAll(
+                { assert workflow.success },
+                { assert !names.contains('PREPARE_AA_DATA_REPO:AADATAREPO_DOWNLOAD') },
+                { assert workflow.out.data_repo.size() == 1 },
+                { assert workflow.out.versions.size() == 0 }
+            )
+        }
+    }
+}

@@ -1,0 +1,80 @@
+{
+    "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,88e4b55db4eaf1e77382a81bf89f361c"
+                ]
+            ],
+            {
+                "versions_modkit": [
+                    [
+                        "MODKIT_DMR",
+                        "modkit",
+                        "0.6.4"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T13:39:52.386460283",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "[bedmethyl_a, tbi], [bedmethyl_b, tbi], [], fasta": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,64d0d1131027300a5d9766bf29c35c67"
+                ]
+            ],
+            {
+                "versions_modkit": [
+                    [
+                        "MODKIT_DMR",
+                        "modkit",
+                        "0.6.4"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T13:40:10.750011704",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "[bedmethyl_a, tbi], [bedmethyl_b, tbi], regions_bed, fasta - stub": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.bed:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ],
+            {
+                "versions_modkit": [
+                    [
+                        "MODKIT_DMR",
+                        "modkit",
+                        "0.6.4"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T13:40:27.769775341",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

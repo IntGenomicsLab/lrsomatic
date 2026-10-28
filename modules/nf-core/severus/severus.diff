@@ -1,21 +1,154 @@
 Changes in component 'nf-core/severus'
 'modules/nf-core/severus/environment.yml' is unchanged
-'modules/nf-core/severus/meta.yml' is unchanged
+Changes in 'severus/meta.yml':
+--- modules/nf-core/severus/meta.yml
++++ modules/nf-core/severus/meta.yml
+@@ -51,6 +51,11 @@
+           specific SV calling
+         pattern: "*.{vcf,vcf.gz}"
+         ontologies: []
++    - tbi:
++        type: file
++        description: index of the phasing vcf
++        pattern: "*.tbi"
++        ontologies: []
+   - - meta2:
+         type: map
+         description: |
+@@ -61,6 +66,22 @@
+         description: path to bed file for tandem repeat regions (must be ordered)
+         pattern: "*.bed"
+         ontologies: []
++    - pon_path:
++        type: file
++        description: panel of normals, passed as --PON for tumour-only samples only
++        pattern: "*.tsv.gz"
++        ontologies: []
++  - - meta3:
++        type: map
++        description: |
++          Groovy Map containing whitelist information
++          e.g. `[:]`
++    - whitelist:
++        type: file
++        description: optional bed file of regions in which every SV is reported (--whitelist);
++          needs the patched Severus image
++        pattern: "*.bed"
++        ontologies: []
+ output:
+   log:
+     - - meta:
+@@ -144,33 +165,33 @@
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/all_SVs/severus_all.vcf:
+-          type: map
++      - ${prefix}/all_SVs/severus_all.vcf.gz:
++          type: file
+           description: |
+-            VCF file containing somatic and germline structural variants
+-          pattern: "${prefix}/all_SVs/severus_all.vcf"
++            bgzipped VCF file containing somatic and germline structural variants
++          pattern: "${prefix}/all_SVs/severus_all.vcf.gz"
+           ontologies: []
+   all_breakpoints_clusters_list:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/all_SVs/breakpoints_clusters_list.tsv:
++      - ${prefix}/all_SVs/breakpoint_clusters_list.tsv:
+           type: file
+           description: |
+             a TSV containing a list of all breakpoint clusters
+-          pattern: "${prefix}/all_SVs/breakpoints_clusters_list.tsv"
++          pattern: "${prefix}/all_SVs/breakpoint_clusters_list.tsv"
+           ontologies: []
+   all_breakpoints_clusters:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/all_SVs/breakpoints_clusters.tsv:
++      - ${prefix}/all_SVs/breakpoint_clusters.tsv:
+           type: file
+           description: |
+             TSV file listing meta information in breakpoint clusters
+-          pattern: "${prefix}/all_SVs/breakpoints_clusters.tsv"
++          pattern: "${prefix}/all_SVs/breakpoint_clusters.tsv"
+           ontologies: []
+   all_plots:
+     - - meta:
+@@ -188,33 +209,33 @@
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/somatic_SVs/severus_somatic.vcf:
++      - ${prefix}/somatic_SVs/severus_somatic.vcf.gz:
+           type: file
+           description: |
+-            VCF file containing somatic structural variants (SV)
+-          pattern: "${prefix}/somatic_SVs/severus_all.vcf"
++            bgzipped VCF file containing somatic structural variants (SV)
++          pattern: "${prefix}/somatic_SVs/severus_somatic.vcf.gz"
+           ontologies: []
+   somatic_breakpoints_clusters_list:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/somatic_SVs/breakpoints_clusters_list.tsv:
++      - ${prefix}/somatic_SVs/breakpoint_clusters_list.tsv:
+           type: file
+           description: |
+             TSV file containing full list of somatic breakpoint clusters
+-          pattern: "${prefix}/somatic_SVs/breakpoints_clusters_list.tsv"
++          pattern: "${prefix}/somatic_SVs/breakpoint_clusters_list.tsv"
+           ontologies: []
+   somatic_breakpoints_clusters:
+     - - meta:
+           type: map
+           description: |
+             Groovy Map containing sample information
+-      - ${prefix}/somatic_SVs/breakpoints_clusters.tsv:
++      - ${prefix}/somatic_SVs/breakpoint_clusters.tsv:
+           type: file
+           description: |
+             TSV file containing meta information of somatic breakpoint clusters
+-          pattern: "${prefix}/somatic_SVs/breakpoints_clusters.tsv"
++          pattern: "${prefix}/somatic_SVs/breakpoint_clusters.tsv"
+           ontologies: []
+   somatic_plots:
+     - - meta:
+
 Changes in 'severus/main.nf':
 --- modules/nf-core/severus/main.nf
 +++ modules/nf-core/severus/main.nf
-@@ -8,8 +8,8 @@
-         'community.wave.seqera.io/library/severus:1.7--d16d59609ef4ee7d' }"
+@@ -3,13 +3,18 @@
+     label 'process_medium'
+ 
+     conda "${moduleDir}/environment.yml"
++    // Patched Severus 1.7 (github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration, 6813dee) carries the --whitelist fixes;
++    // without --whitelist its VCF records are identical to stock 1.7 (the header adds a WL_RESCUE INFO line). Revert to the biocontainer once
++    // KolmogorovLab/Severus carries the fixes.
++    // Conda installs stock bioconda Severus, so --severus_whitelist is refused under conda at startup (utils_nfcore_lrsomatic_pipeline).
+     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8f/8fd0858ee067f8b95246e57683a7431bc126929b4203fbda8e315cd94d2570ad/data':
+-        'community.wave.seqera.io/library/severus:1.7--d16d59609ef4ee7d' }"
++        'oras://docker.io/amberverhasselt/severus-sif:1.7-whitelist-6813dee':
++        'docker.io/amberverhasselt/severus:1.7-whitelist-6813dee' }"
  
      input:
 -    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf)
 -    tuple val(meta2), path(bed)
 +    tuple val(meta), path(target_input), path(target_index), path(control_input), path(control_index), path(vcf), path(tbi)
 +    tuple val(meta2), path(bed), path(pon_path)
++    tuple val(meta3), path(whitelist)
  
      output:
      tuple val(meta), path("${prefix}/severus.log")                              , emit: log
-@@ -19,13 +19,13 @@
+@@ -19,13 +24,13 @@
      tuple val(meta), path("${prefix}/read_ids.csv")                             , emit: read_ids                         , optional: true
      tuple val(meta), path("${prefix}/severus_collaped_dup.bed")                 , emit: collapsed_dup                    , optional: true
      tuple val(meta), path("${prefix}/severus_LOH.bed")                          , emit: loh                              , optional: true
@@ -35,11 +168,12 @@ Changes in 'severus/main.nf':
      tuple val(meta), path("${prefix}/somatic_SVs/plots/severus*.html")          , emit: somatic_plots                    , optional: true
      tuple val("${task.process}"), val('severus'), eval("severus --version"), emit: versions_severus, topic: versions
      when:
-@@ -38,15 +38,23 @@
+@@ -38,15 +43,25 @@
      def control = control_input ? "--control-bam ${control_input}" : ""
      def vntr_bed = bed ? "--vntr-bed ${bed}" : ""
      def phasing_vcf = vcf ? "--phasing-vcf ${vcf}" : ""
 +    def pon = pon_path && (!control_input) ? "--PON ${pon_path}" : ""
++    def whitelist_bed = whitelist ? "--whitelist ${whitelist}" : ""
 +
      """
      severus \\
@@ -50,6 +184,7 @@ Changes in 'severus/main.nf':
 +        $pon \\
          $control \\
          $phasing_vcf \\
++        $whitelist_bed \\
          --out-dir ${prefix}
 +
 +    bgzip ${prefix}/somatic_SVs/severus_somatic.vcf
@@ -61,6 +196,78 @@ Changes in 'severus/main.nf':
      stub:
 
 'modules/nf-core/severus/tests/nextflow.config' is unchanged
-'modules/nf-core/severus/tests/main.nf.test' is unchanged
+Changes in 'severus/tests/main.nf.test':
+--- modules/nf-core/severus/tests/main.nf.test
++++ modules/nf-core/severus/tests/main.nf.test
+@@ -21,9 +21,11 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
+                     [],
+                     [],
++                    [],
+                     []
+-                    ]
+-                input[1] = [[],[]]
++                ]
++                input[1] = [[],[],[]]
++                input[2] = [[:],[]]
+                 """
+             }
+         }
+@@ -60,9 +62,11 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
++                    [],
+                     []
+                 ]
+-                input[1] = [[],[]]
++                input[1] = [[],[],[]]
++                input[2] = [[:],[]]
+                 """
+             }
+         }
+@@ -103,8 +107,10 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
++                    []
+                 ]
+-                input[1] = [[],[]]
++                input[1] = [[],[],[]]
++                input[2] = [[:],[]]
+                 """
+             }
+         }
+@@ -145,11 +151,14 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
++                    []
+                 ]
+                 input[1] = [
+                     [ id:'bed'], // meta map
+-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true)
++                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true),
++                    []
+                 ]
++                input[2] = [[:],[]]
+                 """
+             }
+         }
+@@ -189,9 +198,11 @@
+                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
+                     [],
+                     [],
++                    [],
+                     []
+-                    ]
+-                input[1] = [[],[]]
++                ]
++                input[1] = [[],[],[]]
++                input[2] = [[:],[]]
+                 """
+             }
+         }
+
 'modules/nf-core/severus/tests/main.nf.test.snap' is unchanged
 ************************************************************

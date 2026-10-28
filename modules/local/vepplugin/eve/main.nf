@@ -12,7 +12,7 @@ process VEPPLUGIN_EVE {
 
     output:
     path "eve_merged.vcf.gz{,.tbi}", emit: files
-    tuple val("${task.process}"), val('tabix'), eval("tabix -h 2>&1 | grep -oP 'Version:\\s*\\K[^\\s]+'"), topic: versions, emit: versions_tabix
+    tuple val("${task.process}"), val('tabix'), eval("tabix -h 2>&1 | sed -n 's/^Version: *\\([^ ]*\\).*/\\1/p' | head -n 1"), topic: versions, emit: versions_tabix
 
     when:
     task.ext.when == null || task.ext.when

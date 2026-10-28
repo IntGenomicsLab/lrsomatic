@@ -3,11 +3,11 @@
         "content": [
             "88c8d3cf9cb49fdbc53372b2275d5f3e"
         ],
-        "timestamp": "2026-09-02T10:24:37.511974063",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
-        }
+        },
+        "timestamp": "2026-09-02T10:24:37.511974063"
     },
     "-profile test, clair only, extended samplesheet": {
         "content": [
@@ -89,6 +89,12 @@
                 },
                 "NANOPLOT_PRE": {
                     "NanoPlot": "1.48.0"
+                },
+                "REJOIN_GERMLINE": {
+                    "bcftools": 1.24
+                },
+                "REJOIN_SOMATIC": {
+                    "bcftools": 1.24
                 },
                 "SAMTOOLS_FAIDX": {
                     "samtools": 1.24
@@ -843,9 +849,9 @@
                 "sample4_tumor.flagstat:md5,5710382ba31b23172ca19f9407f689b4",
                 "sample4_tumor.idxstats:md5,3bf4793a1667f41f0b31d578f99e3955",
                 "sample4_tumor.stats:md5,ca370074e7f2b8fd59efa3020778e202",
-                "sample4_whatshap_stats.gtf:md5,9ca85642243042d3580d14a1d54b3d6a",
-                "sample4_whatshap_stats.log:md5,b453653f5d83c4aa408862e7141f0965",
-                "sample4_whatshap_stats.tsv:md5,8830262298440c4bd8675d1ff3f601e8",
+                "sample4_whatshap_stats.gtf:md5,12eb4bb226ce7a27a611a0e98bfcdf9d",
+                "sample4_whatshap_stats.log:md5,0fe7091e29d1ce88667a9fa507399522",
+                "sample4_whatshap_stats.tsv:md5,804922ca6ebd94ae71a7a4058fa9e156",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,9166b26c548c2ed233a2ff04e1c1f144",
@@ -855,9 +861,9 @@
                 "sample5_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample5_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample5_tumor.stats:md5,bc00d89d6eba1da05a6a777a39e52725",
-                "sample5_whatshap_stats.gtf:md5,d02a3be9b50b953b32b42e2fedabc0e5",
-                "sample5_whatshap_stats.log:md5,a2e4ed9edca8609fc947041a9fead794",
-                "sample5_whatshap_stats.tsv:md5,860ad30057b783e24dcb41ec581c8b68",
+                "sample5_whatshap_stats.gtf:md5,f2d10de299c23dcbe384479bc2ecf064",
+                "sample5_whatshap_stats.log:md5,20d6af982949afbdfa666a33b4e1751d",
+                "sample5_whatshap_stats.tsv:md5,0ec14e83f9ad788104de1c6ef3f021f2",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,40c0b0de0363ae3e660061e407cf5235",
@@ -866,10 +872,10 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-07T15:31:00.760245155",
         "meta": {
-            "nf-test": "0.9.4",
-            "nextflow": "26.04.3"
-        }
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-05T20:09:59.776226598"
     }
 }

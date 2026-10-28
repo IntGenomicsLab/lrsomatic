@@ -1,0 +1,128 @@
+nextflow_workflow {
+
+    name "Test Workflow DMR"
+    script "../dmr.nf"
+    workflow "DMR"
+    config "./nextflow.config"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "dmr"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // Full DMR chain on the public phased nanopore BAM, with a synthetic chr22 island and gene
+    setup {
+        run("MODKIT_PILEUP") {
+            script "../../../modules/nf-core/modkit/pileup/main.nf"
+            process {
+                """
+                // lrsomatic's patched pileup takes fasta and fai separately, plus a bed tuple
+                input[0] = [
+                    [ id: 'test', type: 'tumor' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true)
+                ]
+                input[1] = [
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ]
+                input[2] = [
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ]
+                input[3] = [[:],[]]
+                """
+            }
+        }
+    }
+
+    test("real phased public data -> haplotype DMR, annotated with nearest gene") {
+
+        when {
+            workflow {
+                """
+                def cpg_islands_bed = Channel.of('chr22\\t0\\t40001')
+                    .collectFile(name: 'cpg_islands.bed', newLine: true)
+
+                def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
+                    .collectFile(name: 'gencode_gene.bed', newLine: true)
+
+                // Value channels: DMR calls .first() on fasta/fai
+                input[0] = MODKIT_PILEUP.out.bedgz
+                input[1] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ])
+                input[2] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ])
+                input[3] = cpg_islands_bed
+                input[4] = gencode_gene_bed
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('HTSLIB_BGZIPTABIX') } },
+                { assert processes.any { name -> name.contains('DMR_HAPLOTYPE_REGIONS') } },
+                { assert processes.any { name -> name.contains('MODKIT_DMR') } },
+                { assert processes.any { name -> name.contains('DMR_NEAREST_GENE') } },
+                { assert workflow.out.nearest_gene_bed.size() == 1 },
+                // Real content, not just a file existing: at least one DMR call, annotated
+                // with the synthetic gene above.
+                {
+                    def bed = workflow.out.nearest_gene_bed[0][1]
+                    def lines = file(bed).readLines()
+                    assert lines.size() > 0
+                    assert lines.every { line -> line.contains('TEST_GENE') }
+                }
+            )
+        }
+    }
+
+    test("no CpG island covered in both haplotypes -> sample skipped, run succeeds") {
+
+        when {
+            workflow {
+                """
+                // An island on a contig the BAM has no reads on: DMR_HAPLOTYPE_REGIONS writes an
+                // empty regions BED, which modkit dmr pair would reject.
+                def cpg_islands_bed = Channel.of('chr1\\t0\\t1000')
+                    .collectFile(name: 'cpg_islands.bed', newLine: true)
+
+                def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
+                    .collectFile(name: 'gencode_gene.bed', newLine: true)
+
+                input[0] = MODKIT_PILEUP.out.bedgz
+                input[1] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ])
+                input[2] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ])
+                input[3] = cpg_islands_bed
+                input[4] = gencode_gene_bed
+                """
+            }
+        }
+
+        then {
+            def processes = workflow.trace.tasks().collect { task -> task.name }
+
+            assertAll(
+                { assert workflow.success },
+                { assert processes.any { name -> name.contains('DMR_HAPLOTYPE_REGIONS') } },
+                { assert !processes.any { name -> name.contains('MODKIT_DMR') } },
+                { assert workflow.out.nearest_gene_bed.size() == 0 }
+            )
+        }
+    }
+}

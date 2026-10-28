@@ -88,6 +88,11 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/ensemblvep/vep/ensemblvep-vep.diff"
                     },
+                    "htslib/bgziptabix": {
+                        "branch": "master",
+                        "git_sha": "cbe6025183336010a9b716e463f897b0c0f70f8a",
+                        "installed_by": ["modules"]
+                    },
                     "longphase/haplotag": {
                         "branch": "master",
                         "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
@@ -110,6 +115,12 @@
                         "branch": "master",
                         "git_sha": "135d883a43b1a2324b4112cd270cf22e20835533",
                         "installed_by": ["modules"]
+                    },
+                    "modkit/dmr": {
+                        "branch": "master",
+                        "git_sha": "0f9aa70f68367b17b2a92043ff9614aa5792d73f",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/modkit/dmr/modkit-dmr.diff"
                     },
                     "modkit/pileup": {
                         "branch": "master",
@@ -202,6 +213,11 @@
                         "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/severus/severus.diff"
+                    },
+                    "untar": {
+                        "branch": "master",
+                        "git_sha": "447f7bc0fa41dfc2400c8cad4c0291880dc060cf",
+                        "installed_by": ["modules"]
                     },
                     "unzip": {
                         "branch": "master",

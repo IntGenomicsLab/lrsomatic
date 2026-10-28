@@ -13,6 +13,8 @@ include { BCFTOOLS_VIEW                                     } from '../../module
 include { BCFTOOLS_VIEW as SOMATIC_ALT                      } from '../../modules/local/bcftools/view/main.nf'
 include { BCFTOOLS_VIEW as SOMATIC_NONALT                   } from '../../modules/local/bcftools/view/main.nf'
 include { BCFTOOLS_EXCLUDE_SITES as GERMLINE_ANCHORS        } from '../../modules/local/bcftools/excludesites/main.nf'
+include { BCFTOOLS_NORM as REJOIN_SOMATIC                    } from '../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_NORM as REJOIN_GERMLINE                   } from '../../modules/nf-core/bcftools/norm/main'
 include { VCFTAG as TAG_SOMATIC                             } from '../../modules/local/vcftag/main.nf'
 include { VCFTAG as TAG_GERMLINE                            } from '../../modules/local/vcftag/main.nf'
 
@@ -146,11 +148,24 @@ workflow PHASING_HAPLOTYPING {
     }
 
     //
+    // MODULE: BCFTOOLS_NORM (label: process_medium), aliased REJOIN_SOMATIC / REJOIN_GERMLINE
+    // Join records sharing a POS (-m +any) for every caller path; LongPhase cannot take two records at one POS.
+    //
+    REJOIN_SOMATIC ( somatic_vcf,  fasta )
+    REJOIN_GERMLINE( germline_vcf, fasta )
+
+    //
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
     // Stamp each arm with an INFO provenance flag before the merge; LongPhase keeps it through phasing.
     //
-    TAG_SOMATIC ( somatic_vcf,  'SOMATIC'  )
-    TAG_GERMLINE( germline_vcf, 'GERMLINE' )
+    TAG_SOMATIC (
+        REJOIN_SOMATIC.out.vcf.join(REJOIN_SOMATIC.out.index, failOnMismatch: true, failOnDuplicate: true),
+        'SOMATIC'
+    )
+    TAG_GERMLINE(
+        REJOIN_GERMLINE.out.vcf.join(REJOIN_GERMLINE.out.index, failOnMismatch: true, failOnDuplicate: true),
+        'GERMLINE'
+    )
 
     TAG_SOMATIC.out.vcf
         .join(TAG_SOMATIC.out.tbi, failOnMismatch: true, failOnDuplicate: true)
