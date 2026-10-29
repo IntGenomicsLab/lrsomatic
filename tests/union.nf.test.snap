@@ -682,7 +682,7 @@
                 "sample1_whatshap_stats.tsv:md5,905ca791c9087b1fbcd14794a6af8b5a",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,9201053691e18925d29855b810447ee8",
+                "breakpoints_double.csv:md5,d0a9bb59e109c46275d09b8544ec232a",
                 "read_qual.txt:md5,92321a03aae1168fdce8ea921b635036",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
@@ -697,7 +697,7 @@
                 "sample2_whatshap_stats.tsv:md5,138f333a6c09f4f51db218ed430ec26f",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,0b0e8072175501210d1d9bf0fe2e8312",
+                "breakpoints_double.csv:md5,0a370cb95279cb195c9c0b632df5d713",
                 "read_qual.txt:md5,57aaac5f18f81b1cbde13e49c012651a",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
@@ -709,16 +709,16 @@
                 "sample3_whatshap_stats.tsv:md5,2dad37f19eea1a9cb75a1b07f584a5ed",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "breakpoints_double.csv:md5,888dc2f1159bf66edb7b69fc8aa51e28",
+                "breakpoints_double.csv:md5,379afb9d8868d9b7cf5335f855c0f272",
                 "read_qual.txt:md5,f6d803b54f3aa4a36f21af1a9a97923f",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
+        "timestamp": "2026-10-29T08:35:26.717679294",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-10-06T11:40:46.910684091"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
     }
 }
