@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Workflow DMR"
-    script "../dmr.nf"
+    script "../dmr/main.nf"
     workflow "DMR"
     config "./nextflow.config"
 

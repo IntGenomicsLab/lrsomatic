@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "cramino"
-## TODO nf-core: Add a description of the module and list keywords
 description: A tool for quick quality assessment of cram and bam files, intended for long read sequencing.
 keywords:
   - quality

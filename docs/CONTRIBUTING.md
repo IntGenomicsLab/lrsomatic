@@ -162,4 +162,8 @@ If you update images or graphics, follow the nf-core [style guidelines](https://
 
 ## Pipeline specific contribution guidelines
 
-<!-- TODO nf-core: Add any pipeline specific contribution guidelines here, such as coding styles, procedures, checklists etc. -->
+- [ ] Before writing a local module, check whether nf-core/modules already has one, and install it with `nf-core modules install`.
+- [ ] Keep the `[ meta, data ]` tuple shape across module and subworkflow boundaries, so sample metadata reaches every downstream step.
+- [ ] Put local subworkflows in `subworkflows/local/<name>/main.nf`.
+- [ ] Add a `CHANGELOG.md` entry with the PR number for every user-facing change.
+- [ ] Tag fast (stub) tests with `small`: pull-request CI runs only tests with that tag. The extended pipeline tests (`clair_only`, `consensus`, `deep_only`, `union`) run only on release or manual dispatch, so regenerate their snapshots whenever an output changes.

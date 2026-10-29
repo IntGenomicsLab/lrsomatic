@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Workflow PADFOOT_ANNOTATION"
-    script "../padfoot_annotation.nf"
+    script "../padfoot_annotation/main.nf"
     workflow "PADFOOT_ANNOTATION"
 
     tag "subworkflows"

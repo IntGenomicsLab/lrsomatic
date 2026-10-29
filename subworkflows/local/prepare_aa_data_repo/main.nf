@@ -2,8 +2,8 @@
 // Stage the AmpliconArchitect data repository AmpliconClassifier reads at runtime
 //
 
-include { AADATAREPO_DOWNLOAD         } from '../../modules/local/aadatarepo/download/main'
-include { UNTAR as UNTAR_AA_DATA_REPO } from '../../modules/nf-core/untar/main'
+include { AADATAREPO_DOWNLOAD         } from '../../../modules/local/aadatarepo/download/main'
+include { UNTAR as UNTAR_AA_DATA_REPO } from '../../../modules/nf-core/untar/main'
 
 workflow PREPARE_AA_DATA_REPO {
 

@@ -1,11 +1,11 @@
-include { BCFTOOLS_NORM                                      } from '../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_NORM as BCFTOOLS_NORM_REJOIN              } from '../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_ISEC                                      } from '../../modules/nf-core/bcftools/isec/main'
-include { BCFTOOLS_QUERY                                     } from '../../modules/nf-core/bcftools/query/main'
-include { BCFTOOLS_ANNOTATE                                  } from '../../modules/nf-core/bcftools/annotate/main'
-include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../modules/nf-core/bcftools/sort/main'
-include { BCFTOOLS_SORT as BCFTOOLS_SORT_CONSENSUS           } from '../../modules/nf-core/bcftools/sort/main'
-include { BCFTOOLS_CALLER_UNION                              } from '../../modules/local/bcftools/callerunion/main'
+include { BCFTOOLS_NORM                                      } from '../../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_NORM as BCFTOOLS_NORM_REJOIN              } from '../../../modules/nf-core/bcftools/norm/main'
+include { BCFTOOLS_ISEC                                      } from '../../../modules/nf-core/bcftools/isec/main'
+include { BCFTOOLS_QUERY                                     } from '../../../modules/nf-core/bcftools/query/main'
+include { BCFTOOLS_ANNOTATE                                  } from '../../../modules/nf-core/bcftools/annotate/main'
+include { BCFTOOLS_SORT as SORT_POST_NORM                    } from '../../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_SORT as BCFTOOLS_SORT_CONSENSUS           } from '../../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_CALLER_UNION                              } from '../../../modules/local/bcftools/callerunion/main'
 
 
 

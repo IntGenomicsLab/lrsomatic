@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Workflow RECONPLOT_FIGURES"
-    script "../reconplot_figures.nf"
+    script "../reconplot_figures/main.nf"
     workflow "RECONPLOT_FIGURES"
 
     tag "subworkflows"
