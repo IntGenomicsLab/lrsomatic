@@ -67,6 +67,9 @@ option_list <- list(
   make_option("--min-svlen", type = "double", default = 0,
               help = paste("Drop intra-chromosomal SVs shorter than this many bp;",
                            "translocations are never dropped [default %default]")),
+  make_option("--max-svs", type = "integer", default = 0,
+              help = paste("Draw at most this many SV junctions, the best supported first; the",
+                           "--write-tables table keeps them all. 0 = no limit [default %default]")),
   make_option("--exclude-vntr", action = "store_true", default = FALSE,
               help = "Drop SVs flagged as inside a VNTR (Severus)"),
   make_option("--cluster-id", type = "character", default = NULL,
@@ -169,6 +172,11 @@ if (isTRUE(args$write_tables)) {
   data.table::fwrite(sv, file.path(args$outdir, paste0(prefix, ".reconplot_sv.tsv")), sep = "\t", scipen = 50)
   log_msg("  wrote harmonised tables to ", args$outdir)
 }
+
+## after the tables, which keep every junction
+n_sv <- nrow(sv)
+sv <- cap_svs(sv, args$max_svs)
+if (nrow(sv) < n_sv) meta$sv_note <- sprintf("top %d of %d SVs", nrow(sv), n_sv)
 
 ## --- 3. regions -------------------------------------------------------------
 regions <- if (!is.null(args$regions_file)) {

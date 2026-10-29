@@ -1,0 +1,79 @@
+nextflow_process {
+
+    name "Test Process SAVANA_PON_FILTER"
+    script "../main.nf"
+    process "SAVANA_PON_FILTER"
+
+    tag "modules"
+    tag "modules_local"
+    tag "savana_pon_filter"
+    tag "small"
+
+    // Fixture PoN (with the header row the CHM13 PoN has) against the 5-event SAVANA fixture:
+    //   INS at chr19:1100400 len 310    -> matches ID_3 (INS chr19:1100500, 300 bp)
+    //   DEL chr19:1215050-1223040       -> matches ID_1 (chr19:1215001-1223000), both mates dropped
+    //   DEL chr19:1560001-1600000       -> same start as ID_2 but 100 kb shorter: kept
+    //   DEL on chr20                    -> other chromosome: no effect
+    test("removes events in the panel of normals and keeps BND mates together") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test_tumor', platform:'pb' ],
+                    file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true)
+                ]
+                input[1] = [
+                    [:],
+                    file("\${projectDir}/modules/local/savana_pon_filter/tests/fixtures/pon.tsv.gz", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def vcf = path(process.out.vcf[0][1])
+            def ids = vcf.readLines().findAll { line -> !line.startsWith('#') }.collect { line -> line.split('\t')[2] }
+
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.vcf[0][1]).name == 'test_tumor.pon_filtered.classified.somatic.vcf' },
+                { assert ids == ['ID_4_1', 'ID_4_2', 'ID_5_1', 'ID_2_1', 'ID_2_2', 'ID_5_2'] },
+                { assert vcf.readLines().any { line -> line.startsWith('##savana_pon_filter=') } },
+                { assert path(process.out.summary[0][1]).readLines()[1] == 'test_tumor\t5\t2\t3\t9\t6' },
+                { assert snapshot(
+                    process.out.vcf,
+                    process.out.summary,
+                    process.out.findAll { key, _val -> key.startsWith('versions') }
+                ).match() }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test_tumor', platform:'pb' ],
+                    file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true)
+                ]
+                input[1] = [
+                    [:],
+                    file("\${projectDir}/modules/local/savana_pon_filter/tests/fixtures/pon.tsv.gz", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

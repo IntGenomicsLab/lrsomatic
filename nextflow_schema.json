@@ -425,6 +425,12 @@
                 "savana_allele_mapq": {
                     "type": "integer",
                     "description": "Mapping quality threshold for reads counted at a het-SNP site (SAVANA's --allele_mapq, default 5). Intended for test profiles running on downsampled data below that coverage floor."
+                },
+                "savana_pb_pon_filter": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Remove SAVANA SVs found in the germline SV panel of normals from PacBio tumour-only samples.",
+                    "help_text": "SAVANA's PacBio classifier (`--pb`) only rejects a call on matched-normal evidence, so without a normal nearly every germline SV is reported as somatic (~28k on a 30x genome). The somatic VCF is then filtered against the genome's Severus panel of normals (`pon_file`) with Severus's matching rule, which removes ~97% of the calls. The unfiltered VCF is still published. Has no effect on ONT (SAVANA's tumour-only model) or paired samples, or on a genome without a `pon_file`."
                 }
             }
         },
@@ -485,6 +491,13 @@
                     "default": 0,
                     "help_text": "Intra-chromosomal SVs shorter than this many bp are left out of the figures and the harmonised SV table; translocations are always kept. 0 keeps every SV.",
                     "description": "Drop intra-chromosomal SVs shorter than this many bp (translocations are kept). 0 keeps everything."
+                },
+                "reconplot_max_svs": {
+                    "type": "integer",
+                    "default": 2500,
+                    "minimum": 0,
+                    "description": "Draw at most this many SVs per ReConPlot figure, the best supported first. 0 draws every SV.",
+                    "help_text": "ReConPlot adds one plot layer per SV, so a few thousand SVs take minutes and tens of thousands take hours. Above this limit the figures show the SVs with the most tumour read support (then the longest), and their title says `top N of M SVs`. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
                 },
                 "reconplot_exclude_vntr": {
                     "type": "boolean",

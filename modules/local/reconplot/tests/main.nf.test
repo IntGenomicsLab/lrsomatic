@@ -287,4 +287,40 @@ nextflow_process {
             )
         }
     }
+
+    test("savana single source - real, more SVs than --max-svs") {
+
+        config "./nextflow.maxsvs.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    'savana',
+                    [ file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_segmented_absolute_copy_number.tsv", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true),
+                      file("${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor_fitted_purity_ploidy.tsv", checkIfExists: true) ],
+                    'savana',
+                    []
+                ]
+                input[1] = [ [ id:'reconplot' ], file("${projectDir}/assets/reconplot", checkIfExists: true) ]
+                input[2] = 'hg38'
+                """
+            }
+        }
+
+        then {
+            def reconplot_log = path(process.out.log.get(0).get(1)).text
+            assertAll(
+                { assert process.success },
+                { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
+                // both drawing runs (per-chromosome, genome-wide) cap the five junctions at three
+                { assert reconplot_log.count('WARNING: 5 SV junctions exceed --max-svs 3') == 2 },
+                // the harmonised table is written before the cap and keeps every junction
+                { assert path(process.out.tables.get(0).get(1).find { f -> file(f).name.endsWith('reconplot_sv.tsv') }).readLines().size() == 6 }
+            )
+        }
+    }
 }

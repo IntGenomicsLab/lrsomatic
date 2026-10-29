@@ -1,0 +1,99 @@
+{
+    "removes events in the panel of normals and keeps BND mates together": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_tumor",
+                        "platform": "pb"
+                    },
+                    "test_tumor.pon_filtered.classified.somatic.vcf:md5,861e715d108dcff56734256d6d0f0be2"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_tumor",
+                        "platform": "pb"
+                    },
+                    "test_tumor.pon_filtered.pon_filter_summary.tsv:md5,443d046741ba277c056b58f25ed28d7b"
+                ]
+            ],
+            {
+                "versions_python": [
+                    [
+                        "SAVANA_PON_FILTER",
+                        "python",
+                        "3.12.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-29T11:39:20.243084355",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_tumor",
+                            "platform": "pb"
+                        },
+                        "test_tumor.pon_filtered.classified.somatic.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test_tumor",
+                            "platform": "pb"
+                        },
+                        "test_tumor.pon_filtered.pon_filter_summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        "SAVANA_PON_FILTER",
+                        "python",
+                        "3.12.2"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "test_tumor",
+                            "platform": "pb"
+                        },
+                        "test_tumor.pon_filtered.pon_filter_summary.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "test_tumor",
+                            "platform": "pb"
+                        },
+                        "test_tumor.pon_filtered.classified.somatic.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_python": [
+                    [
+                        "SAVANA_PON_FILTER",
+                        "python",
+                        "3.12.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-29T11:38:05.085736965",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}
