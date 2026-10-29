@@ -34,8 +34,11 @@ process METAEXTRACT {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    // A real model name, so the Clair3/ClairS model lookups resolve and -stub runs reach the callers
+    def stub_model = meta.platform == 'ont' ? 'dna_r10.4.1_e8.2_400bps_sup@v5.0.0' : 'hifi_revio'
+    def stub_kinetics = meta.platform == 'ont' ? '' : 'false'
     """
-    touch ${prefix}.bam
+    export basecall_model="${stub_model}"
+    export kinetics="${stub_kinetics}"
     """
 }

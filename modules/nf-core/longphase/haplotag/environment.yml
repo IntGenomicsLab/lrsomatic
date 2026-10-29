@@ -7,3 +7,4 @@ channels:
 dependencies:
   - bioconda::htslib=1.23.1
   - bioconda::longphase=2.0.1
+  - bioconda::samtools=1.23.1
