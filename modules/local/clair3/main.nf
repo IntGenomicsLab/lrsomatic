@@ -26,7 +26,7 @@ process CLAIR3 {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    def use_gpu = task.ext.use_gpu as boolean
+    def use_gpu = task.accelerator?.request as boolean
     // An empty model input means the model is bundled with the image: models/ next to run_clair3.sh
     // in the biocontainer, /opt/models in the HKU Docker image
     def model_path = model ? "${model}" : "\${CLAIR3_MODELS}/${meta.clair3_model}"

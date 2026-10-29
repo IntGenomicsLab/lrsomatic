@@ -65,7 +65,7 @@ workflow PIPELINE_INITIALISATION {
         "",
         "",
         command,
-        false
+        null
     )
 
     //
@@ -216,7 +216,7 @@ workflow PIPELINE_COMPLETION {
                 plaintext_email,
                 outdir,
                 monochrome_logs,
-                multiqc_reports.getVal(),
+                multiqc_reports.isBound() ? multiqc_reports.getVal() : [],
             )
         }
 
