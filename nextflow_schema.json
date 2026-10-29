@@ -111,7 +111,8 @@
                     "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Also write gVCFs from DeepVariant and DeepSomatic, and publish them next to the VCFs."
                 }
             }
         },
@@ -224,7 +225,8 @@
             "default": "",
             "properties": {
                 "autocorrelation": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Pass --acf to fibertools qc to add the nucleosome autocorrelation to the Fiber-seq QC output. Any non-empty value turns it on."
                 }
             }
         },
@@ -259,10 +261,12 @@
                     "description": "Download the VEP cache if not already present"
                 },
                 "vep_custom": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to a bgzipped VCF (.vcf.gz) of custom variants for VEP to annotate against. Needs a matching --custom file=... entry in --vep_args."
                 },
                 "vep_custom_tbi": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to the tabix index of --vep_custom."
                 },
                 "vep_alphamissense": {
                     "type": "string",
@@ -384,7 +388,8 @@
             "properties": {
                 "severus_minsupport": {
                     "type": "integer",
-                    "default": 3
+                    "default": 3,
+                    "description": "Minimum number of supporting reads for Severus to report an SV (Severus --min-support)."
                 },
                 "severus_whitelist": {
                     "type": "string",
@@ -584,7 +589,8 @@
             "default": "",
             "properties": {
                 "wakhan_chroms": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Comma-separated contigs, or ranges such as chr1-22,chrX, for Wakhan to use. Defaults to chr1-22,chrX for female samples and chr1-22,chrX,chrY for male samples."
                 }
             }
         },
@@ -674,6 +680,10 @@
                 "skip_wakhan": {
                     "type": "boolean",
                     "description": "Skips wakhan"
+                },
+                "skip_modkit": {
+                    "type": "boolean",
+                    "description": "Skip the modkit pileup of base modifications."
                 },
                 "skip_fiber": {
                     "type": "boolean",
@@ -1039,10 +1049,5 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "skip_modkit": {
-            "type": "boolean"
-        }
-    }
+    ]
 }

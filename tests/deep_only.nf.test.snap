@@ -171,7 +171,7 @@
                     "whatshap": 2.8
                 },
                 "Workflow": {
-                    "IntGenomicsLab/lrsomatic": "v1.1.0"
+                    "IntGenomicsLab/lrsomatic": "v1.2.0dev"
                 }
             },
             [

@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Subworkflow ECDNA"
-    script "../ecdna.nf"
+    script "../ecdna/main.nf"
     workflow "ECDNA"
 
     tag "subworkflows"

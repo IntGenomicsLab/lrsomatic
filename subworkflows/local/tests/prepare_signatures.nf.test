@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Workflow PREPARE_SIGNATURES"
-    script "../prepare_signatures.nf"
+    script "../prepare_signatures/main.nf"
     workflow "PREPARE_SIGNATURES"
 
     tag "subworkflows"

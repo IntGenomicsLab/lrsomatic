@@ -1,6 +1,6 @@
-include { DEEPSOMATIC_MAKEEXAMPLES        } from '../../modules/local/deepsomatic/makeexamples/main'
-include { DEEPSOMATIC_CALLVARIANTS        } from '../../modules/local/deepsomatic/callvariants/main'
-include { DEEPSOMATIC_POSTPROCESSVARIANTS } from '../../modules/local/deepsomatic/postprocessvariants/main'
+include { DEEPSOMATIC_MAKEEXAMPLES        } from '../../../modules/local/deepsomatic/makeexamples/main'
+include { DEEPSOMATIC_CALLVARIANTS        } from '../../../modules/local/deepsomatic/callvariants/main'
+include { DEEPSOMATIC_POSTPROCESSVARIANTS } from '../../../modules/local/deepsomatic/postprocessvariants/main'
 
 workflow DEEPSOMATIC {
     take:

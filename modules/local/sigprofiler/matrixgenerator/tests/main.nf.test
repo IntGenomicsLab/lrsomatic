@@ -20,7 +20,7 @@ nextflow_process {
 
         setup {
             run("PREPARE_SIGNATURES") {
-                script "../../../../../subworkflows/local/prepare_signatures.nf"
+                script "../../../../../subworkflows/local/prepare_signatures/main.nf"
                 workflow {
                     """
                     input[0] = 'CHM13-T2T'
