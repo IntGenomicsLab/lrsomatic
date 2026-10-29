@@ -62,15 +62,13 @@ process LONGPHASE_PHASE {
 
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
+    def sv_command = svs ? "echo '' | bgzip -c > ${prefix}_SV.vcf.gz && touch ${prefix}_SV.vcf.gz.tbi" : ""
+    def mod_command = mods ? "echo '' | bgzip -c > ${prefix}_mod.vcf.gz && touch ${prefix}_mod.vcf.gz.tbi" : ""
     """
-      tabix -p vcf ${prefix}.vcf.gz
+    echo "" | bgzip -c > ${prefix}.vcf.gz
+    touch ${prefix}.vcf.gz.tbi
 
-    if [ -f ${prefix}_SV.vcf.gz ]; then
-        tabix -p vcf ${prefix}_SV.vcf.gz
-    fi
-
-    if [ -f ${prefix}_mod.vcf.gz ]; then
-        tabix -p vcf ${prefix}_mod.vcf.gz
-    fi
+    $sv_command
+    $mod_command
     """
 }
