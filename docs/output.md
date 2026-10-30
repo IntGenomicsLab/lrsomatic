@@ -19,6 +19,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    ├── methylation
 │    │    └── tumor
 │    │        └── modkit_pileup
+│    ├── owl
 │    ├── padfoot
 │    │   ├── severus_wakhan
 │    │   └── savana
@@ -64,6 +65,7 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── modkit_pileup
 │    │    └── normal
 │    │        └── modkit_pileup
+│    ├── owl
 │    ├── padfoot
 │    │   ├── severus_wakhan
 │    │   └── savana
@@ -725,6 +727,32 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                 | The reference signatures used for the fit and their spectra                                                                                        |
 | `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`             | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                |
 | `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                            | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                         |
+
+</details>
+
+### `owl`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── owl
+│   ├── sample.owl-profile.txt
+│   ├── sample.owl-scores.txt
+│   ├── sample.owl-motif-counts.txt
+│   ├── sample.owl-phased-sites.txt
+│   └── sample.owl-phased-summary.txt
+```
+
+| File                            | Description                                                                                                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sample.owl-profile.txt`        | One row per marker locus: per haplotype, the phase block, read count, mean repeat length and coefficient of variation (CV) of the repeat length                |
+| `sample.owl-scores.txt`         | The sample summary: haplotypes with high and low CV, `%high` (the MSI score), the share of sites phased and passing, and `qc` (`fail` below 50% passing sites) |
+| `sample.owl-motif-counts.txt`   | High and low CV haplotypes per repeat motif                                                                                                                    |
+| `sample.owl-phased-sites.txt`   | Per site, whether each haplotype is high (1) or low (0) CV                                                                                                     |
+| `sample.owl-phased-summary.txt` | Per phase block, how often both haplotypes are high against what chance predicts                                                                               |
+
+[owl](https://github.com/PacificBiosciences/owl) runs on the haplotagged tumour BAM only. A haplotype is high when its repeat-length CV is at least 5%; `%high` is the percentage of high haplotypes across all marker loci. owl does not call MSI-high itself. PacBio's HiFi-somatic-WDL suggests above 10% as a good indicator of MSI, but that guidance comes from PacBio's curated GRCh38 marker set; CHM13 scores use a different marker set and are not on the same scale (see [owl options](usage.md#owl-options)).
 
 </details>
 

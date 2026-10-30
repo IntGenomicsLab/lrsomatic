@@ -1,0 +1,68 @@
+nextflow_process {
+
+    name "Test Process OWL_PROFILE"
+    script "../main.nf"
+    process "OWL_PROFILE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "owl"
+    tag "small"
+
+    // tests/fixtures/owl: three (AC)n loci, six reads per haplotype; only locus 1 haplotype 2 varies in length
+    test("haplotagged BAM - per-haplotype repeat lengths") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', type:'tumor', platform:'pb' ],
+                    file("\${projectDir}/tests/fixtures/owl/owl.bam", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/owl/owl.bam.bai", checkIfExists: true)
+                ]
+                input[1] = file("\${projectDir}/tests/fixtures/owl/owl_markers.bed", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            // ##fileDate changes daily, so only the column header and records are compared
+            def body = path(process.out.profile[0][1]).readLines().findAll { line -> !line.startsWith('##') }
+            def cv = { region, hap -> body.find { line -> line.startsWith(region) }.split('\t')[3].split(';')[hap - 1].split(',')[4] as double }
+
+            assertAll(
+                { assert body[0] == '#Region\tinfo\tformat\ttest' },
+                { assert body.size() == 4 },
+                { assert cv('chr1:1000-1040', 1) == 0.0 },
+                { assert cv('chr1:1000-1040', 2) > 5.0 },
+                { assert cv('chr1:3000-3040', 2) == 0.0 },
+                // the per-read mg warnings are filtered out of the task log
+                { assert !process.stderr.any { line -> line.contains('without MG') } },
+                { assert snapshot(body, process.out.versions_owl).match() }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test', type:'tumor', platform:'pb' ], [], [] ]
+                input[1] = []
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

@@ -1,0 +1,80 @@
+nextflow_process {
+
+    name "Test Process OWL_SCORE"
+    script "../main.nf"
+    process "OWL_SCORE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "owl"
+    tag "small"
+
+    // Profiles tests/fixtures/owl first: 1 of 6 haplotypes is unstable, so %high is 16.67
+    test("profile - MSI score") {
+
+        setup {
+            run("OWL_PROFILE") {
+                script "../../profile/main.nf"
+                process {
+                    """
+                    input[0] = [
+                        [ id:'test', type:'tumor', platform:'pb' ],
+                        file("\${projectDir}/tests/fixtures/owl/owl.bam", checkIfExists: true),
+                        file("\${projectDir}/tests/fixtures/owl/owl.bam.bai", checkIfExists: true)
+                    ]
+                    input[1] = file("\${projectDir}/tests/fixtures/owl/owl_markers.bed", checkIfExists: true)
+                    """
+                }
+            }
+        }
+
+        when {
+            process {
+                """
+                input[0] = OWL_PROFILE.out.profile
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def scores = path(process.out.scores[0][1]).readLines()
+            def row = [scores[0].split('\t'), scores[1].split('\t')].transpose().collectEntries()
+
+            assertAll(
+                { assert row['#sample'] == 'test' },
+                { assert row['#high'] == '1' && row['#low'] == '5' },
+                { assert row['%high'] == '16.67' },
+                { assert row['qc'] == 'pass' },
+                { assert snapshot(
+                    process.out.scores,
+                    process.out.motif_counts,
+                    process.out.phased_sites,
+                    process.out.phased_summary,
+                    process.out.versions_owl
+                ).match() }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test', type:'tumor', platform:'pb' ], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

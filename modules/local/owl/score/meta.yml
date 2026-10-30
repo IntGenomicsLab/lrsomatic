@@ -1,0 +1,97 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "owl_score"
+description: Summarise an owl profile into an MSI score (percentage of haplotypes with unstable repeat lengths)
+keywords:
+  - msi
+  - microsatellite
+  - tandem-repeat
+  - long-read
+tools:
+  - "owl":
+      description: "Microsatellite instability (MSI) analysis for PacBio HiFi data"
+      homepage: "https://github.com/PacificBiosciences/owl"
+      documentation: "https://github.com/PacificBiosciences/owl"
+      tool_dev_url: "https://github.com/PacificBiosciences/owl"
+      licence: ["PacBio Software License Agreement"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - profile:
+        type: file
+        description: owl profile from OWL_PROFILE
+        pattern: "*.owl-profile.txt"
+
+output:
+  scores:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - "*.owl-scores.txt":
+        type: file
+        description: Per-sample counts of high and low CV haplotypes; %high is the MSI score
+        pattern: "*.owl-scores.txt"
+  motif_counts:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - "*.owl-motif-counts.txt":
+        type: file
+        description: High and low CV haplotype counts per motif
+        pattern: "*.owl-motif-counts.txt"
+  phased_sites:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - "*.owl-phased-sites.txt":
+        type: file
+        description: Per-site high (1) or low (0) call for each haplotype
+        pattern: "*.owl-phased-sites.txt"
+  phased_summary:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - "*.owl-phased-summary.txt":
+        type: file
+        description: Per phase block observed versus expected co-high haplotype pairs
+        pattern: "*.owl-phased-summary.txt"
+
+  versions_owl:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - owl:
+          type: string
+          description: The tool name
+      - "owl --version | sed 's/^owl //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - owl:
+          type: string
+          description: The tool name
+      - "owl --version | sed 's/^owl //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

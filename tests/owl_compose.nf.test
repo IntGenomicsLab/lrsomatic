@@ -1,0 +1,50 @@
+nextflow_pipeline {
+
+    name "Test pipeline - owl wiring (-preview)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The test profile skips owl (it would change the pipeline snapshots); -preview builds the workflow graph without
+    // running a task, so this checks that owl is wired in, and that --skip_owl removes it.
+
+    test("-profile test with owl on - preview") {
+
+        options "-preview -with-dag dag.mmd"
+
+        when {
+            params {
+                outdir   = "$outputDir"
+                skip_owl = false
+            }
+        }
+
+        then {
+            def processes = (path("$launchDir/dag.mmd").text =~ /\(\["([A-Z0-9_]+)"\]\)/).collect { m -> m[1] } as Set
+            assertAll(
+                { assert workflow.success },
+                { assert processes.containsAll(['OWL_PROFILE', 'OWL_SCORE']) }
+            )
+        }
+    }
+
+    test("-profile test with owl skipped - preview") {
+
+        options "-preview -with-dag dag.mmd"
+
+        when {
+            params {
+                outdir   = "$outputDir"
+                skip_owl = true
+            }
+        }
+
+        then {
+            def processes = (path("$launchDir/dag.mmd").text =~ /\(\["([A-Z0-9_]+)"\]\)/).collect { m -> m[1] } as Set
+            assertAll(
+                { assert workflow.success },
+                { assert !processes.any { name -> name.startsWith('OWL_') } }
+            )
+        }
+    }
+}

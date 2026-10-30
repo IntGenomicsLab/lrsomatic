@@ -243,6 +243,7 @@ def validateInputParameters() {
     validateSmallvarCallers()
     validateSvAnnotationParams()
     validateSeverusWhitelist()
+    validateOwlParams()
 }
 
 //
@@ -447,6 +448,28 @@ def validateSvAnnotationParams() {
     if (!workflow.containerEngine && !(params.skip_padfoot && params.skip_reconplot)) {
         log.warn "Padfoot and ReConPlot need a container engine (Docker, Singularity, Apptainer, ...) and are skipped without one " +
             "(use --skip_padfoot --skip_reconplot to silence this warning)."
+    }
+}
+
+//
+// owl marker BED: --owl_bed wins, else the --genome default (GRCh38 and CHM13 only)
+//
+def owlMarkers() {
+    return params.owl_bed ?: getGenomeAttribute('owl_bed')
+}
+
+//
+// Warn when owl cannot run on this genome, and about its PacBio-only licence when ONT is let through
+//
+def validateOwlParams() {
+    if (params.skip_owl) {
+        return
+    }
+    if (!owlMarkers()) {
+        log.warn "owl will be skipped: no marker BED for genome '${params.genome}'. Give one with --owl_bed."
+    }
+    if (params.owl_allow_ont) {
+        log.warn "--owl_allow_ont: owl's licence covers data from PacBio instruments only, and its defaults are tuned on HiFi reads."
     }
 }
 

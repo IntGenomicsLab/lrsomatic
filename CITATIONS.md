@@ -106,6 +106,10 @@
 
   > De Coster W, Rademakers R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics. 2023 May 4;39(5):btad311. doi: 10.1093/bioinformatics/btad311. PubMed PMID: 37171891; PubMed Central PMCID: PMC10196664.
 
+- [owl](https://github.com/PacificBiosciences/owl)
+
+  > Pacific Biosciences. owl: Microsatellite instability (MSI) analysis for HiFi data [Software]. GitHub. https://github.com/PacificBiosciences/owl
+
 - [Padfoot](https://github.com/KolmogorovLab/Padfoot)
 
   > Functional annotation of somatic structural variants and copy number alterations from long-read cancer genomes [Software]. GitHub. https://github.com/KolmogorovLab/Padfoot
@@ -207,6 +211,10 @@
   The source of the gene symbols in the protein-space AlphaMissense table above. Not fetched at
   runtime: it is an input to the table the pipeline distributes. UniProtKB is licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode).
+
+- [UCSC hs1 RepeatMasker annotation](https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/)
+
+  The source of the CHM13 owl marker set (`--genome CHM13`), built with owl's marker recipe; see `assets/owl/README.md`.
 
 - [ASAP Panel of Normals](https://www.biorxiv.org/content/10.64898/2026.03.15.711881v1)
 

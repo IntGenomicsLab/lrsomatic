@@ -14,6 +14,7 @@ include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { owlMarkers                } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -64,6 +65,7 @@ include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/p
 include { DMR                             } from '../subworkflows/local/dmr'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
+include { OWL_MSI                         } from '../subworkflows/local/owl_msi'
 
 
 
@@ -727,6 +729,17 @@ workflow LRSOMATIC {
                 )
             }
         }
+    }
+
+    //
+    // SUBWORKFLOW: OWL_MSI (microsatellite instability on the haplotagged tumour BAMs)
+    //
+    if (!params.skip_owl && owlMarkers()) {
+        OWL_MSI(
+            PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch,
+            file(owlMarkers()),
+            params.owl_allow_ont
+        )
     }
 
     // Prepare phased VCFs for VEP: add empty 'extra' list required by ENSEMBLVEP_VEP

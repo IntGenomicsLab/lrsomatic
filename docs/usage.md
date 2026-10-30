@@ -165,6 +165,8 @@ If the loci cannot belong to the reference, ClairS-TO disables Verdict with a wa
 
 Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--genome CHM13` it is skipped with a warning unless you also pass `--padfoot_gff` and `--padfoot_rm` (see [Padfoot Options](#padfoot-options)). ReConPlot needs nothing extra on CHM13 (`T2T` preset).
 
+owl has no published CHM13 marker set. `--genome CHM13` uses one the pipeline built with owl's own recipe, so CHM13 MSI scores are not on the same scale as GRCh38 ones (see [owl Options](#owl-options)).
+
 ### Pipeline options
 
 | Parameter        | Description                                                                                                                                                                  |
@@ -197,6 +199,7 @@ Padfoot bundles gene and repeat annotations for `hg38` and `mm10` only. With `--
 | `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                                                                                                        |
 | `--skip_signatures`    | A boolean to skip mutational signature analysis (SigProfilerMatrixGenerator + SigProfilerAssignment). Default = `false`                                                                                                                                                 |
 | `--skip_report`        | A boolean to skip the final per-sample HTML report. Default = `false`                                                                                                                                                                                                   |
+| `--skip_owl`           | A boolean to skip `owl` microsatellite instability scoring. Default = `false`                                                                                                                                                                                           |
 
 #### Modkit options:
 
@@ -426,6 +429,21 @@ A volume passed with `--sigprofiler_genome_dir` is checked once per run against 
 | `--sigprofiler_assignment_args`             | Extra arguments for `SigProfilerAssignment cosmic_fit`, e.g. `"--make_plots False"`. Default = `null`                                                                                               |
 
 Both tools run from `ghcr.io/ljwharbers/sigprofiler`, which adds CHM13 support not yet in a SigProfiler release: SigProfilerMatrixGenerator from the branch behind [SigProfilerSuite/SigProfilerMatrixGenerator#250](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/pull/250) and SigProfilerAssignment from [ljwharbers/SigProfilerAssignment](https://github.com/ljwharbers/SigProfilerAssignment/tree/chm13-t2t-support), with COSMIC SBS/DBS signatures renormalised to CHM13. ID83 signatures always use the GRCh37 set. Conda is not supported for this step.
+
+#### owl Options
+
+[owl](https://github.com/PacificBiosciences/owl) scores microsatellite instability (MSI) on the haplotagged tumour BAM. For each marker locus it measures, per haplotype, how much the repeat length varies between reads; `%high` in `<sample>.owl-scores.txt` is the percentage of haplotypes whose coefficient of variation is at least 5%. Normals are not profiled, since owl is a tumour-only method.
+
+| Parameter         | Description                                                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--owl_bed`       | Marker BED (chromosome, start, end, motif as `(AC)n`), plain or gzipped. Default = the `--genome` marker set (GRCh38 and CHM13); others need this |
+| `--owl_allow_ont` | A boolean to also run owl on ONT tumours. Default = `false`                                                                                       |
+
+owl's licence covers data from PacBio instruments only, and its defaults are tuned on HiFi reads, so ONT tumours are left out unless `--owl_allow_ont` is set. owl also filters reads on pbmm2's `mg` (gap-compressed identity) tag. minimap2 does not write that tag, so on lrsomatic BAMs that filter never applies; the pipeline drops owl's per-read warning about it from the task log.
+
+The GRCh38 marker set is PacBio's curated `GRCh38_owl_markers.bed.gz` (146,562 loci). No CHM13 set is published, so `--genome CHM13` uses one built with owl's own marker recipe (repeats 20-100 bp, at least 97% identity, motifs up to 6 bp, chr1-22 and chrX) from UCSC's hs1 RepeatMasker annotation: 170,612 loci. The scripts and checks are in `assets/owl/`. PacBio's curated GRCh38 set is the same recipe followed by a pruning step that removed 10.8% of loci (17,812 of 164,374), and the CHM13 set has no such pruning. CHM13 `%high` is therefore not on the same scale as GRCh38 `%high`, or as PacBio's guidance that above 10% indicates MSI.
+
+Extra `owl profile` or `owl score` options can be passed with `ext.args` on `OWL_PROFILE` or `OWL_SCORE` (see [Custom Tool Arguments](#custom-tool-arguments)); use long option names, since owl reuses `-m` for several options.
 
 #### Padfoot Options
 

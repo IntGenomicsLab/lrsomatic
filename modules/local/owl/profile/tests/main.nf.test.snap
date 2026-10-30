@@ -1,0 +1,69 @@
+{
+    "haplotagged BAM - per-haplotype repeat lengths": {
+        "content": [
+            [
+                "#Region\tinfo\tformat\ttest",
+                "chr1:1000-1040\tRL=40;MO=AC\tPS:HP:CT:MU:CV:LN\t1000,1,6,42.0,0.0,.;1000,2,6,44.0,17.0,.",
+                "chr1:3000-3040\tRL=40;MO=AC\tPS:HP:CT:MU:CV:LN\t1000,1,6,43.0,0.0,.;1000,2,6,43.0,0.0,.",
+                "chr1:5000-5040\tRL=40;MO=AC\tPS:HP:CT:MU:CV:LN\t1000,1,6,42.0,0.0,.;1000,2,6,42.0,0.0,."
+            ],
+            [
+                [
+                    "OWL_PROFILE",
+                    "owl",
+                    "0.4.0"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-14T16:16:00.827260519"
+    },
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-profile.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        "OWL_PROFILE",
+                        "owl",
+                        "0.4.0"
+                    ]
+                ],
+                "profile": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-profile.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_owl": [
+                    [
+                        "OWL_PROFILE",
+                        "owl",
+                        "0.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-14T16:16:06.278491845"
+    }
+}

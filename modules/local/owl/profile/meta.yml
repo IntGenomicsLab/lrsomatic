@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "owl_profile"
+description: Profile repeat-length variability per haplotype at microsatellite loci in a haplotagged long-read BAM
+keywords:
+  - msi
+  - microsatellite
+  - tandem-repeat
+  - long-read
+tools:
+  - "owl":
+      description: "Microsatellite instability (MSI) analysis for PacBio HiFi data"
+      homepage: "https://github.com/PacificBiosciences/owl"
+      documentation: "https://github.com/PacificBiosciences/owl"
+      tool_dev_url: "https://github.com/PacificBiosciences/owl"
+      licence: ["PacBio Software License Agreement"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - bam:
+        type: file
+        description: Coordinate-sorted BAM, haplotagged with HP and PS
+        pattern: "*.bam"
+    - bai:
+        type: file
+        description: BAM index
+        pattern: "*.bai"
+  - markers:
+      type: file
+      description: 4-column BED of marker loci (chrom, start, end, motif as "(AC)n"), plain or gzipped
+      pattern: "*.{bed,bed.gz}"
+
+output:
+  profile:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor' ]`
+    - "*.owl-profile.txt":
+        type: file
+        description: Per-locus, per-haplotype read count, mean repeat length and CV
+        pattern: "*.owl-profile.txt"
+
+  versions_owl:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - owl:
+          type: string
+          description: The tool name
+      - "owl --version | sed 's/^owl //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - owl:
+          type: string
+          description: The tool name
+      - "owl --version | sed 's/^owl //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

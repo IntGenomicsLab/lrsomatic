@@ -1,0 +1,70 @@
+nextflow_workflow {
+
+    name "Test Subworkflow OWL_MSI"
+    script "../owl_msi.nf"
+    workflow "OWL_MSI"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "owl"
+    tag "small"
+
+    // Stub-only: what these prove is the sample filter -- tumours only, and ONT only with allow_ont
+    test("-stub - profiles the PacBio tumour only") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                def bam = file("\${projectDir}/tests/fixtures/owl/owl.bam", checkIfExists: true)
+                def bai = file("\${projectDir}/tests/fixtures/owl/owl.bam.bai", checkIfExists: true)
+                input[0] = channel.of(
+                    [ [ id:'pb_paired', type:'tumor',  platform:'pb'  ], bam, bai ],
+                    [ [ id:'pb_paired', type:'normal', platform:'pb'  ], bam, bai ],
+                    [ [ id:'ont_only',  type:'tumor',  platform:'ont' ], bam, bai ]
+                )
+                input[1] = file("\${projectDir}/tests/fixtures/owl/owl_markers.bed", checkIfExists: true)
+                input[2] = false
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.scores.collect { it[0].id } == ['pb_paired'] },
+                { assert workflow.out.scores.collect { it[0].type } == ['tumor'] }
+            )
+        }
+    }
+
+    test("-stub - allow_ont also profiles the ONT tumour") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                def bam = file("\${projectDir}/tests/fixtures/owl/owl.bam", checkIfExists: true)
+                def bai = file("\${projectDir}/tests/fixtures/owl/owl.bam.bai", checkIfExists: true)
+                input[0] = channel.of(
+                    [ [ id:'pb_paired', type:'tumor',  platform:'pb'  ], bam, bai ],
+                    [ [ id:'pb_paired', type:'normal', platform:'pb'  ], bam, bai ],
+                    [ [ id:'ont_only',  type:'tumor',  platform:'ont' ], bam, bai ]
+                )
+                input[1] = file("\${projectDir}/tests/fixtures/owl/owl_markers.bed", checkIfExists: true)
+                input[2] = true
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.scores.collect { it[0].id }.sort() == ['ont_only', 'pb_paired'] },
+                { assert workflow.out.profile.every { it[0].type == 'tumor' } }
+            )
+        }
+    }
+}

@@ -68,7 +68,11 @@ b. Structural variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep
 
 c. Somatic SV and CNA functional annotation ([`Padfoot`](https://github.com/KolmogorovLab/Padfoot))
 
-**5) Visualisation:**
+**5) Microsatellite instability:**
+
+a. MSI score from the haplotagged tumour BAM ([`owl`](https://github.com/PacificBiosciences/owl))
+
+**6) Visualisation:**
 
 a. Rearrangement and copy-number figures per CN/SV caller pair ([`ReConPlot`](https://github.com/cortes-ciriano-lab/ReConPlot))
 
@@ -114,7 +118,7 @@ IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth
 
 The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations and ReConPlot figures go to `padfoot/` and `reconplot/`, one subfolder per caller pair. See the [output documentation](/docs/output.md).
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations and ReConPlot figures go to `padfoot/` and `reconplot/`, one subfolder per caller pair; owl MSI scores go to `owl/`. See the [output documentation](/docs/output.md).
 
 Example output directory structure:
 
@@ -122,6 +126,7 @@ Example output directory structure:
 ├── Sample 1
 │    ├── ascat
 │    ├── bamfiles
+│    ├── owl
 │    ├── padfoot
 │    │   ├── savana
 │    │   └── severus_wakhan
@@ -149,6 +154,7 @@ Example output directory structure:
 ├── Sample 2
 │    ├── ascat
 │    ├── bamfiles
+│    ├── owl
 │    ├── padfoot
 │    │   ├── savana
 │    │   └── severus_wakhan

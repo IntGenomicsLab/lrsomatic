@@ -1,0 +1,163 @@
+{
+    "profile - MSI score": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "type": "tumor",
+                        "platform": "pb"
+                    },
+                    "test.owl-scores.txt:md5,464dc715ca22b336a7513dac22679597"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "type": "tumor",
+                        "platform": "pb"
+                    },
+                    "test.owl-motif-counts.txt:md5,e499328f6df54a27099098bcd397bd7c"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "type": "tumor",
+                        "platform": "pb"
+                    },
+                    "test.owl-phased-sites.txt:md5,eb3f12bf5eeb153cdd8d32cea2b12f6d"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "type": "tumor",
+                        "platform": "pb"
+                    },
+                    "test.owl-phased-summary.txt:md5,39ce13751f00725917318620157a3239"
+                ]
+            ],
+            [
+                [
+                    "OWL_SCORE",
+                    "owl",
+                    "0.4.0"
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-14T16:16:12.204775735"
+    },
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-scores.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-motif-counts.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-phased-sites.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-phased-summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        "OWL_SCORE",
+                        "owl",
+                        "0.4.0"
+                    ]
+                ],
+                "motif_counts": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-motif-counts.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "phased_sites": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-phased-sites.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "phased_summary": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-phased-summary.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "scores": [
+                    [
+                        {
+                            "id": "test",
+                            "type": "tumor",
+                            "platform": "pb"
+                        },
+                        "test.owl-scores.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_owl": [
+                    [
+                        "OWL_SCORE",
+                        "owl",
+                        "0.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-14T16:16:17.636487204"
+    }
+}

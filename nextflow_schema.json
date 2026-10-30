@@ -462,6 +462,25 @@
                 }
             }
         },
+        "owl_options": {
+            "title": "owl options",
+            "type": "object",
+            "description": "Options for owl microsatellite instability (MSI) scoring",
+            "default": "",
+            "properties": {
+                "owl_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "Marker BED for owl (chrom, start, end, motif as `(AC)n`), plain or gzipped.",
+                    "help_text": "Defaults to PacBio's curated marker set for GRCh38 and to a set built with owl's marker recipe for CHM13 (see `assets/owl/README.md`). Any other genome needs this, or owl is skipped with a warning."
+                },
+                "owl_allow_ont": {
+                    "type": "boolean",
+                    "description": "Also run owl on ONT tumours. owl's licence covers data from PacBio instruments only, and its defaults are tuned on HiFi reads."
+                }
+            }
+        },
         "reconplot_options": {
             "title": "ReConPlot options",
             "type": "object",
@@ -745,6 +764,10 @@
                 "skip_ampliconclassifier": {
                     "type": "boolean",
                     "description": "Run CoRAL but skip AmpliconClassifier, which avoids needing an AA data repository."
+                },
+                "skip_owl": {
+                    "type": "boolean",
+                    "description": "Skip owl microsatellite instability (MSI) scoring."
                 }
             }
         },
@@ -1014,6 +1037,9 @@
         },
         {
             "$ref": "#/$defs/reconplot_options"
+        },
+        {
+            "$ref": "#/$defs/owl_options"
         },
         {
             "$ref": "#/$defs/ascat_parameters"
