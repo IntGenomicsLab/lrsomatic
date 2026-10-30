@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "shatterseek"
-description: Chromothripsis calls with ShatterSeek (robert-a-forsyth fork with chm13 support and corrected statistics), labelled with the PCAWG high/low-confidence tiers, from ASCAT/Wakhan/SAVANA copy number and Severus/SAVANA SVs.
+description: Chromothripsis calls with ShatterSeek (upstream, with a build-time chm13 patch), labelled with the PCAWG high-confidence tiers, from ASCAT/Wakhan/SAVANA copy number and Severus/SAVANA SVs.
 keywords:
   - chromothripsis
   - structural-variation
@@ -12,8 +12,8 @@ tools:
   - "shatterseek":
       description: "ShatterSeek: detection of chromothripsis from SV and copy-number calls"
       homepage: "https://github.com/parklab/ShatterSeek"
-      documentation: "https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support"
-      tool_dev_url: "https://github.com/robert-a-forsyth/ShatterSeek"
+      documentation: "https://github.com/parklab/ShatterSeek/blob/master/tutorial.pdf"
+      tool_dev_url: "https://github.com/parklab/ShatterSeek"
       doi: "10.1038/s41588-019-0576-7"
       licence: ["GPL-3.0-or-later"]
       identifier: ""
@@ -57,7 +57,7 @@ output:
           description: Groovy Map containing sample information
       - "${prefix}/${meta.id}.shatterseek.tsv":
           type: file
-          description: One row per chromosome (1-22, X) with the cluster, the statistical criteria, BH q-values, the PCAWG tiers (HC1, HC2, HC3, LC1) and chromothripsis_confidence
+          description: One row per chromosome (1-22, X) with the cluster, the statistical criteria, BH q-values, the PCAWG tiers (HC1, HC2, HC3) and chromothripsis_confidence
           pattern: "*.shatterseek.tsv"
   - inputs:
       - meta:

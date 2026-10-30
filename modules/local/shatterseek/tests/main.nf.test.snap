@@ -46,7 +46,7 @@
                     ]
                 ],
                 "5": [
-                    "versions.yml:md5,8cbcc93057dfcfad0d7cd89f1b035179"
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
                 ],
                 "inputs": [
                     [
@@ -92,7 +92,7 @@
                     ]
                 ],
                 "versions": [
-                    "versions.yml:md5,8cbcc93057dfcfad0d7cd89f1b035179"
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
                 ]
             }
         ],
@@ -100,7 +100,7 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-10-14T15:40:32.880945189"
+        "timestamp": "2026-10-30T10:33:37.070484047"
     },
     "ascat + severus - real": {
         "content": [
@@ -109,7 +109,7 @@
                     {
                         "id": "test"
                     },
-                    "test.shatterseek.tsv:md5,52bdbcbc33b8fceb7cce44a19ec47ae7"
+                    "test.shatterseek.tsv:md5,c2f449257a71dfee9f946d9d61c3b838"
                 ]
             ],
             [
@@ -124,14 +124,14 @@
                 ]
             ],
             [
-                "versions.yml:md5,0ddceb0c12aa3dbc8fa9648c158e1770"
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-10-14T15:40:48.576974826"
+        "timestamp": "2026-10-30T10:33:52.021265099"
     },
     "wakhan + severus - real": {
         "content": [
@@ -140,7 +140,7 @@
                     {
                         "id": "test"
                     },
-                    "test.shatterseek.tsv:md5,4298d3136a0d42899397d807b4d7a516"
+                    "test.shatterseek.tsv:md5,fa5e8ac3f6a5639b3b9dd44e46a13b66"
                 ]
             ],
             [
@@ -155,14 +155,14 @@
                 ]
             ],
             [
-                "versions.yml:md5,0ddceb0c12aa3dbc8fa9648c158e1770"
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-10-14T15:40:58.358617435"
+        "timestamp": "2026-10-30T10:34:01.900701475"
     },
     "savana single source - real": {
         "content": [
@@ -171,7 +171,7 @@
                     {
                         "id": "test"
                     },
-                    "test.shatterseek.tsv:md5,9dfb723da4741ead534812fa6e212799"
+                    "test.shatterseek.tsv:md5,e35f12492ea69f91fa3bd2747e4bf57c"
                 ]
             ],
             [
@@ -186,14 +186,14 @@
                 ]
             ],
             [
-                "versions.yml:md5,0ddceb0c12aa3dbc8fa9648c158e1770"
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-10-14T15:41:08.198924416"
+        "timestamp": "2026-10-30T10:34:11.328170994"
     },
     "savana single source - stub": {
         "content": [
@@ -242,7 +242,7 @@
                     ]
                 ],
                 "5": [
-                    "versions.yml:md5,8cbcc93057dfcfad0d7cd89f1b035179"
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
                 ],
                 "inputs": [
                     [
@@ -288,7 +288,7 @@
                     ]
                 ],
                 "versions": [
-                    "versions.yml:md5,8cbcc93057dfcfad0d7cd89f1b035179"
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
                 ]
             }
         ],
@@ -296,6 +296,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.10.4"
         },
-        "timestamp": "2026-10-14T15:40:38.682355173"
+        "timestamp": "2026-10-30T10:33:42.290507479"
     }
 }

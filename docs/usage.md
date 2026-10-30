@@ -460,14 +460,14 @@ Each pair produces `per_chromosome/` (one figure per chromosome), `genome_wide/`
 
 #### ShatterSeek Options
 
-[ShatterSeek](https://github.com/parklab/ShatterSeek) chromothripsis calls are made for every CN/SV caller pair available for a sample (`severus_ascat`, `severus_wakhan`, `savana`, the same pairs as ReConPlot), into `shatterseek/<pair>/`, and each chromosome's cluster is labelled with the PCAWG high/low-confidence tiers (see [output](output.md#shatterseek)). The pipeline runs a fork, [robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support), with T2T-CHM13 support and the statistical criteria corrected to the PCAWG definitions; it ships inside the module's image (`docker.io/robertaforsyth/shatterseek`, recipe in `containers/shatterseek/`), so the module is not available under `-profile conda`. The callers are read by the same parsers as ReConPlot (`assets/reconplot/R/parsers`), through the wrapper in `assets/shatterseek/`.
+[ShatterSeek](https://github.com/parklab/ShatterSeek) chromothripsis calls are made for every CN/SV caller pair available for a sample (`severus_ascat`, `severus_wakhan`, `savana`, the same pairs as ReConPlot), into `shatterseek/<pair>/`, and each chromosome's cluster is labelled with the PCAWG high-confidence tiers (see [output](output.md#shatterseek)). The pipeline runs upstream ShatterSeek with a build-time patch adding T2T-CHM13; it ships inside the module's image (`oras://docker.io/robertaforsyth/shatterseek-sif` under Singularity/Apptainer, `docker.io/robertaforsyth/shatterseek` otherwise, recipe in `containers/shatterseek/`), so the module is not available under `-profile conda`. The callers are read by the same parsers as ReConPlot (`assets/reconplot/R/parsers`), through the wrapper in `assets/shatterseek/`.
 
 | Parameter                 | Description                                                                                                                 |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `--shatterseek_genome`    | ShatterSeek genome (`hg38`, `chm13`, `hg19`). Default = `null` (inferred from `--genome`; skipped with a warning otherwise) |
 | `--shatterseek_min_svlen` | Drop intra-chromosomal SVs shorter than this (bp) before ShatterSeek; translocations kept. Default = `150`                  |
 
-Tier cut-offs (`--min-sv-hc1`, `--min-osc-hc`, `--min-sv-hc2`, `--min-tra-hc2`, `--min-sv-hc3`, `--min-osc-lc`, `--max-osc-lc`, `--no-hc3`), the significance level (`--alpha`, default 0.2), q-values or raw P values (`--use q|p`) and the other SV filters (`--min-support`, `--exclude-vntr`) are wrapper options, set through `ext.args` (keep `--min-svlen` in it, or use `--shatterseek_min_svlen`, since `ext.args` replaces the pipeline's value):
+Tier cut-offs (`--min-sv-hc1`, `--min-osc-hc`, `--min-sv-hc2`, `--min-tra-hc2`, `--min-sv-hc3`, `--no-hc3`), the significance level (`--alpha`, default 0.2), q-values or raw P values (`--use q|p`) and the other SV filters (`--min-support`, `--exclude-vntr`) are wrapper options, set through `ext.args` (keep `--min-svlen` in it, or use `--shatterseek_min_svlen`, since `ext.args` replaces the pipeline's value):
 
 ```groovy
 process {

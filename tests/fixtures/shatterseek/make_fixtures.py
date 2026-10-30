@@ -7,6 +7,7 @@ One invented chromothripsis event in every caller's own file layout (GRCh38 coor
   chr19 <-> chr7      5 translocations from inside the cluster to chr7:50.1-50.9 Mb
   chr19:20-30 Mb      copy number alternating 1/2 over ten 1 Mb segments (2 elsewhere)
   chr2:10.00-10.05 Mb one isolated deletion (a chromosome with an SV but no event)
+  chr2:30.0000-30.0001 Mb a 100 bp deletion, dropped by the pipeline's default --min-svlen 150
 Expected ShatterSeek result: chr19 high confidence (HC1, HC2), chr2 and chr7 none.
 Also present so the conversion is exercised: an insertion and a non-PASS deletion (both dropped), a Wakhan segment
 with a fractional haplotype state and fractional SAVANA copy numbers (rounded), and SAVANA translocations whose
@@ -75,6 +76,7 @@ for j, (p19, p7, s) in enumerate(tra, 1):
     sev("chr19", p19, f"severus_BND{100 + j}_1", alt(s, "chr7", p7), f"SVTYPE=BND;SVLEN=0;MATE_ID=severus_BND{100 + j}_2;STRANDS={s}")
     sev("chr7", p7, f"severus_BND{100 + j}_2", alt(s[::-1], "chr19", p19), f"SVTYPE=BND;SVLEN=0;MATE_ID=severus_BND{100 + j}_1;STRANDS={s[::-1]}")
 sev("chr2", 10_000_000, "severus_DEL200", "<DEL>", "SVTYPE=DEL;SVLEN=50000;END=10050000;STRANDS=+-")
+sev("chr2", 30_000_000, "severus_DEL202", "<DEL>", "SVTYPE=DEL;SVLEN=100;END=30000100;STRANDS=+-")
 sev("chr2", 20_000_000, "severus_DEL201", "<DEL>", "SVTYPE=DEL;SVLEN=80000;END=20080000;STRANDS=+-", flt="FAIL_LOWSUPPORT")
 sev("chr19", 25_000_100, "severus_INS1", "<INS>", "SVTYPE=INS;SVLEN=300")
 rec.sort(key=lambda r: (ORDER[r[0]], r[1]))
@@ -117,6 +119,7 @@ for i, (c, p1, p2, t) in enumerate(intra, 1):
 for j, (p19, p7, s) in enumerate(tra, 1):   # _1 on chr19, so the chr7 _2 record is written first
     sav_pair(100 + j, "chr19", p19, "chr7", p7, s, 0)
 sav_pair(200, "chr2", 10_000_000, "chr2", 10_050_000, "+-", 50000)
+sav_pair(202, "chr2", 30_000_000, "chr2", 30_000_100, "+-", 100)
 rec.append(("chr19", 25_000_100, "chr19\t25000100\tID_300_1\tN\t<INS>\t.\tPASS\tSVTYPE=INS;TUMOUR_READ_SUPPORT=12;SVLEN=300;BP_NOTATION=<INS>\tGT\t0/1"))
 rec.sort(key=lambda r: (ORDER[r[0]], r[1]))
 w("savana/test_tumor.classified.somatic.vcf", sav_hdr + [r[2] for r in rec])

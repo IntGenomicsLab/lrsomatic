@@ -22,13 +22,12 @@ workflow SHATTERSEEK_CHROMOTHRIPSIS {
     ch_versions = channel.empty()
 
     // A digest of every wrapper file goes into the meta map, so editing either wrapper invalidates -resume
-    def wrapper_src = { name ->
-        def dir    = file("${projectDir}/assets/${name}", type: 'dir', checkIfExists: true)
-        def digest = files("${projectDir}/assets/${name}/**", type: 'file').sort { f -> f.toString() }.collect { f -> f.text }.join('\n').md5()
-        return channel.value([[id: name, digest: digest], dir])
-    }
-    shatterseek_src = wrapper_src('shatterseek')
-    reconplot_src   = wrapper_src('reconplot')
+    def shatterseek_dir    = file("${projectDir}/assets/shatterseek", type: 'dir', checkIfExists: true)
+    def shatterseek_digest = files("${projectDir}/assets/shatterseek/**", type: 'file').sort { f -> f.toString() }.collect { f -> f.text }.join('\n').md5()
+    def reconplot_dir      = file("${projectDir}/assets/reconplot", type: 'dir', checkIfExists: true)
+    def reconplot_digest   = files("${projectDir}/assets/reconplot/**", type: 'file').sort { f -> f.toString() }.collect { f -> f.text }.join('\n').md5()
+    shatterseek_src = channel.value([[id: 'shatterseek', digest: shatterseek_digest], shatterseek_dir])
+    reconplot_src   = channel.value([[id: 'reconplot', digest: reconplot_digest], reconplot_dir])
 
     severus_sv_files = severus_vcf.map { meta, vcf -> [meta, [vcf]] }
     // severus_sv_files: [meta, [severus_somatic.vcf.gz]]

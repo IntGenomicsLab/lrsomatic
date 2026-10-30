@@ -3,11 +3,12 @@
 ## run_shatterseek.R -- ShatterSeek chromothripsis calls from lrsomatic caller output.
 ##
 ## <caller output> --[ReConPlot wrapper parsers]--> {cn, sv} --[ShatterSeek format]--> shatterseek()
-##   --> classify_chromothripsis() (PCAWG HC1/HC2/HC3/LC1) --> summary TSV + per-chromosome figures
+##   --> PCAWG high-confidence tiers (HC1/HC2/HC3) --> summary TSV + per-chromosome figures
 ##
 ## Callers are read by the parsers in assets/reconplot/R/parsers (--reconplot-dir), so ShatterSeek and
-## ReConPlot see the same SVs and segments. ShatterSeek itself is the robert-a-forsyth fork (chm13 support,
-## corrected statistics) installed in the module's container.
+## ReConPlot see the same SVs and segments. ShatterSeek itself is upstream parklab/ShatterSeek, installed in the
+## module's container with a build-time patch adding T2T-CHM13 (containers/shatterseek/).
+## The tiers follow Cortes-Ciriano et al. 2020, Supplementary Note 1.2, as spelled out in parklab/ShatterSeek#22.
 ## ---------------------------------------------------------------------------
 
 suppressPackageStartupMessages({
@@ -36,13 +37,13 @@ option_list <- list(
   make_option("--min-size", type = "integer", default = 1, help = "shatterseek() min.Size [default %default]"),
   make_option("--use", type = "character", default = "q", help = "Tier tests on BH q (q) or raw P values (p) [default %default]"),
   make_option("--alpha", type = "double", default = 0.2, help = "Significance level for the tiers [default %default]"),
-  make_option("--min-sv-hc1", type = "double", default = 6, help = "HC1/LC1 interleaved intra SVs [default %default]"),
+  make_option("--seed", type = "integer", default = 1,
+              help = "RNG seed (ShatterSeek's exponential tests draw random numbers) [default %default]"),
+  make_option("--min-sv-hc1", type = "double", default = 6, help = "HC1 interleaved intra SVs [default %default]"),
   make_option("--min-osc-hc", type = "double", default = 7, help = "HC1/HC2 oscillating segments [default %default]"),
   make_option("--min-sv-hc2", type = "double", default = 3, help = "HC2 interleaved intra SVs [default %default]"),
   make_option("--min-tra-hc2", type = "double", default = 4, help = "HC2 translocations [default %default]"),
   make_option("--min-sv-hc3", type = "double", default = 40, help = "HC3 SVs incl. translocations [default %default]"),
-  make_option("--min-osc-lc", type = "double", default = 4, help = "LC1 minimum oscillating segments [default %default]"),
-  make_option("--max-osc-lc", type = "double", default = 6, help = "LC1 maximum oscillating segments [default %default]"),
   make_option("--no-hc3", action = "store_true", default = FALSE, help = "Skip the >= 40 SV tier (PCAWG: sarcomas only)"),
   make_option("--plot-all", action = "store_true", default = FALSE,
               help = "Draw every chromosome with a cluster, not only those with a tier")
@@ -113,9 +114,12 @@ to_shatterseek_cn <- function(cn) {
   out <- list()
   for (ch in unique(d$chrom)) {
     x <- d[d$chrom == ch, , drop = FALSE]
-    # no overlaps: each segment starts after the previous one ends
-    for (i in seq_len(nrow(x))[-1]) if (x$start[i] <= x$end[i - 1]) x$start[i] <- x$end[i - 1] + 1L
-    x <- x[x$start <= x$end, , drop = FALSE]
+    # no overlaps: each segment starts after every earlier one ends (running maximum, so nested segments drop out)
+    if (nrow(x) > 1) {
+      prev_end <- c(-Inf, cummax(x$end)[-nrow(x)])
+      x$start <- as.integer(pmax(x$start, prev_end + 1))
+      x <- x[x$start <= x$end, , drop = FALSE]
+    }
     # neighbours with equal copy number become one segment (ShatterSeek counts states row by row)
     run <- cumsum(c(TRUE, diff(x$total_cn) != 0))
     out[[ch]] <- data.frame(chrom = ch, start = tapply(x$start, run, min), end = tapply(x$end, run, max),
@@ -136,16 +140,42 @@ fwrite(sv_ss, file.path(args$outdir, paste0(prefix, ".shatterseek_sv_input.tsv")
 fwrite(cn_ss, file.path(args$outdir, paste0(prefix, ".shatterseek_cn_input.tsv")), sep = "\t")
 
 ## --- 4. ShatterSeek + PCAWG tiers ---------------------------------------------
+## PCAWG high-confidence tiers (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; parklab/ShatterSeek#22). Tests
+## are significant at <= alpha on BH q (across the sample's chromosomes) or raw P; NA counts as a fail.
+classify_pcawg <- function(d, use, alpha, min_sv_hc1, min_osc_hc, min_sv_hc2, min_tra_hc2, min_sv_hc3, hc3) {
+  for (stem in c("fragment_joins", "chr_breakpoint_enrichment", "exp_chr", "exp_cluster")) {
+    p_col <- if (stem == "chr_breakpoint_enrichment") stem else paste0("pval_", stem)
+    d[[paste0("q_", stem)]] <- p.adjust(d[[p_col]], method = "BH")
+  }
+  test <- function(stem) d[[if (use == "q") paste0("q_", stem) else if (stem == "chr_breakpoint_enrichment") stem
+                            else paste0("pval_", stem)]]
+  ok <- function(x) !is.na(x) & x
+
+  n_intra <- d$number_DEL + d$number_DUP + d$number_h2hINV + d$number_t2tINV
+  osc <- d$max_number_oscillating_CN_segments_2_states
+  joins_random <- ok(test("fragment_joins") > alpha)
+  clustered <- ok(test("chr_breakpoint_enrichment") <= alpha) | ok(test("exp_chr") <= alpha)
+
+  d$HC1 <- ok(n_intra >= min_sv_hc1) & ok(osc >= min_osc_hc) & joins_random & clustered
+  d$HC2 <- ok(n_intra >= min_sv_hc2) & ok(d$number_TRA >= min_tra_hc2) & ok(osc >= min_osc_hc) & joins_random
+  d$HC3 <- hc3 & ok(d$clusterSize_including_TRA >= min_sv_hc3) & joins_random
+
+  tiers <- c("HC1", "HC2", "HC3")
+  d$chromothripsis_criteria <- apply(as.matrix(d[, tiers]), 1, function(r) paste(tiers[r], collapse = ","))
+  d$chromothripsis_confidence <- ifelse(d$HC1 | d$HC2 | d$HC3, "high", "none")
+  d
+}
+
+set.seed(args$seed)
 res <- shatterseek(
   SV.sample = SVs(chrom1 = sv_ss$chrom1, pos1 = as.numeric(sv_ss$pos1), chrom2 = sv_ss$chrom2, pos2 = as.numeric(sv_ss$pos2),
                   SVtype = sv_ss$SVtype, strand1 = sv_ss$strand1, strand2 = sv_ss$strand2),
   seg.sample = CNVsegs(chrom = cn_ss$chrom, start = as.numeric(cn_ss$start), end = as.numeric(cn_ss$end),
                        total_cn = as.numeric(cn_ss$total_cn)),
   min.Size = args$min_size, genome = args$genome)
-res@chromSummary <- classify_chromothripsis(
+res@chromSummary <- classify_pcawg(
   res@chromSummary, use = args$use, alpha = args$alpha, min_sv_hc1 = args$min_sv_hc1, min_osc_hc = args$min_osc_hc,
-  min_sv_hc2 = args$min_sv_hc2, min_tra_hc2 = args$min_tra_hc2, min_sv_hc3 = args$min_sv_hc3,
-  min_osc_lc = args$min_osc_lc, max_osc_lc = args$max_osc_lc, hc3 = !isTRUE(args$no_hc3))
+  min_sv_hc2 = args$min_sv_hc2, min_tra_hc2 = args$min_tra_hc2, min_sv_hc3 = args$min_sv_hc3, hc3 = !isTRUE(args$no_hc3))
 
 summary <- res@chromSummary
 summary$inter_other_chroms_coords_all <- trimws(gsub("[\n;]+", ";", summary$inter_other_chroms_coords_all))

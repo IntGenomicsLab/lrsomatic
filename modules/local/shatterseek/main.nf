@@ -2,10 +2,12 @@ process SHATTERSEEK {
     tag "${meta.id}:${cn_source}+${sv_source}"
     label 'process_low'
 
-    // No conda: the ShatterSeek fork (chm13, corrected statistics, PCAWG tiers) ships only in this image, built from
+    // No conda: ShatterSeek (upstream, plus a build-time chm13 patch) ships only in this image, built from
     // containers/shatterseek/Dockerfile; the wrapper is pipeline glue in assets/shatterseek/ and reads the callers with
-    // the ReConPlot parsers in assets/reconplot/. Fork update = new commit there, rebuild, bump this tag.
-    container "docker.io/robertaforsyth/shatterseek:1.1.1-chm13-e1cee6c"
+    // the ReConPlot parsers in assets/reconplot/. Package update = new commit there, rebuild, bump these two tags.
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://docker.io/robertaforsyth/shatterseek-sif:1.1-3b3f4cd-chm13'
+        : 'docker.io/robertaforsyth/shatterseek:1.1-3b3f4cd-chm13'}"
 
     input:
     // cn_files / sv_files are the caller output files the parsers discover by name.
@@ -29,7 +31,7 @@ process SHATTERSEEK {
     script:
     // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
-        error "SHATTERSEEK does not support Conda: the ShatterSeek fork ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_shatterseek."
+        error "SHATTERSEEK does not support Conda: ShatterSeek ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_shatterseek."
     }
     def args  = task.ext.args ?: ''
     prefix    = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")
@@ -46,7 +48,7 @@ process SHATTERSEEK {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         shatterseek: \$(Rscript -e 'cat(as.character(packageVersion("ShatterSeek")))' 2>/dev/null)
-        shatterseek_fork_commit: \${SHATTERSEEK_COMMIT:-unknown}
+        shatterseek_commit: \${SHATTERSEEK_COMMIT:-unknown}
         shatterseek_wrapper: \$(cat ${shatterseek_src}/VERSION 2>/dev/null || echo unknown)
         r-base: \$(Rscript -e 'cat(R.version\$major, R.version\$minor, sep=".")' 2>/dev/null)
     END_VERSIONS
@@ -63,7 +65,7 @@ process SHATTERSEEK {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         shatterseek: stub
-        shatterseek_fork_commit: stub
+        shatterseek_commit: stub
         shatterseek_wrapper: stub
         r-base: stub
     END_VERSIONS

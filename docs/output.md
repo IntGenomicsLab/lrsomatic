@@ -803,35 +803,35 @@ A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPl
 | `plots/*.pdf`                          | ShatterSeek figure (ideogram, SVs, copy number, summary) for every chromosome with a confidence tier (optional)                   |
 | `shatterseek.log`                      | Wrapper log: files read, SVs dropped and why, copy numbers rounded, the tiers called                                              |
 
-[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs a fork ([robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support)) whose statistics follow the definitions in the PCAWG Supplementary Note; they differ from upstream ShatterSeek:
+[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs upstream ShatterSeek (v1.1, pinned commit) unchanged, apart from a build-time patch adding T2T-CHM13 chromosome sizes and cytobands. The columns are upstream's:
 
-| Column                                                 | Meaning                                                                                                                                                |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `start`, `end`, `clusterSize`                          | Span and number of intra-chromosomal SVs of the chromosome's largest cluster (one cluster; NA/0 without one)                                           |
-| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                              |
-| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                                 |
-| `pval_fragment_joins`                                  | Chi-square test of the cluster's four SV types against equal proportions. Chromothripsis expects random joins, so this should **not** be significant   |
-| `chr_breakpoint_enrichment`                            | One-sided binomial test: more breakpoints on this chromosome than its share of the genome predicts (hg38: non-N bases; chm13: length)                  |
-| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov test of the gaps between consecutive breakpoints (chromosome / cluster) against an exponential; significant = clustered breakpoints |
-| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                      |
-| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes                                                                          |
-| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                           |
-| `HC1`, `HC2`, `HC3`, `LC1`                             | PCAWG confidence tiers met (see below)                                                                                                                 |
-| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any HC), `low` (LC1 only) or `none`                                                                         |
+| Column                                                 | Meaning                                                                                                                                            |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start`, `end`                                         | Span of the chromosome's largest cluster of interleaved intra-chromosomal SVs (NA without one)                                                     |
+| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                          |
+| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                             |
+| `pval_fragment_joins`                                  | Chi-square test of the cluster's SV types (translocations typed by strand) against equal proportions; chromothripsis should **not** be significant |
+| `chr_breakpoint_enrichment`                            | Binomial test of the translocations touching this chromosome against its share of the genome                                                       |
+| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov tests of the breakpoints (chromosome / cluster) against an exponential distribution; significant = clustered breakpoints        |
+| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                  |
+| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes (added by the wrapper)                                               |
+| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                       |
+| `HC1`, `HC2`, `HC3`                                    | PCAWG high-confidence tiers met (see below)                                                                                                        |
+| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any tier) or `none`                                                                                     |
 
-The tiers use the PCAWG cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail:
+The tiers use the PCAWG high-confidence cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail. Interleaved intra SVs is the sum of the four SV-type columns. PCAWG's low-confidence tier (4-6 oscillating segments) is not reported.
 
-| Tier | Interleaved intra SVs | Other                         | Oscillating CN segments (2 states) | Fragment joins | Enrichment or exponential test |
-| ---- | --------------------- | ----------------------------- | ---------------------------------- | -------------- | ------------------------------ |
-| HC1  | ≥ 6                   |                               | ≥ 7                                | q > 0.2        | q ≤ 0.2                        |
-| HC2  | ≥ 3                   | ≥ 4 translocations            | ≥ 7                                | q > 0.2        |                                |
-| HC3  |                       | ≥ 40 SVs incl. translocations |                                    | q > 0.2        |                                |
-| LC1  | ≥ 6                   |                               | 4-6                                | q > 0.2        | q ≤ 0.2                        |
+| Tier | Interleaved intra SVs | Other                         | Oscillating CN segments (2 states) | Fragment joins | Enrichment or `exp_chr` test |
+| ---- | --------------------- | ----------------------------- | ---------------------------------- | -------------- | ---------------------------- |
+| HC1  | ≥ 6                   |                               | ≥ 7                                | q > 0.2        | q ≤ 0.2                      |
+| HC2  | ≥ 3                   | ≥ 4 translocations            | ≥ 7                                | q > 0.2        |                              |
+| HC3  |                       | ≥ 40 SVs incl. translocations |                                    | q > 0.2        |                              |
 
 Points to keep in mind when reading the calls:
 
 - PCAWG applied HC3 only to osteosarcomas, leiomyosarcomas and liposarcomas, where amplification erodes the oscillating pattern; here it applies to every tumour. Drop it with `ext.args = '--no-hc3'`.
 - PCAWG corrected the P values once across every chromosome of all 2,658 tumours; within one sample the correction covers 23 chromosomes. The raw P values are kept, so a cohort-wide correction can be recomputed from the summaries (each row carries `sample`, `cn_source` and `sv_source`).
+- Upstream's exponential tests compare against random draws; the wrapper seeds R's generator (`--seed`, default 1), so a rerun gives the same P values. Clusters of equal size are pooled before the statistics are computed, so a chromosome whose SVs are all singletons is summarised over all of them.
 - The cut-offs were set by visual inspection of PCAWG's short-read consensus calls. Long-read callers report many small SVs, whose two breakpoints a few hundred bp apart make the exponential test significant on most chromosomes; intra-chromosomal SVs shorter than `--shatterseek_min_svlen` (default 150 bp) are therefore left out, and raising it tests larger rearrangements only.
 - ShatterSeek does not mask centromeres or satellite arrays. A cluster spanning a centromere or heterochromatin block (e.g. chr16 q11.2, chr1 q12, chr9 q12) is more likely mapping artefact than chromothripsis; check the figure.
 - Tumour-only Severus calls include germline SVs that the panel of normals did not remove.
