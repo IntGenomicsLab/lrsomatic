@@ -1,0 +1,301 @@
+{
+    "ascat + severus - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.shatterseek.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        [
+                            "test.shatterseek_cn_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "test.shatterseek_sv_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "shatterseek.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "staged.txt:md5,3f1ba489ac329fd2881e318803d3068a"
+                    ]
+                ],
+                "5": [
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
+                ],
+                "inputs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        [
+                            "test.shatterseek_cn_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "test.shatterseek_sv_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "shatterseek.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "plots": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "staged": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "staged.txt:md5,3f1ba489ac329fd2881e318803d3068a"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.shatterseek.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-30T10:33:37.070484047"
+    },
+    "ascat + severus - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.shatterseek.tsv:md5,c2f449257a71dfee9f946d9d61c3b838"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    [
+                        "test.shatterseek_cn_input.tsv:md5,982eb23095d2181864328d8ad5ff771f",
+                        "test.shatterseek_sv_input.tsv:md5,b668729863186626947977e9651505ae"
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-30T10:33:52.021265099"
+    },
+    "wakhan + severus - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.shatterseek.tsv:md5,fa5e8ac3f6a5639b3b9dd44e46a13b66"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    [
+                        "test.shatterseek_cn_input.tsv:md5,e5fc9a40fddb5b1e0371ec6ed19356d7",
+                        "test.shatterseek_sv_input.tsv:md5,b668729863186626947977e9651505ae"
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-30T10:34:01.900701475"
+    },
+    "savana single source - real": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    "test.shatterseek.tsv:md5,e35f12492ea69f91fa3bd2747e4bf57c"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test"
+                    },
+                    [
+                        "test.shatterseek_cn_input.tsv:md5,982eb23095d2181864328d8ad5ff771f",
+                        "test.shatterseek_sv_input.tsv:md5,b668729863186626947977e9651505ae"
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,e956f799e9d3ed36eb265ced3ab3de77"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-30T10:34:11.328170994"
+    },
+    "savana single source - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.shatterseek.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        [
+                            "test.shatterseek_cn_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "test.shatterseek_sv_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "shatterseek.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "staged.txt:md5,4464eb9289c1b04cbe9f13b2fa94befc"
+                    ]
+                ],
+                "5": [
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
+                ],
+                "inputs": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        [
+                            "test.shatterseek_cn_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "test.shatterseek_sv_input.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "log": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "shatterseek.log:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "plots": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test_chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "staged": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "staged.txt:md5,4464eb9289c1b04cbe9f13b2fa94befc"
+                    ]
+                ],
+                "summary": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.shatterseek.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,243442e8d24a16e7ef70c1d6f9157ca8"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.4"
+        },
+        "timestamp": "2026-10-30T10:33:42.290507479"
+    }
+}

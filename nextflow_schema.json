@@ -515,6 +515,27 @@
                 }
             }
         },
+        "shatterseek_options": {
+            "title": "ShatterSeek options",
+            "type": "object",
+            "description": "Options for ShatterSeek chromothripsis calling",
+            "default": "",
+            "properties": {
+                "shatterseek_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "chm13", "hg19"],
+                    "help_text": "Genome for ShatterSeek's chromosome lengths (breakpoint enrichment test) and ideograms: `hg38`, `chm13` or `hg19`. Inferred from `--genome` (GRCh38 -> hg38, CHM13 -> chm13); for any other genome ShatterSeek is skipped with a warning unless this is set.",
+                    "description": "ShatterSeek genome. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> chm13)."
+                },
+                "shatterseek_min_svlen": {
+                    "type": "integer",
+                    "default": 150,
+                    "minimum": 0,
+                    "help_text": "Intra-chromosomal SVs shorter than this many bp are not given to ShatterSeek; translocations are always kept. Small SVs (e.g. VNTR indels) add pairs of breakpoints a few hundred bp apart, which make the exponential-distribution test read clustering where there is none. 0 keeps every SV.",
+                    "description": "Drop intra-chromosomal SVs shorter than this many bp before ShatterSeek (translocations are kept). 0 keeps everything."
+                }
+            }
+        },
         "ascat_parameters": {
             "title": "ASCAT parameters",
             "type": "object",
@@ -700,6 +721,11 @@
                     "type": "boolean",
                     "help_text": "Skips the ReConPlot rearrangement and copy-number figures (ASCAT + Severus, Wakhan + Severus and SAVANA pairs). ReConPlot runs only inside its container; skip it under `-profile conda`.",
                     "description": "Skips ReConPlot SV/CNA figures"
+                },
+                "skip_shatterseek": {
+                    "type": "boolean",
+                    "help_text": "Skips ShatterSeek chromothripsis calling (ASCAT + Severus, Wakhan + Severus and SAVANA pairs). ShatterSeek runs only inside its container; skip it under `-profile conda`.",
+                    "description": "Skips ShatterSeek chromothripsis calling"
                 },
                 "skip_m6a": {
                     "type": "boolean",
@@ -1014,6 +1040,9 @@
         },
         {
             "$ref": "#/$defs/reconplot_options"
+        },
+        {
+            "$ref": "#/$defs/shatterseek_options"
         },
         {
             "$ref": "#/$defs/ascat_parameters"
