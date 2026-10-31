@@ -474,7 +474,9 @@ evidence, so a PacBio tumour-only `sample.classified.somatic.vcf` holds nearly e
 genome (~28k on a 30x sample). For these samples the pipeline removes the SVs found in the genome's
 Severus germline SV panel of normals (Severus's matching rule) and passes
 `sample.pon_filtered.classified.somatic.vcf` to VEP, Padfoot and ReConPlot instead; about 97% of the
-calls are removed. Turn this off with `--savana_pb_pon_filter false`.
+calls are removed. What remains is still mostly germline (on a PacBio pair, all 761 survivors had
+matched-normal support), so treat PacBio tumour-only SAVANA SVs as a fallback and prefer Severus
+or a matched normal. Turn this off with `--savana_pb_pon_filter false`.
 
 ```
 ├── savana

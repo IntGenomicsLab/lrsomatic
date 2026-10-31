@@ -430,7 +430,7 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Remove SAVANA SVs found in the germline SV panel of normals from PacBio tumour-only samples.",
-                    "help_text": "SAVANA's PacBio classifier (`--pb`) only rejects a call on matched-normal evidence, so without a normal nearly every germline SV is reported as somatic (~28k on a 30x genome). The somatic VCF is then filtered against the genome's Severus panel of normals (`pon_file`) with Severus's matching rule, which removes ~97% of the calls. The unfiltered VCF is still published. Has no effect on ONT (SAVANA's tumour-only model) or paired samples, or on a genome without a `pon_file`."
+                    "help_text": "SAVANA's PacBio classifier (`--pb`) only rejects a call on matched-normal evidence, so without a normal nearly every germline SV is reported as somatic (~28k on a 30x genome). The somatic VCF is then filtered against the genome's Severus panel of normals (`pon_file`) with Severus's matching rule, which removes ~97% of the calls. What remains is still mostly germline (on a PacBio sample with a matched normal, all 761 survivors were germline), so prefer Severus or a matched normal for PacBio tumour-only SVs. The unfiltered VCF is still published. Has no effect on ONT (SAVANA's tumour-only model) or paired samples, or on a genome without a `pon_file`."
                 }
             }
         },
@@ -494,10 +494,10 @@
                 },
                 "reconplot_max_svs": {
                     "type": "integer",
-                    "default": 2500,
+                    "default": 1000,
                     "minimum": 0,
                     "description": "Draw at most this many SVs per ReConPlot figure, the best supported first. 0 draws every SV.",
-                    "help_text": "ReConPlot adds one plot layer per SV, so a few thousand SVs take minutes and tens of thousands take hours. Above this limit the figures show the SVs with the most tumour read support (then the longest), and their title says `top N of M SVs`. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
+                    "help_text": "ReConPlot adds one plot layer per SV, so tens of thousands take hours and the genome-wide panel fails (R node stack overflow) from about 2,000 SVs. Above this limit the figures show the SVs with the most tumour read support (then the longest), and their title says `top N of M SVs`. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
                 },
                 "reconplot_exclude_vntr": {
                     "type": "boolean",
