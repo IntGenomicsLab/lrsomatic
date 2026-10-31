@@ -469,6 +469,15 @@ steps; tumor-only samples run the combined `savana to` command instead, producin
 in one step. We strongly recommend matched tumor/normal mode for best performance -- SAVANA's own
 docs note tumor-only calling is a fallback, best combined with population/panel-of-normals filtering.
 
+SAVANA's PacBio classifier (`--pb`) has no tumour-only mode: it rejects a call only on matched-normal
+evidence, so a PacBio tumour-only `sample.classified.somatic.vcf` holds nearly every germline SV in the
+genome (~28k on a 30x sample). For these samples the pipeline removes the SVs found in the genome's
+Severus germline SV panel of normals (Severus's matching rule) and passes
+`sample.pon_filtered.classified.somatic.vcf` to VEP, Padfoot and ReConPlot instead; about 97% of the
+calls are removed. What remains is still mostly germline (on a PacBio pair, all 761 survivors had
+matched-normal support), so treat PacBio tumour-only SAVANA SVs as a fallback and prefer Severus
+or a matched normal. Turn this off with `--savana_pb_pon_filter false`.
+
 ```
 ├── savana
 │   ├── sample.sv_breakpoints.vcf
@@ -479,6 +488,8 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 │   ├── sample.classified.somatic.vcf
 │   ├── sample.classified.somatic.bedpe
 │   ├── sample.classified.germline.vcf
+│   ├── sample.pon_filtered.classified.somatic.vcf
+│   ├── sample.pon_filtered.pon_filter_summary.tsv
 │   ├── sample_segmented_absolute_copy_number.tsv
 │   ├── sample_ranked_solutions.tsv
 │   ├── sample_fitted_purity_ploidy.tsv
@@ -488,23 +499,25 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 │   ├── 10kbp_bin_ref_all_sample.bed
 ```
 
-| File                                            | Description                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `sample.sv_breakpoints.vcf`                     | Raw (unclassified) SV breakpoints from `savana run`/`savana to`                |
-| `sample.sv_breakpoints.bedpe`                   | Raw SV breakpoints in BEDPE format                                             |
-| `sample.sv_breakpoints_read_support.tsv`        | Supporting-read evidence per breakpoint                                        |
-| `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                              |
-| `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                   |
-| `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                       |
-| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)     |
-| `sample.classified.germline.vcf`                | Classified germline SVs                                                        |
-| `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`             |
-| `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                      |
-| `sample_fitted_purity_ploidy.tsv`               | Selected purity/ploidy fit                                                     |
-| `sample_raw_read_counts.tsv`                    | Raw binned read counts used for CN segmentation                                |
-| `sample_read_counts_<mode>_log2r_segmented.tsv` | Segmented log2 read-count ratios per bin (`<mode>` is `mnorm` or `self`)       |
-| `sample_allele_counts_hetSNPs.bed`              | Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given) |
-| `10kbp_bin_ref_all_sample.bed`                  | Genome bins used for read-count binning                                        |
+| File                                            | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `sample.sv_breakpoints.vcf`                     | Raw (unclassified) SV breakpoints from `savana run`/`savana to`                   |
+| `sample.sv_breakpoints.bedpe`                   | Raw SV breakpoints in BEDPE format                                                |
+| `sample.sv_breakpoints_read_support.tsv`        | Supporting-read evidence per breakpoint                                           |
+| `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                                 |
+| `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                      |
+| `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                          |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)        |
+| `sample.classified.germline.vcf`                | Classified germline SVs                                                           |
+| `sample.pon_filtered.classified.somatic.vcf`    | PacBio tumour-only: somatic SVs not in the SV panel of normals -- used downstream |
+| `sample.pon_filtered.pon_filter_summary.tsv`    | PacBio tumour-only: events and records before and after the PoN filter            |
+| `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`                |
+| `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                         |
+| `sample_fitted_purity_ploidy.tsv`               | Selected purity/ploidy fit                                                        |
+| `sample_raw_read_counts.tsv`                    | Raw binned read counts used for CN segmentation                                   |
+| `sample_read_counts_<mode>_log2r_segmented.tsv` | Segmented log2 read-count ratios per bin (`<mode>` is `mnorm` or `self`)          |
+| `sample_allele_counts_hetSNPs.bed`              | Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given)    |
+| `10kbp_bin_ref_all_sample.bed`                  | Genome bins used for read-count binning                                           |
 
 #### `deepvariant`
 

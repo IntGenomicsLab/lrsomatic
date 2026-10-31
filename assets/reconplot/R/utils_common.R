@@ -110,6 +110,26 @@ validate_cn <- function(cn, drop_na_minor = FALSE) {
   cn
 }
 
+#' Keep the `max_svs` best-supported junctions for drawing.
+#'
+#' ReConPlot adds one ggplot layer per SV, so a few thousand junctions take minutes and tens of thousands
+#' take hours (e.g. SAVANA's PacBio tumour-only calls without a panel of normals). Junctions are ranked by
+#' tumour read support, then by span (translocations first, insertions by their length); a caller without
+#' a support column is ranked on span alone.
+cap_svs <- function(sv, max_svs) {
+  if (is.null(max_svs) || is.na(max_svs) || max_svs <= 0 || nrow(sv) <= max_svs) return(sv)
+  support <- if (!is.null(sv$support)) suppressWarnings(as.numeric(sv$support)) else rep(NA_real_, nrow(sv))
+  svlen <- if (!is.null(sv$svlen)) suppressWarnings(abs(as.numeric(sv$svlen))) else rep(NA_real_, nrow(sv))
+  span <- ifelse(sv$chr1 != sv$chr2, Inf,
+                 ifelse(sv$strands %in% "INS" & !is.na(svlen), svlen, abs(sv$pos2 - sv$pos1)))
+  keep <- sort(order(-support, -span, na.last = TRUE)[seq_len(max_svs)])
+  log_msg(sprintf("  WARNING: %d SV junctions exceed --max-svs %d; drawing the %d best supported",
+                  nrow(sv), max_svs, max_svs))
+  out <- sv[keep, , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}
+
 validate_sv <- function(sv, interchrom_as_tra = TRUE) {
   req <- c("chr1", "pos1", "chr2", "pos2", "strands")
   missing <- setdiff(req, names(sv))

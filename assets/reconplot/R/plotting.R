@@ -34,6 +34,7 @@ build_title <- function(user_title, meta, regions) {
     paste(chrs, collapse = ", ")
   }
   bits <- c(bits, where)
+  if (!is.null(meta$sv_note)) bits <- c(bits, meta$sv_note)
   paste(bits, collapse = "  |  ")
 }
 
