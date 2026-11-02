@@ -316,7 +316,7 @@ nextflow_process {
                 { assert process.success },
                 { assert process.out.per_chromosome.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
                 { assert process.out.genome_wide.get(0).get(1).collect { f -> file(f).name }.sort() == ['test_chr19.pdf', 'test_chr19.png'] },
-                // the cap counts each figure's own junctions: chr19's figure in both drawing runs (per-chromosome, genome-wide)
+                // one cap per drawing run (per-chromosome, genome-wide), over the junctions that run's regions (chr19) show
                 { assert reconplot_log.count('WARNING: chr19: 5 SV junctions exceed --max-svs 3') == 2 },
                 // the harmonised table is written before the cap and keeps every junction
                 { assert path(process.out.tables.get(0).get(1).find { f -> file(f).name.endsWith('reconplot_sv.tsv') }).readLines().size() == 6 }

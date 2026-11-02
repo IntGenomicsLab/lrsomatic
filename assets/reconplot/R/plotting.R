@@ -81,11 +81,13 @@ save_reconplot <- function(p, outdir, stem, width, height, formats = c("pdf")) {
 #' Render and save one plot per element of `region_sets`.
 #'
 #' @param region_sets list of chr_selection data frames
+#' @param sv_uncapped when `sv` was capped by --max-svs, the table before the cap; each figure's title
+#'   then says how many of its own junctions it draws
 #' @return character vector of files written
 plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
                              title = NULL, genes = NULL, annotation_fn = NULL,
                              formats = c("pdf"), width = NULL, height = NULL,
-                             extra = list(), max_svs = 0) {
+                             extra = list(), sv_uncapped = NULL) {
   written <- character(0)
   for (i in seq_along(region_sets)) {
     regions <- region_sets[[i]]
@@ -94,15 +96,11 @@ plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
     log_msg(sprintf("plotting %s (%d panel%s)", label, nrow(regions),
                     if (nrow(regions) == 1) "" else "s"))
 
-    ## --max-svs counts the junctions this figure shows; an uncapped figure gets the full table as before
-    sv_fig = sv
     meta_fig = meta
-    if (!is.null(max_svs) && !is.na(max_svs) && max_svs > 0) {
-      sv_here = sv_in_regions(sv, regions)
-      if (nrow(sv_here) > max_svs) {
-        sv_fig = cap_svs(sv_here, max_svs, label = label)
-        meta_fig$sv_note = sprintf("top %d of %d SVs", nrow(sv_fig), nrow(sv_here))
-      }
+    if (!is.null(sv_uncapped)) {
+      n_drawn = nrow(sv_in_regions(sv, regions))
+      n_all = nrow(sv_in_regions(sv_uncapped, regions))
+      if (n_drawn < n_all) meta_fig$sv_note = sprintf("top %d of %d SVs", n_drawn, n_all)
     }
 
     annotation <- if (!is.null(annotation_fn)) {
@@ -114,7 +112,7 @@ plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
     h <- height %||% size$height
 
     p <- tryCatch(
-      render_reconplot(cn, sv_fig, regions,
+      render_reconplot(cn, sv, regions,
                        title = build_title(title, meta_fig, regions),
                        genes = genes, annotation = annotation, extra = extra),
       error = function(e) { log_msg("  ERROR: ", conditionMessage(e)); NULL })

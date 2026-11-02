@@ -133,7 +133,7 @@ sv_in_regions = function(sv, regions) {
 #' ReConPlot adds one ggplot layer per SV, so a few thousand junctions take minutes and tens of thousands
 #' take hours (e.g. SAVANA's PacBio tumour-only calls without a panel of normals). Junctions are ranked by
 #' tumour read support, then by span (translocations first, insertions by their length); a caller without
-#' a support column is ranked on span alone. Applied per figure, to the junctions that figure shows.
+#' a support column is ranked on span alone. Applied once per run, to the junctions its regions show.
 cap_svs <- function(sv, max_svs, label = NULL) {
   if (is.null(max_svs) || is.na(max_svs) || max_svs <= 0 || nrow(sv) <= max_svs) return(sv)
   support <- if (!is.null(sv$support)) suppressWarnings(as.numeric(sv$support)) else rep(NA_real_, nrow(sv))

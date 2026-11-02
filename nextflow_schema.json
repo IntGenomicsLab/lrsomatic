@@ -496,8 +496,8 @@
                     "type": "integer",
                     "default": 1000,
                     "minimum": 0,
-                    "description": "Draw at most this many SVs per ReConPlot figure, the best supported first. 0 draws every SV.",
-                    "help_text": "ReConPlot adds one plot layer per SV, so tens of thousands take hours and the genome-wide panel fails (R node stack overflow) from about 2,000 SVs. The limit counts the SVs each figure shows (one chromosome, the genome-wide strip, or the focus panel); above it that figure draws the SVs with the most tumour read support (then the longest), and its title says `top N of M SVs`. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
+                    "description": "Draw at most this many SVs in each ReConPlot figure set (per-chromosome, genome-wide, focus), the best supported first. 0 draws every SV.",
+                    "help_text": "ReConPlot adds one plot layer per SV, so tens of thousands take hours and the genome-wide panel fails (R node stack overflow) from about 2,000 SVs. The limit applies separately to the per-chromosome figures (one budget shared by all chromosomes, since the cost is per SV drawn), the genome-wide strip and the focus panel; above it the SVs with the most tumour read support (then the longest) are drawn, and a figure missing some of its SVs says `top N of M SVs` in its title. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
                 },
                 "reconplot_exclude_vntr": {
                     "type": "boolean",
