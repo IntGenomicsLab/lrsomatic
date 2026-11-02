@@ -225,8 +225,9 @@
             "default": "",
             "properties": {
                 "autocorrelation": {
-                    "type": "string",
-                    "description": "Pass --acf to fibertools qc to add the nucleosome autocorrelation to the Fiber-seq QC output. Any non-empty value turns it on."
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --acf to fibertools qc to add nucleosome autocorrelation to the Fiber-seq QC output."
                 }
             }
         },
