@@ -3,10 +3,11 @@ process CLAIR3 {
     label "${params.use_gpu ? 'process_gpu_very_high' : 'process_very_high'}"
 
     conda "${moduleDir}/environment.yml"
-    // No GPU image was published for 2.0.3; 2.0.2 differs only by the --gender option, which is not used here
+    // GPU: HKU's image (no biocontainer has CUDA). Needs >= 2.0.3: 2.0.2 resolves the reference symlink and then
+    // misses the .fai, which Nextflow stages from a different task. Bundles the same models as the biocontainer.
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
-        (params.use_gpu ? 'docker://docker.io/hkubal/clair3:v2.0.2_gpu' : 'https://depot.galaxyproject.org/singularity/clair3:2.0.3--py311hbc58adc_0') :
-        (params.use_gpu ? 'docker.io/hkubal/clair3:v2.0.2_gpu' : 'quay.io/biocontainers/clair3:2.0.3--py311hbc58adc_0') }"
+        (params.use_gpu ? 'docker://docker.io/hkubal/clair3:v2.0.5_gpu' : 'https://depot.galaxyproject.org/singularity/clair3:2.0.3--py311hbc58adc_0') :
+        (params.use_gpu ? 'docker.io/hkubal/clair3:v2.0.5_gpu' : 'quay.io/biocontainers/clair3:2.0.3--py311hbc58adc_0') }"
 
     input:
     tuple val(meta) , path(bam), path(bai), path(model), val(platform)
