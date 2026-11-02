@@ -743,7 +743,8 @@
                 },
                 "use_gpu": {
                     "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
+                    "description": "Run DeepVariant, DeepSomatic, Clair3 and fibertools on a GPU (use with the gpu profile).",
+                    "help_text": "Clair3's GPU image supports NVIDIA GPUs up to compute capability 9.0 (A100, H100, RTX Ada); it fails on newer cards such as the B200, so leave this off there."
                 },
                 "skip_report": {
                     "type": "boolean",
