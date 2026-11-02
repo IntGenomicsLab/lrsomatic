@@ -35,8 +35,12 @@ def open_text(path):
 def read_pon(path):
     """Key (chrom, or (chrom1, chrom2) between chromosomes) -> sorted columns pos1, ci1, end, ci2, partner chrom."""
     rows = defaultdict(list)
+    n_lines = n_parsed = 0
     with open_text(path) as fp:
-        for line in fp:
+        for line_no, line in enumerate(fp):
+            if not line.strip():
+                continue
+            n_lines += 1
             fields = line.strip().split(',')
             if len(fields) < 7:
                 continue
@@ -44,7 +48,10 @@ def read_pon(path):
             try:
                 p1, p2, ci1, ci2 = int(p1), int(p2), int(ci1), int(ci2)
             except ValueError:
+                if line_no == 0:
+                    n_lines -= 1  # a header row
                 continue
+            n_parsed += 1
             if svtype == 'INS':
                 rows[c1].append((p1, ci1, p1 + p2, ci2, c1))
             elif c1 == c2:
@@ -52,6 +59,16 @@ def read_pon(path):
             else:
                 rows[(c1, c2)].append((p1, ci1, p2, ci2, c2))
                 rows[(c2, c1)].append((p2, ci2, p1, ci1, c1))
+    # A PoN in another layout (tab-separated, other columns) would otherwise parse to nothing and
+    # silently pass every germline SV through
+    if n_parsed == 0:
+        sys.exit(f'ERROR: no rows of the SV panel of normals {path} could be parsed ({n_lines} data lines); '
+                 'expected comma-separated chr1,pos1,chr2,pos2,ci1,ci2,svtype[,fraction] rows as in the Severus PoN')
+    n_skipped = n_lines - n_parsed
+    if n_skipped > 0.01 * n_lines:
+        print(f'WARNING: {n_skipped} of {n_lines} PoN data lines in {path} could not be parsed and were ignored',
+              file=sys.stderr)
+    print(f'read {n_parsed} PoN rows from {path}', file=sys.stderr)
     pon = {}
     for key, entries in rows.items():
         entries.sort()

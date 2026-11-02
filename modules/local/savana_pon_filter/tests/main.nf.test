@@ -50,6 +50,32 @@ nextflow_process {
         }
     }
 
+    // A PoN in another layout must stop the run, not pass every germline SV through unfiltered
+    test("fails on a panel of normals it cannot parse") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test_tumor', platform:'pb' ],
+                    file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true)
+                ]
+                input[1] = [
+                    [:],
+                    file("\${projectDir}/modules/local/savana_pon_filter/tests/fixtures/pon_tab.tsv.gz", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                { assert process.errorReport.contains('no rows of the SV panel of normals') }
+            )
+        }
+    }
+
     test("stub") {
 
         options "-stub"
