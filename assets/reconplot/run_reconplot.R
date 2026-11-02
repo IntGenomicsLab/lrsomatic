@@ -173,11 +173,6 @@ if (isTRUE(args$write_tables)) {
   log_msg("  wrote harmonised tables to ", args$outdir)
 }
 
-## after the tables, which keep every junction
-n_sv <- nrow(sv)
-sv <- cap_svs(sv, args$max_svs)
-if (nrow(sv) < n_sv) meta$sv_note <- sprintf("top %d of %d SVs", nrow(sv), n_sv)
-
 ## --- 3. regions -------------------------------------------------------------
 regions <- if (!is.null(args$regions_file)) {
   read_regions_file(args$regions_file)
@@ -234,7 +229,7 @@ written <- plot_region_sets(
   title = args$title, genes = genes,
   annotation_fn = parsed$annotation_fn,
   formats = formats, width = args$width, height = args$height,
-  extra = extra
+  extra = extra, max_svs = args$max_svs   # per figure; the --write-tables table keeps every junction
 )
 
 log_msg(sprintf("done: %d file(s) written to %s", length(written), args$outdir))

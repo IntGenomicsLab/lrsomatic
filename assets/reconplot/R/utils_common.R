@@ -110,21 +110,39 @@ validate_cn <- function(cn, drop_na_minor = FALSE) {
   cn
 }
 
+#' Junctions with at least one breakpoint inside `regions` (one figure's chr_selection).
+#'
+#' A full-chromosome region matches on the chromosome alone; a window also needs the position inside it.
+sv_in_regions = function(sv, regions) {
+  hit = function(chr, pos) {
+    out = rep(FALSE, length(chr))
+    for (i in seq_len(nrow(regions))) {
+      r = regions[i, ]
+      out = out | (chr == r$chr & (isTRUE(r$full) | (!is.na(pos) & pos >= r$start & pos <= r$end)))
+    }
+    out
+  }
+  keep = hit(sv$chr1, sv$pos1) | hit(sv$chr2, sv$pos2)
+  out = sv[keep, , drop = FALSE]
+  rownames(out) = NULL
+  out
+}
+
 #' Keep the `max_svs` best-supported junctions for drawing.
 #'
 #' ReConPlot adds one ggplot layer per SV, so a few thousand junctions take minutes and tens of thousands
 #' take hours (e.g. SAVANA's PacBio tumour-only calls without a panel of normals). Junctions are ranked by
 #' tumour read support, then by span (translocations first, insertions by their length); a caller without
-#' a support column is ranked on span alone.
-cap_svs <- function(sv, max_svs) {
+#' a support column is ranked on span alone. Applied per figure, to the junctions that figure shows.
+cap_svs <- function(sv, max_svs, label = NULL) {
   if (is.null(max_svs) || is.na(max_svs) || max_svs <= 0 || nrow(sv) <= max_svs) return(sv)
   support <- if (!is.null(sv$support)) suppressWarnings(as.numeric(sv$support)) else rep(NA_real_, nrow(sv))
   svlen <- if (!is.null(sv$svlen)) suppressWarnings(abs(as.numeric(sv$svlen))) else rep(NA_real_, nrow(sv))
   span <- ifelse(sv$chr1 != sv$chr2, Inf,
                  ifelse(sv$strands %in% "INS" & !is.na(svlen), svlen, abs(sv$pos2 - sv$pos1)))
   keep <- sort(order(-support, -span, na.last = TRUE)[seq_len(max_svs)])
-  log_msg(sprintf("  WARNING: %d SV junctions exceed --max-svs %d; drawing the %d best supported",
-                  nrow(sv), max_svs, max_svs))
+  log_msg(sprintf("  WARNING: %s%d SV junctions exceed --max-svs %d; drawing the %d best supported",
+                  if (is.null(label)) "" else paste0(label, ": "), nrow(sv), max_svs, max_svs))
   out <- sv[keep, , drop = FALSE]
   rownames(out) <- NULL
   out
