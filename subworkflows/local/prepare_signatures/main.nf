@@ -1,5 +1,5 @@
-include { SIGPROFILER_INSTALL } from '../../modules/local/sigprofiler/install/main'
-include { SIGPROFILER_VERIFY  } from '../../modules/local/sigprofiler/verify/main'
+include { SIGPROFILER_INSTALL } from '../../../modules/local/sigprofiler/install/main'
+include { SIGPROFILER_VERIFY  } from '../../../modules/local/sigprofiler/verify/main'
 
 workflow PREPARE_SIGNATURES {
 

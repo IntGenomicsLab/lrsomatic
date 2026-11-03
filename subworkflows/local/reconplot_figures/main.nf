@@ -1,7 +1,7 @@
 // IMPORT MODULES
-include { RECONPLOT as RECONPLOT_SEVERUS_ASCAT  } from '../../modules/local/reconplot/main'
-include { RECONPLOT as RECONPLOT_SEVERUS_WAKHAN } from '../../modules/local/reconplot/main'
-include { RECONPLOT as RECONPLOT_SAVANA         } from '../../modules/local/reconplot/main'
+include { RECONPLOT as RECONPLOT_SEVERUS_ASCAT  } from '../../../modules/local/reconplot/main'
+include { RECONPLOT as RECONPLOT_SEVERUS_WAKHAN } from '../../../modules/local/reconplot/main'
+include { RECONPLOT as RECONPLOT_SAVANA         } from '../../../modules/local/reconplot/main'
 
 //
 // ReConPlot rearrangement + copy-number figures for every CN/SV caller pair that produced output for

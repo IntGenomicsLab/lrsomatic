@@ -3,12 +3,12 @@
 //
 
 // IMPORT MODULES
-include { ASCAT_TO_CORAL_BED } from '../../modules/local/ascattocoralbed/main'
-include { CORAL_SEED         } from '../../modules/local/coral/seed/main'
-include { CORAL_RECONSTRUCT  } from '../../modules/local/coral/reconstruct/main'
-include { CORAL_CYCLE        } from '../../modules/local/coral/cycle/main'
-include { CORAL_PLOT         } from '../../modules/local/coral/plot/main'
-include { AMPLICONCLASSIFIER } from '../../modules/local/ampliconclassifier/main'
+include { ASCAT_TO_CORAL_BED } from '../../../modules/local/ascattocoralbed/main'
+include { CORAL_SEED         } from '../../../modules/local/coral/seed/main'
+include { CORAL_RECONSTRUCT  } from '../../../modules/local/coral/reconstruct/main'
+include { CORAL_CYCLE        } from '../../../modules/local/coral/cycle/main'
+include { CORAL_PLOT         } from '../../../modules/local/coral/plot/main'
+include { AMPLICONCLASSIFIER } from '../../../modules/local/ampliconclassifier/main'
 
 workflow ECDNA {
 

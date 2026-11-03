@@ -1,4 +1,4 @@
-include {ENSEMBLVEP_DOWNLOAD } from '../../modules/nf-core/ensemblvep/download/main.nf'
+include {ENSEMBLVEP_DOWNLOAD } from '../../../modules/nf-core/ensemblvep/download/main.nf'
 
 workflow PREPARE_ANNOTATION {
 

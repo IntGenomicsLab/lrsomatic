@@ -7,9 +7,9 @@ include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main
 
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                   } from '../../../subworkflows/nf-core/deepvariant/main.nf'
-include { DEEPSOMATIC                                   } from '../../../subworkflows/local/deepsomatic.nf'
-include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subworkflows/local/small_variant_consensus.nf'
-include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { DEEPSOMATIC                                   } from '../../../subworkflows/local/deepsomatic/main.nf'
+include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subworkflows/local/small_variant_consensus/main.nf'
+include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus/main.nf'
 
 // Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
 include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DS      } from '../../../modules/nf-core/bcftools/norm/main'

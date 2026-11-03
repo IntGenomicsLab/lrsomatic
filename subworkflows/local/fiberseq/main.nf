@@ -2,10 +2,10 @@
 // Fiber-seq: m6A prediction (PacBio with kinetics), nucleosome and FIRE calling on the unaligned BAMs
 //
 
-include { FIBERTOOLSRS_PREDICTM6A  } from '../../modules/local/fibertoolsrs/predictm6a'
-include { FIBERTOOLSRS_FIRE        } from '../../modules/local/fibertoolsrs/fire'
-include { FIBERTOOLSRS_NUCLEOSOMES } from '../../modules/local/fibertoolsrs/nucleosomes'
-include { FIBERTOOLSRS_QC          } from '../../modules/local/fibertoolsrs/qc'
+include { FIBERTOOLSRS_PREDICTM6A  } from '../../../modules/local/fibertoolsrs/predictm6a'
+include { FIBERTOOLSRS_FIRE        } from '../../../modules/local/fibertoolsrs/fire'
+include { FIBERTOOLSRS_NUCLEOSOMES } from '../../../modules/local/fibertoolsrs/nucleosomes'
+include { FIBERTOOLSRS_QC          } from '../../../modules/local/fibertoolsrs/qc'
 
 workflow FIBERSEQ {
 
