@@ -14,4 +14,4 @@ applies to SAVANA too; `--genes` symbols are resolved against ReConPlot's gene t
 skipped with a warning instead of losing the panel); a failing BAF-track reader skips the track instead of failing the run;
 `--genome` is validated up front; thousands separators are accepted in `--regions`; malformed and duplicate regions are
 dropped; the Wakhan BED header is found with or without the comment block; `--sv-format` defaults to `auto`, which reads
-SAVANA's classified somatic VCF when no BEDPE is staged (SAVANA's PacBio classifier writes no BEDPE).
+SAVANA's classified somatic VCF when no BEDPE is staged (SAVANA's PacBio classifier writes no BEDPE). SAVANA writes `BP_NOTATION` in (_1, _2) order on both mate records, so a `_2` record is re-expressed from its mate's side before mates are collapsed (positions then match the orientation).

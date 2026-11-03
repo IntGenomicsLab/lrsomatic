@@ -149,6 +149,9 @@ savana_read_sv_vcf <- function(file, min_support = 0, min_svlen = 0, pass_only =
     support = support,
     stringsAsFactors = FALSE
   )
+  ## BP_NOTATION is written in (_1, _2) order on both mates: put a _2 record's mate first so positions match it
+  mate2 <- grepl("_2$", vcf$id) & !is.na(mate$chr)
+  if (any(mate2)) sv[mate2, c("chr1", "pos1", "chr2", "pos2")] <- sv[mate2, c("chr2", "pos2", "chr1", "pos1")]
   sv <- dedupe_breakend_pairs(sv)   # BND records come in mate pairs
   savana_filter_sv(sv, min_support, min_svlen)
 }

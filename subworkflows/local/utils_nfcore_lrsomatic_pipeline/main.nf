@@ -381,6 +381,13 @@ def padfootGenome() {
 }
 
 //
+// ShatterSeek genome: an explicit --shatterseek_genome wins, else inferred from --genome (hg38 / chm13), else null (skipped)
+//
+def shatterseekGenome() {
+    return params.shatterseek_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
 // Whether Padfoot can annotate on that preset: it bundles annotations for hg38 and mm10 only; any other
 // preset needs both --padfoot_gff and --padfoot_rm, and a null preset disables Padfoot even with them.
 // The workflow gate and validateSvAnnotationParams() both call this, so they cannot drift apart.
@@ -405,6 +412,14 @@ def validateSvAnnotationParams() {
         log.warn "Padfoot will be skipped: no bundled annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
             "Padfoot bundles hg38 and mm10; for any other assembly give gene and repeat annotations for that assembly with " +
             "--padfoot_gff and --padfoot_rm (and --padfoot_genome for a genome lrsomatic cannot infer)."
+    }
+
+    // ShatterSeek's chromosome lengths and ideograms must be those of the alignments' assembly
+    if (!params.skip_shatterseek && genome_preset && params.shatterseek_genome && params.shatterseek_genome != genome_preset) {
+        error("--shatterseek_genome ${params.shatterseek_genome} does not match --genome ${params.genome} (expected ${genome_preset}).")
+    }
+    if (!params.skip_shatterseek && !shatterseekGenome()) {
+        log.warn "ShatterSeek will be skipped: genome could not be inferred from '${params.genome}'. Set --shatterseek_genome (hg38, chm13, hg19)."
     }
 
     if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {

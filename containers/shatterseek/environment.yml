@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# R runtime for the ShatterSeek wrapper (assets/shatterseek), used only to build containers/shatterseek/Dockerfile;
+# ShatterSeek itself (upstream parklab/ShatterSeek, not on conda) is installed into the image from a pinned commit.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - "conda-forge::r-base=4.4.3"
+  - "bioconda::bioconductor-biocgenerics=0.52.0"
+  - "bioconda::bioconductor-s4vectors=0.44.0"
+  - "bioconda::bioconductor-iranges=2.40.0"
+  - "bioconda::bioconductor-genomicranges=1.58.0"
+  - "bioconda::bioconductor-graph=1.84.0"
+  - "conda-forge::r-foreach=1.5.2"
+  - "conda-forge::r-mass=7.3_66"
+  - "conda-forge::r-ggplot2=4.0.3"
+  - "conda-forge::r-gridextra=2.3"
+  - "conda-forge::r-data.table=1.18.4"
+  - "conda-forge::r-optparse=1.8.2"
+  - "conda-forge::procps-ng" # `ps` required by Nextflow task metrics
