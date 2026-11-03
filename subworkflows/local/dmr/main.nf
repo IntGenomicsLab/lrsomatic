@@ -1,8 +1,8 @@
 // IMPORT MODULES
-include { HTSLIB_BGZIPTABIX     } from '../../modules/nf-core/htslib/bgziptabix/main'
-include { MODKIT_DMR            } from '../../modules/nf-core/modkit/dmr/main'
-include { DMR_HAPLOTYPE_REGIONS } from '../../modules/local/dmr/haplotype_regions/main'
-include { DMR_NEAREST_GENE      } from '../../modules/local/dmr/nearest_gene/main'
+include { HTSLIB_BGZIPTABIX     } from '../../../modules/nf-core/htslib/bgziptabix/main'
+include { MODKIT_DMR            } from '../../../modules/nf-core/modkit/dmr/main'
+include { DMR_HAPLOTYPE_REGIONS } from '../../../modules/local/dmr/haplotype_regions/main'
+include { DMR_NEAREST_GENE      } from '../../../modules/local/dmr/nearest_gene/main'
 
 workflow DMR {
 
