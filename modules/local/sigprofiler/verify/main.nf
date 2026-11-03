@@ -38,7 +38,6 @@ process SIGPROFILER_VERIFY {
 
     manager = rgm.ReferenceGenomeManager("genome_volume")
     if not manager.is_genome_installed(genome):
-        manager.print_genome_checksum_verification_report(genome)
         tsb = manager.reference_dir.get_tsb_dir() / genome
         expected = rgm.CHECKSUMS[genome]
         missing = [chrom for chrom in expected if not (tsb / f"{chrom}.txt").is_file()]
@@ -53,11 +52,15 @@ process SIGPROFILER_VERIFY {
                 "payload (GRCh38 and CHM13-T2T installed for lrsomatic < 1.2.0 are a superseded revision) or the "
                 "copy is corrupted."
             )
-        sys.exit(
+        message = (
             f"ERROR: the {genome} payload in --sigprofiler_genome_dir {cause} Reinstall it with "
             "--download_sigprofiler_genome (published to <outdir>/cache/sigprofiler/volume) and pass that directory "
             "on later runs."
         )
+        # Message before the checksum table, on the same stream: Nextflow's error report keeps only the first lines
+        print(message, flush=True)
+        manager.print_genome_checksum_verification_report(genome)
+        sys.exit(message)
     PY
     """
 

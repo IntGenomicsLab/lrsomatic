@@ -264,6 +264,27 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | `{tumor,normal}/modkit_pileup/sample_{hp1,hp2}.bed.gz` | With `--modkit_phased`: bedMethyl tables restricted to reads carrying haplotype tag `HP:1` or `HP:2` from the Longphase-haplotagged BAM.                                                                        |
 | `{tumor,normal}/modkit_pileup/sample_combined.bed.gz`  | With `--modkit_phased`: bedMethyl table over all reads, including untagged ones (equivalent to the unphased default output). There is no separate file for untagged reads; they only contribute to `_combined`. |
 
+With `--modkit_phased` set (and `--skip_dmr` not set), haplotype differential methylation region (DMR) calling also runs, comparing the `_hp1`/`_hp2` bedMethyl pileups over CpG islands covered in both haplotypes and annotating each result with its nearest gene:
+
+```
+├── methylation
+│   ├── tumor
+│   │   ├── modkit_pileup
+│   │   │   └── ...
+│   │   └── dmr
+│   │       ├── sample.log                   # modkit dmr pair's debug log
+│   │       └── sample.nearestGene.bed       # final DMR deliverable
+│   ├── normal                               # paired samples only
+│   │   └── ...                              # same layout as tumor
+```
+
+| File                                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{tumor,normal}/dmr/sample.log`             | `modkit dmr pair`'s own debug log, published for troubleshooting (e.g. the `invalid-bedmethyl-data` class of failure) without needing `-resume`. The intermediate raw `modkit dmr pair` BED is not published, since this file supersedes it.                                                                                                                                                                                                                             |
+| `{tumor,normal}/dmr/sample.nearestGene.bed` | Each `modkit dmr pair` DMR call (17 columns — chrom/start/end, haplotype-vs-haplotype methylation counts/fractions and the difference score; see `modkit dmr pair --help` for the full column list), joined via `bedtools closest -D b -t first` to its nearest gene from `--dmr_gencode_gene_bed` (that gene's own BED6: chrom/start/end/name/score/strand), followed by the signed distance to that gene (relative to the gene's own strand; negative means upstream). |
+
+DMR runs `modkit dmr pair --base C`, which counts every modification on C as modified. The pileup feeding it requests both 5mC and 5hmC (see `--modkit_args` in the usage docs), so the methylation fractions and the difference score describe 5mC and 5hmC combined, not 5mC alone.
+
 </details>
 
 ### `variants`

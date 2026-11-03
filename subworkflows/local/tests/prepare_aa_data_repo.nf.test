@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Subworkflow PREPARE_AA_DATA_REPO"
-    script "../prepare_aa_data_repo.nf"
+    script "../prepare_aa_data_repo/main.nf"
     workflow "PREPARE_AA_DATA_REPO"
 
     tag "subworkflows"

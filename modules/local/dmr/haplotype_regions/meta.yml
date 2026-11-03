@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "dmr_haplotype_regions"
+description: |
+  Restrict a CpG-islands BED to islands with real read coverage in both of a sample's two
+  haplotype bedMethyl files, for use as modkit dmr pair's --regions-bed. Without this, an island
+  covered in one haplotype but not the other would be compared against absence of data rather than
+  a real methylation difference.
+keywords:
+  - methylation
+  - dmr
+  - haplotype
+  - cpg islands
+  - bedtools
+tools:
+  - "bedtools":
+      description: "A powerful toolset for genome arithmetic"
+      homepage: "https://bedtools.readthedocs.io/"
+      documentation: "https://bedtools.readthedocs.io/"
+      licence: ["GPL-2.0-only"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - hp1_bedmethyl:
+        type: file
+        description: Bgzip-compressed bedMethyl for haplotype 1
+        pattern: "*.bed.gz"
+    - hp1_tbi:
+        type: file
+        description: Tabix index for hp1_bedmethyl
+        pattern: "*.bed.gz.tbi"
+    - hp2_bedmethyl:
+        type: file
+        description: Bgzip-compressed bedMethyl for haplotype 2
+        pattern: "*.bed.gz"
+    - hp2_tbi:
+        type: file
+        description: Tabix index for hp2_bedmethyl
+        pattern: "*.bed.gz.tbi"
+  - - cpg_islands_bed:
+        type: file
+        description: Genome-wide CpG islands BED to restrict
+        pattern: "*.bed"
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing reference information, e.g. `[ id:'GRCh38' ]`
+    - fai:
+        type: file
+        description: FASTA index for the reference genome (used only for its chrom/length columns)
+        pattern: "*.fai"
+
+output:
+  regions_bed:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+    - "*.regions.bed":
+        type: file
+        description: |
+          cpg_islands_bed restricted to islands covered in both haplotypes, sorted by
+          genome/coordinate order, ready to pass to modkit dmr pair's --regions-bed
+        pattern: "*.regions.bed"
+  versions:
+    - "versions.yml":
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@YannVRB"
+maintainers:
+  - "@YannVRB"

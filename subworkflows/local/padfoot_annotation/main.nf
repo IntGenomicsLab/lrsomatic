@@ -1,6 +1,6 @@
 // IMPORT MODULES
-include { PADFOOT as PADFOOT_SEVERUS_WAKHAN } from '../../modules/local/padfoot/main'
-include { PADFOOT as PADFOOT_SAVANA         } from '../../modules/local/padfoot/main'
+include { PADFOOT as PADFOOT_SEVERUS_WAKHAN } from '../../../modules/local/padfoot/main'
+include { PADFOOT as PADFOOT_SAVANA         } from '../../../modules/local/padfoot/main'
 
 //
 // Padfoot annotation of somatic SVs + CNAs, once per caller pair that produced output for a sample:
