@@ -1,7 +1,7 @@
 nextflow_workflow {
 
     name "Test Workflow SHATTERSEEK_CHROMOTHRIPSIS"
-    script "../shatterseek_chromothripsis.nf"
+    script "../shatterseek_chromothripsis/main.nf"
     workflow "SHATTERSEEK_CHROMOTHRIPSIS"
 
     tag "subworkflows"

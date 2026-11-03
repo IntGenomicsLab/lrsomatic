@@ -1,7 +1,7 @@
 // IMPORT MODULES
-include { SHATTERSEEK as SHATTERSEEK_SEVERUS_ASCAT  } from '../../modules/local/shatterseek/main'
-include { SHATTERSEEK as SHATTERSEEK_SEVERUS_WAKHAN } from '../../modules/local/shatterseek/main'
-include { SHATTERSEEK as SHATTERSEEK_SAVANA         } from '../../modules/local/shatterseek/main'
+include { SHATTERSEEK as SHATTERSEEK_SEVERUS_ASCAT  } from '../../../modules/local/shatterseek/main'
+include { SHATTERSEEK as SHATTERSEEK_SEVERUS_WAKHAN } from '../../../modules/local/shatterseek/main'
+include { SHATTERSEEK as SHATTERSEEK_SAVANA         } from '../../../modules/local/shatterseek/main'
 
 //
 // ShatterSeek chromothripsis calls with PCAWG confidence tiers for every CN/SV caller pair that produced output for a
