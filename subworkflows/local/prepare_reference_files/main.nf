@@ -2,13 +2,13 @@
 // Prepare reference files (unzipping and adding index)
 //
 
-include { PIGZ_UNCOMPRESS as UNZIP_FASTA } from '../../modules/nf-core/pigz/uncompress/main'
-include { SAMTOOLS_FAIDX                 } from '../../modules/nf-core/samtools/faidx/main'
-include { UNZIP as UNZIP_ALLELES         } from '../../modules/nf-core/unzip/main'
-include { UNZIP as UNZIP_GC              } from '../../modules/nf-core/unzip/main'
-include { UNZIP as UNZIP_LOCI            } from '../../modules/nf-core/unzip/main'
-include { UNZIP as UNZIP_RT              } from '../../modules/nf-core/unzip/main'
-include { CLAIR3_MODEL                    } from '../../modules/local/clair3_model/main'
+include { PIGZ_UNCOMPRESS as UNZIP_FASTA } from '../../../modules/nf-core/pigz/uncompress/main'
+include { SAMTOOLS_FAIDX                 } from '../../../modules/nf-core/samtools/faidx/main'
+include { UNZIP as UNZIP_ALLELES         } from '../../../modules/nf-core/unzip/main'
+include { UNZIP as UNZIP_GC              } from '../../../modules/nf-core/unzip/main'
+include { UNZIP as UNZIP_LOCI            } from '../../../modules/nf-core/unzip/main'
+include { UNZIP as UNZIP_RT              } from '../../../modules/nf-core/unzip/main'
+include { CLAIR3_MODEL                    } from '../../../modules/local/clair3_model/main'
 
 workflow PREPARE_REFERENCE_FILES {
     take:

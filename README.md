@@ -72,9 +72,6 @@ c. Somatic SV and CNA functional annotation ([`Padfoot`](https://github.com/Kolm
 
 a. Rearrangement and copy-number figures per CN/SV caller pair ([`ReConPlot`](https://github.com/cortes-ciriano-lab/ReConPlot))
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
-
 ## Usage
 
 > [!NOTE]

@@ -3,13 +3,13 @@
 // ClinVar once so the VEP tasks never stage it from its host themselves
 //
 
-include { UNZIP as UNZIP_REVEL } from '../../modules/nf-core/unzip/main.nf'
-include { UNZIP as UNZIP_EVE   } from '../../modules/nf-core/unzip/main.nf'
-include { WGET as WGET_REVEL   } from '../../modules/nf-core/wget/main'
-include { WGET as WGET_EVE     } from '../../modules/nf-core/wget/main'
-include { VEPPLUGIN_REVEL      } from '../../modules/local/vepplugin/revel/main.nf'
-include { VEPPLUGIN_EVE        } from '../../modules/local/vepplugin/eve/main.nf'
-include { VEPPLUGIN_CLINVAR    } from '../../modules/local/vepplugin/clinvar/main.nf'
+include { UNZIP as UNZIP_REVEL } from '../../../modules/nf-core/unzip/main.nf'
+include { UNZIP as UNZIP_EVE   } from '../../../modules/nf-core/unzip/main.nf'
+include { WGET as WGET_REVEL   } from '../../../modules/nf-core/wget/main'
+include { WGET as WGET_EVE     } from '../../../modules/nf-core/wget/main'
+include { VEPPLUGIN_REVEL      } from '../../../modules/local/vepplugin/revel/main.nf'
+include { VEPPLUGIN_EVE        } from '../../../modules/local/vepplugin/eve/main.nf'
+include { VEPPLUGIN_CLINVAR    } from '../../../modules/local/vepplugin/clinvar/main.nf'
 
 workflow PREPARE_VEP_PLUGINS {
 

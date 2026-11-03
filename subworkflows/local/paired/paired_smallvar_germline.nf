@@ -5,7 +5,7 @@ include { CLAIR3                    } from '../../../modules/local/clair3/main.n
 
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                     } from '../../../subworkflows/nf-core/deepvariant/main.nf'
-include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus/main.nf'
 
 workflow PAIRED_SMALLVAR_GERMLINE {
 
