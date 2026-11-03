@@ -111,7 +111,8 @@
                     "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Also write gVCFs from DeepVariant and DeepSomatic, and publish them next to the VCFs."
                 }
             }
         },
@@ -224,7 +225,9 @@
             "default": "",
             "properties": {
                 "autocorrelation": {
-                    "type": "string"
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --acf to fibertools qc to add nucleosome autocorrelation to the Fiber-seq QC output."
                 }
             }
         },
@@ -259,10 +262,12 @@
                     "description": "Download the VEP cache if not already present"
                 },
                 "vep_custom": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to a bgzipped VCF (.vcf.gz) of custom variants for VEP to annotate against. Needs a matching --custom file=... entry in --vep_args."
                 },
                 "vep_custom_tbi": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to the tabix index of --vep_custom."
                 },
                 "vep_alphamissense": {
                     "type": "string",
@@ -384,7 +389,8 @@
             "properties": {
                 "severus_minsupport": {
                     "type": "integer",
-                    "default": 3
+                    "default": 3,
+                    "description": "Minimum number of supporting reads for Severus to report an SV (Severus --min-support)."
                 },
                 "severus_whitelist": {
                     "type": "string",
@@ -584,7 +590,8 @@
             "default": "",
             "properties": {
                 "wakhan_chroms": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Comma-separated contigs, or ranges such as chr1-22,chrX, for Wakhan to use. Defaults to chr1-22,chrX for female samples and chr1-22,chrX,chrY for male samples."
                 }
             }
         },
@@ -675,6 +682,10 @@
                     "type": "boolean",
                     "description": "Skips wakhan"
                 },
+                "skip_modkit": {
+                    "type": "boolean",
+                    "description": "Skip the modkit pileup of base modifications."
+                },
                 "skip_fiber": {
                     "type": "boolean",
                     "description": "Skip Fibertools steps"
@@ -732,7 +743,8 @@
                 },
                 "use_gpu": {
                     "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
+                    "description": "Run DeepVariant, DeepSomatic, Clair3 and fibertools on a GPU (use with the gpu profile).",
+                    "help_text": "Clair3's GPU image supports NVIDIA GPUs up to compute capability 9.0 (A100, H100, RTX Ada); it fails on newer cards such as the B200, so leave this off there."
                 },
                 "skip_report": {
                     "type": "boolean",
@@ -880,7 +892,7 @@
                 },
                 "trace_report_suffix": {
                     "type": "string",
-                    "fa_icon": "far calendar",
+                    "fa_icon": "far fa-calendar",
                     "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
                     "hidden": true
                 },
@@ -1039,10 +1051,5 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "skip_modkit": {
-            "type": "boolean"
-        }
-    }
+    ]
 }
