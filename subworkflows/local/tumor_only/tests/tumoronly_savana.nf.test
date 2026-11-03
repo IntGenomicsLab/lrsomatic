@@ -1,0 +1,81 @@
+nextflow_workflow {
+
+    name "Test Workflow TUMORONLY_SAVANA"
+    script "../tumoronly_savana.nf"
+    workflow "TUMORONLY_SAVANA"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "tumoronly_savana"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // No test samplesheet has a PacBio tumour-only sample, so the pipeline tests never reach SAVANA_PON_FILTER.
+    // Under -stub what is tested is the routing: PacBio somatic VCFs go through the PoN filter, ONT ones (SAVANA's
+    // tumour-only model) do not, and without a PoN every VCF passes unfiltered.
+
+    test("PacBio somatic VCFs are PoN-filtered, ONT ones are not") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                // stand-ins: the SAVANA_TO stub does not read its BAM
+                def bam = file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true)
+                def bai = file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.bedpe", checkIfExists: true)
+                input[0] = channel.of(
+                    [ [ id:'sample_pb',  paired_data:false, platform:'pb'  ], bam, bai, [], [] ],
+                    [ [ id:'sample_ont', paired_data:false, platform:'ont' ], bam, bai, [], [] ]
+                )
+                input[1] = channel.value([ [:], file("\${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ])
+                input[2] = channel.value([ [:], file("\${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ])
+                input[3] = channel.value([ [:], [] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], file("\${projectDir}/modules/local/savana_pon_filter/tests/fixtures/pon.tsv.gz", checkIfExists: true) ])
+                """
+            }
+        }
+
+        then {
+            def names = workflow.out.somatic_vcf.collectEntries { meta, vcf -> [meta.id, file(vcf).name] }
+            assertAll(
+                { assert workflow.success },
+                { assert names == [
+                    sample_pb : 'sample_pb.pon_filtered.classified.somatic.vcf',
+                    sample_ont: 'sample_ont.classified.somatic.vcf'
+                ] }
+            )
+        }
+    }
+
+    test("without a PoN every somatic VCF passes unfiltered") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                // stand-ins: the SAVANA_TO stub does not read its BAM
+                def bam = file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.vcf", checkIfExists: true)
+                def bai = file("\${projectDir}/tests/fixtures/padfoot_reconplot/test_tumor.classified.somatic.bedpe", checkIfExists: true)
+                input[0] = channel.of(
+                    [ [ id:'sample_pb', paired_data:false, platform:'pb' ], bam, bai, [], [] ]
+                )
+                input[1] = channel.value([ [:], file("\${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true) ])
+                input[2] = channel.value([ [:], file("\${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta.fai", checkIfExists: true) ])
+                input[3] = channel.value([ [:], [] ])
+                input[4] = channel.value([ [:], [] ])
+                input[5] = channel.value([ [:], [] ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.somatic_vcf.collect { meta, vcf -> file(vcf).name } == ['sample_pb.classified.somatic.vcf'] }
+            )
+        }
+    }
+}
