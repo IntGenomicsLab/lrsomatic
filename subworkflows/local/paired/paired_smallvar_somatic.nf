@@ -6,8 +6,8 @@ include { BCFTOOLS_CONCAT           } from '../../../modules/nf-core/bcftools/co
 include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/sort'
 
 // IMPORT SUBWORKFLOWS
-include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic.nf'
-include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic/main.nf'
+include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus/main.nf'
 
 workflow PAIRED_SMALLVAR_SOMATIC {
 
