@@ -5,8 +5,9 @@ process LONGPHASE_MODCALL {
     conda "${moduleDir}/environment.yml"
     // 2.0.2, not 2.0.1: 2.0.1 read its region iterator with sam_itr_multi_next, which on CRAM input returns
     // fewer reads, differently every run (~28 % fewer sites genome-wide on a PacBio pair); 2.0.2 reads
-    // CRAM like BAM and is deterministic. The script needs only longphase, so the plain biocontainer
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    // CRAM like BAM and is deterministic. The script needs only longphase, so the plain biocontainer is enough
+    // (longphase bundles its own htslib, hence no htslib pin in environment.yml either).
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/longphase:2.0.2--h4e109e1_0':
         'quay.io/biocontainers/longphase:2.0.2--h4e109e1_0' }"
 

@@ -30,9 +30,12 @@ process LONGPHASE_HAPLOTAG {
     // ext.cram: longphase writes its BAM into a FIFO that samtools encodes as CRAM (options from ext.args2,
     // e.g. embed_ref=1, which longphase's own --cram cannot set); no intermediate BAM touches the disk
     def cram_out = task.ext.cram ?: false
+    // the encoder runs alongside longphase, so the two share task.cpus instead of each taking all of it
+    def conv_threads = cram_out ? Math.max(1, task.cpus.intdiv(2)) : 0
+    def lp_threads = Math.max(1, task.cpus - conv_threads)
     def cram_start = cram_out ? """
     mkfifo ${prefix}.bam
-    samtools view --threads ${task.cpus} -C -T ${fasta} ${args2} -o ${prefix}.cram ${prefix}.bam &
+    samtools view --threads ${conv_threads} -C -T ${fasta} ${args2} -o ${prefix}.cram ${prefix}.bam &
     conv=\$!
     trap 'kill \$conv 2>/dev/null || true' EXIT
     """ : ''
@@ -47,7 +50,7 @@ process LONGPHASE_HAPLOTAG {
     longphase \\
         haplotag \\
         $args \\
-        --threads $task.cpus \\
+        --threads ${lp_threads} \\
         -o ${prefix} \\
         --reference ${fasta} \\
         --snp-file ${snps} \\
