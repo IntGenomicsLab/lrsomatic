@@ -1,0 +1,67 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --aligned_format cram|bam wiring (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // PR CI runs only `small` tests, and the one real run there (default) is CRAM with no replicates. These -stub runs
+    // use the extended samplesheet, whose sample4 has two replicates, so the format-dependent wiring runs on every PR:
+    // MINIMAP2_ALIGN's output format, the bam/cram mix, SAMTOOLS_MERGE with its reference, LONGPHASE_HAPLOTAG's
+    // ext.cram and the published file names. Read content is covered by the real runs (default, clair_only, deep_only).
+
+    test("-profile test, extended samplesheet, CRAM default - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+            }
+        }
+
+        then {
+            def merged = workflow.trace.succeeded().findAll { task -> task.name.contains(':SAMTOOLS_MERGE ') }*.name
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert merged.size() == 1 && merged[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${merged}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
+                                       'sample3_tumor', 'sample4_tumor', 'sample5_tumor']
+                                       .collectMany { name -> [name + '.cram', name + '.cram.crai'] } as Set }
+            )
+        }
+    }
+
+    test("-profile test, extended samplesheet, --aligned_format bam - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                input          = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+                aligned_format = 'bam'
+            }
+        }
+
+        then {
+            def merged = workflow.trace.succeeded().findAll { task -> task.name.contains(':SAMTOOLS_MERGE ') }*.name
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert merged.size() == 1 && merged[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${merged}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
+                                       'sample3_tumor', 'sample4_tumor', 'sample5_tumor']
+                                       .collectMany { name -> [name + '.bam', name + '.bam.bai'] } as Set }
+            )
+        }
+    }
+}

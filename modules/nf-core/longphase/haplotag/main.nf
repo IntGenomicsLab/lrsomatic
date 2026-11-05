@@ -23,22 +23,41 @@ process LONGPHASE_HAPLOTAG {
 
     script:
     def args = task.ext.args ?: ''
+    def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sv_file = svs ? "--sv-file ${svs}" : ""
     def mod_file = mods ? "--mod-file ${mods}" : ""
+    // ext.cram: longphase writes its BAM into a FIFO that samtools encodes as CRAM (options from ext.args2,
+    // e.g. embed_ref=1, which longphase's own --cram cannot set); no intermediate BAM touches the disk
+    def cram_out = task.ext.cram ?: false
+    // the encoder runs alongside longphase, so the two share task.cpus instead of each taking all of it
+    def conv_threads = cram_out ? Math.max(1, task.cpus.intdiv(2)) : 0
+    def lp_threads = Math.max(1, task.cpus - conv_threads)
+    def cram_start = cram_out ? """
+    mkfifo ${prefix}.bam
+    samtools view --threads ${conv_threads} -C -T ${fasta} ${args2} -o ${prefix}.cram ${prefix}.bam &
+    conv=\$!
+    trap 'kill \$conv 2>/dev/null || true' EXIT
+    """ : ''
+    def cram_end = cram_out ? """
+    wait \$conv
+    trap - EXIT
+    rm ${prefix}.bam
+    """ : ''
 
     """
+    ${cram_start}
     longphase \\
         haplotag \\
         $args \\
-        --threads $task.cpus \\
+        --threads ${lp_threads} \\
         -o ${prefix} \\
         --reference ${fasta} \\
         --snp-file ${snps} \\
         --bam ${bam} \\
         ${sv_file} \\
         ${mod_file}
-
+    ${cram_end}
     if [ -f "${prefix}.out" ]; then
         mv ${prefix}.out ${prefix}.log
     fi
@@ -47,7 +66,7 @@ process LONGPHASE_HAPLOTAG {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def suffix = args.contains('--cram') ? "cram" : "bam"
+    def suffix = args.contains('--cram') || task.ext.cram ? "cram" : "bam"
     def log = args.contains('--log') ? "touch ${prefix}.log" : ''
     """
     touch ${prefix}.${suffix}
