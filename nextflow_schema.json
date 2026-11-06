@@ -569,13 +569,21 @@
                     "type": "string",
                     "description": "Chromosomes to process (automatically inferred, only use if you want to run on a subset)"
                 },
-                "ascat_gc_files": {
+                "ascat_allele_files": {
                     "type": "string",
-                    "description": "Path to (zip) of GC files"
+                    "description": "Path to a .zip of ASCAT allele files. Defaults to the --genome reference"
                 },
-                "ascat_rt_files": {
+                "ascat_loci_files": {
                     "type": "string",
-                    "description": "path to (zip) of RT files"
+                    "description": "Path to a .zip of ASCAT loci files. Defaults to the --genome reference"
+                },
+                "ascat_gc_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT GC correction file (.txt or .txt.zip). Defaults to the --genome reference"
+                },
+                "ascat_rt_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT replication timing correction file (.txt or .txt.zip). Defaults to the --genome reference"
                 },
                 "ascat_pdf_plots": {
                     "type": "boolean",
