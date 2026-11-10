@@ -40,11 +40,30 @@ process MINIMAP2_ALIGN {
     def cigar_paf = cigar_paf_format && !bam_format ? "-c" : ''
     def set_cigar_bam = cigar_bam && bam_format ? "-L" : ''
     def bam_input = "${reads.extension}".matches('sam|bam|cram')
-    def samtools_reset_fastq = bam_input ? "samtools reset --threads ${task.cpus-1} $args3 $reads | samtools fastq --threads ${task.cpus-1} $args4 |" : ''
+    // A CRAM input is decoded against `reference` only if no contig it shares with it has a different M5. Given a
+    // mismatched --reference, an embedded-reference CRAM decodes to wrong bases with exit 0; without it, htslib uses the
+    // embedded reference, the @SQ UR path or REF_PATH. Unaligned CRAM has no @SQ lines and needs no reference.
+    def cram_input = "${reads.extension}" == 'cram' && reference
+    def cram_ref_check = cram_input ? """reset_ref="--reference ${reference}"
+    samtools view -H ${reads} | grep '^@SQ' > input_sq.txt || true
+    if [ -s input_sq.txt ] && samtools dict ${reference} | grep '^@SQ' | awk -F'\\t' '
+        function tag(t,   i) { for (i = 2; i <= NF; i++) if (substr(\$i, 1, 3) == t ":") return substr(\$i, 4); return "" }
+        FNR == NR { m5[tag("SN")] = tag("M5"); next }
+        (tag("SN") in m5) && tag("M5") != "" && tag("M5") != m5[tag("SN")] { bad = 1 }
+        END { exit !bad }' - input_sq.txt; then
+        echo "WARNING: ${reads} is aligned to a different assembly than ${reference}; decoding it with its embedded reference, @SQ UR or REF_PATH instead" >&2
+        reset_ref=""
+    fi
+    """ : ''
+    // samtools reset (1.23) takes no --reference, so a CRAM is decoded by samtools view first
+    def samtools_reset = cram_input
+        ? "samtools view -u --threads ${task.cpus-1} \$reset_ref $reads | samtools reset --threads ${task.cpus-1} $args3 -"
+        : "samtools reset --threads ${task.cpus-1} $args3 $reads"
+    def samtools_reset_fastq = bam_input ? "$samtools_reset | samtools fastq --threads ${task.cpus-1} $args4 |" : ''
     def query = bam_input ? "-" : reads
     def target = reference ?: (bam_input ? error("Error: minimap2/align BAM input mode requires reference") : reads)
     """
-    $samtools_reset_fastq \\
+    ${cram_ref_check}$samtools_reset_fastq \\
     minimap2 \\
         ${args} \\
         -t ${task.cpus} \\

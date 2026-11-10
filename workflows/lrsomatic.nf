@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -260,7 +261,16 @@ workflow LRSOMATIC {
 
     // MODULE: METAEXTRACT (label: process_single)
     // Input:  [meta, [bam...]]
-    METAEXTRACT( ch_samplesheet )
+    //         [meta, fasta] or [[:], []]  -- params.fasta only for CRAM input, to check its @SQ M5s; PREPARE_REFERENCE_FILES
+    //                                        needs this module's basecall model, so the raw (possibly gzipped) FASTA is used
+    ch_samplesheet
+        .multiMap { meta, bams ->
+            reads: [ meta, bams ]
+            fasta: isCram(bams) ? [ [ id: 'fasta' ], file(params.fasta, checkIfExists: true) ] : [ [:], [] ]
+        }
+        .set { ch_metaextract_in }
+
+    METAEXTRACT( ch_metaextract_in.reads, ch_metaextract_in.fasta )
 
     basecall_meta = METAEXTRACT.out.meta_ext
     // basecall_meta: [meta, basecall_model_str, kinetics_str]
@@ -345,11 +355,25 @@ workflow LRSOMATIC {
 
         //
         // MODULE: CRAMINO_PRE (label: process_medium)
-        // Input:  [meta, [bam...]]  -- pre-alignment unaligned BAMs
+        // Input:  [meta, [bam...]]  -- pre-alignment input BAMs/CRAMs
+        //         [meta, fasta] or [[:], []]  -- the reference only for an aligned CRAM whose contigs it matches (METAEXTRACT's
+        //                                        M5 check); BAM and unaligned CRAM need none, so BAM inputs keep their -resume cache
         // Output: cramino_pre.out.arrow -- [meta, arrow_file] (feather format stats)
         //
 
-        CRAMINO_PRE( ch_samplesheet, [[:], []] )
+        // ch_samplesheet's meta has gained the model fields since METAEXTRACT, so join on the fields both keep
+        ch_samplesheet
+            .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+            .join(METAEXTRACT.out.decode_with_fasta.map { meta, decode -> [ [ meta.id, meta.type, meta.replicate ], decode ] }, failOnMismatch: true)
+            .map { _key, meta, bams, decode_with_fasta -> [ meta, bams, decode_with_fasta ] }
+            .combine(PREPARE_REFERENCE_FILES.out.prepped_fasta)
+            .multiMap { meta, bams, decode_with_fasta, meta_fasta, fasta ->
+                reads: [ meta, bams ]
+                fasta: decode_with_fasta == 'true' ? [ meta_fasta, fasta ] : [ [:], [] ]
+            }
+            .set { ch_cramino_pre_in }
+
+        CRAMINO_PRE( ch_cramino_pre_in.reads, ch_cramino_pre_in.fasta )
 
         if (!params.skip_nanoplot) {
 

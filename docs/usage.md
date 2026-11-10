@@ -46,8 +46,8 @@ sample1,tumour3.bam,,pb,male,n
 | Column           | Description                                                                                                                                                                                                                                                                                                        |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sample`         | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`).                                                                                                                             |
-| `bam_tumor`      | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                                                                                                                                                      |
-| `bam_normal`     | Full path to BAM file for the tumor. File must end in `.bam`.                                                                                                                                                                                                                                                      |
+| `bam_tumor`      | Full path to the BAM or CRAM file of the tumour. File must end in `.bam` or `.cram` (see [CRAM input](#cram-input)).                                                                                                                                                                                               |
+| `bam_normal`     | Full path to the BAM or CRAM file of the normal (_optional_). File must end in `.bam` or `.cram`.                                                                                                                                                                                                                  |
 | `platform`       | A string specifying the platform used for sequencing, can be either `pb` for PacBio sequencing data or `ont` for Oxford Nanopore sequencing data                                                                                                                                                                   |
 | `sex`            | A string specifying the biological sex of the sample, can either be `m` or `f`                                                                                                                                                                                                                                     |
 | `fiber`          | A string specifying if the sample has been subjected to Fiber-seq. Can either be `y` or `n`                                                                                                                                                                                                                        |
@@ -56,6 +56,22 @@ sample1,tumour3.bam,,pb,male,n
 | `clairS_model`   | A string describing which model is to be used for ClairS's small variant calling (_optional_)                                                                                                                                                                                                                      |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
+
+### CRAM input
+
+The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned, so it
+can be unaligned or aligned to any assembly. An **unaligned** CRAM (e.g. `samtools reset -O cram`) needs no reference.
+An **aligned** CRAM can only be read with the reference it was written against:
+
+- a CRAM with the reference embedded (`--output-fmt-option embed_ref=1`, as lrsomatic writes) always works;
+- a CRAM aligned to the same assembly as `--fasta` works: the pipeline decodes it with `--fasta`, after checking that
+  no contig name has a different checksum (`M5`) in the two;
+- a CRAM aligned to another assembly is decoded from its embedded reference, the `UR:` path in its header or htslib's
+  `REF_PATH`/`REF_CACHE` (with `REF_PATH` unset, htslib downloads the sequence from the EBI reference server), never
+  from `--fasta`. If none of those is reachable from the tasks, the run stops with an htslib `Unable to fetch reference` error.
+
+For fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics, use BAM or unaligned CRAM: fibertools-rs cannot
+take a reference.
 
 ## Running the pipeline
 

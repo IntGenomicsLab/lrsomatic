@@ -374,6 +374,13 @@ def validateReportGenePanels() {
 }
 
 //
+// Whether a samplesheet entry (one path or a list of paths) is CRAM input
+//
+def isCram(reads) {
+    return [reads].flatten().any { read_file -> read_file.toString().endsWith('.cram') }
+}
+
+//
 // Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
 //
 def padfootGenome() {
