@@ -47,6 +47,11 @@
                         "installed_by": ["modules"],
                         "patch": "modules/nf-core/bcftools/query/bcftools-query.diff"
                     },
+                    "bcftools/reheader": {
+                        "branch": "master",
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
+                        "installed_by": ["modules"]
+                    },
                     "bcftools/sort": {
                         "branch": "master",
                         "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
