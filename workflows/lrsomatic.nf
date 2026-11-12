@@ -1297,18 +1297,10 @@ workflow LRSOMATIC {
         ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
     }
 
-    //
-    // SUBWORKFLOW: SHATTERSEEK_CHROMOTHRIPSIS -- ShatterSeek chromothripsis tiers per CN/SV caller pair (same pairs as ReConPlot)
-    //
+    // ShatterSeek chromothripsis tiers, same CN/SV pairs as ReConPlot
     if (!params.skip_shatterseek && sv_annot_container_ok && shatterseekGenome()) {
-        SHATTERSEEK_CHROMOTHRIPSIS (
-            SEVERUS.out.somatic_vcf,
-            params.skip_ascat  ? channel.empty() : ASCAT.out.segments,
-            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs,
-            savana_cna,
-            savana_somatic_vcf,
-            shatterseekGenome()
-        )
+        SHATTERSEEK_CHROMOTHRIPSIS(SEVERUS.out.somatic_vcf, params.skip_ascat ? channel.empty() : ASCAT.out.segments,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs, savana_cna, savana_somatic_vcf, shatterseekGenome())
         ch_versions = ch_versions.mix(SHATTERSEEK_CHROMOTHRIPSIS.out.versions)
     }
 
