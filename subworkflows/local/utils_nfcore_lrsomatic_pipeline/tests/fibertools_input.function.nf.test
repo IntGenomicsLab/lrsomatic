@@ -1,0 +1,144 @@
+nextflow_function {
+
+    name "Test the fibertools-rs input check"
+    script "../main.nf"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "cram_input"
+
+    // fibertoolsReadsInput decides which samples FIBERSEQ hands to fibertools-rs, which takes no reference, so the
+    // workflow rejects an aligned CRAM for exactly these. It must follow the FIBERSEQ subworkflow's branches.
+
+    test("fiber-seq row - read by fibertools-rs") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = ''
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio kinetics, not fiber-seq - read for m6A prediction") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'n' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio kinetics, not fiber-seq, --skip_m6a - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = true
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'n' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("fiber-seq normal, --skip_normalfiber - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = true
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'normal', platform:'pb', fiber:'y' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("fiber-seq row, --skip_fiber - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = true
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = ''
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+}

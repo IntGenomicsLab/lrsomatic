@@ -64,4 +64,52 @@ nextflow_pipeline {
             )
         }
     }
+
+    // CRAM samplesheet input: the FASTA staged into METAEXTRACT for CRAM rows only, the decode_with_fasta join into
+    // CRAMINO_PRE (failOnMismatch) and replicates of one sample given in both formats. The M5 decisions and the decoding
+    // itself need real reads: tests/modules/metaextract_cram.nf.test and minimap2_align_cram.nf.test.
+    test("-profile test, BAM and CRAM rows mixed - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                // Stub tasks never open the reads, so empty files stand in for the CRAMs: the schema only checks they exist
+                def input_dir = new File("${outputDir}/../cram_input")
+                input_dir.mkdirs()
+                def tumour_cram = new File(input_dir, 'sample1_tumour.cram')
+                def rep2_cram   = new File(input_dir, 'sample4_rep2.cram')
+                tumour_cram.text = ''
+                rep2_cram.text   = ''
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_cram.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate',
+                    "sample1,${tumour_cram.canonicalPath},${data}/headered_BL2009_ONT_UL_chr19_downsample.bam,ont,female,n,,,,",
+                    "sample4,${data}/HS578T_HIFI_chr19.bam,,pb,female,n,,,,1",
+                    "sample4,${rep2_cram.canonicalPath},,pb,female,n,,,,2"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }*.name }
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('METAEXTRACT').size() == 4 : "METAEXTRACT tasks: ${succeeded('METAEXTRACT')}" },
+                { assert succeeded('CRAMINO_PRE').size() == 4 : "CRAMINO_PRE tasks: ${succeeded('CRAMINO_PRE')}" },
+                { assert succeeded('MINIMAP2_ALIGN').size() == 4 : "MINIMAP2_ALIGN tasks: ${succeeded('MINIMAP2_ALIGN')}" },
+                { assert succeeded('SAMTOOLS_MERGE').size() == 1 && succeeded('SAMTOOLS_MERGE')[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${succeeded('SAMTOOLS_MERGE')}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample4_tumor']
+                                       .collectMany { name -> [name + '.cram', name + '.cram.crai'] } as Set }
+            )
+        }
+    }
 }

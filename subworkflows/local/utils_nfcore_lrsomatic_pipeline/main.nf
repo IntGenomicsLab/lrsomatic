@@ -396,6 +396,17 @@ def isCram(reads) {
 }
 
 //
+// Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
+// while m6A prediction runs. fibertools-rs takes no reference, so an aligned CRAM there must be rejected up front.
+//
+def fibertoolsReadsInput(meta, kinetics) {
+    if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {
+        return false
+    }
+    return meta.fiber == 'y' || (meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a)
+}
+
+//
 // Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
 //
 def padfootGenome() {

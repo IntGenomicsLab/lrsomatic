@@ -1,0 +1,108 @@
+nextflow_process {
+
+    name "Test Process METAEXTRACT on CRAM input"
+    script "../../modules/local/metaextract/main.nf"
+    process "METAEXTRACT"
+
+    tag "modules"
+    tag "metaextract"
+    tag "cram_input"
+    tag "small"
+
+    // Lives in tests/modules so PR CI runs it (see severus_whitelist.nf.test). The CRAMs are built from the CHM13 chr19
+    // HiFi test BAM: aligned with and without the reference embedded, and unaligned. GRCh38_chr19.fasta.gz shares the
+    // contig name chr19 under a different M5, so it stands in for a --fasta of another assembly. METAEXTRACT gets the
+    // FASTA as the pipeline gives it, gzipped.
+
+    setup {
+        run("CRAM_FIXTURES") {
+            script "./cram_fixtures.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'HS578T' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+    }
+
+    test("CRAMs of the FASTA's assembly - decoded with --fasta when aligned") {
+
+        when {
+            process {
+                """
+                input[0] = CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded', platform:'pb' ], cram ] }
+                    .mix(CRAM_FIXTURES.out.noref.map { _meta, cram -> [ [ id:'noref', platform:'pb' ], cram ] })
+                    .mix(CRAM_FIXTURES.out.unaligned.map { _meta, cram -> [ [ id:'unaligned', platform:'pb' ], cram ] })
+                input[1] = [
+                    [ id:'fasta' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_cram.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert decode == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
+                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_cram: ${aligned}" }
+            )
+        }
+    }
+
+    test("CRAMs of another assembly than the FASTA - never decoded with --fasta") {
+
+        when {
+            process {
+                """
+                input[0] = CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded', platform:'pb' ], cram ] }
+                    .mix(CRAM_FIXTURES.out.unaligned.map { _meta, cram -> [ [ id:'unaligned', platform:'pb' ], cram ] })
+                input[1] = [
+                    [ id:'fasta' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_cram.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert decode == [ embedded: 'false', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
+                { assert aligned == [ embedded: 'true', unaligned: 'false' ] : "aligned_cram: ${aligned}" }
+            )
+        }
+    }
+
+    test("BAM input - no FASTA, no CRAM check") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'bam', platform:'pb' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true)
+                ]
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.decode_with_fasta == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] },
+                { assert process.out.aligned_cram == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] }
+            )
+        }
+    }
+}

@@ -70,8 +70,10 @@ An **aligned** CRAM can only be read with the reference it was written against:
   `REF_PATH`/`REF_CACHE` (with `REF_PATH` unset, htslib downloads the sequence from the EBI reference server), never
   from `--fasta`. If none of those is reachable from the tasks, the run stops with an htslib `Unable to fetch reference` error.
 
-For fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics, use BAM or unaligned CRAM: fibertools-rs cannot
-take a reference.
+For fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics, use BAM or unaligned CRAM: fibertools-rs reads
+them before alignment and cannot take a reference. An aligned CRAM there stops the run as soon as its header has been
+read, with an error naming the sample, unless fibertools-rs is not run on it (`--skip_fiber`, `--skip_normalfiber` for
+a normal, or `--skip_m6a` for a PacBio sample with `fiber` = `n`).
 
 ## Running the pipeline
 

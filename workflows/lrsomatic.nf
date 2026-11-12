@@ -13,6 +13,7 @@ include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { fibertoolsReadsInput   } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -279,7 +280,12 @@ workflow LRSOMATIC {
 
     ch_samplesheet
         .join(basecall_meta)
-        .map { meta, bam, basecall_model_meta, kinetics_meta ->
+        .join(METAEXTRACT.out.aligned_cram)
+        .map { meta, bam, basecall_model_meta, kinetics_meta, aligned_cram ->
+            // fibertools-rs reads the input before alignment and takes no reference; stop here rather than mid-FIBERSEQ
+            if (aligned_cram == 'true' && fibertoolsReadsInput(meta, kinetics_meta)) {
+                error("Sample ${meta.id} (${meta.type}): ${[bam].flatten()*.name.join(', ')} is an aligned CRAM, but fibertools-rs (fiber-seq, or m6A prediction on PacBio kinetics) cannot take a reference. Give these reads as BAM or unaligned CRAM (samtools reset -O cram), or run with --skip_fiber.")
+            }
             // Same unset test as PREPARE_REFERENCE_FILES, so both pick the same model and the combine keys agree
             def clair3_model_unset = !meta.clair3_model || meta.clair3_model.toString().trim() in ['', '[]']
             def chosen_clair3_model = clair3_model_unset ? clair3_modelMap.get(basecall_model_meta) : meta.clair3_model
@@ -357,7 +363,7 @@ workflow LRSOMATIC {
         // MODULE: CRAMINO_PRE (label: process_medium)
         // Input:  [meta, [bam...]]  -- pre-alignment input BAMs/CRAMs
         //         [meta, fasta] or [[:], []]  -- the reference only for an aligned CRAM whose contigs it matches (METAEXTRACT's
-        //                                        M5 check); BAM and unaligned CRAM need none, so BAM inputs keep their -resume cache
+        //                                        M5 check); BAM and unaligned CRAM need none
         // Output: cramino_pre.out.arrow -- [meta, arrow_file] (feather format stats)
         //
 

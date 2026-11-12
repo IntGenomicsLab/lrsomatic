@@ -71,6 +71,17 @@ output:
         description: |
           'true' when the input is an aligned CRAM sharing no contig name with `fasta`
           under a different M5, so it may be decoded with `fasta`; 'false' otherwise
+  aligned_cram:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - env(aligned_cram):
+        type: string
+        description: |
+          'true' when the input is a CRAM with @SQ lines (checked only when `fasta` is given),
+          which needs its own reference to decode; 'false' otherwise
   versions_samtools:
     - - ${task.process}:
           type: string
