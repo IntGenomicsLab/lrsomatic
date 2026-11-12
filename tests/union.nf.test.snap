@@ -131,6 +131,9 @@
                 "NANOPLOT_PRE": {
                     "NanoPlot": "1.48.0"
                 },
+                "REHEADER_GERMLINE": {
+                    "bcftools": "1.23.1"
+                },
                 "REJOIN_GERMLINE": {
                     "bcftools": 1.24
                 },
