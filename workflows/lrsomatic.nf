@@ -1465,8 +1465,7 @@ workflow LRSOMATIC {
     // Input:  [[id:'multiqc'], [qc_files...], [config_files...], [logo], [], []]
     // Output: .report -- [meta, html]  -- MultiQC HTML report
     //
-    summary_params = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
