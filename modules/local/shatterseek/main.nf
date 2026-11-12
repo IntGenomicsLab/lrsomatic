@@ -37,6 +37,9 @@ process SHATTERSEEK {
     prefix    = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")
     def sv_in = cn_source == sv_source ? '' : '--sv-input sv_input'
     """
+    # Apptainer forwards the host env; a host R_HOME makes R print "WARNING: ignoring environment value of R_HOME"
+    # on stdout, which would land in the versions.yml strings below
+    unset R_HOME
     mkdir -p ${prefix}
 
     Rscript ${shatterseek_src}/run_shatterseek.R \\
