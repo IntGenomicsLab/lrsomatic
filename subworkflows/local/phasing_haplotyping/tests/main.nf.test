@@ -46,7 +46,7 @@ nextflow_workflow {
         }
     }
 
-    test("tumour-only, germline VCF header without a contig that has reads - the haplotagged BAM keeps them") {
+    test("tumour-only, germline VCF header without a contig that has reads - the haplotagged output keeps them") {
 
         when {
             params {
@@ -68,9 +68,12 @@ nextflow_workflow {
         }
 
         then {
-            // Records per contig (all records, as samtools idxstats counts them) and HP-tagged records
+            // Records per contig (all records, as samtools idxstats counts them) and HP-tagged records, for BAM or
+            // CRAM (decoded against the fixture reference)
+            def reference = new File("${outputDir}/fixtures/reference.fa")
             def readStats = { String path ->
                 def reader = htsjdk.samtools.SamReaderFactory.makeDefault()
+                    .referenceSequence(reference)
                     .validationStringency(htsjdk.samtools.ValidationStringency.SILENT)
                     .open(new File(path))
                 def perContig = [:]
@@ -91,7 +94,8 @@ nextflow_workflow {
             }
             def faiContigs = new File("${outputDir}/fixtures/reference.fa.fai").readLines().collect { line -> line.split('\t')[0] }
             def input      = readStats("${outputDir}/fixtures/fixture_input.bam")
-            def tagged     = workflow.success ? readStats(workflow.out.tumor_normal_hapbams_ch[0][1]) : null
+            def hapPath    = workflow.success ? workflow.out.tumor_normal_hapbams_ch[0][1].toString() : ''
+            def tagged     = workflow.success ? readStats(hapPath) : null
             def phasedVcf  = workflow.success ? workflow.out.phased_germline_vcf[0][1] : null
 
             assertAll(
@@ -100,8 +104,10 @@ nextflow_workflow {
                 { assert faiContigs == [ 'chr19', 'chrUn_extra' ] },
                 { assert vcfContigs("${outputDir}/fixtures/germline.vcf.gz") == [ 'chr19' ] },
                 { assert input.perContig['chrUn_extra'] >= 20 },
+                // Haplotagged output in the default --aligned_format
+                { assert hapPath.endsWith('.cram') : "haplotagged output ${hapPath} is not CRAM" },
                 // Every read is kept, on every contig
-                { assert tagged.perContig == input.perContig : "haplotagged BAM ${tagged.perContig} != input ${input.perContig}" },
+                { assert tagged.perContig == input.perContig : "haplotagged output ${tagged.perContig} != input ${input.perContig}" },
                 // and haplotagging did happen
                 { assert tagged.hp > 0 },
                 // The phased germline VCF carries the full reference contig list
