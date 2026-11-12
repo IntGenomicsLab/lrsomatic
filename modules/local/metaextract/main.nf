@@ -62,10 +62,15 @@ process METAEXTRACT {
     stub:
     // A real model name, so the Clair3/ClairS model lookups resolve and -stub runs reach the callers
     def stub_model = meta.platform == 'ont' ? 'dna_r10.4.1_e8.2_400bps_sup@v5.0.0' : 'hifi_revio'
-    def stub_kinetics = meta.platform == 'ont' ? '' : 'false'
+    def ont = meta.platform == 'ont'
+    // The real kinetics header check, so a -stub run can give a sample's BAMs different kinetics
+    // (tests/kinetics_pairing.nf.test); an empty placeholder reads as 'false'
     """
     export basecall_model="${stub_model}"
-    export kinetics="${stub_kinetics}"
+    export kinetics=""
+    if [ $ont != 'true' ]; then
+        kinetics=\$( (samtools view -H ${bam} 2> /dev/null || true) | awk '/--keep-kinetics/ {found=1} END {print (found ? "true" : "false")}')
+    fi
     decode_with_fasta=false
     # The real header check, so -stub runs route aligned input as real runs do; an empty placeholder reads as unaligned
     aligned_input=false
