@@ -521,35 +521,18 @@ workflow LRSOMATIC {
     // branched_paired_ch.normal: [meta, bam, bai]  -- normal samples (meta.type == "normal")
     // branched_paired_ch.tumor:  [meta, bam, bai]  -- tumor samples  (meta.type == "tumor")
 
-    // Strip 'type' field from normal meta before joining, so the key is just sample ID
-     branched_paired_ch.normal
-        .map{ meta, bam, bai ->
-            def new_meta = meta.subMap('id',
-                            'paired_data',
-                            'platform',
-                            'sex',
-                            'fiber',
-                            'clair3_model',
-                            'clairS_model',
-                            'clairSTO_model')
-            return[new_meta, bam, bai]
-        }
+    // Tumour/normal pairing key, also used by the SV callers below. Per-BAM fields (type, replicate, kinetics)
+    // must stay out of it, or a pair whose BAMs differ in them is never joined.
+    def pair_meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber', 'clair3_model', 'clairS_model', 'clairSTO_model']
+
+    branched_paired_ch.normal
+        .map{ meta, bam, bai -> [meta.subMap(pair_meta_keys), bam, bai] }
         .set{paired_normal_bams}
     // paired_normal_bams: [meta (no type), normal_bam, normal_bai]
 
     // Join tumor and normal BAMs on meta (type stripped) for somatic calling
     branched_paired_ch.tumor
-        .map{ meta, bam, bai ->
-            def new_meta = meta.subMap('id',
-                            'paired_data',
-                            'platform',
-                            'sex',
-                            'fiber',
-                            'clair3_model',
-                            'clairS_model',
-                            'clairSTO_model')
-            return[new_meta, bam, bai]
-        }
+        .map{ meta, bam, bai -> [meta.subMap(pair_meta_keys), bam, bai] }
         // failOnMismatch: a tumor/normal meta drift must stop the run, not drop the pair
         .join(paired_normal_bams, failOnMismatch: true)
         .set { somatic_smallvar_input }
@@ -571,17 +554,9 @@ workflow LRSOMATIC {
     if (!params.skip_ascat) {
         branched_minimap.tumor_only
             .map { meta, bam, bai ->
-                def new_meta = meta.subMap('id',
-                            'paired_data',
-                            'platform',
-                            'sex',
-                            'fiber',
-                            'clair3_model',
-                            'clairS_model',
-                            'clairSTO_model')
                 def normal_bam = []
                 def normal_bai = []
-                return [new_meta, normal_bam, normal_bai, bam, bai]
+                return [meta.subMap(pair_meta_keys), normal_bam, normal_bai, bam, bai]
             }
             .mix(
                 somatic_smallvar_input
@@ -903,9 +878,6 @@ workflow LRSOMATIC {
     // SEVERUS input: tumor-only and paired samples with their phased germline VCF; [] normal BAM/BAI = tumor-only mode.
     // Severus, Wakhan and SAVANA read the HP (haplotype) tag per read, so build it from
     // PHASING_HAPLOTYPING's haplotagged BAMs rather than the unphased minimap2 BAMs.
-    def sv_meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber',
-        'clair3_model', 'clairS_model', 'clairSTO_model']
-
     PHASING_HAPLOTYPING.out.tumor_normal_hapbams_ch
         .branch { meta, _bam, _bai ->
             tumor_only:    !meta.paired_data
@@ -918,16 +890,16 @@ workflow LRSOMATIC {
         .map { meta, bam, bai ->
             def normal_bam = []
             def normal_bai = []
-            return [meta.subMap(sv_meta_keys), bam, bai, normal_bam, normal_bai]
+            return [meta.subMap(pair_meta_keys), bam, bai, normal_bam, normal_bai]
         }
         .set { tumoronly_hapbams }
 
     branched_hapbams.paired_tumor
-        .map { meta, bam, bai -> return [meta.subMap(sv_meta_keys), bam, bai] }
+        .map { meta, bam, bai -> return [meta.subMap(pair_meta_keys), bam, bai] }
         .set { paired_tumor_hapbams }
 
     branched_hapbams.paired_normal
-        .map { meta, bam, bai -> return [meta.subMap(sv_meta_keys), bam, bai] }
+        .map { meta, bam, bai -> return [meta.subMap(pair_meta_keys), bam, bai] }
         .set { paired_normal_hapbams }
 
     paired_tumor_hapbams
