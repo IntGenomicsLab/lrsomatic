@@ -114,9 +114,9 @@ nextflow_pipeline {
     }
 
     // Aligned input of fiber-seq rows goes through SAMTOOLS_VIEW_FIBERPREP (primary records, CRAM decoded) before
-    // fibertools-rs; every other row reaches FIBERSEQ as given. The METAEXTRACT stub runs the real @SQ check, so the
-    // aligned CRAM here is a SAM header in a .cram file (htslib reads the format from the content), and the empty
-    // .cram reads as unaligned. The filter and the decoding: tests/modules/samtools_view_fiberprep.nf.test.
+    // fibertools-rs (both inside FIBERSEQ); every other row reaches fibertools-rs as given. The METAEXTRACT stub runs
+    // the real @SQ check, so the aligned CRAM here is a SAM header in a .cram file (htslib reads the format from the
+    // content), and the empty .cram reads as unaligned. The filter and the decoding: tests/modules/samtools_view_fiberprep.nf.test.
     test("-profile test, fiber-seq rows given as aligned CRAM, aligned BAM and unaligned CRAM - stub") {
 
         options "-stub"

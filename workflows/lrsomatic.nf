@@ -13,7 +13,6 @@ include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrso
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
-include { fibertoolsReadsInput   } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -23,7 +22,6 @@ include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugi
 // IMPORT MODULES
 //
 include { SAMTOOLS_MERGE                    } from '../modules/nf-core/samtools/merge/main'
-include { SAMTOOLS_VIEW as SAMTOOLS_VIEW_FIBERPREP } from '../modules/nf-core/samtools/view/main'
 include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_MERGE } from '../modules/nf-core/samtools/index/main'
 include { MINIMAP2_INDEX                    } from '../modules/nf-core/minimap2/index/main'
 include { MINIMAP2_ALIGN                    } from '../modules/nf-core/minimap2/align/main'
@@ -429,57 +427,16 @@ workflow LRSOMATIC {
     rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
 
     //
-    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling on the unaligned BAMs, per replicate
+    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling per replicate; aligned input that fibertools-rs reads
+    // is first cut to primary records as BAM (SAMTOOLS_VIEW_FIBERPREP, which decodes CRAM)
     //
     if (!params.skip_fiber) {
-        //
-        // MODULE: SAMTOOLS_VIEW_FIBERPREP (nf-core samtools/view; 8 cpus, see modules.config) -- only for aligned input
-        // that fibertools-rs reads.
-        // fibertools-rs takes no reference, so it cannot decode a CRAM unless htslib finds one itself, and
-        // `ft predict-m6a` panics on secondary alignments, which minimap2 writes with SEQ '*' by default. This keeps the
-        // primary records (-F 0x900) as BAM, decoding a CRAM with --fasta when METAEXTRACT's M5 check allows it, and
-        // from its embedded reference, UR: path or REF_PATH otherwise. MINIMAP2_ALIGN's samtools reset drops secondary
-        // and supplementary records anyway. Every other sample goes to FIBERSEQ as given.
-        // Input:  [meta, bam_or_cram, []]  -- aligned input of samples fibertoolsReadsInput() selects
-        //         [meta, fasta, fai] or [[:], [], []]  -- the reference only where decode_with_fasta is 'true'
-        // Output: .bam -- [meta, bam]  -- primary records only
-        //
-        // ch_samplesheet's meta has gained the model fields since METAEXTRACT, so join on the fields both keep
-        ch_samplesheet
-            .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
-            .join(
-                METAEXTRACT.out.aligned_input
-                    .join(METAEXTRACT.out.decode_with_fasta, failOnMismatch: true)
-                    .map { meta, aligned, decode -> [ [ meta.id, meta.type, meta.replicate ], aligned, decode ] },
-                failOnMismatch: true
-            )
-            .branch { _key, meta, _bams, aligned, _decode ->
-                prep: aligned == 'true' && fibertoolsReadsInput(meta, meta.kinetics)
-                as_given: true
-            }
-            .set { ch_fiber_input }
-
-        ch_fiber_input.prep
-            .combine(ch_fasta)
-            .combine(ch_fai)
-            .multiMap { _key, meta, bams, _aligned, decode, meta_fasta, fasta, _meta_fai, fai ->
-                reads: [ meta, bams, [] ]
-                fasta: decode == 'true' ? [ meta_fasta, fasta, fai ] : [ [:], [], [] ]
-            }
-            .set { ch_fiberprep_in }
-
-        SAMTOOLS_VIEW_FIBERPREP (
-            ch_fiberprep_in.reads,
-            ch_fiberprep_in.fasta,
-            [ [:], [] ],
-            [ [:], [] ],
-            ''
-        )
-
         FIBERSEQ (
-            ch_fiber_input.as_given
-                .map { _key, meta, bams, _aligned, _decode -> [ meta, bams ] }
-                .mix(SAMTOOLS_VIEW_FIBERPREP.out.bam)
+            ch_samplesheet,
+            METAEXTRACT.out.aligned_input,
+            METAEXTRACT.out.decode_with_fasta,
+            ch_fasta,
+            ch_fai
         )
         ch_ubams = FIBERSEQ.out.bams
     }
