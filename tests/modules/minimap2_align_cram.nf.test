@@ -1,0 +1,101 @@
+nextflow_process {
+
+    name "Test Process MINIMAP2_ALIGN on CRAM input"
+    script "../../modules/nf-core/minimap2/align/main.nf"
+    process "MINIMAP2_ALIGN"
+    config "./minimap2_align_cram.config"
+
+    tag "modules"
+    tag "minimap2"
+    tag "cram_input"
+    tag "small"
+
+    // Lives in tests/modules so PR CI runs it, and so the patched nf-core module's own tests stay as upstream has them.
+    // The CRAMs are built from the CHM13 chr19 HiFi test BAM, and each test realigns them next to that BAM: decoding
+    // went right only if every input gives the same read sequences. The config blocks REF_PATH and REF_CACHE, and the
+    // CRAMs' UR: path is gone, so a CRAM without its reference embedded decodes only with the module's --reference.
+    // - another assembly: --reference would decode the embedded-reference CRAM to wrong bases, so it must be left out;
+    // - the same assembly: the CRAM without an embedded reference cannot be decoded without --reference.
+
+    setup {
+        run("CRAM_FIXTURES") {
+            script "./cram_fixtures.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'HS578T' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+    }
+
+    test("BAM, embedded-reference CRAM and unaligned CRAM - reference of another assembly") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                        [ id:'bam' ],
+                        file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true)
+                    ])
+                    .mix(CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded' ], cram ] })
+                    .mix(CRAM_FIXTURES.out.unaligned.map { _meta, cram -> [ [ id:'unaligned' ], cram ] })
+                input[1] = CRAM_FIXTURES.out.other_fasta.map { _meta, fasta -> [ [ id:'GRCh38_chr19' ], fasta ] }
+                input[2] = 'bam'
+                input[3] = ''
+                input[4] = false
+                input[5] = false
+                """
+            }
+        }
+
+        then {
+            def reads_md5 = process.out.bam.collectEntries { meta, out -> [ (meta.id): bam(out).getReadsMD5() ] }
+            def bam_reads = bam(process.out.bam.find { meta, _out -> meta.id == 'bam' }[1]).getStatistics().readCount
+            assertAll(
+                { assert process.success },
+                { assert bam_reads > 0 : "the BAM input realigned to no reads" },
+                { assert reads_md5.keySet() == [ 'bam', 'embedded', 'unaligned' ] as Set },
+                { assert reads_md5.embedded == reads_md5.bam : "embedded-reference CRAM decoded differently: ${reads_md5}" },
+                { assert reads_md5.unaligned == reads_md5.bam : "unaligned CRAM decoded differently: ${reads_md5}" }
+            )
+        }
+    }
+
+    test("BAM, CRAM without and with embedded reference - reference of the same assembly") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                        [ id:'bam' ],
+                        file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true)
+                    ])
+                    .mix(CRAM_FIXTURES.out.noref.map { _meta, cram -> [ [ id:'noref' ], cram ] })
+                    .mix(CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded' ], cram ] })
+                input[1] = CRAM_FIXTURES.out.fasta.map { _meta, fasta -> [ [ id:'CHM13_chr19' ], fasta ] }
+                input[2] = 'bam'
+                input[3] = ''
+                input[4] = false
+                input[5] = false
+                """
+            }
+        }
+
+        then {
+            def reads_md5 = process.out.bam.collectEntries { meta, out -> [ (meta.id): bam(out).getReadsMD5() ] }
+            def bam_reads = bam(process.out.bam.find { meta, _out -> meta.id == 'bam' }[1]).getStatistics().readCount
+            assertAll(
+                { assert process.success },
+                { assert bam_reads > 0 : "the BAM input realigned to no reads" },
+                { assert reads_md5.keySet() == [ 'bam', 'noref', 'embedded' ] as Set },
+                { assert reads_md5.noref == reads_md5.bam : "CRAM without embedded reference decoded differently: ${reads_md5}" },
+                { assert reads_md5.embedded == reads_md5.bam : "embedded-reference CRAM decoded differently: ${reads_md5}" }
+            )
+        }
+    }
+}

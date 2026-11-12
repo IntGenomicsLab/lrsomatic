@@ -61,7 +61,9 @@ workflow PIPELINE_INITIALISATION {
         null,
         help,
         help_full,
-        show_hidden,
+        // Nextflow 26 passes a bare `--show_hidden` as the string 'true', and nf-schema 3.0.0 casts it to Boolean
+        // and fails (fixed upstream after 3.0.0, nextflow-io/nf-schema#237)
+        show_hidden.toString().toBoolean(),
         "",
         "",
         command,
@@ -201,7 +203,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  //  string: Path to MultiQC report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     //
@@ -389,6 +391,25 @@ def validateReportGenePanels() {
 }
 
 //
+// Whether a samplesheet entry (one path or a list of paths) is CRAM input
+//
+def isCram(reads) {
+    return [reads].flatten().any { read_file -> read_file.toString().endsWith('.cram') }
+}
+
+//
+// Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
+// while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
+// fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
+//
+def fibertoolsReadsInput(meta, kinetics) {
+    if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {
+        return false
+    }
+    return meta.fiber == 'y' || (meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a)
+}
+
+//
 // Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
 //
 def padfootGenome() {
@@ -493,6 +514,21 @@ def validateInputSamplesheet(input) {
     }
 
     return [ metas[0], bams ]
+}
+
+//
+// Caller models key the tumor/normal and replicate joins, so all BAMs of a sample must agree on them
+//
+def validateSampleModels(metas) {
+    def model_keys = ['clair3_model', 'clairS_model', 'clairSTO_model']
+    metas.groupBy { meta -> meta.id }.each { id, rows ->
+        def differing = model_keys.findAll { key -> rows.collect { meta -> meta[key] }.unique().size() > 1 }
+        if (differing) {
+            def detail = differing.collect { key -> "${key}: ${rows.collect { meta -> "${meta.type}=${meta[key]}" }.join(', ')}" }.join('; ')
+            error("Sample '${id}': its BAMs resolve to different caller models (${detail}). Set ${differing.join(', ')} explicitly in the samplesheet for every row of this sample.")
+        }
+    }
+    return true
 }
 //
 // Get attribute from genome config file e.g. fasta

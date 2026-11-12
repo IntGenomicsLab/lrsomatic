@@ -53,8 +53,7 @@ workflow PHASING_HAPLOTYPING {
                                         'fiber',
                                         'clair3_model',
                                         'clairS_model',
-                                        'clairSTO_model',
-                                        'kinetics')
+                                        'clairSTO_model')
                     return [ new_meta, bam, bai ]
             }
         .set{ tumor_only_ch }
@@ -80,8 +79,7 @@ workflow PHASING_HAPLOTYPING {
                                         'fiber',
                                         'clair3_model',
                                         'clairS_model',
-                                        'clairSTO_model',
-                                        'kinetics')
+                                        'clairSTO_model')
                     return [ new_meta, bam, bai ]
             }
         .set{ paired_normal_ch }
@@ -96,8 +94,7 @@ workflow PHASING_HAPLOTYPING {
                                         'fiber',
                                         'clair3_model',
                                         'clairS_model',
-                                        'clairSTO_model',
-                                        'kinetics')
+                                        'clairSTO_model')
                     return [ new_meta, bam, bai ]
             }
         .set{ paired_tumor_ch }
@@ -353,8 +350,7 @@ workflow PHASING_HAPLOTYPING {
                                     'fiber',
                                     'clair3_model',
                                     'clairS_model',
-                                    'clairSTO_model',
-                                    'kinetics')
+                                    'clairSTO_model')
                 return [ new_meta, mods ]
             }
             .set{modcall_vcf_ch}
@@ -459,7 +455,7 @@ workflow PHASING_HAPLOTYPING {
     //
     // MODULE: SAMTOOLS_INDEX (label: process_medium)
     // Input:  [meta, bam]  -- haplotagged BAM
-    // Output: .index -- [meta, bai]
+    // Output: .index -- [meta, index]  -- .bai or .crai, whichever matches the haplotag output format
     //
     SAMTOOLS_INDEX (
         tumor_normal_hapbams_ch

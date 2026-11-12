@@ -761,7 +761,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_alphamissense_tbi') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_alphamissense_tbi') } }
             )
         }
     }
@@ -783,7 +783,7 @@ nextflow_function {
             assertAll(
                 // the prep task indexes what it writes, so a supplied index would be discarded
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_revel_tbi') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_revel_tbi') } }
             )
         }
     }
@@ -805,7 +805,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('GRCh38-only') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('GRCh38-only') } }
             )
         }
     }
@@ -827,7 +827,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_alphamissense_aa') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_alphamissense_aa') } }
             )
         }
     }
@@ -850,7 +850,7 @@ nextflow_function {
             assertAll(
                 { assert function.failed },
                 // "On null use --vep_alphamissense" would be the regression here
-                { assert function.stdout.every { line -> !line.contains('On null') } }
+                { assert (function.stdout + function.stderr).every { line -> !line.contains('On null') } }
             )
         }
     }
@@ -872,7 +872,7 @@ nextflow_function {
             assertAll(
                 // without this the module would rewrite the ClinVar --custom entry instead
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_custom') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_custom') } }
             )
         }
     }
@@ -913,7 +913,7 @@ nextflow_function {
             assertAll(
                 // only the download task checks it, so a local file would skip it silently
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_clinvar_md5') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_md5') } }
             )
         }
     }
@@ -958,7 +958,7 @@ nextflow_function {
             assertAll(
                 // the download task fetches both, so wget would be handed a local path
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_clinvar_tbi') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_tbi') } }
             )
         }
     }
@@ -980,7 +980,56 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('vep_clinvar_tbi_md5') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_tbi_md5') } }
+            )
+        }
+    }
+
+    // --- validateSampleModels: a sample's BAMs must agree on caller models, or the pairing joins drop it
+
+    test("validateSampleModels accepts a pair that differs only in kinetics") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'false'],
+                    [id: 's1', type: 'normal', clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'true']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("validateSampleModels stops on a tumor/normal clair3_model mismatch") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  clair3_model: 'r1041_e82_400bps_sup_v500', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'normal', clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's2', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("Sample 's1'") && line.contains('clair3_model') } }
             )
         }
     }
@@ -1007,8 +1056,8 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('modkit pileup, mutational signatures') } },
-                { assert function.stdout.any { line -> line.contains('--skip_modkit --skip_signatures') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('modkit pileup, mutational signatures') } },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--skip_modkit --skip_signatures') } }
             )
         }
     }
@@ -1091,7 +1140,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains("--germline_var_keep: no caller given") } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: no caller given") } }
             )
         }
     }
@@ -1110,7 +1159,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains("--germline_var_keep: empty entry") } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: empty entry") } }
             )
         }
     }
@@ -1130,7 +1179,7 @@ nextflow_function {
             assertAll(
                 // DeepSomatic only adjudicates somatic calls
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains("--germline_var_keep: 'deepsomatic' is not a valid caller") } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: 'deepsomatic' is not a valid caller") } }
             )
         }
     }
@@ -1149,7 +1198,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains("--somatic_var_keep: 'deepvariant' is not a valid caller") } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--somatic_var_keep: 'deepvariant' is not a valid caller") } }
             )
         }
     }
@@ -1168,7 +1217,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains("--somatic_var_keep: 'clair' is listed more than once") } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--somatic_var_keep: 'clair' is listed more than once") } }
             )
         }
     }
