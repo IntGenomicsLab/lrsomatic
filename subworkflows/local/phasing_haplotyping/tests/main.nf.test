@@ -57,7 +57,7 @@ nextflow_workflow {
                 """
                 // The keys PHASING_HAPLOTYPING keeps (subMap), so the BAM and VCF metas join as in the pipeline
                 def vcf_meta = [ id:'sample1', paired_data:false, platform:'pb', sex:'female', fiber:'n',
-                                 clair3_model:null, clairS_model:null, clairSTO_model:'hifi_revio', kinetics:false ]
+                                 clair3_model:null, clairS_model:null, clairSTO_model:'hifi_revio' ]
                 input[0] = PHASING_FIXTURE_BAM.out.bam.map { _meta, bam, bai -> [ vcf_meta + [ type:'tumor' ], bam, bai ] }
                 input[1] = PHASING_FIXTURE_VCF.out.germline.map { _meta, vcf, tbi -> [ vcf_meta, vcf, tbi ] }
                 input[2] = PHASING_FIXTURE_VCF.out.somatic.map { _meta, vcf, tbi -> [ vcf_meta, vcf, tbi ] }
