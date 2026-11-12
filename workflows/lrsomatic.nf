@@ -881,13 +881,14 @@ workflow LRSOMATIC {
             .join(SIGPROFILER_MATRIXGENERATOR.out.dbs78, remainder: true)
             .join(SIGPROFILER_MATRIXGENERATOR.out.id83, remainder: true)
             .filter { _meta, _output_dir, sbs96, dbs78, id83 -> sbs96 || dbs78 || id83 }
-            .map { meta, _output_dir, sbs96, dbs78, id83 -> [meta, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
+            .map { meta, output_dir, sbs96, dbs78, id83 -> [meta, output_dir, sbs96 ?: [], dbs78 ?: [], id83 ?: []] }
             .set { sigprofiler_matrices }
-        // sigprofiler_matrices: [meta, sbs96 | [], dbs78 | [], id83 | []]
+        // sigprofiler_matrices: [meta, output_dir, sbs96 | [], dbs78 | [], id83 | []]
 
         //
         // MODULE: SIGPROFILER_ASSIGNMENT (label: process_low) -- fits COSMIC signatures (SBS/DBS per build, ID from GRCh37)
-        // Output: per-sample Assignment_Solution directories with activities, statistics and plots
+        // Input:  [meta, output_dir, sbs96, dbs78, id83], genome name, COSMIC version
+        // Output: per-sample Assignment_Solution directories with activities, per-mutation probabilities, statistics and plots
         //
         SIGPROFILER_ASSIGNMENT (
             sigprofiler_matrices,
@@ -1111,13 +1112,17 @@ workflow LRSOMATIC {
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
         ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
+        // SAVANA's PacBio classifier has no tumour-only mode, so its PacBio tumour-only calls are filtered against
+        // the Severus germline SV panel of normals -- see TUMORONLY_SAVANA
+        ch_savana_sv_pon = channel.value([[:], params.savana_pb_pon_filter && params.pon_file ? file(params.pon_file) : []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,
             ch_fasta,
             ch_fai,
             ch_savana_contigs,
-            ch_savana_g1000_vcf
+            ch_savana_g1000_vcf,
+            ch_savana_sv_pon
         )
 
         PAIRED_SAVANA (
