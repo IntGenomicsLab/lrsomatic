@@ -71,6 +71,11 @@ process CLAIRSTO {
             cp -- "\$src" "${prefix}_Tumor_\${table}.txt"
         fi
     done
+
+    # The intermediate haplotagged copy of the tumor reads (phased_bam_output/, always BAM, so larger than a
+    # CRAM input) is unused once ClairS-TO exits; --remove_intermediate_dir would also take cna_output above.
+    # 0.5.1 names the directory tmp_<sample_name>.
+    rm -rf tmp*/phasing_output/phased_bam_output
     """
 
     stub:

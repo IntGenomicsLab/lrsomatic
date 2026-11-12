@@ -61,7 +61,9 @@ workflow PIPELINE_INITIALISATION {
         null,
         help,
         help_full,
-        show_hidden,
+        // Nextflow 26 passes a bare `--show_hidden` as the string 'true', and nf-schema 3.0.0 casts it to Boolean
+        // and fails (fixed upstream after 3.0.0, nextflow-io/nf-schema#237)
+        show_hidden.toString().toBoolean(),
         "",
         "",
         command,
@@ -201,7 +203,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  //  string: Path to MultiQC report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     //
@@ -386,6 +388,25 @@ def validateReportGenePanels() {
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
     }
+}
+
+//
+// Whether a samplesheet entry (one path or a list of paths) is CRAM input
+//
+def isCram(reads) {
+    return [reads].flatten().any { read_file -> read_file.toString().endsWith('.cram') }
+}
+
+//
+// Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
+// while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
+// fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
+//
+def fibertoolsReadsInput(meta, kinetics) {
+    if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {
+        return false
+    }
+    return meta.fiber == 'y' || (meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a)
 }
 
 //
