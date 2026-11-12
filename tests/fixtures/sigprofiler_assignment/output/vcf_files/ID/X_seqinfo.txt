@@ -1,0 +1,14 @@
+sample1	X	185959	B:1:Del:C:3	A	AT	1
+sample1	X	190269	B:3:Ins:R:0	A	AT	1
+sample1	X	190967	B:1:Del:C:3	A	AT	1
+sample1	X	195019	B:4:Del:R:2	A	AT	1
+sample1	X	197895	B:1:Ins:C:0	A	AT	1
+sample1	X	201634	B:4:Ins:R:4	A	AT	1
+sample1	X	203049	B:4:Del:M:1	A	AT	1
+sample1	X	205803	B:3:Del:M:1	A	AT	1
+sample1	X	210257	B:1:Ins:T:3	A	AT	1
+sample1	X	214512	B:4:Del:M:2	A	AT	1
+sample1	X	219044	B:1:Del:C:0	A	AT	1
+sample1	X	221639	B:1:Del:T:4	A	AT	1
+sample1	X	223838	B:1:Ins:T:4	A	AT	1
+sample1	X	224830	B:1:Ins:T:2	A	AT	1
