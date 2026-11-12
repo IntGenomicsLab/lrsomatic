@@ -391,6 +391,25 @@ def validateReportGenePanels() {
 }
 
 //
+// Whether a samplesheet entry (one path or a list of paths) is CRAM input
+//
+def isCram(reads) {
+    return [reads].flatten().any { read_file -> read_file.toString().endsWith('.cram') }
+}
+
+//
+// Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
+// while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
+// fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
+//
+def fibertoolsReadsInput(meta, kinetics) {
+    if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {
+        return false
+    }
+    return meta.fiber == 'y' || (meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a)
+}
+
+//
 // Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
 //
 def padfootGenome() {

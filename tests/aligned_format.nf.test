@@ -1,0 +1,161 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --aligned_format cram|bam wiring (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // PR CI runs only `small` tests, and the one real run there (default) is CRAM with no replicates. These -stub runs
+    // use the extended samplesheet, whose sample4 has two replicates, so the format-dependent wiring runs on every PR:
+    // MINIMAP2_ALIGN's output format, the bam/cram mix, SAMTOOLS_MERGE with its reference, LONGPHASE_HAPLOTAG's
+    // ext.cram and the published file names. Read content is covered by the real runs (default, clair_only, deep_only).
+
+    test("-profile test, extended samplesheet, CRAM default - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+            }
+        }
+
+        then {
+            def merged = workflow.trace.succeeded().findAll { task -> task.name.contains(':SAMTOOLS_MERGE ') }*.name
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert merged.size() == 1 && merged[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${merged}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
+                                       'sample3_tumor', 'sample4_tumor', 'sample5_tumor']
+                                       .collectMany { name -> [name + '.cram', name + '.cram.crai'] } as Set }
+            )
+        }
+    }
+
+    test("-profile test, extended samplesheet, --aligned_format bam - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                input          = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/refs/heads/main/samplesheets/test_sheet_2.csv"
+                aligned_format = 'bam'
+            }
+        }
+
+        then {
+            def merged = workflow.trace.succeeded().findAll { task -> task.name.contains(':SAMTOOLS_MERGE ') }*.name
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert merged.size() == 1 && merged[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${merged}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor',
+                                       'sample3_tumor', 'sample4_tumor', 'sample5_tumor']
+                                       .collectMany { name -> [name + '.bam', name + '.bam.bai'] } as Set }
+            )
+        }
+    }
+
+    // CRAM samplesheet input: the FASTA staged into METAEXTRACT for CRAM rows only, the decode_with_fasta join into
+    // CRAMINO_PRE (failOnMismatch) and replicates of one sample given in both formats. The M5 decisions and the decoding
+    // itself need real reads: tests/modules/metaextract_cram.nf.test and minimap2_align_cram.nf.test.
+    test("-profile test, BAM and CRAM rows mixed - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                // Stub tasks never open the reads, so empty files stand in for the CRAMs: the schema only checks they exist
+                def input_dir = new File("${outputDir}/../cram_input")
+                input_dir.mkdirs()
+                def tumour_cram = new File(input_dir, 'sample1_tumour.cram')
+                def rep2_cram   = new File(input_dir, 'sample4_rep2.cram')
+                tumour_cram.text = ''
+                rep2_cram.text   = ''
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_cram.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate',
+                    "sample1,${tumour_cram.canonicalPath},${data}/headered_BL2009_ONT_UL_chr19_downsample.bam,ont,female,n,,,,",
+                    "sample4,${data}/HS578T_HIFI_chr19.bam,,pb,female,n,,,,1",
+                    "sample4,${rep2_cram.canonicalPath},,pb,female,n,,,,2"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }*.name }
+            // Every file in <sample>/bamfiles/
+            def published = new File("$outputDir").listFiles().findAll { dir -> dir.isDirectory() }.collectMany { dir ->
+                (new File(dir, 'bamfiles').listFiles() ?: []) as List
+            }*.name as Set
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('METAEXTRACT').size() == 4 : "METAEXTRACT tasks: ${succeeded('METAEXTRACT')}" },
+                { assert succeeded('CRAMINO_PRE').size() == 4 : "CRAMINO_PRE tasks: ${succeeded('CRAMINO_PRE')}" },
+                { assert succeeded('MINIMAP2_ALIGN').size() == 4 : "MINIMAP2_ALIGN tasks: ${succeeded('MINIMAP2_ALIGN')}" },
+                { assert succeeded('SAMTOOLS_MERGE').size() == 1 && succeeded('SAMTOOLS_MERGE')[0].endsWith('(sample4)') : "SAMTOOLS_MERGE tasks: ${succeeded('SAMTOOLS_MERGE')}" },
+                { assert published == ['sample1_normal', 'sample1_tumor', 'sample4_tumor']
+                                       .collectMany { name -> [name + '.cram', name + '.cram.crai'] } as Set }
+            )
+        }
+    }
+
+    // Aligned input of fiber-seq rows goes through SAMTOOLS_VIEW_FIBERPREP (primary records, CRAM decoded) before
+    // fibertools-rs (both inside FIBERSEQ); every other row reaches fibertools-rs as given. The METAEXTRACT stub runs
+    // the real @SQ check, so the aligned CRAM here is a SAM header in a .cram file (htslib reads the format from the
+    // content), and the empty .cram reads as unaligned. The filter and the decoding: tests/modules/samtools_view_fiberprep.nf.test.
+    test("-profile test, fiber-seq rows given as aligned CRAM, aligned BAM and unaligned CRAM - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../fiber_input")
+                input_dir.mkdirs()
+                def aligned_cram   = new File(input_dir, 'fibercram.cram')
+                def unaligned_cram = new File(input_dir, 'fiberucram.cram')
+                aligned_cram.text   = '@HD\tVN:1.6\tSO:coordinate\n@SQ\tSN:chr19\tLN:58617616\n'
+                unaligned_cram.text = ''
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_fiber.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber',
+                    "fibercram,${aligned_cram.canonicalPath},,ont,female,y",
+                    "fiberucram,${unaligned_cram.canonicalPath},,ont,female,y",
+                    "fiberbam,${data}/HS578T_HIFI_chr19.bam,,pb,female,y",
+                    "plain,${data}/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,n"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }*.name }
+            def samples = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') } as Set }
+            assertAll(
+                { assert workflow.success },
+                { assert samples('SAMTOOLS_VIEW_FIBERPREP') == [ 'fibercram', 'fiberbam' ] as Set : "SAMTOOLS_VIEW_FIBERPREP tasks: ${succeeded('SAMTOOLS_VIEW_FIBERPREP')}" },
+                { assert succeeded('SAMTOOLS_VIEW_FIBERPREP').size() == 2 },
+                { assert samples('FIBERTOOLSRS_NUCLEOSOMES') == [ 'fibercram', 'fiberucram', 'fiberbam' ] as Set : "FIBERTOOLSRS_NUCLEOSOMES tasks: ${succeeded('FIBERTOOLSRS_NUCLEOSOMES')}" },
+                { assert succeeded('FIBERTOOLSRS_NUCLEOSOMES').size() == 3 },
+                { assert samples('MINIMAP2_ALIGN') == [ 'fibercram', 'fiberucram', 'fiberbam', 'plain' ] as Set : "MINIMAP2_ALIGN tasks: ${succeeded('MINIMAP2_ALIGN')}" },
+                { assert succeeded('MINIMAP2_ALIGN').size() == 4 }
+            )
+        }
+    }
+}

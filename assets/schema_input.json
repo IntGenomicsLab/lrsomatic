@@ -17,15 +17,15 @@
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.bam$",
-                "errorMessage": "Bam file of tumor sample must be provided, cannot contain spaces and must have extension '.bam'"
+                "pattern": "^\\S+\\.(bam|cram)$",
+                "errorMessage": "BAM or CRAM file of tumor sample must be provided, cannot contain spaces and must have extension '.bam' or '.cram'"
             },
             "bam_normal": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.bam$",
-                "errorMessage": "Bam file of normal sample must be provided, cannot contain spaces and must have extension '.bam'"
+                "pattern": "^\\S+\\.(bam|cram)$",
+                "errorMessage": "BAM or CRAM file of normal sample must be provided, cannot contain spaces and must have extension '.bam' or '.cram'"
             },
             "platform": {
                 "type": "string",
