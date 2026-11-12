@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "sigprofiler_assignment"
-description: Fit COSMIC reference mutational signatures to SBS96, DBS78 and ID83 matrices with SigProfilerAssignment
+description: Fit COSMIC reference mutational signatures to SBS96, DBS78 and ID83 matrices with SigProfilerAssignment and export per-mutation signature probabilities
 keywords:
   - mutational signatures
   - cosmic
@@ -23,6 +23,9 @@ input:
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1' ]`
+    - spmg_output:
+        type: directory
+        description: SigProfilerMatrixGenerator output directory; its vcf_files/*/*_seqinfo.txt give each mutation's context for the per-mutation probabilities
     - sbs96:
         type: file
         description: SBS96 matrix from SigProfilerMatrixGenerator (optional, may be [])
@@ -77,6 +80,14 @@ output:
         type: file
         description: Signature activity (mutation count per signature) tables, one per fitted matrix type
         pattern: "*/*/Assignment_Solution/Activities/*_Activities.txt"
+  probabilities_per_mutation:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt":
+        type: file
+        description: Per-mutation probability of each COSMIC signature (Sample Names, Chr without the chr prefix, Pos, MutationType, one column per signature), one per fitted context
+        pattern: "*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt"
   versions_sigprofilerassignment:
     - - ${task.process}:
           type: string

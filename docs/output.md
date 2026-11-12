@@ -477,6 +477,15 @@ steps; tumor-only samples run the combined `savana to` command instead, producin
 in one step. We strongly recommend matched tumor/normal mode for best performance -- SAVANA's own
 docs note tumor-only calling is a fallback, best combined with population/panel-of-normals filtering.
 
+SAVANA's PacBio classifier (`--pb`) has no tumour-only mode: it rejects a call only on matched-normal
+evidence, so a PacBio tumour-only `sample.classified.somatic.vcf` holds nearly every germline SV in the
+genome (~28k on a 30x sample). For these samples the pipeline removes the SVs found in the genome's
+Severus germline SV panel of normals (Severus's matching rule) and passes
+`sample.pon_filtered.classified.somatic.vcf` to VEP, Padfoot and ReConPlot instead; about 97% of the
+calls are removed. What remains is still mostly germline (on a PacBio pair, all 761 survivors had
+matched-normal support), so treat PacBio tumour-only SAVANA SVs as a fallback and prefer Severus
+or a matched normal. Turn this off with `--savana_pb_pon_filter false`.
+
 ```
 ├── savana
 │   ├── sample.sv_breakpoints.vcf
@@ -487,6 +496,8 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 │   ├── sample.classified.somatic.vcf
 │   ├── sample.classified.somatic.bedpe
 │   ├── sample.classified.germline.vcf
+│   ├── sample.pon_filtered.classified.somatic.vcf
+│   ├── sample.pon_filtered.pon_filter_summary.tsv
 │   ├── sample_segmented_absolute_copy_number.tsv
 │   ├── sample_ranked_solutions.tsv
 │   ├── sample_fitted_purity_ploidy.tsv
@@ -496,23 +507,25 @@ docs note tumor-only calling is a fallback, best combined with population/panel-
 │   ├── 10kbp_bin_ref_all_sample.bed
 ```
 
-| File                                            | Description                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `sample.sv_breakpoints.vcf`                     | Raw (unclassified) SV breakpoints from `savana run`/`savana to`                |
-| `sample.sv_breakpoints.bedpe`                   | Raw SV breakpoints in BEDPE format                                             |
-| `sample.sv_breakpoints_read_support.tsv`        | Supporting-read evidence per breakpoint                                        |
-| `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                              |
-| `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                   |
-| `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                       |
-| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)     |
-| `sample.classified.germline.vcf`                | Classified germline SVs                                                        |
-| `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`             |
-| `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                      |
-| `sample_fitted_purity_ploidy.tsv`               | Selected purity/ploidy fit                                                     |
-| `sample_raw_read_counts.tsv`                    | Raw binned read counts used for CN segmentation                                |
-| `sample_read_counts_<mode>_log2r_segmented.tsv` | Segmented log2 read-count ratios per bin (`<mode>` is `mnorm` or `self`)       |
-| `sample_allele_counts_hetSNPs.bed`              | Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given) |
-| `10kbp_bin_ref_all_sample.bed`                  | Genome bins used for read-count binning                                        |
+| File                                            | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `sample.sv_breakpoints.vcf`                     | Raw (unclassified) SV breakpoints from `savana run`/`savana to`                   |
+| `sample.sv_breakpoints.bedpe`                   | Raw SV breakpoints in BEDPE format                                                |
+| `sample.sv_breakpoints_read_support.tsv`        | Supporting-read evidence per breakpoint                                           |
+| `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                                 |
+| `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                      |
+| `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                          |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)        |
+| `sample.classified.germline.vcf`                | Classified germline SVs                                                           |
+| `sample.pon_filtered.classified.somatic.vcf`    | PacBio tumour-only: somatic SVs not in the SV panel of normals -- used downstream |
+| `sample.pon_filtered.pon_filter_summary.tsv`    | PacBio tumour-only: events and records before and after the PoN filter            |
+| `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`                |
+| `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                         |
+| `sample_fitted_purity_ploidy.tsv`               | Selected purity/ploidy fit                                                        |
+| `sample_raw_read_counts.tsv`                    | Raw binned read counts used for CN segmentation                                   |
+| `sample_read_counts_<mode>_log2r_segmented.tsv` | Segmented log2 read-count ratios per bin (`<mode>` is `mnorm` or `self`)          |
+| `sample_allele_counts_hetSNPs.bed`              | Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given)    |
+| `10kbp_bin_ref_all_sample.bed`                  | Genome bins used for read-count binning                                           |
 
 #### `deepvariant`
 
@@ -672,7 +685,7 @@ field rather than a match value.
 
 ### `signatures`
 
-Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) builds the mutational matrices and [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment) fits COSMIC reference signatures to them. The `DBS78` and `ID83` directories are absent when a sample has no doublet substitutions or indels. See [Mutational Signature Options](usage.md#mutational-signature-options) for the CHM13 handling.
+Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) builds the mutational matrices and [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment) fits COSMIC reference signatures to them. The `DBS78` and `ID83` directories are absent when a sample has no doublet substitutions or indels. File names use the sample ID with every character other than letters, digits, `_` and `-` replaced by `_`. See [Mutational Signature Options](usage.md#mutational-signature-options) for the CHM13 handling.
 
 <details markdown="1">
 <summary>Output files</summary>
@@ -706,7 +719,9 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │           │   │   │   ├── Assignment_Solution_Activities.txt
 │           │   │   │   ├── Assignment_Solution_Activity_Plots.pdf
 │           │   │   │   ├── Assignment_Solution_TMB_plot.pdf
-│           │   │   │   └── Decomposed_MutationType_Probabilities.txt
+│           │   │   │   ├── Decomposed_MutationType_Probabilities.txt
+│           │   │   │   └── Decomposed_Mutation_Probabilities
+│           │   │   │       └── Decomposed_Mutation_Probabilities_<sample>.txt
 │           │   │   ├── Signatures
 │           │   │   │   ├── Assignment_Solution_Signatures.txt
 │           │   │   │   └── SBS_96_plots_Assignment_Solution.pdf
@@ -720,19 +735,21 @@ Mutational signature analysis of the PASS SNVs and indels in the phased somatic 
 │               └── ...
 ```
 
-| File                                                                                     | Description                                                                                                                                        |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `matrices/output/SBS/sample.SBS96.all`                                                   | SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside |
-| `matrices/output/DBS/sample.DBS78.all`                                                   | DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)                                                                            |
-| `matrices/output/ID/sample.ID83.all`                                                     | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                   |
-| `matrices/output/plots/*.pdf`                                                            | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                |
-| `matrices/output/vcf_files/`                                                             | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                            |
-| `matrices/output/logs/*`                                                                 | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                 |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt` | Number of mutations attributed to every COSMIC signature                                                                                           |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`            | Activity bar plots and tumour mutational burden plot                                                                                               |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                 | The reference signatures used for the fit and their spectra                                                                                        |
-| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`             | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                |
-| `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                            | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                         |
+| File                                                                                                              | Description                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matrices/output/SBS/sample.SBS96.all`                                                                            | SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside                                                                         |
+| `matrices/output/DBS/sample.DBS78.all`                                                                            | DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)                                                                                                                                                    |
+| `matrices/output/ID/sample.ID83.all`                                                                              | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                                                                                           |
+| `matrices/output/plots/*.pdf`                                                                                     | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                                                                                        |
+| `matrices/output/vcf_files/`                                                                                      | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                                                                                                    |
+| `matrices/output/logs/*`                                                                                          | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                                                                                         |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt`                          | Number of mutations attributed to every COSMIC signature                                                                                                                                                                   |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt` | Probability of each signature per mutation class                                                                                                                                                                           |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/`        | Probability of each COSMIC signature for every mutation: `Sample Names`, `Chr` (no `chr` prefix; `chrM` is `MT`), `Pos`, `MutationType`, then one column per signature. E.g. to attribute a driver mutation to a signature |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`                                     | Activity bar plots and tumour mutational burden plot                                                                                                                                                                       |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                                          | The reference signatures used for the fit and their spectra                                                                                                                                                                |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`                                      | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                                                                                        |
+| `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                                                     | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                                                                                                 |
 
 </details>
 
