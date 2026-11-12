@@ -502,8 +502,6 @@ process {
 }
 ```
 
-ShatterSeek has no SIF twin: like CoRAL, its Docker image is used under every engine (Singularity/Apptainer convert it when pulling).
-
 Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under `containers/`).
 
 #### Variant Filtering and Combining Options
