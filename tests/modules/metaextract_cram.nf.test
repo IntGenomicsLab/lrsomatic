@@ -48,11 +48,11 @@ nextflow_process {
 
         then {
             def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
-            def aligned = process.out.aligned_cram.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_input.collectEntries { meta, value -> [ (meta.id): value ] }
             assertAll(
                 { assert process.success },
                 { assert decode == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
-                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_cram: ${aligned}" }
+                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" }
             )
         }
     }
@@ -74,16 +74,16 @@ nextflow_process {
 
         then {
             def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
-            def aligned = process.out.aligned_cram.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_input.collectEntries { meta, value -> [ (meta.id): value ] }
             assertAll(
                 { assert process.success },
                 { assert decode == [ embedded: 'false', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
-                { assert aligned == [ embedded: 'true', unaligned: 'false' ] : "aligned_cram: ${aligned}" }
+                { assert aligned == [ embedded: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" }
             )
         }
     }
 
-    test("BAM input - no FASTA, no CRAM check") {
+    test("aligned BAM input - no FASTA, no M5 check, aligned") {
 
         when {
             process {
@@ -101,7 +101,7 @@ nextflow_process {
             assertAll(
                 { assert process.success },
                 { assert process.out.decode_with_fasta == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] },
-                { assert process.out.aligned_cram == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] }
+                { assert process.out.aligned_input == [ [ [ id:'bam', platform:'pb' ], 'true' ] ] : "aligned BAM: ${process.out.aligned_input}" }
             )
         }
     }

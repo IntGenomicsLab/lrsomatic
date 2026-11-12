@@ -185,6 +185,11 @@
                         "installed_by": ["bam_stats_samtools"],
                         "patch": "modules/nf-core/samtools/stats/samtools-stats.diff"
                     },
+                    "samtools/view": {
+                        "branch": "master",
+                        "git_sha": "80eb474060aa4aa6d7b4b00e0dc785174f156a28",
+                        "installed_by": ["modules"]
+                    },
                     "savana/classify": {
                         "branch": "master",
                         "git_sha": "7e612460bcb5aaf9c6f146cfb6475064c2d062ee",

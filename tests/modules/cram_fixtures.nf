@@ -16,16 +16,39 @@ process CRAM_FIXTURES {
     tuple val(meta), path("unaligned.cram")       , emit: unaligned
     tuple val(meta), path("reference.fa")         , emit: fasta
     tuple val(meta), path("other_reference.fa")   , emit: other_fasta
+    // The BAM plus secondary alignments as minimap2 writes them (SEQ '*'), as BAM and as both CRAMs, and the BAM's
+    // primary records alone: the records a filter dropping secondary and supplementary alignments must leave
+    tuple val(meta), path("secondary.bam")         , emit: secondary_bam
+    tuple val(meta), path("secondary_embedded.cram"), emit: secondary_embedded
+    tuple val(meta), path("secondary_noref.cram")  , emit: secondary_noref
+    tuple val(meta), path("primary_only.bam")      , emit: primary_only
 
     script:
     """
     zcat -f ${fasta} > reference.fa
     zcat -f ${other_fasta} > other_reference.fa
+    # Secondary copies of the first 5 forward or reverse primary records: flag + 256, MAPQ 0, no SEQ/QUAL, no tags
+    if [ "\$(samtools view -c -f 0x100 ${bam})" -ne 0 ]; then
+        echo "${bam} already has secondary alignments; primary_only.bam below assumes it has none" >&2
+        exit 1
+    fi
+    samtools view -h ${bam} \\
+        | awk -F'\\t' -v OFS='\\t' '/^@/ { print; next } { print }
+            n < 5 && (\$2 == 0 || \$2 == 16) { \$2 = \$2 + 256; \$5 = 0; \$10 = "*"; \$11 = "*"
+                s = \$1; for (i = 2; i <= 11; i++) s = s OFS \$i; print s; n++ }' \\
+        | samtools view -b -o secondary.bam -
+    if [ "\$(samtools view -c -f 0x100 secondary.bam)" -ne 5 ]; then
+        echo "secondary.bam: expected 5 injected secondary alignments" >&2
+        exit 1
+    fi
+    samtools view -b -F 0x800 -o primary_only.bam ${bam}
     # The CRAMs are written against a copy that is then deleted, so their @SQ UR: tags point nowhere and
-    # aligned_noref.cram can only be decoded with a reference handed to samtools
+    # the *noref.cram files can only be decoded with a reference handed to samtools
     cp reference.fa ur_gone.fa
     samtools view -C --reference ur_gone.fa --output-fmt-option version=3.0 --output-fmt-option embed_ref=1 -o aligned_embedded.cram ${bam}
     samtools view -C --reference ur_gone.fa --output-fmt-option version=3.0 -o aligned_noref.cram ${bam}
+    samtools view -C --reference ur_gone.fa --output-fmt-option version=3.0 --output-fmt-option embed_ref=1 -o secondary_embedded.cram secondary.bam
+    samtools view -C --reference ur_gone.fa --output-fmt-option version=3.0 -o secondary_noref.cram secondary.bam
     rm ur_gone.fa ur_gone.fa.fai
     samtools reset -O cram,version=3.0 -o unaligned.cram ${bam}
     """

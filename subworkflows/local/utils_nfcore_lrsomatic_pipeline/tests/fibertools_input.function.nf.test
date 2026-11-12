@@ -1,6 +1,6 @@
 nextflow_function {
 
-    name "Test the fibertools-rs input check"
+    name "Test the fibertools-rs input selection"
     script "../main.nf"
     // "small" is what .github/workflows/nf-test.yml selects on for pull_request
     tag "small"
@@ -9,8 +9,8 @@ nextflow_function {
     tag "utils_nfcore_lrsomatic_pipeline"
     tag "cram_input"
 
-    // fibertoolsReadsInput decides which samples FIBERSEQ hands to fibertools-rs, which takes no reference, so the
-    // workflow rejects an aligned CRAM for exactly these. It must follow the FIBERSEQ subworkflow's branches.
+    // fibertoolsReadsInput decides which samples FIBERSEQ hands to fibertools-rs, so the workflow prepares aligned
+    // input (SAMTOOLS_VIEW_FIBERPREP) for exactly these. It must follow the FIBERSEQ subworkflow's branches.
 
     test("fiber-seq row - read by fibertools-rs") {
 

@@ -397,7 +397,8 @@ def isCram(reads) {
 
 //
 // Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
-// while m6A prediction runs. fibertools-rs takes no reference, so an aligned CRAM there must be rejected up front.
+// while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
+// fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
 //
 def fibertoolsReadsInput(meta, kinetics) {
     if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {

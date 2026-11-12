@@ -70,10 +70,14 @@ An **aligned** CRAM can only be read with the reference it was written against:
   `REF_PATH`/`REF_CACHE` (with `REF_PATH` unset, htslib downloads the sequence from the EBI reference server), never
   from `--fasta`. If none of those is reachable from the tasks, the run stops with an htslib `Unable to fetch reference` error.
 
-For fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics, use BAM or unaligned CRAM: fibertools-rs reads
-them before alignment and cannot take a reference. An aligned CRAM there stops the run as soon as its header has been
-read, with an error naming the sample, unless fibertools-rs is not run on it (`--skip_fiber`, `--skip_normalfiber` for
-a normal, or `--skip_m6a` for a PacBio sample with `fiber` = `n`).
+Fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics are read by fibertools-rs before alignment, and
+fibertools-rs cannot take a reference. Aligned input for these samples, BAM or CRAM, therefore first goes through
+`SAMTOOLS_VIEW_FIBERPREP`, which writes the primary records as BAM: secondary and supplementary records are dropped
+(`samtools view -F 0x900`), since fibertools-rs crashes on the secondary alignments minimap2 writes by default and
+the pipeline's realignment drops both anyway. An aligned CRAM is decoded there by the rules above, so it works if it
+embeds its reference or matches `--fasta`. Otherwise `SAMTOOLS_VIEW_FIBERPREP` fails for that sample with htslib's
+`Failed to populate reference` error, unless its `UR:` path or `REF_PATH` is reachable: write the CRAM with
+`--output-fmt-option embed_ref=1`, convert it to BAM, or run with the `--fasta` it was aligned to.
 
 ## Running the pipeline
 

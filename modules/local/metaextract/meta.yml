@@ -71,17 +71,17 @@ output:
         description: |
           'true' when the input is an aligned CRAM sharing no contig name with `fasta`
           under a different M5, so it may be decoded with `fasta`; 'false' otherwise
-  aligned_cram:
+  aligned_input:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-    - env(aligned_cram):
+    - env(aligned_input):
         type: string
         description: |
-          'true' when the input is a CRAM with @SQ lines (checked only when `fasta` is given),
-          which needs its own reference to decode; 'false' otherwise
+          'true' when the input (BAM or CRAM) has @SQ lines, i.e. is aligned; 'false' otherwise.
+          The stub runs the same header check, so an empty placeholder file reads as 'false'
   versions_samtools:
     - - ${task.process}:
           type: string
