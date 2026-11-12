@@ -61,7 +61,9 @@ workflow PIPELINE_INITIALISATION {
         null,
         help,
         help_full,
-        show_hidden,
+        // Nextflow 26 passes a bare `--show_hidden` as the string 'true', and nf-schema 3.0.0 casts it to Boolean
+        // and fails (fixed upstream after 3.0.0, nextflow-io/nf-schema#237)
+        show_hidden.toString().toBoolean(),
         "",
         "",
         command,
