@@ -1,0 +1,96 @@
+nextflow_pipeline {
+
+    name "Test pipeline - tumour/normal pairing and replicate merging when kinetics differ per BAM (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // METAEXTRACT sets `kinetics` per BAM from its header (--keep-kinetics). Before #219 that flag keyed the replicate
+    // groupKey and every tumour/normal join, so a PacBio pair whose tumour kept kinetics and whose normal did not was
+    // silently left out of all variant calling, and the report join then crashed. The METAEXTRACT stub runs the real
+    // header check, so a SAM header carrying --keep-kinetics stands in for a kinetics-keeping BAM; the test-data BAMs
+    // carry none and read as 'false'. Stub tasks never open the reads, so a header is all the stand-in needs.
+
+    test("-profile test, PacBio pair and replicates with mixed kinetics - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../kinetics_input")
+                input_dir.mkdirs()
+                def kinetics_header = '@HD\tVN:1.6\tSO:unknown\n' +
+                    '@PG\tID:ccs\tPN:ccs\tVN:8.0.0\tCL:ccs movie.subreads.bam movie.hifi_reads.bam --keep-kinetics\n'
+                def pair_tumour = new File(input_dir, 'pbpair_tumour_kinetics.bam')
+                def rep1        = new File(input_dir, 'pbreps_rep1_kinetics.bam')
+                pair_tumour.text = kinetics_header
+                rep1.text        = kinetics_header
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_kinetics.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate',
+                    // tumour kinetics 'true', normal 'false'
+                    "pbpair,${pair_tumour.canonicalPath},${data}/HS578BST_HIFI_chr19.bam,pb,female,n,,,,",
+                    // tumour-only, replicate 1 kinetics 'true', replicate 2 'false'
+                    "pbreps,${rep1.canonicalPath},,pb,female,n,,,,1",
+                    "pbreps,${data}/HS578T_HIFI_chr19.bam,,pb,female,n,,,,2"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }
+            }
+            assertAll(
+                { assert workflow.success },
+                // the pair reaches paired small-variant calling, once
+                { assert samples('CLAIRS') == ['pbpair'] : "CLAIRS tasks: ${samples('CLAIRS')}" },
+                // both replicates merge into one BAM and reach tumour-only calling, once
+                { assert samples('SAMTOOLS_MERGE') == ['pbreps'] : "SAMTOOLS_MERGE tasks: ${samples('SAMTOOLS_MERGE')}" },
+                { assert samples('CLAIRSTO') == ['pbreps'] : "CLAIRSTO tasks: ${samples('CLAIRSTO')}" },
+                // and every sample reaches the report
+                { assert samples('LRSOMATICREPORT').sort() == ['pbpair', 'pbreps'] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" },
+                { assert file("$outputDir/pbpair/report/pbpair_report.html").exists() },
+                { assert file("$outputDir/pbreps/report/pbreps_report.html").exists() }
+            )
+        }
+    }
+
+    // validateSampleModels: the caller models key the same joins, so BAMs of one sample that resolve to different
+    // models must stop the run at launch rather than drop the sample. Here two replicates name different Clair3 models.
+    test("-profile test, replicates resolving to different Clair3 models - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../models_input")
+                input_dir.mkdirs()
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_models.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate',
+                    "pbreps,${data}/HS578T_HIFI_chr19.bam,,pb,female,n,hifi,,,1",
+                    "pbreps,${data}/HS578T_HIFI_chr19.bam,,pb,female,n,hifi_revio,,,2"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert workflow.stdout.any { line -> line.contains("Sample 'pbreps'") && line.contains('different caller models') } },
+                { assert workflow.trace.succeeded().findAll { task -> task.name.contains(':CLAIRSTO ') }.isEmpty() },
+                { assert !file("$outputDir/pbreps/report/pbreps_report.html").exists() }
+            )
+        }
+    }
+}
