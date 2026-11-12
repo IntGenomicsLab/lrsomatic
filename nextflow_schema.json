@@ -582,13 +582,25 @@
                     "type": "string",
                     "description": "Chromosomes to process (automatically inferred, only use if you want to run on a subset)"
                 },
-                "ascat_gc_files": {
+                "ascat_allele_files": {
                     "type": "string",
-                    "description": "Path to (zip) of GC files"
+                    "description": "Path to ASCAT allele files (.zip or folder). Defaults to the --genome reference",
+                    "help_text": "Per-chromosome 1000 Genomes SNP allele files for ASCAT, also used by ClairS-TO's Verdict module on CHM13. Either a `.zip` containing one folder, or the path to that folder. The folder name must prefix its files (`<folder>/<folder>_chr<N>.txt`), because ASCAT reads them as `<folder>_chr`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
                 },
-                "ascat_rt_files": {
+                "ascat_loci_files": {
                     "type": "string",
-                    "description": "path to (zip) of RT files"
+                    "description": "Path to ASCAT loci files (.zip or folder). Defaults to the --genome reference",
+                    "help_text": "Per-chromosome 1000 Genomes SNP loci files for ASCAT, also used by ClairS-TO's Verdict module on CHM13. Either a `.zip` containing one folder, or the path to that folder. The folder name must prefix its files (`<folder>/<folder>_chr<N>.txt`), because ASCAT reads them as `<folder>_chr`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
+                },
+                "ascat_gc_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT GC correction file (.txt or .txt.zip). Defaults to the --genome reference",
+                    "help_text": "GC-content correction file for ASCAT's LogR correction, also used by ClairS-TO's Verdict module on CHM13. A `.txt`, or a `.zip` containing that `.txt`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
+                },
+                "ascat_rt_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT replication timing correction file (.txt or .txt.zip). Defaults to the --genome reference",
+                    "help_text": "Replication-timing correction file for ASCAT's LogR correction. A `.txt`, or a `.zip` containing that `.txt`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. CHM13 has no default RT file, so on CHM13 ASCAT corrects for GC only unless one is given here."
                 },
                 "ascat_pdf_plots": {
                     "type": "boolean",
