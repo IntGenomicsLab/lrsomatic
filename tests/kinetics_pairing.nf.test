@@ -87,7 +87,8 @@ nextflow_pipeline {
         then {
             assertAll(
                 { assert workflow.failed },
-                { assert workflow.stdout.any { line -> line.contains("Sample 'pbreps'") && line.contains('different caller models') } },
+                // Nextflow 26.10 prints the console log to stderr, earlier versions to stdout
+                { assert (workflow.stdout + workflow.stderr).any { line -> line.contains("Sample 'pbreps'") && line.contains('different caller models') } },
                 { assert workflow.trace.succeeded().findAll { task -> task.name.contains(':CLAIRSTO ') }.isEmpty() },
                 { assert !file("$outputDir/pbreps/report/pbreps_report.html").exists() }
             )
