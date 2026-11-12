@@ -67,6 +67,9 @@ option_list <- list(
   make_option("--min-svlen", type = "double", default = 0,
               help = paste("Drop intra-chromosomal SVs shorter than this many bp;",
                            "translocations are never dropped [default %default]")),
+  make_option("--max-svs", type = "integer", default = 0,
+              help = paste("Draw at most this many SV junctions, the best supported first; the",
+                           "--write-tables table keeps them all. 0 = no limit [default %default]")),
   make_option("--exclude-vntr", action = "store_true", default = FALSE,
               help = "Drop SVs flagged as inside a VNTR (Severus)"),
   make_option("--cluster-id", type = "character", default = NULL,
@@ -196,6 +199,19 @@ region_sets <- switch(
 )
 region_sets <- lapply(region_sets, function(x) { rownames(x) <- NULL; x })
 
+## --max-svs: one budget per run, over the junctions this run's regions show. ReConPlot's cost is per SV
+## drawn, so the per-chromosome figures share it (24 separate budgets took ~10 h on 27k SVs); the
+## genome-wide strip and the focus panel are separate runs, so a sparse focus region keeps its SVs.
+## Applied after the tables, which keep every junction.
+sv_uncapped = NULL
+if (!is.null(args$max_svs) && !is.na(args$max_svs) && args$max_svs > 0) {
+  sv_run = sv_in_regions(sv, regions)
+  if (nrow(sv_run) > args$max_svs) {
+    sv_uncapped = sv
+    sv = cap_svs(sv_run, args$max_svs, label = region_label(regions))
+  }
+}
+
 ## --- 4. plot ----------------------------------------------------------------
 genes <- if (!is.null(args$genes)) trimws(unlist(strsplit(args$genes, ","))) else NULL
 ## ReConPlot errors on a symbol with several rows in its gene table and ignores unknown ones silently;
@@ -226,7 +242,7 @@ written <- plot_region_sets(
   title = args$title, genes = genes,
   annotation_fn = parsed$annotation_fn,
   formats = formats, width = args$width, height = args$height,
-  extra = extra
+  extra = extra, sv_uncapped = sv_uncapped
 )
 
 log_msg(sprintf("done: %d file(s) written to %s", length(written), args$outdir))

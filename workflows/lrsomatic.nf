@@ -109,10 +109,10 @@ workflow LRSOMATIC {
     // Load in igenomes
     params.fasta = getGenomeAttribute('fasta')
     params.genome_name = getGenomeAttribute('genome_name')
-    params.ascat_allele_files = getGenomeAttribute('ascat_alleles')
-    params.ascat_loci_files = getGenomeAttribute('ascat_loci')
-    params.ascat_gc_file = getGenomeAttribute('ascat_loci_gc')
-    params.ascat_rt_file = getGenomeAttribute('ascat_loci_rt')
+    def ascat_allele_files = params.ascat_allele_files ?: getGenomeAttribute('ascat_alleles')
+    def ascat_loci_files = params.ascat_loci_files ?: getGenomeAttribute('ascat_loci')
+    def ascat_gc_file = params.ascat_gc_file ?: getGenomeAttribute('ascat_loci_gc')
+    def ascat_rt_file = params.ascat_rt_file ?: getGenomeAttribute('ascat_loci_rt')
     params.centromere_bed = getGenomeAttribute('centromere_bed')
     params.pon_file = getGenomeAttribute('pon_file')
     params.bed_file = getGenomeAttribute('bed_file')
@@ -229,9 +229,9 @@ workflow LRSOMATIC {
 
     // A missing set would leave the join below waiting forever, so CLAIRSTO would silently never run
     if (build_clairsto_cna) {
-        def missing_ascat = ['ascat_alleles': params.ascat_allele_files,
-                             'ascat_loci': params.ascat_loci_files,
-                             'ascat_loci_gc': params.ascat_gc_file].findAll { _attr, value -> !value }.keySet()
+        def missing_ascat = ['ascat_alleles': ascat_allele_files,
+                             'ascat_loci': ascat_loci_files,
+                             'ascat_loci_gc': ascat_gc_file].findAll { _attr, value -> !value }.keySet()
         if (missing_ascat) {
             error("ClairS-TO's Verdict module needs ${missing_ascat.join(', ')} for ${params.genome}: set them in the genome config, or pass a prepared directory with --clairsto_cna_resources.")
         }
@@ -318,10 +318,10 @@ workflow LRSOMATIC {
 
     PREPARE_REFERENCE_FILES (
         params.fasta,
-        params.ascat_allele_files,
-        params.ascat_loci_files,
-        params.ascat_gc_file,
-        params.ascat_rt_file,
+        ascat_allele_files,
+        ascat_loci_files,
+        ascat_gc_file,
+        ascat_rt_file,
         build_clairsto_cna,
         basecall_meta,
         clair3_modelMap
@@ -1190,13 +1190,17 @@ workflow LRSOMATIC {
         // Tumor-only has no matched germline control, so allele counting uses the bundled 1000g
         // population SNP set instead of a (nonexistent) germline VCF -- see TUMORONLY_SAVANA.
         ch_savana_g1000_vcf = channel.value([[:], params.savana_g1000_vcf ?: []])
+        // SAVANA's PacBio classifier has no tumour-only mode, so its PacBio tumour-only calls are filtered against
+        // the Severus germline SV panel of normals -- see TUMORONLY_SAVANA
+        ch_savana_sv_pon = channel.value([[:], params.savana_pb_pon_filter && params.pon_file ? file(params.pon_file) : []])
 
         TUMORONLY_SAVANA (
             tumoronly_savana_input,
             ch_fasta,
             ch_fai,
             ch_savana_contigs,
-            ch_savana_g1000_vcf
+            ch_savana_g1000_vcf,
+            ch_savana_sv_pon
         )
 
         PAIRED_SAVANA (

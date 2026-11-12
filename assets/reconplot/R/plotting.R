@@ -34,6 +34,7 @@ build_title <- function(user_title, meta, regions) {
     paste(chrs, collapse = ", ")
   }
   bits <- c(bits, where)
+  if (!is.null(meta$sv_note)) bits <- c(bits, meta$sv_note)
   paste(bits, collapse = "  |  ")
 }
 
@@ -80,11 +81,13 @@ save_reconplot <- function(p, outdir, stem, width, height, formats = c("pdf")) {
 #' Render and save one plot per element of `region_sets`.
 #'
 #' @param region_sets list of chr_selection data frames
+#' @param sv_uncapped when `sv` was capped by --max-svs, the table before the cap; each figure's title
+#'   then says how many of its own junctions it draws
 #' @return character vector of files written
 plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
                              title = NULL, genes = NULL, annotation_fn = NULL,
                              formats = c("pdf"), width = NULL, height = NULL,
-                             extra = list()) {
+                             extra = list(), sv_uncapped = NULL) {
   written <- character(0)
   for (i in seq_along(region_sets)) {
     regions <- region_sets[[i]]
@@ -92,6 +95,13 @@ plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
     stem <- paste(c(prefix, label), collapse = "_")
     log_msg(sprintf("plotting %s (%d panel%s)", label, nrow(regions),
                     if (nrow(regions) == 1) "" else "s"))
+
+    meta_fig = meta
+    if (!is.null(sv_uncapped)) {
+      n_drawn = nrow(sv_in_regions(sv, regions))
+      n_all = nrow(sv_in_regions(sv_uncapped, regions))
+      if (n_drawn < n_all) meta_fig$sv_note = sprintf("top %d of %d SVs", n_drawn, n_all)
+    }
 
     annotation <- if (!is.null(annotation_fn)) {
       tryCatch(annotation_fn(regions),
@@ -103,7 +113,7 @@ plot_region_sets <- function(region_sets, cn, sv, meta, outdir, prefix,
 
     p <- tryCatch(
       render_reconplot(cn, sv, regions,
-                       title = build_title(title, meta, regions),
+                       title = build_title(title, meta_fig, regions),
                        genes = genes, annotation = annotation, extra = extra),
       error = function(e) { log_msg("  ERROR: ", conditionMessage(e)); NULL })
     if (is.null(p)) next
