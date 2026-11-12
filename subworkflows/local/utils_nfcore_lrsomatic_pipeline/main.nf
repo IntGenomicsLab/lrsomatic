@@ -243,6 +243,21 @@ def validateInputParameters() {
     validateSmallvarCallers()
     validateSvAnnotationParams()
     validateSeverusWhitelist()
+    validateSigprofilerMatrixArgs()
+}
+
+//
+// Per-mutation probabilities join the fit with MatrixGenerator's unfiltered seqinfo, so region filters would not match the matrices
+//
+def validateSigprofilerMatrixArgs() {
+    def args = params.sigprofiler_matrix_args ?: ''
+    if (params.skip_signatures || !args) {
+        return
+    }
+    def unsupported = [/--bed_file\b/, /--exome\b/, /(?i)--seqInfo[= ]+(false|f|no|n|0)\b/].findAll { args =~ it }
+    if (unsupported) {
+        error("--sigprofiler_matrix_args '${args}': --bed_file, --exome and --seqInfo False are not supported, because the per-mutation signature probabilities need every mutation's seqinfo.")
+    }
 }
 
 //
