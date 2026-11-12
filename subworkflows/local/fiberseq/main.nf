@@ -1,18 +1,74 @@
 //
-// Fiber-seq: m6A prediction (PacBio with kinetics), nucleosome and FIRE calling on the unaligned BAMs
+// Fiber-seq: m6A prediction (PacBio with kinetics), nucleosome and FIRE calling on the input reads (aligned input
+// that fibertools-rs reads is cut to primary records as BAM first)
 //
 
 include { FIBERTOOLSRS_PREDICTM6A  } from '../../../modules/local/fibertoolsrs/predictm6a'
 include { FIBERTOOLSRS_FIRE        } from '../../../modules/local/fibertoolsrs/fire'
 include { FIBERTOOLSRS_NUCLEOSOMES } from '../../../modules/local/fibertoolsrs/nucleosomes'
 include { FIBERTOOLSRS_QC          } from '../../../modules/local/fibertoolsrs/qc'
+include { SAMTOOLS_VIEW as SAMTOOLS_VIEW_FIBERPREP } from '../../../modules/nf-core/samtools/view/main'
+include { fibertoolsReadsInput     } from '../utils_nfcore_lrsomatic_pipeline'
 
 workflow FIBERSEQ {
 
     take:
-    ch_samplesheet // [meta_with_replicate, bam] -- unaligned BAMs, one per replicate
+    ch_input_reads    // [meta_with_replicate, bam_or_cram] -- input reads, one per replicate (unaligned or aligned)
+    ch_aligned_input  // [meta, 'true'|'false']  -- METAEXTRACT: the input has @SQ lines
+    ch_decode_fasta   // [meta, 'true'|'false']  -- METAEXTRACT: decode this CRAM with --fasta (its M5s match)
+    ch_fasta          // [[:], fasta]
+    ch_fai            // [[:], fai]
 
     main:
+    //
+    // MODULE: SAMTOOLS_VIEW_FIBERPREP (nf-core samtools/view; 8 cpus, see modules.config) -- only for aligned input
+    // that fibertools-rs reads.
+    // fibertools-rs takes no reference, so it cannot decode a CRAM unless htslib finds one itself, and
+    // `ft predict-m6a` panics on secondary alignments, which minimap2 writes with SEQ '*' by default. This keeps the
+    // primary records (-F 0x900) as BAM, decoding a CRAM with --fasta when METAEXTRACT's M5 check allows it, and
+    // from its embedded reference, UR: path or REF_PATH otherwise. MINIMAP2_ALIGN's samtools reset drops secondary
+    // and supplementary records anyway. Every other sample goes on as given.
+    // Input:  [meta, bam_or_cram, []]  -- aligned input of samples fibertoolsReadsInput() selects
+    //         [meta, fasta, fai] or [[:], [], []]  -- the reference only where decode_with_fasta is 'true'
+    // Output: .bam -- [meta, bam]  -- primary records only
+    //
+    // ch_input_reads' meta has gained the model fields since METAEXTRACT, so join on the fields both keep
+    ch_input_reads
+        .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+        .join(
+            ch_aligned_input
+                .join(ch_decode_fasta, failOnMismatch: true)
+                .map { meta, aligned, decode -> [ [ meta.id, meta.type, meta.replicate ], aligned, decode ] },
+            failOnMismatch: true
+        )
+        .branch { _key, meta, _bams, aligned, _decode ->
+            prep: aligned == 'true' && fibertoolsReadsInput(meta, meta.kinetics)
+            as_given: true
+        }
+        .set { ch_fiber_input }
+
+    ch_fiber_input.prep
+        .combine(ch_fasta)
+        .combine(ch_fai)
+        .multiMap { _key, meta, bams, _aligned, decode, meta_fasta, fasta, _meta_fai, fai ->
+            reads: [ meta, bams, [] ]
+            fasta: decode == 'true' ? [ meta_fasta, fasta, fai ] : [ [:], [], [] ]
+        }
+        .set { ch_fiberprep_in }
+
+    SAMTOOLS_VIEW_FIBERPREP (
+        ch_fiberprep_in.reads,
+        ch_fiberprep_in.fasta,
+        [ [:], [] ],
+        [ [:], [] ],
+        ''
+    )
+
+    ch_samplesheet = ch_fiber_input.as_given
+        .map { _key, meta, bams, _aligned, _decode -> [ meta, bams ] }
+        .mix(SAMTOOLS_VIEW_FIBERPREP.out.bam)
+    // ch_samplesheet: [meta_with_replicate, bam_or_cram]  -- fibertools-rs input is now unaligned or primary-only BAM
+
     // Fiber-seq runs per replicate on the unaligned BAMs; replicates are merged after alignment
     if (!params.skip_normalfiber){
         // Process all samples (including normals) for fiber-seq

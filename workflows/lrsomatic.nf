@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -260,7 +261,16 @@ workflow LRSOMATIC {
 
     // MODULE: METAEXTRACT (label: process_single)
     // Input:  [meta, [bam...]]
-    METAEXTRACT( ch_samplesheet )
+    //         [meta, fasta] or [[:], []]  -- params.fasta only for CRAM input, to check its @SQ M5s; PREPARE_REFERENCE_FILES
+    //                                        needs this module's basecall model, so the raw (possibly gzipped) FASTA is used
+    ch_samplesheet
+        .multiMap { meta, bams ->
+            reads: [ meta, bams ]
+            fasta: isCram(bams) ? [ [ id: 'fasta' ], file(params.fasta, checkIfExists: true) ] : [ [:], [] ]
+        }
+        .set { ch_metaextract_in }
+
+    METAEXTRACT( ch_metaextract_in.reads, ch_metaextract_in.fasta )
 
     basecall_meta = METAEXTRACT.out.meta_ext
     // basecall_meta: [meta, basecall_model_str, kinetics_str]
@@ -345,11 +355,25 @@ workflow LRSOMATIC {
 
         //
         // MODULE: CRAMINO_PRE (label: process_medium)
-        // Input:  [meta, [bam...]]  -- pre-alignment unaligned BAMs
+        // Input:  [meta, [bam...]]  -- pre-alignment input BAMs/CRAMs
+        //         [meta, fasta] or [[:], []]  -- the reference only for an aligned CRAM whose contigs it matches (METAEXTRACT's
+        //                                        M5 check); BAM and unaligned CRAM need none
         // Output: cramino_pre.out.arrow -- [meta, arrow_file] (feather format stats)
         //
 
-        CRAMINO_PRE( ch_samplesheet )
+        // ch_samplesheet's meta has gained the model fields since METAEXTRACT, so join on the fields both keep
+        ch_samplesheet
+            .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+            .join(METAEXTRACT.out.decode_with_fasta.map { meta, decode -> [ [ meta.id, meta.type, meta.replicate ], decode ] }, failOnMismatch: true)
+            .map { _key, meta, bams, decode_with_fasta -> [ meta, bams, decode_with_fasta ] }
+            .combine(PREPARE_REFERENCE_FILES.out.prepped_fasta)
+            .multiMap { meta, bams, decode_with_fasta, meta_fasta, fasta ->
+                reads: [ meta, bams ]
+                fasta: decode_with_fasta == 'true' ? [ meta_fasta, fasta ] : [ [:], [] ]
+            }
+            .set { ch_cramino_pre_in }
+
+        CRAMINO_PRE( ch_cramino_pre_in.reads, ch_cramino_pre_in.fasta )
 
         if (!params.skip_nanoplot) {
 
@@ -403,11 +427,16 @@ workflow LRSOMATIC {
     rt_file      = PREPARE_REFERENCE_FILES.out.rt_file       // [path, ...]  -- RT correction ([] if skipped)
 
     //
-    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling on the unaligned BAMs, per replicate
+    // SUBWORKFLOW: FIBERSEQ -- m6A, nucleosome and FIRE calling per replicate; aligned input that fibertools-rs reads
+    // is first cut to primary records as BAM (SAMTOOLS_VIEW_FIBERPREP, which decodes CRAM)
     //
     if (!params.skip_fiber) {
         FIBERSEQ (
-            ch_samplesheet
+            ch_samplesheet,
+            METAEXTRACT.out.aligned_input,
+            METAEXTRACT.out.decode_with_fasta,
+            ch_fasta,
+            ch_fai
         )
         ch_ubams = FIBERSEQ.out.bams
     }
@@ -415,22 +444,27 @@ workflow LRSOMATIC {
     // MODULE: MINIMAP2_ALIGN (label: process_high) -- once per replicate; @RG encodes sample, type and replicate
     // Input:  [meta_with_replicate, bam]  -- unaligned BAM per replicate
     //         ch_fasta     -- [[:], fasta]
-    //         sort_bam=true, cigar_paf_format='bai', cigar_bam='', split_prefix=''
-    // Output: .bam   -- [meta_with_replicate, bam]  -- coordinate-sorted aligned BAM
-    //         .index -- [meta_with_replicate, bai]  -- BAM index
+    //         bam_format=params.aligned_format ('cram' or 'bam'), bam_index_extension='crai' or 'bai'
+    // Output: .cram / .bam -- [meta_with_replicate, alignments]  -- coordinate-sorted; CRAM is reference-compressed
+    //         .index       -- [meta_with_replicate, crai or bai]
     //
+
+    def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
     MINIMAP2_ALIGN (
         ch_ubams,
         ch_fasta,
-        true,
-        'bai',
+        params.aligned_format,
+        aligned_index,
         "",
         ""
     )
 
-    // Join BAM with index, drop the replicate field, group per sample; single-replicate samples skip SAMTOOLS_MERGE
+    // Join alignments with index, drop the replicate field, group per sample; single-replicate samples skip SAMTOOLS_MERGE.
+    // Downstream tuples keep the [meta, bam, bai] names whichever format --aligned_format picks; every consumer
+    // reads CRAM through the same slots.
     MINIMAP2_ALIGN.out.bam
+        .mix(MINIMAP2_ALIGN.out.cram)
         .join(MINIMAP2_ALIGN.out.index)
         .map { meta, bam, bai ->
             def new_meta = meta.subMap('id',
@@ -466,22 +500,23 @@ workflow LRSOMATIC {
 
     //
     // MODULE: SAMTOOLS_MERGE (label: process_low) -- replicate identity survives via the unique @RG lines
-    // Input:  [meta, [bam...], [bai...]]  -- grouped replicate BAMs + indices
-    // Output: .bam -- [meta, bam]  -- merged BAM
+    // Input:  [meta, [cram...], [crai...]]  -- grouped replicate alignments + indices
+    //         [meta, fasta, fai, gzi]         -- reference to decode CRAM inputs and encode a merged CRAM
+    // Output: .cram / .bam -- [meta, alignments]  -- merged (output format follows the input extension)
     //
     SAMTOOLS_MERGE(
         ch_aligned_split.multiple,
-        [[],[],[],[]],
+        ch_fasta.join(ch_fai).map { meta, fasta, fai -> [meta, fasta, fai, []] }.first(),
         ''  // index_format: indexed separately by SAMTOOLS_INDEX_MERGE
     )
 
-    // Index the merged BAM to produce a BAI (SAMTOOLS_MERGE does not create BAI inline)
-    SAMTOOLS_INDEX_MERGE(SAMTOOLS_MERGE.out.bam)
+    // Index the merged file (SAMTOOLS_MERGE does not index inline)
+    SAMTOOLS_INDEX_MERGE(SAMTOOLS_MERGE.out.bam.mix(SAMTOOLS_MERGE.out.cram))
 
-    // Combine single-replicate and merged paths into a unified [meta, bam, bai] channel
+    // Combine single-replicate and merged paths into a unified [meta, alignments, index] channel
     ch_single_indexed
         .mix(
-            SAMTOOLS_MERGE.out.bam
+            SAMTOOLS_MERGE.out.bam.mix(SAMTOOLS_MERGE.out.cram)
                 .join(SAMTOOLS_INDEX_MERGE.out.index)
         )
         .set { ch_index_minimap }
@@ -595,7 +630,7 @@ workflow LRSOMATIC {
             allele_files,
             loci_files,
             [],
-            [],
+            [],  // no fasta: the image's ASCAT has no ref.fasta argument; the CRAMs embed their reference
             gc_file,
             rt_file
         )
@@ -1001,7 +1036,7 @@ workflow LRSOMATIC {
         // Output: .arrow -- [meta, arrow_file]  -- alignment statistics in feather format
         //
 
-        CRAMINO_POST ( ch_minimap_bam )
+        CRAMINO_POST ( ch_minimap_bam, ch_fasta )
 
         ch_cramino_post_txt = CRAMINO_POST.out.txt
 
@@ -1465,8 +1500,7 @@ workflow LRSOMATIC {
     // Input:  [[id:'multiqc'], [qc_files...], [config_files...], [logo], [], []]
     // Output: .report -- [meta, html]  -- MultiQC HTML report
     //
-    summary_params = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))

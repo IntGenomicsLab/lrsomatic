@@ -49,7 +49,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('reconplot_regions') && line.contains('chr17:50000000-30000000') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('reconplot_regions') && line.contains('chr17:50000000-30000000') } }
             )
         }
     }
@@ -70,7 +70,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('--padfoot_genome hg38 does not match --genome CHM13') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--padfoot_genome hg38 does not match --genome CHM13') } }
             )
         }
     }
@@ -112,7 +112,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('--reconplot_regions names no region') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--reconplot_regions names no region') } }
             )
         }
     }
@@ -135,7 +135,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('--reconplot_genes must be a comma-separated list of gene symbols') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--reconplot_genes must be a comma-separated list of gene symbols') } }
             )
         }
     }
@@ -157,7 +157,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.failed },
-                { assert function.stdout.any { line -> line.contains('bogus:x-y') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains('bogus:x-y') } }
             )
         }
     }
