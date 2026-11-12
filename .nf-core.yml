@@ -34,7 +34,7 @@ lint:
   nf_test_content:
     - tests/sv_annotation_compose.nf.test
     - tests/aligned_format.nf.test
-nf_core_version: 4.2.1
+nf_core_version: 4.2.2
 repository_type: pipeline
 template:
   author: Robert Forsyth & Luuk Harbers

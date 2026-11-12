@@ -61,7 +61,9 @@ workflow PIPELINE_INITIALISATION {
         null,
         help,
         help_full,
-        show_hidden,
+        // Nextflow 26 passes a bare `--show_hidden` as the string 'true', and nf-schema 3.0.0 casts it to Boolean
+        // and fails (fixed upstream after 3.0.0, nextflow-io/nf-schema#237)
+        show_hidden.toString().toBoolean(),
         "",
         "",
         command,
@@ -201,7 +203,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  //  string: Path to MultiQC report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     //
