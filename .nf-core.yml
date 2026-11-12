@@ -30,8 +30,10 @@ lint:
     - validation.summary.beforeText
     - validation.summary.afterText
   # a -preview run publishes nothing, so this test asserts on the workflow graph instead of a versions.yml snapshot
+  # kinetics_pairing is a -stub regression test of the pairing joins: it asserts on the task trace and published reports
   nf_test_content:
     - tests/sv_annotation_compose.nf.test
+    - tests/kinetics_pairing.nf.test
 nf_core_version: 4.2.1
 repository_type: pipeline
 template:
