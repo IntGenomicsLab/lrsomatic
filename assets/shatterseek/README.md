@@ -5,11 +5,11 @@ cluster with the PCAWG confidence tiers and draws a figure for every called chro
 stages this directory, plus `assets/reconplot/` whose `R/parsers/` read ASCAT, Wakhan, Severus and SAVANA, so
 ShatterSeek and ReConPlot see the same SVs and segments.
 
-ShatterSeek is upstream [parklab/ShatterSeek](https://github.com/parklab/ShatterSeek) inside the module's image (recipe
-in `containers/shatterseek/`), with a build-time patch adding T2T-CHM13 (`--genome chm13`). The PCAWG high-confidence
-tiers (HC1, HC2, HC3; Cortes-Ciriano et al. 2020, Supplementary Note 1.2, and ShatterSeek issue #22) and their BH
-q-values are computed here, from ShatterSeek's per-chromosome summary. R's generator is seeded (`--seed`) because
-upstream's exponential tests draw random numbers.
+ShatterSeek is the [robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support)
+fork inside the module's image (recipe in `containers/shatterseek/`): T2T-CHM13 support (`--genome chm13`), the
+statistical criteria fixed to the PCAWG definitions, and one cluster per chromosome. The PCAWG high-confidence tiers
+(HC1, HC2, HC3; Cortes-Ciriano et al. 2020, Supplementary Note 1.2, and ShatterSeek issue #22) and their BH q-values are
+computed here, from ShatterSeek's per-chromosome summary; the fork's own low-confidence tier (LC1) is dropped.
 
 Conversion to ShatterSeek's format:
 

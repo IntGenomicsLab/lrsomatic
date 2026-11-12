@@ -106,6 +106,10 @@ nextflow_process {
                 { assert process.success },
                 { assert called == ['chr19:high:HC1,HC2'] },
                 { assert rows.size() == 24 },   // header + chromosomes 1-22 and X
+                // the robert-a-forsyth fork, not upstream: only the fork reports the intra-SV clusterSize (12 on chr19), and
+                // the wrapper drops the fork's own low-confidence tier
+                { assert head.contains('clusterSize') && !head.contains('LC1') },
+                { assert rows.drop(1).find { r -> r.split('\t', -1)[head.indexOf('chrom')] == 'chr19' }.split('\t', -1)[head.indexOf('clusterSize')] == '12' },
                 { assert log_text.contains('dropped 1 non-PASS VCF records') && log_text.contains('INS=1') },
                 // the 100 bp deletion falls below --min-svlen 150; all five translocations are kept
                 { assert log_text.contains('dropped 1 junctions: intra-chromosomal span < 150 bp') },

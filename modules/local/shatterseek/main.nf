@@ -2,12 +2,11 @@ process SHATTERSEEK {
     tag "${meta.id}:${cn_source}+${sv_source}"
     label 'process_low'
 
-    // No conda: ShatterSeek (upstream, plus a build-time chm13 patch) ships only in this image, built from
+    // No conda: the ShatterSeek fork (chm13, corrected statistics) ships only in this image, built from
     // containers/shatterseek/Dockerfile; the wrapper is pipeline glue in assets/shatterseek/ and reads the callers with
-    // the ReConPlot parsers in assets/reconplot/. Package update = new commit there, rebuild, bump these two tags.
-    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://docker.io/robertaforsyth/shatterseek-sif:1.1-3b3f4cd-chm13'
-        : 'docker.io/robertaforsyth/shatterseek:1.1-3b3f4cd-chm13'}"
+    // the ReConPlot parsers in assets/reconplot/. Fork update = new commit there, rebuild, bump this tag.
+    // No SIF twin is published yet, so Singularity/Apptainer convert the Docker image when pulling.
+    container "docker.io/robertaforsyth/shatterseek:1.1.1-chm13-e1cee6c"
 
     input:
     // cn_files / sv_files are the caller output files the parsers discover by name.
@@ -31,7 +30,7 @@ process SHATTERSEEK {
     script:
     // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
-        error "SHATTERSEEK does not support Conda: ShatterSeek ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_shatterseek."
+        error "SHATTERSEEK does not support Conda: the ShatterSeek fork ships only inside its container. Use Docker / Singularity / Apptainer, or --skip_shatterseek."
     }
     def args  = task.ext.args ?: ''
     prefix    = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")

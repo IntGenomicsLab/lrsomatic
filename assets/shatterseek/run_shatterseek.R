@@ -6,8 +6,9 @@
 ##   --> PCAWG high-confidence tiers (HC1/HC2/HC3) --> summary TSV + per-chromosome figures
 ##
 ## Callers are read by the parsers in assets/reconplot/R/parsers (--reconplot-dir), so ShatterSeek and
-## ReConPlot see the same SVs and segments. ShatterSeek itself is upstream parklab/ShatterSeek, installed in the
-## module's container with a build-time patch adding T2T-CHM13 (containers/shatterseek/).
+## ReConPlot see the same SVs and segments. ShatterSeek itself is the robert-a-forsyth/ShatterSeek fork (chm13-support:
+## T2T-CHM13, statistics corrected to the PCAWG definitions, one cluster per chromosome), installed in the module's
+## container (containers/shatterseek/).
 ## The tiers follow Cortes-Ciriano et al. 2020, Supplementary Note 1.2, as spelled out in parklab/ShatterSeek#22.
 ## ---------------------------------------------------------------------------
 
@@ -173,6 +174,7 @@ res <- shatterseek(
   seg.sample = CNVsegs(chrom = cn_ss$chrom, start = as.numeric(cn_ss$start), end = as.numeric(cn_ss$end),
                        total_cn = as.numeric(cn_ss$total_cn)),
   min.Size = args$min_size, genome = args$genome)
+res@chromSummary$LC1 <- NULL   # the fork labels its own tiers too; only the high-confidence tiers below are reported
 res@chromSummary <- classify_pcawg(
   res@chromSummary, use = args$use, alpha = args$alpha, min_sv_hc1 = args$min_sv_hc1, min_osc_hc = args$min_osc_hc,
   min_sv_hc2 = args$min_sv_hc2, min_tra_hc2 = args$min_tra_hc2, min_sv_hc3 = args$min_sv_hc3, hc3 = !isTRUE(args$no_hc3))
