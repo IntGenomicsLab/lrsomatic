@@ -52,7 +52,7 @@ workflow PAIRED_SAVANA {
     // filters out germline/artefact junctions before they inform CNA binning.
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, snp_vcf, [], breakpoints]
     //         [[:], fasta, fai]
-    //         contigs / blacklist / g1000_vcf (contigs/[]/[]: snp_vcf takes priority in paired mode)
+    //         contigs / blacklist / g1000_vcf ([]/[]/[]: snp_vcf takes priority in paired mode)
     //
     tumor_normal_input
         .map { meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_vcf, _phased_tbi ->
@@ -70,7 +70,7 @@ workflow PAIRED_SAVANA {
     SAVANA_CNA (
         savana_cna_input,
         ch_fasta_fai,
-        contigs.map { _meta, contigs_file -> contigs_file },  // same contigs as SAVANA_RUN; [] without --genome
+        [],  // contigs: `savana cna` has no --contigs option (only `run`/`to` do); use --savana_chromosomes to restrict CNA
         [],  // blacklist (unused)
         []   // g1000_vcf (unused -- snp_vcf takes priority in paired mode)
     )
