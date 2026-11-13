@@ -15,6 +15,7 @@ include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrso
 include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { shatterseekGenome      } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources; validateSampleModels } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -65,6 +66,7 @@ include { PAIRED_SAVANA                   } from '../subworkflows/local/paired/p
 include { DMR                             } from '../subworkflows/local/dmr'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
+include { SHATTERSEEK_CHROMOTHRIPSIS      } from '../subworkflows/local/shatterseek_chromothripsis'
 
 
 
@@ -1303,6 +1305,13 @@ workflow LRSOMATIC {
             params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
         )
         ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
+    }
+
+    // ShatterSeek chromothripsis tiers, same CN/SV pairs as ReConPlot
+    if (!params.skip_shatterseek && sv_annot_container_ok && shatterseekGenome()) {
+        SHATTERSEEK_CHROMOTHRIPSIS(SEVERUS.out.somatic_vcf, params.skip_ascat ? channel.empty() : ASCAT.out.segments,
+            params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs, savana_cna, savana_somatic_vcf, shatterseekGenome())
+        ch_versions = ch_versions.mix(SHATTERSEEK_CHROMOTHRIPSIS.out.versions)
     }
 
     //

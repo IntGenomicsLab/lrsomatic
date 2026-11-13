@@ -122,6 +122,10 @@
 
   > Espejo Valle-Inclán J, Cortés-Ciriano I. ReConPlot: an R package for the visualization and interpretation of genomic rearrangements. Bioinformatics. 2023 Dec 1;39(12):btad719. doi: 10.1093/bioinformatics/btad719. PubMed PMID: 38058190; PubMed Central PMCID: PMC10710371.
 
+- [ShatterSeek](https://pubmed.ncbi.nlm.nih.gov/32025003/)
+
+  > Cortés-Ciriano I, Lee JJ, Xi R, Jain D, Jung YL, Yang L, Gordenin D, Klimczak LJ, Zhang CZ, Pellman DS; PCAWG Structural Variation Working Group; Park PJ; PCAWG Consortium. Comprehensive analysis of chromothripsis in 2,658 human cancers using whole-genome sequencing. Nat Genet. 2020 Mar;52(3):331-341. doi: 10.1038/s41588-019-0576-7. PubMed PMID: 32025003; PubMed Central PMCID: PMC7058534.
+
 - [RepeatMasker](https://www.repeatmasker.org/)
 
   > Smit AFA, Hubley R, Green P. RepeatMasker Open-4.0 [Software]. https://www.repeatmasker.org/

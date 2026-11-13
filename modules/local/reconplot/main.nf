@@ -57,6 +57,9 @@ process RECONPLOT {
         : ""
 
     """
+    # Apptainer forwards the host env; a host R_HOME makes R print "WARNING: ignoring environment value of R_HOME"
+    # on stdout, which would land in the versions.yml strings below
+    unset R_HOME
     mkdir -p ${prefix}
 
     Rscript ${reconplot_src}/run_reconplot.R ${source_args} --sample ${sample} --prefix ${sample} \\

@@ -18,7 +18,8 @@ repos:
               modules/(?!local/).*|
               subworkflows/(?!local/).*|
               .*\.snap$|
-              tests/fixtures/padfoot_reconplot/wakhan/.*
+              tests/fixtures/padfoot_reconplot/wakhan/.*|
+              tests/fixtures/shatterseek/wakhan/.*
           )$
       - id: end-of-file-fixer
         exclude: |
