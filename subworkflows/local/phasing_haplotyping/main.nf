@@ -8,6 +8,7 @@ include { SAMTOOLS_INDEX                                    } from '../../../mod
 include { BCFTOOLS_CONCAT                                   } from '../../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_CONCAT as CONCAT_SOMATIC_UNPHASED        } from '../../../modules/nf-core/bcftools/concat/main'
 include { BCFTOOLS_SORT                                     } from '../../../modules/nf-core/bcftools/sort/main'
+include { BCFTOOLS_REHEADER as REHEADER_GERMLINE            } from '../../../modules/nf-core/bcftools/reheader/main'
 include { BCFTOOLS_SORT as SORT_SOMATIC_PHASED              } from '../../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_VIEW                                     } from '../../../modules/local/bcftools/view/main.nf'
 include { BCFTOOLS_VIEW as SOMATIC_ALT                      } from '../../../modules/local/bcftools/view/main.nf'
@@ -149,7 +150,26 @@ workflow PHASING_HAPLOTYPING {
     // Join records sharing a POS (-m +any) for every caller path; LongPhase cannot take two records at one POS.
     //
     REJOIN_SOMATIC ( somatic_vcf,  fasta )
-    REJOIN_GERMLINE( germline_vcf, fasta )
+
+    //
+    // MODULE: BCFTOOLS_REHEADER (label: process_low), aliased REHEADER_GERMLINE
+    // LongPhase haplotag only writes the contigs listed in the ##contig header of the phased germline VCF, so
+    // reads on any other contig (chrM, unplaced/alt contigs, chrY without calls) are dropped from the haplotagged
+    // BAM. ClairS-TO only lists contigs that have calls (chr1-22,X,Y by default), so replace the header contigs
+    // with the full reference .fai. Records are untouched.
+    // Input:  [meta, vcf, header, samples] / [meta2, fai]  (header and samples unused)
+    // Output: .vcf + .index -- [meta, vcf.gz] / [meta, tbi]
+    //
+    REHEADER_GERMLINE (
+        germline_vcf.map { meta, vcf, _tbi -> [ meta, vcf, [], [] ] },
+        fai
+    )
+    REHEADER_GERMLINE.out.vcf
+        .join(REHEADER_GERMLINE.out.index, failOnMismatch: true, failOnDuplicate: true)
+        .set{ reheadered_germline_vcf }
+    // reheadered_germline_vcf: [meta, vcf, tbi]  -- germline VCF with all reference contigs in the header
+
+    REJOIN_GERMLINE( reheadered_germline_vcf, fasta )
 
     //
     // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE

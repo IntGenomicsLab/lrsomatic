@@ -1,0 +1,118 @@
+nextflow_workflow {
+
+    name "Test Workflow PHASING_HAPLOTYPING"
+    // nested.nf only adds a parent workflow, so the conf/modules.config selectors match as in the pipeline
+    script "./nested.nf"
+    workflow "NESTED_PHASING_HAPLOTYPING"
+
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "phasing_haplotyping"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+
+    // #231: LongPhase haplotag only writes reads on the contigs listed in the phased germline VCF's header, and
+    // ClairS-TO lists only the contigs it called (chr1-22,X,Y), so tumour-only runs lost every read on chrM and the
+    // unplaced contigs. The pipeline tests cannot show it: their reference is chr19 alone. Here the reference has a
+    // second contig with reads and no germline calls (see phasing_fixtures.nf), and the germline VCF's header lists
+    // chr19 only. Without REHEADER_GERMLINE the chrUn_extra reads are missing from the haplotagged BAM.
+
+    setup {
+        run("PHASING_FIXTURE_BAM") {
+            script "./phasing_fixtures.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'fixture' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam.bai', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+        run("PHASING_FIXTURE_VCF") {
+            script "./phasing_fixtures.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'fixture' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam.bai', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+    }
+
+    test("tumour-only, germline VCF header without a contig that has reads - the haplotagged output keeps them") {
+
+        when {
+            params {
+                outdir       = "$outputDir"
+                skip_modcall = true
+            }
+            workflow {
+                """
+                // The keys PHASING_HAPLOTYPING keeps (subMap), so the BAM and VCF metas join as in the pipeline
+                def vcf_meta = [ id:'sample1', paired_data:false, platform:'pb', sex:'female', fiber:'n',
+                                 clair3_model:null, clairS_model:null, clairSTO_model:'hifi_revio' ]
+                input[0] = PHASING_FIXTURE_BAM.out.bam.map { _meta, bam, bai -> [ vcf_meta + [ type:'tumor' ], bam, bai ] }
+                input[1] = PHASING_FIXTURE_VCF.out.germline.map { _meta, vcf, tbi -> [ vcf_meta, vcf, tbi ] }
+                input[2] = PHASING_FIXTURE_VCF.out.somatic.map { _meta, vcf, tbi -> [ vcf_meta, vcf, tbi ] }
+                input[3] = PHASING_FIXTURE_BAM.out.fasta.map { _meta, fasta -> [ [:], fasta ] }
+                input[4] = PHASING_FIXTURE_BAM.out.fai.map { _meta, fai -> [ [:], fai ] }
+                """
+            }
+        }
+
+        then {
+            // Records per contig (all records, as samtools idxstats counts them) and HP-tagged records, for BAM or
+            // CRAM (decoded against the fixture reference)
+            def reference = new File("${outputDir}/fixtures/reference.fa")
+            def readStats = { String path ->
+                def reader = htsjdk.samtools.SamReaderFactory.makeDefault()
+                    .referenceSequence(reference)
+                    .validationStringency(htsjdk.samtools.ValidationStringency.SILENT)
+                    .open(new File(path))
+                def perContig = [:]
+                def hp = 0
+                reader.each { rec ->
+                    perContig[rec.referenceName] = (perContig[rec.referenceName] ?: 0) + 1
+                    if (rec.getAttribute('HP') != null) { hp++ }
+                }
+                reader.close()
+                [ perContig: perContig, hp: hp ]
+            }
+            def vcfContigs = { String path ->
+                new java.util.zip.GZIPInputStream(new FileInputStream(path)).withReader { reader ->
+                    reader.readLines()
+                        .findAll { line -> line.startsWith('##contig=<ID=') }
+                        .collect { line -> (line =~ /ID=([^,>]+)/)[0][1] }
+                }
+            }
+            def faiContigs = new File("${outputDir}/fixtures/reference.fa.fai").readLines().collect { line -> line.split('\t')[0] }
+            def input      = readStats("${outputDir}/fixtures/fixture_input.bam")
+            def hapPath    = workflow.success ? workflow.out.tumor_normal_hapbams_ch[0][1].toString() : ''
+            def tagged     = workflow.success ? readStats(hapPath) : null
+            def phasedVcf  = workflow.success ? workflow.out.phased_germline_vcf[0][1] : null
+
+            assertAll(
+                { assert workflow.success },
+                // The fixture: a contig with reads that the germline VCF's header leaves out, as ClairS-TO writes it
+                { assert faiContigs == [ 'chr19', 'chrUn_extra' ] },
+                { assert vcfContigs("${outputDir}/fixtures/germline.vcf.gz") == [ 'chr19' ] },
+                { assert input.perContig['chrUn_extra'] >= 20 },
+                // Haplotagged output in the default --aligned_format
+                { assert hapPath.endsWith('.cram') : "haplotagged output ${hapPath} is not CRAM" },
+                // Every read is kept, on every contig
+                { assert tagged.perContig == input.perContig : "haplotagged output ${tagged.perContig} != input ${input.perContig}" },
+                // and haplotagging did happen
+                { assert tagged.hp > 0 },
+                // The phased germline VCF carries the full reference contig list
+                { assert vcfContigs(phasedVcf) == faiContigs }
+            )
+        }
+    }
+}
