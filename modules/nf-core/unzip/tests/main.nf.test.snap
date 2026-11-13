@@ -8,7 +8,7 @@
                             "id": "hello"
                         },
                         [
-                            
+                            "hello.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
                         ]
                     ]
                 ],
@@ -21,10 +21,10 @@
                 ]
             }
         ],
-        "timestamp": "2026-06-15T16:55:32.454288336",
+        "timestamp": "2026-11-13T22:39:00.768776741",
         "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.0"
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
         }
     },
     "generic [tar] [tar_gz]": {

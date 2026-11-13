@@ -32,7 +32,9 @@ process UNZIP {
     stub:
     if ( archive instanceof List && archive.name.size > 1 ) { error "[UNZIP] error: 7za only accepts a single archive as input. Please check module input." }
     prefix = task.ext.prefix ?: ( meta.id ? "${meta.id}" : archive.baseName)
+    // A real archive always holds at least one file; an empty directory makes `listFiles()` consumers emit nothing
     """
     mkdir "${prefix}"
+    touch "${prefix}/${prefix}.txt"
     """
 }

@@ -1,0 +1,46 @@
+Changes in component 'nf-core/unzip'
+'modules/nf-core/unzip/environment.yml' is unchanged
+'modules/nf-core/unzip/meta.yml' is unchanged
+Changes in 'unzip/main.nf':
+--- modules/nf-core/unzip/main.nf
++++ modules/nf-core/unzip/main.nf
+@@ -32,7 +32,9 @@
+     stub:
+     if ( archive instanceof List && archive.name.size > 1 ) { error "[UNZIP] error: 7za only accepts a single archive as input. Please check module input." }
+     prefix = task.ext.prefix ?: ( meta.id ? "${meta.id}" : archive.baseName)
++    // A real archive always holds at least one file; an empty directory makes `listFiles()` consumers emit nothing
+     """
+     mkdir "${prefix}"
++    touch "${prefix}/${prefix}.txt"
+     """
+ }
+
+'modules/nf-core/unzip/tests/main.nf.test' is unchanged
+Changes in 'unzip/tests/main.nf.test.snap':
+--- modules/nf-core/unzip/tests/main.nf.test.snap
++++ modules/nf-core/unzip/tests/main.nf.test.snap
+@@ -8,7 +8,7 @@
+                             "id": "hello"
+                         },
+                         [
+-                            
++                            "hello.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                         ]
+                     ]
+                 ],
+@@ -21,10 +21,10 @@
+                 ]
+             }
+         ],
+-        "timestamp": "2026-06-15T16:55:32.454288336",
++        "timestamp": "2026-11-13T22:39:00.768776741",
+         "meta": {
+-            "nf-test": "0.9.5",
+-            "nextflow": "26.04.0"
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
+         }
+     },
+     "generic [tar] [tar_gz]": {
+
+************************************************************
