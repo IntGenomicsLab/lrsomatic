@@ -250,14 +250,15 @@ On any other genome, DMR is skipped with a `log.warn` (not a hard failure) unles
 
 #### VEP options:
 
-| Parameter              | Description                                                                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
-| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                         |
-| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`          |
-| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
-| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
-| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                        |
+| Parameter              | Description                                                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/).               |
+| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                                       |
+| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`                        |
+| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                              |
+| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                                            |
+| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                                      |
+| `--outdir_cache`       | Directory the downloaded VEP cache (`--download_vep_cache`) and SigProfiler genome payload (`sigprofiler/volume`) are published to. Default = `<outdir>/cache` |
 
 #### VEP plugin options:
 
@@ -332,9 +333,11 @@ Use `--aligned_format bam` if a tool you run on the results cannot read CRAM, or
 
 #### Fibertools Options
 
-| Parameter           | Description                                                                      |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `--autocorrelation` | A boolean to enable autocorrelation computation in fibertools. Default = `false` |
+| Parameter             | Description                                                                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--autocorrelation`   | A boolean to enable autocorrelation computation in fibertools. Default = `false`                                                                                                                                             |
+| `--keep_kinetic_data` | A boolean to keep the PacBio kinetics tags (`fi`, `fp`, `ri`, `rp`) in the reads after m6A prediction (`ft predict-m6a --keep`); by default they are stripped, which keeps the aligned files much smaller. Default = `false` |
+| `--keep_all_calls`    | A boolean to keep every m6A call regardless of its ML score (`ft predict-m6a --all-calls`). Default = `false`                                                                                                                |
 
 #### SEVERUS Options
 
@@ -437,7 +440,7 @@ Checked at launch:
 
 Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline:
 
-- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`;
+- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume` (or `<outdir_cache>/sigprofiler/volume` with `--outdir_cache`);
 - `--sigprofiler_genome_dir` points at an existing SigProfilerMatrixGenerator volume instead (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run). It takes precedence over the download, so pass it on later runs to skip the ~3 GB fetch.
 
 Running with `--download_sigprofiler_genome false` and no `--sigprofiler_genome_dir`, or with a `--genome` that has no SigProfilerMatrixGenerator genome and no `--sigprofiler_genome`, stops the pipeline at start-up unless `--skip_signatures` is set.
