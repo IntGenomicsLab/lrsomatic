@@ -44,11 +44,12 @@ Changes in 'severus/meta.yml':
              Groovy Map containing sample information
 -      - ${prefix}/all_SVs/severus_all.vcf:
 -          type: map
-+      - ${prefix}/all_SVs/severus_all.vcf.gz:
-+          type: file
-           description: |
+-          description: |
 -            VCF file containing somatic and germline structural variants
 -          pattern: "${prefix}/all_SVs/severus_all.vcf"
++      - ${prefix}/all_SVs/severus_all.vcf.gz:
++          type: file
++          description: |
 +            bgzipped VCF file containing somatic and germline structural variants
 +          pattern: "${prefix}/all_SVs/severus_all.vcf.gz"
            ontologies: []
@@ -85,11 +86,13 @@ Changes in 'severus/meta.yml':
            description: |
              Groovy Map containing sample information
 -      - ${prefix}/somatic_SVs/severus_somatic.vcf:
-+      - ${prefix}/somatic_SVs/severus_somatic.vcf.gz:
-           type: file
-           description: |
+-          type: file
+-          description: |
 -            VCF file containing somatic structural variants (SV)
 -          pattern: "${prefix}/somatic_SVs/severus_all.vcf"
++      - ${prefix}/somatic_SVs/severus_somatic.vcf.gz:
++          type: file
++          description: |
 +            bgzipped VCF file containing somatic structural variants (SV)
 +          pattern: "${prefix}/somatic_SVs/severus_somatic.vcf.gz"
            ontologies: []
@@ -194,6 +197,27 @@ Changes in 'severus/main.nf':
      """
  
      stub:
+@@ -63,14 +78,14 @@
+     touch ${prefix}/read_ids.csv
+     touch ${prefix}/read_qual.txt
+     touch ${prefix}/breakpoints_double.csv
+-    touch ${prefix}/all_SVs/severus_all.vcf
+-    touch ${prefix}/all_SVs/breakpoints_clusters_list.tsv
+-    touch ${prefix}/all_SVs/breakpoints_clusters.tsv
++    echo "" | gzip > ${prefix}/all_SVs/severus_all.vcf.gz
++    touch ${prefix}/all_SVs/breakpoint_clusters_list.tsv
++    touch ${prefix}/all_SVs/breakpoint_clusters.tsv
+     touch ${prefix}/all_SVs/plots/severus_0.html
+     touch ${prefix}/all_SVs/plots/severus_1.html
+-    touch ${prefix}/somatic_SVs/severus_somatic.vcf
+-    touch ${prefix}/somatic_SVs/breakpoints_clusters_list.tsv
+-    touch ${prefix}/somatic_SVs/breakpoints_clusters.tsv
++    echo "" | gzip > ${prefix}/somatic_SVs/severus_somatic.vcf.gz
++    touch ${prefix}/somatic_SVs/breakpoint_clusters_list.tsv
++    touch ${prefix}/somatic_SVs/breakpoint_clusters.tsv
+     touch ${prefix}/somatic_SVs/plots/severus_0.html
+     touch ${prefix}/somatic_SVs/plots/severus_1.html
+     """
 
 'modules/nf-core/severus/tests/nextflow.config' is unchanged
 Changes in 'severus/tests/main.nf.test':
@@ -203,10 +227,11 @@ Changes in 'severus/tests/main.nf.test':
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                      [],
                      [],
-+                    [],
-                     []
+-                    []
 -                    ]
 -                input[1] = [[],[]]
++                    [],
++                    []
 +                ]
 +                input[1] = [[],[],[]]
 +                input[2] = [[:],[]]
@@ -217,10 +242,12 @@ Changes in 'severus/tests/main.nf.test':
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
-+                    [],
-                     []
-                 ]
+-                    []
+-                ]
 -                input[1] = [[],[]]
++                    [],
++                    []
++                ]
 +                input[1] = [[],[],[]]
 +                input[2] = [[:],[]]
                  """
@@ -230,9 +257,10 @@ Changes in 'severus/tests/main.nf.test':
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
-+                    []
-                 ]
+-                ]
 -                input[1] = [[],[]]
++                    []
++                ]
 +                input[1] = [[],[],[]]
 +                input[2] = [[:],[]]
                  """
@@ -247,9 +275,10 @@ Changes in 'severus/tests/main.nf.test':
                  input[1] = [
                      [ id:'bed'], // meta map
 -                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true)
+-                ]
 +                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true),
 +                    []
-                 ]
++                ]
 +                input[2] = [[:],[]]
                  """
              }
@@ -258,10 +287,11 @@ Changes in 'severus/tests/main.nf.test':
                      file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                      [],
                      [],
-+                    [],
-                     []
+-                    []
 -                    ]
 -                input[1] = [[],[]]
++                    [],
++                    []
 +                ]
 +                input[1] = [[],[],[]]
 +                input[2] = [[:],[]]
@@ -269,5 +299,94 @@ Changes in 'severus/tests/main.nf.test':
              }
          }
 
-'modules/nf-core/severus/tests/main.nf.test.snap' is unchanged
+Changes in 'severus/tests/main.nf.test.snap':
+--- modules/nf-core/severus/tests/main.nf.test.snap
++++ modules/nf-core/severus/tests/main.nf.test.snap
+@@ -107,7 +107,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "breakpoints_clusters.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "breakpoint_clusters.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "all_breakpoints_clusters_list": [
+@@ -115,7 +115,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "breakpoints_clusters_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "breakpoint_clusters_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "all_plots": [
+@@ -134,7 +134,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "severus_all.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "severus_all.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                     ]
+                 ],
+                 "breakpoints_double": [
+@@ -198,7 +198,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "breakpoints_clusters.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "breakpoint_clusters.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "somatic_breakpoints_clusters_list": [
+@@ -206,7 +206,7 @@
+                         {
+                             "id": "test"
+                         },
+-                        "breakpoints_clusters_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
++                        "breakpoint_clusters_list.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                     ]
+                 ],
+                 "somatic_plots": [
+@@ -225,23 +225,23 @@
+                         {
+                             "id": "test"
+                         },
+-                        "severus_somatic.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+-                    ]
+-                ],
+-                "versions_severus": [
+-                    [
+-                        "SEVERUS",
+-                        "severus",
+-                        "1.7"
+-                    ]
+-                ]
+-            }
+-        ],
+-        "meta": {
+-            "nf-test": "0.9.3",
+-            "nextflow": "25.10.4"
+-        },
+-        "timestamp": "2026-03-20T09:21:20.655520744"
++                        "severus_somatic.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
++                    ]
++                ],
++                "versions_severus": [
++                    [
++                        "SEVERUS",
++                        "severus",
++                        "1.7"
++                    ]
++                ]
++            }
++        ],
++        "meta": {
++            "nf-test": "0.9.4",
++            "nextflow": "26.04.3"
++        },
++        "timestamp": "2026-11-13T22:38:57.264443412"
+     },
+     "homo_sapiens - [ bam, bai, bam, bai, [] ], [[],[]]": {
+         "content": [
+
 ************************************************************
