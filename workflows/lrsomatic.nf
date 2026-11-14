@@ -459,8 +459,18 @@ workflow LRSOMATIC {
 
     def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
+    // Mark aligned input (METAEXTRACT found @SQ lines) with aligned_input: true, so MINIMAP2_ALIGN's samtools reset
+    // also drops the old alignment and phasing tags (ext.args3). Only aligned rows gain the key, so unaligned input
+    // keeps its meta and its rendered command (and its resume cache); the key is dropped again after alignment.
+    ch_ubams
+        .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+        .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
+        .map { _key, meta, bams, aligned -> [ aligned == 'true' ? meta + [ aligned_input: true ] : meta, bams ] }
+        .set { ch_minimap2_in }
+    // ch_minimap2_in: [meta_with_replicate (+ aligned_input: true for aligned input), bam_or_cram]
+
     MINIMAP2_ALIGN (
-        ch_ubams,
+        ch_minimap2_in,
         ch_fasta,
         params.aligned_format,
         aligned_index,

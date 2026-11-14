@@ -79,6 +79,31 @@ embeds its reference or matches `--fasta`. Otherwise `SAMTOOLS_VIEW_FIBERPREP` f
 `Failed to populate reference` error, unless its `UR:` path or `REF_PATH` is reachable: write the CRAM with
 `--output-fmt-option embed_ref=1`, convert it to BAM, or run with the `--fasta` it was aligned to.
 
+### Aligned input
+
+Aligned input (BAM or CRAM with `@SQ` lines) is turned back into reads before alignment: `MINIMAP2_ALIGN` runs
+`samtools reset | samtools fastq -T '*'` and `minimap2 -y`, which copies every read tag into the new records. For
+aligned input the reset step drops the tags that describe the old alignment or its phasing, so none is duplicated or
+carried over stale into the new alignment:
+
+- everything `samtools reset` drops by default (`AS`, `CC`, `CG`, `CP`, `H0`, `H1`, `H2`, `HI`, `IH`, `MC`, `MD`, `MQ`,
+  `NM`, `SA`, `TS`);
+- minimap2's tags `tp`, `cm`, `s1`, `s2`, `nn`, `ms`, `de`, `dv`, `rl`, `zd`, `cs`, `cg`, `ds`, which minimap2 writes
+  again for the new alignment;
+- phasing tags `HP`, `PS`, `PQ`, `PC` (from WhatsHap, LongPhase or HiPhase, including the pipeline's own haplotagged
+  output), which would otherwise give Severus, SAVANA, Wakhan and modkit the phasing of the old alignment;
+- `OA`, `XA`, `XS` (original alignment, other aligners' alternative hits), and the read group `RG`, which is
+  replaced by the pipeline's own.
+
+Every other tag is kept, in particular base modifications (`MM`, `ML`, `MN`), PacBio kinetics (`fi`, `fp`, `ri`,
+`rp`, where the input still has them), fibertools-rs output and read-level tags written by Dorado or the PacBio
+instruments (`qs`, `ns`, `ts`, `mv`, `pi`, `sp`, `np`, `rq`, `sn`, `ec`, `zm`, ...). This is a deny-list rather than an
+allow-list on purpose: the read-level tags vary with the basecaller version and chemistry, and an allow-list would
+silently drop one a user or a downstream tool relies on. The cost is that a tag from an aligner or phasing tool not
+listed above survives the realignment; if your input carries such tags, remove them first (e.g. `samtools view -x`).
+Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript strand, splice mode only) and
+is kept. Unaligned input only has its `RG` tag dropped, as before.
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
