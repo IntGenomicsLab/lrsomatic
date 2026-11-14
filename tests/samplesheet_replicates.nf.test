@@ -1,0 +1,159 @@
+nextflow_pipeline {
+
+    name "Test pipeline - samplesheet replicate encodings are validated at launch (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // A sample's rows are aligned one by one and merged per type under a key of the sample id, paired_data and the
+    // replicate count, with file names and @RG IDs taken from the replicate number. validateSampleReplicates stops
+    // the run on the encodings that key mis-handles; the one valid paired encoding is every row with its own tumour
+    // and normal file and distinct replicate numbers. Empty files read as unaligned input in the METAEXTRACT stub.
+
+    // Writes the samplesheet with the given rows (file names resolved in a per-test input dir); returns its path
+    def sheet = { dir, rows ->
+        def input_dir = new File(dir)
+        input_dir.mkdirs()
+        ['T1', 'T2', 'N', 'N1', 'N2'].each { name -> new File(input_dir, "${name}.bam").text = '' }
+        def f = new File(input_dir, 'samplesheet.csv')
+        f.text = (['sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate,normal_replicate'] +
+            rows.collect { row -> row.replaceAll(/\b([TN][12]?)\.bam\b/) { m -> new File(input_dir, "${m[1]}.bam").canonicalPath } }
+        ).join('\n') + '\n'
+        return f.canonicalPath
+    }
+
+    def failedWith = { wf, text ->
+        // Nextflow 26.10 prints the console log to stderr, earlier versions to stdout
+        (wf.stdout + wf.stderr).any { line -> line.contains(text) }
+    }
+
+    test("-profile test, second tumour row without a normal - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_mixed", [
+                    'sa,T1.bam,N.bam,pb,female,n,,,,1,1',
+                    'sa,T2.bam,,pb,female,n,,,,2,'
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'sa': some rows have a bam_normal and some do not") },
+                { assert workflow.trace.succeeded().isEmpty() }
+            )
+        }
+    }
+
+    test("-profile test, one normal repeated on every row - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_same_normal", [
+                    'sb,T1.bam,N.bam,pb,female,n,,,,1,1',
+                    'sb,T2.bam,N.bam,pb,female,n,,,,2,2'
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'sb': bam_normal") },
+                { assert failedWith(workflow, 'is listed on 2 rows') },
+                { assert failedWith(workflow, 'split the normal into one file per row') },
+                { assert workflow.trace.succeeded().isEmpty() }
+            )
+        }
+    }
+
+    test("-profile test, rows with blank replicate numbers - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_blank_reps", [
+                    'sc,T1.bam,N1.bam,pb,female,n,,,,,',
+                    'sc,T2.bam,N2.bam,pb,female,n,,,,,'
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'sc': 2 rows have tumor_replicate 1") },
+                { assert failedWith(workflow, "Sample 'sc': 2 rows have normal_replicate 1") },
+                { assert workflow.trace.succeeded().isEmpty() }
+            )
+        }
+    }
+
+    test("-profile test, one file as both tumour and normal - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_tumour_is_normal", [
+                    'se,T1.bam,T1.bam,pb,female,n,,,,1,1'
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'se':") },
+                { assert failedWith(workflow, 'is listed as both bam_tumor and bam_normal') },
+                { assert workflow.trace.succeeded().isEmpty() }
+            )
+        }
+    }
+
+    test("-profile test, paired replicates with their own normals - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_valid_pairs", [
+                    'sd,T1.bam,N1.bam,pb,female,n,,,,1,1',
+                    'sd,T2.bam,N2.bam,pb,female,n,,,,2,2'
+                ])
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }
+            }
+            assertAll(
+                { assert workflow.success },
+                { assert samples('MINIMAP2_ALIGN') == ['sd'] * 4 : "MINIMAP2_ALIGN tasks: ${samples('MINIMAP2_ALIGN')}" },
+                // one merge per type: the two tumour files, the two normal files
+                { assert samples('SAMTOOLS_MERGE') == ['sd', 'sd'] : "SAMTOOLS_MERGE tasks: ${samples('SAMTOOLS_MERGE')}" },
+                { assert file("$outputDir/sd/bamfiles/sd_tumor.cram").exists() },
+                { assert file("$outputDir/sd/bamfiles/sd_normal.cram").exists() },
+                // and one paired analysis, no tumour-only one
+                { assert samples('CLAIRS') == ['sd'] : "CLAIRS tasks: ${samples('CLAIRS')}" },
+                { assert samples('SEVERUS') == ['sd'] : "SEVERUS tasks: ${samples('SEVERUS')}" },
+                { assert samples('CLAIRSTO').isEmpty() : "CLAIRSTO tasks: ${samples('CLAIRSTO')}" },
+                { assert samples('LRSOMATICREPORT') == ['sd'] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" }
+            )
+        }
+    }
+}

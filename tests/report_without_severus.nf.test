@@ -1,0 +1,43 @@
+nextflow_pipeline {
+
+    name "Test pipeline - a sample lost before SEVERUS gets no report and does not abort the run (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The report is keyed on severus_input and every other leg joins with remainder: true. A sample missing from
+    // severus_input but present in another leg came out of the joins as a short, meta-less tuple, and the
+    // fixed-arity .filter closure threw on it, aborting the whole run at report assembly (campaign finding G2-F1).
+    // The config skips LONGPHASE_HAPLOTAG for sample3 to stand in for such a loss. join(remainder: true) pads a key
+    // that is missing on the left with a single null for the whole left side, so the tuple only comes out short when
+    // the orphan first appears after the second leg: with VEP on, sample3's somatic VEP VCF fills the first leg and
+    // the tuple stays full length. --skip_vep makes the phased somatic VCF (fourth leg) its first appearance.
+
+    test("-profile test, sample3 never reaches SEVERUS, VEP skipped - stub") {
+
+        options "-stub"
+        config "./fixtures/drop_sample3_haplotag.config"
+
+        when {
+            params {
+                outdir   = "$outputDir"
+                skip_vep = true
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }
+            }
+            assertAll(
+                { assert workflow.success },
+                { assert samples('SEVERUS').sort() == ['sample1', 'sample2'] : "SEVERUS tasks: ${samples('SEVERUS')}" },
+                // the other samples are still reported, sample3 is dropped with a warning
+                { assert samples('LRSOMATICREPORT').sort() == ['sample1', 'sample2'] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" },
+                { assert (workflow.stdout + workflow.stderr).any { line -> line.contains("Sample 'sample3' never reached SEVERUS") } },
+                { assert !file("$outputDir/sample3/report/sample3_report.html").exists() }
+            )
+        }
+    }
+}

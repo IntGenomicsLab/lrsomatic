@@ -107,7 +107,7 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Keep only PASS records from each small variant caller for downstream use.",
-                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output, with one exception: in tumour-only mode the ClairS-TO somatic split (`VCFSPLIT`) always keeps only `PASS` calls, so ClairS-TO's `LowQual` somatic candidates are dropped either way (paired ClairS keeps them with false). The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
                     "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {
@@ -746,7 +746,7 @@
                 },
                 "skip_ascat": {
                     "type": "boolean",
-                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's."
+                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's. Either way Verdict tags nothing when the purity is above 0.6."
                 },
                 "skip_savana": {
                     "type": "boolean",

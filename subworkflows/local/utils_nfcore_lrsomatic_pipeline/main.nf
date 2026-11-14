@@ -90,8 +90,12 @@ workflow PIPELINE_INITIALISATION {
     // Each samplesheet row describes one tumor (+ optional normal) sample
     // Columns: sample_id, bam_tumor, bam_normal, method, sex, fiber,
     //          clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate
+    def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+    // Stop on replicate encodings the per-type merge below would mis-handle without an error
+    validateSampleReplicates(samplesheet_rows)
+
     channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheet_rows)
         // Step 1: build a combined meta map from the samplesheet columns
         // paired_data = true if a normal BAM is present; false for tumor-only
         .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate ->
@@ -514,6 +518,82 @@ def validateInputSamplesheet(input) {
     }
 
     return [ metas[0], bams ]
+}
+
+//
+// Rows of one sample are aligned one by one, then merged per type (SAMTOOLS_MERGE) under a key of the sample id,
+// paired_data (has a normal) and the replicate count; each row's files are named and read-grouped by its replicate
+// number. Reject the encodings that key mis-handles: a sample whose rows mix "has normal" and "no normal" (tumour
+// rows never merged; the run aborted after alignment with a bare "Join mismatch"), a file repeated across rows
+// (merged with itself), and rows sharing a replicate number (blank counts as 1: colliding file names and @RG IDs).
+// The schema's columns are
+// [meta, bam_tumor, bam_normal, platform, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate].
+//
+def validateSampleReplicates(rows) {
+    def shared_normal_hint = "To use one normal with several tumour files, merge the tumour files into one BAM beforehand " +
+        "and give the sample a single row, or split the normal into one file per row."
+    def errors = []
+    rows.groupBy { row -> row[0].id }.each { id, sample_rows ->
+        def entries = sample_rows.collect { row ->
+            [
+                tumor:      samplesheetFileKey(row[1]),
+                normal:     row[2] ? samplesheetFileKey(row[2]) : null,
+                tumor_rep:  row[9],
+                normal_rep: row[10]
+            ]
+        }
+
+        def tumor_files = entries.collect { e -> e.tumor }
+        def normal_files = entries.findAll { e -> e.normal }.collect { e -> e.normal }
+        tumor_files.intersect(normal_files).unique().each { f ->
+            errors << "Sample '${id}': ${f} is listed as both bam_tumor and bam_normal."
+        }
+        if (entries.size() < 2) {
+            return
+        }
+
+        def with_normal = entries.findAll { e -> e.normal }
+        def without_normal = entries.findAll { e -> !e.normal }
+        if (with_normal && without_normal) {
+            errors << ("Sample '${id}': some rows have a bam_normal and some do not " +
+                "(with: ${with_normal.collect { e -> e.tumor }.join(', ')}; without: ${without_normal.collect { e -> e.tumor }.join(', ')}). " +
+                "A sample's files are merged per type, so either every row has its own normal file or none does; " +
+                "otherwise its tumour rows are not merged with each other and the sample cannot be paired correctly. " +
+                "Give the tumour-only files their own sample name. " + shared_normal_hint)
+            return
+        }
+
+        normal_files.countBy { f -> f }.findAll { _f, n -> n > 1 }.each { f, n ->
+            errors << ("Sample '${id}': bam_normal ${f} is listed on ${n} rows. Each row's files are aligned separately " +
+                "and merged per type, so the normal would be merged with itself and counted ${n} times. " + shared_normal_hint)
+        }
+        // A repeated tumour file is merged with itself too, but the remote test samplesheets use it to exercise the merge
+        tumor_files.countBy { f -> f }.findAll { _f, n -> n > 1 }.each { f, n ->
+            log.warn("Sample '${id}': bam_tumor ${f} is listed on ${n} rows; it is aligned once per row and merged with itself, " +
+                "so its reads are counted ${n} times. Remove the repeated rows unless this is intended.")
+        }
+
+        entries.countBy { e -> e.tumor_rep }.findAll { _rep, n -> n > 1 }.each { rep, n ->
+            errors << ("Sample '${id}': ${n} rows have tumor_replicate ${rep} (a blank tumor_replicate counts as 1). " +
+                "Number the rows of a sample with several files 1, 2, ... in tumor_replicate, and in normal_replicate when they " +
+                "have a normal, e.g. 'T1.bam,N1.bam,...,1,1' and 'T2.bam,N2.bam,...,2,2'.")
+        }
+        with_normal.countBy { e -> e.normal_rep }.findAll { _rep, n -> n > 1 }.each { rep, n ->
+            errors << ("Sample '${id}': ${n} rows have normal_replicate ${rep} (a blank normal_replicate counts as 1). " +
+                "Number the rows of a sample with several files 1, 2, ... in tumor_replicate and normal_replicate, " +
+                "e.g. 'T1.bam,N1.bam,...,1,1' and 'T2.bam,N2.bam,...,2,2'.")
+        }
+    }
+    if (errors) {
+        error("Invalid samplesheet (${params.input}):\n  - " + errors.join("\n  - ") +
+            "\nSee the 'Multiple runs of the same sample' section of docs/usage.md.")
+    }
+    return true
+}
+
+// Comparable form of a samplesheet file column (a Path from samplesheetToList)
+def samplesheetFileKey(f) {
+    return f instanceof Path ? f.toUriString() : f.toString()
 }
 
 //

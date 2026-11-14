@@ -1360,18 +1360,23 @@ workflow LRSOMATIC {
             : ch_wakhan_files.map { meta, files -> [meta.id, files] }
         // report_wakhan_ch: [id, [files]]
 
-        // One emission per sample per tool, none optional: mosdepth 2, cramino 1, samtools 2.
-        // Adding another per-sample emission to either mix below must bump this count.
-        def qc_files_per_sample = params.skip_qc
+        // One emission per sample and BAM type per tool, none optional: mosdepth 2, cramino 1, samtools 2.
+        // Adding another per-sample emission to either mix below must bump the matching count.
+        def qc_files_per_bam = params.skip_qc
             ? 0
             : (params.skip_mosdepth ? 0 : 2) + (params.skip_cramino ? 0 : 1) + (params.skip_bamstats ? 0 : 2)
+        // WhatsHap stats: one TSV per sample (the phased germline VCF: the normal's in a pair, the tumour's when
+        // tumour-only), with no meta.type. It joins the tumor-side bundle; the report finds it by name anywhere.
+        def whatshap_files_per_sample = (params.skip_qc || params.skip_whatshapstats) ? 0 : 1
+        def qc_tumor_files_per_sample = qc_files_per_bam + whatshap_files_per_sample
 
         // Tumor-side QC, keyed by the sample id (= report id)
         // groupKey: emit a sample's bundle on its own files; toString() restores a plain String key
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'tumor' }
-            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
+            .mix(whatshap_stats_txt)
+            .map { meta, f -> [groupKey(meta.id, qc_tumor_files_per_sample), f] }
             .groupTuple()
             .map { key, files -> [key.toString(), files] }
             .set { report_qc_tumor_grouped }
@@ -1381,13 +1386,13 @@ workflow LRSOMATIC {
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
-            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_bam), f] }
             .groupTuple()
             .map { key, files -> [key.toString(), files] }
             .set { report_qc_normal_grouped }
         // report_qc_normal_grouped: [id, [qc_file, ...]]  -- paired samples only
 
-        def report_qc_tumor_ch = qc_files_per_sample == 0
+        def report_qc_tumor_ch = qc_tumor_files_per_sample == 0
             ? report_empty_slot.call()
             : report_qc_tumor_grouped
 
@@ -1400,7 +1405,7 @@ workflow LRSOMATIC {
             }
             .set { report_roster }
 
-        def report_qc_normal_ch = qc_files_per_sample == 0
+        def report_qc_normal_ch = qc_files_per_bam == 0
             ? report_empty_slot.call()
             : report_roster.paired
                 .join(report_qc_normal_grouped)
@@ -1417,21 +1422,31 @@ workflow LRSOMATIC {
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
             .join(report_wakhan_ch,     remainder: true)
-            .filter { _id, meta, _vep, _sv_vep, _severus, _somatic, _ascat, _qc_t, _qc_n, _wakhan -> meta != null }
-            .map { _id, meta, vep, sv_vep_vcf, severus, somatic, ascat, qc_t, qc_n, wakhan ->
-                return [
-                    meta,
-                    vep        ?: [],
-                    sv_vep_vcf ?: [],
-                    severus    ?: [],
-                    somatic    ?: [],
-                    ascat      ?: [],
-                    qc_t       ?: [],
-                    qc_n       ?: [],
-                    wakhan     ?: []
-                ]
+            // Index-based, not destructured: a sample missing from severus_input (lost upstream, e.g. by an
+            // errorStrategy 'ignore' leg) comes out of remainder as a short, meta-less tuple such as
+            // [id, null, [qc files], null, null], and a fixed-arity closure would throw and abort the run
+            .branch { row ->
+                reportable: row[1] != null
+                no_severus: true
+            }
+            .set { report_joined }
+
+        // Report identity is the Severus input, so such a sample gets no report; say so once instead of failing
+        report_joined.no_severus
+            .map { row -> row[0] }
+            .unique()
+            .subscribe { id ->
+                log.warn "Sample '${id}' never reached SEVERUS (an upstream step was skipped or failed), so it gets no lrsomatic report."
+            }
+
+        // [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan]: a leg absent for this sample arrives as null
+        report_joined.reportable
+            .map { row ->
+                def legs = (2..9).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }
+                return [row[1]] + legs
             }
             .set { report_input_ch }
+        // report_input_ch: [meta, vep, sv_vep, severus, somatic, ascat, qc_tumor, qc_normal, wakhan] -- [] for an absent leg
 
         // Only panel files are staged; builtin names reach the tool through ext.args (conf/modules.config)
         def report_gene_panel_files = reportGenePanelTokens(params.report_gene_panel)

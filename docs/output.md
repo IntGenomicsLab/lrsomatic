@@ -367,7 +367,7 @@ Present in **tumor-only** samples (no matched normal).
 | `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                           |
 | `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                   |
 
-The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -977,7 +977,7 @@ Sections:
   - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible **Phasing** block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with `--skip_whatshapstats` or `--skip_qc`.
 
 Filtering in the browser:
 
