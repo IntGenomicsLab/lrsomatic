@@ -567,9 +567,22 @@ selected, and by a `PASS` filter otherwise, so `RefCall` records never enter it.
 The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>` are
 never filtered, so no calls are lost from the results directory.
 
-Set it to `false` to restore the previous unfiltered behaviour: each caller's
-records are passed on with their original `FILTER`, except the two tumour-only
-germline arms above, and the ClairS-TO germline split is still `PASS`-rewritten.
+Set it to `false` to pass on non-`PASS` calls as well, with their original
+`FILTER`: Clair3 and ClairS records as they are (`LowQual` included), and
+DeepVariant and DeepSomatic records whose genotype carries an alternate allele
+and whose `FILTER` is `PASS` or `LowQual`. DeepVariant and DeepSomatic records
+without a call (`RefCall`, `NoCall`; over 40 million on a 30x genome with
+DeepSomatic) are never passed on, nor are DeepSomatic's `GERMLINE` records
+(written as `0/0`) and `PON` records: like ClairS-TO's `NonSomatic` calls, they
+are its verdict that a site is not somatic. The two tumour-only germline arms
+above stay `PASS`-only, and the ClairS-TO germline split is still
+`PASS`-rewritten.
+
+DeepSomatic 1.10 declares `FORMAT/NAF` as `Number=R` but writes one value per
+alternate allele. Before its records reach any step that joins records
+(`bcftools norm -m +any`), the pipeline declares the field `Number=A` in its
+working copy (`DEEPSOMATIC_PASS_FILTER`); the published DeepSomatic VCF keeps the
+caller's header.
 
 `consensus` keeps the prioritised caller's records whose called alleles are all
 called by the other caller too. An allele counts as called when the record's

@@ -1,0 +1,69 @@
+name: deepsomatic_filter
+description: Filter a DeepSomatic VCF with bcftools view (expression via ext.args), after declaring its FORMAT/NAF field Number=A when DeepSomatic writes one value per ALT allele under a Number=R declaration
+keywords:
+  - filtering
+  - VCF
+  - deepsomatic
+tools:
+  - view:
+      description: VCF/BCF conversion, view, subset and filter VCF/BCF files.
+      homepage: http://samtools.github.io/bcftools/bcftools.html
+      documentation: http://www.htslib.org/doc/bcftools.html
+      tool_dev_url: https://github.com/samtools/bcftools
+      doi: "10.1093/bioinformatics/btp352"
+      licence: ["MIT"]
+      identifier: biotools:bcftools
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information e.g. [ id:'test' ]
+    - vcf:
+        type: file
+        description: DeepSomatic VCF
+        pattern: "*.vcf.gz"
+    - tbi:
+        type: file
+        description: Tabix index of the VCF
+        pattern: "*.tbi"
+output:
+  vcf:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz:
+          type: file
+          description: Filtered VCF with the repaired header
+          pattern: "*.vcf.gz"
+  index:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - ${prefix}.vcf.gz.tbi:
+          type: file
+          description: Tabix index of the output VCF
+          pattern: "*.tbi"
+  versions_bcftools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - bcftools:
+          type: string
+          description: The tool name
+      - "bcftools --version | sed '1!d; s/^.*bcftools //'":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

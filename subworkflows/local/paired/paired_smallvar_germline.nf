@@ -127,13 +127,11 @@ workflow PAIRED_SMALLVAR_GERMLINE {
             false      // with_phasing: LongPhase phases the calls downstream
         )
 
-        // PASS-only copy for downstream steps; published VCFs are untouched.
-        def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        if (params.smallvar_filter_pass) {
-            DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
-            deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
-                .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
-        }
+        // Filtered copy for downstream steps (PASS, or with --smallvar_filter_pass false the alt-genotype PASS/LowQual
+        // records, never RefCall/NoCall); published VCFs are untouched.
+        DEEPVARIANT_PASS_FILTER ( DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index, failOnMismatch: true, failOnDuplicate: true), [], [], [] )
+        def deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
+            .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
 
         deepvariant_vcf
             .map{ meta, vcf, tbi ->

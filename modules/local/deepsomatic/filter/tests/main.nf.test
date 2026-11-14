@@ -1,0 +1,88 @@
+nextflow_process {
+
+    name "Test Process DEEPSOMATIC_FILTER"
+    script "../main.nf"
+    process "DEEPSOMATIC_FILTER"
+
+    tag "modules"
+    tag "modules_local"
+    tag "deepsomatic_filter"
+    tag "small"
+
+    // The fixture carries DeepSomatic 1.10's header (FORMAT/NAF declared Number=R, one value per ALT written)
+    // and one record per FILTER class, with two NoCall and two PASS records sharing a position.
+    test("PASS filter off - keeps alt PASS/LowQual calls, drops RefCall/NoCall/GERMLINE, repairs NAF") {
+
+        config "./unfiltered.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/deepsomatic_naf.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/deepsomatic_naf.vcf.gz.tbi", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def lines = path(process.out.vcf[0][1]).linesGzip
+            def kept  = lines.findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[4]}:${f[6]}" }
+            assertAll(
+                { assert kept == [ '400:C:LowQual', '500:T:PASS', '500:AT:PASS', '600:C,T:PASS' ] },
+                { assert lines.any { line -> line.startsWith('##FORMAT=<ID=NAF,Number=A,') } },
+                { assert !lines.any { line -> line.startsWith('##FORMAT=<ID=NAF,Number=R,') } },
+                { assert file(process.out.index[0][1]).exists() }
+            )
+        }
+    }
+
+    test("PASS filter on - keeps PASS records only") {
+
+        config "./pass.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/deepsomatic_naf.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/deepsomatic_naf.vcf.gz.tbi", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def lines = path(process.out.vcf[0][1]).linesGzip
+            def kept  = lines.findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[4]}:${f[6]}" }
+            assertAll(
+                { assert kept == [ '500:T:PASS', '500:AT:PASS', '600:C,T:PASS' ] },
+                { assert lines.any { line -> line.startsWith('##FORMAT=<ID=NAF,Number=A,') } }
+            )
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

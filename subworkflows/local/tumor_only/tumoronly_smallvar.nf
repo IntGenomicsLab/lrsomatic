@@ -1,6 +1,6 @@
 // IMPORT MODULES
 include { BCFTOOLS_VIEW as DEEPVARIANT_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
-include { BCFTOOLS_VIEW as DEEPSOMATIC_PASS_FILTER } from '../../../modules/nf-core/bcftools/view/main'
+include { DEEPSOMATIC_FILTER as DEEPSOMATIC_PASS_FILTER } from '../../../modules/local/deepsomatic/filter/main'
 include { CLAIRSTO                  } from '../../../modules/local/clairsto/main.nf'
 include { CLAIRSTO_VERDICT_TAG      } from '../../../modules/local/clairsto/verdict_tag/main.nf'
 include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main.nf'
@@ -167,13 +167,11 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]],  // GZI (empty if FASTA is uncompressed)
             ds_pon_channel
         )
-        // PASS-only copy for downstream steps; published VCFs are untouched.
-        def deepsomatic_vcf = DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index)
-        if (params.smallvar_filter_pass) {
-            DEEPSOMATIC_PASS_FILTER ( deepsomatic_vcf, [], [], [] )
-            deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
-                .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
-        }
+        // Filtered copy for downstream steps (PASS, or with --smallvar_filter_pass false the alt-genotype PASS/LowQual
+        // records, never RefCall/NoCall/GERMLINE/PON), with the FORMAT/NAF declaration repaired; published VCFs are untouched.
+        DEEPSOMATIC_PASS_FILTER ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true) )
+        def deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
+            .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
 
         deepsomatic_vcf
             .map{ meta, vcf, tbi ->
