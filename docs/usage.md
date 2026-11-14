@@ -79,6 +79,49 @@ embeds its reference or matches `--fasta`. Otherwise `SAMTOOLS_VIEW_FIBERPREP` f
 `Failed to populate reference` error, unless its `UR:` path or `REF_PATH` is reachable: write the CRAM with
 `--output-fmt-option embed_ref=1`, convert it to BAM, or run with the `--fasta` it was aligned to.
 
+### Aligned input
+
+Aligned input (BAM or CRAM with `@SQ` lines) is turned back into reads before alignment: `MINIMAP2_ALIGN` runs
+`samtools reset | samtools fastq -T '*'` and `minimap2 -y`, which copies every read tag into the new records. For
+aligned input the reset step drops the tags that describe the old alignment or its phasing, so none is duplicated or
+carried over stale into the new alignment:
+
+- everything `samtools reset` drops by default (`AS`, `CC`, `CG`, `CP`, `H0`, `H1`, `H2`, `HI`, `IH`, `MC`, `MD`, `MQ`,
+  `NM`, `SA`, `TS`);
+- minimap2's tags `tp`, `cm`, `s1`, `s2`, `nn`, `ms`, `de`, `dv`, `rl`, `zd`, `cs`, `cg`, `ds`, which minimap2 writes
+  again for the new alignment;
+- phasing tags `HP`, `PS`, `PQ`, `PC` (from WhatsHap, LongPhase or HiPhase, including the pipeline's own haplotagged
+  output), which would otherwise give Severus, SAVANA, Wakhan and modkit the phasing of the old alignment;
+- `OA`, `XA`, `XS` (original alignment, other aligners' alternative hits), and the read group `RG`, which is
+  replaced by the pipeline's own.
+
+Every other tag is kept, in particular base modifications (`MM`, `ML`, `MN`), PacBio kinetics (`fi`, `fp`, `ri`,
+`rp`, where the input still has them), fibertools-rs output and read-level tags written by Dorado or the PacBio
+instruments (`qs`, `ns`, `ts`, `mv`, `pi`, `sp`, `np`, `rq`, `sn`, `ec`, `zm`, ...). This is a deny-list rather than an
+allow-list on purpose: the read-level tags vary with the basecaller version and chemistry, and an allow-list would
+silently drop one a user or a downstream tool relies on. The cost is that a tag from an aligner or phasing tool not
+listed above survives the realignment; if your input carries such tags, remove them first (e.g. `samtools view -x`).
+Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript strand, splice mode only) and
+is kept. Unaligned input only has its `RG` tag dropped, as before.
+
+Each samplesheet row gets one new read group, `@RG ID:<sample>_<type>_rep<replicate>`. For ONT input whose header
+names its basecalling model (Dorado's `DS:basecall_model=...`), the model is written into that read group as
+`DS:basecall_model=<model>`, so a BAM/CRAM published by the pipeline can be fed back in without filling the model
+columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
+groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
+rows (from the original input files) if you need them kept apart.
+
+### PacBio kinetics
+
+PacBio HiFi reads written with `--keep-kinetics` carry per-base kinetics (`fi`, `fp`, `ri`, `rp`), which fibertools-rs
+uses to call m6A and which make up a large share of a BAM. By default the pipeline drops them (and the per-subread
+`ip`/`pw`, if present) from every PacBio read when the reads are converted for alignment, so no aligned or published
+file carries them: not the reads `ft predict-m6a` gave no m6A call (it strips the kinetics only from the reads it
+calls, leaving them on about 2-3 % of reads), and not the samples that never reach it (`--skip_m6a`, `--skip_fiber`,
+or normals under `--skip_normalfiber`). Base modifications (`MM`/`ML`), fibertools-rs tags and the other PacBio read
+tags, including the kinetics pass counts `fn`/`rn`, are kept. With `--keep_kinetic_data true` the kinetics are kept
+on every read instead (`ft predict-m6a --keep`, and nothing dropped at alignment).
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
@@ -630,10 +673,10 @@ lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
 
 #### Advanced Options
 
-| Parameter         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--use_gpu`       | A boolean to run DeepVariant, DeepSomatic, Clair3 and the fibertools steps (m6A prediction, nucleosomes, FIRE) on a GPU, with their GPU container images. Needs a GPU-enabled compute environment; add the `gpu` profile (`-profile <...>,gpu`) so the containers can see the GPU. Clair3's GPU image (`hkubal/clair3:v2.0.5_gpu`) is built for NVIDIA GPUs up to compute capability 9.0 (for example A100, H100 or RTX Ada) and fails on newer cards such as the B200; there, leave `--use_gpu` off. Default = `false` |
-| `--generate_gvcf` | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false`                                                                                                                                                                                                                                                                                                                                             |
+| Parameter         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--use_gpu`       | A boolean to run the GPU-capable steps on a GPU, with their GPU container images: DeepVariant and DeepSomatic `call_variants` (`DEEPVARIANT_CALLVARIANTS`, `DEEPSOMATIC_CALLVARIANTS`; their `make_examples` step uses the same `-gpu` image but stays on the CPU) and Clair3 (`CLAIR3`). Every other step, including the fibertools-rs steps (m6A prediction, nucleosomes, FIRE), runs on the CPU either way. Needs a GPU-enabled compute environment; add the `gpu` profile (`-profile <...>,gpu`) so the containers can see the GPU. The DeepVariant/DeepSomatic `1.10.0-gpu` images (TensorFlow 2.16.1, CUDA 12.3) and Clair3's GPU image (`hkubal/clair3:v2.0.5_gpu`) support NVIDIA GPUs up to the Hopper generation (compute capability 9.0 or lower, for example A100, H100 or RTX Ada). On Blackwell cards such as the B200 (compute capability 10.0) `call_variants` fails with `CUDA_ERROR_INVALID_PTX` and Clair3 fails too; there, leave `--use_gpu` off. Default = `false` |
+| `--generate_gvcf` | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 #### Genome-Derived Parameters
 

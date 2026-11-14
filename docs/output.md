@@ -237,7 +237,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                   |
 | `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary for the bam file                                                                                   |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files         |
 | `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
 | `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                  |
 | `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                     |

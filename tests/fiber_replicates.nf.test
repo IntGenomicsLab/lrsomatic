@@ -1,0 +1,45 @@
+nextflow_pipeline {
+
+    name "Test pipeline - per-replicate fibertools-rs QC file names (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // FIBERTOOLSRS_QC runs once per input file. Its output used to be <id>_qc.txt for every replicate, so a sample's
+    // replicates overwrote each other in <outdir>/<id>/qc/<type>/fibertoolsrs/ and only one survived. Replicates now
+    // publish <id>_rep<N>_qc.txt; a sample with a single input file keeps <id>_qc.txt.
+
+    test("-profile test, fiber-seq sample with two replicates and one with a single file - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../fiber_replicates_input")
+                input_dir.mkdirs()
+                def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+                def sheet = new File(input_dir, 'samplesheet_fiber_replicates.csv')
+                sheet.text = [
+                    'sample,bam_tumor,bam_normal,platform,sex,fiber,clair3_model,clairSTO_model,clairS_model,tumor_replicate',
+                    "fiberreps,${data}/HS578T_HIFI_chr19.bam,,pb,female,y,,,,1",
+                    "fiberreps,${data}/HS578T_HIFI_chr19.bam,,pb,female,y,,,,2",
+                    "fibersingle,${data}/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,y,,,,"
+                ].join('\n') + '\n'
+
+                outdir = "$outputDir"
+                input  = sheet.canonicalPath
+            }
+        }
+
+        then {
+            def qc = { sample -> (new File("$outputDir/${sample}/qc/tumor/fibertoolsrs").listFiles() ?: [])*.name as Set }
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }*.name }
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('FIBERTOOLSRS_QC').size() == 3 : "FIBERTOOLSRS_QC tasks: ${succeeded('FIBERTOOLSRS_QC')}" },
+                { assert qc('fiberreps') == [ 'fiberreps_rep1_qc.txt', 'fiberreps_rep2_qc.txt' ] as Set : "fiberreps QC files: ${qc('fiberreps')}" },
+                { assert qc('fibersingle') == [ 'fibersingle_qc.txt' ] as Set : "fibersingle QC files: ${qc('fibersingle')}" }
+            )
+        }
+    }
+}
