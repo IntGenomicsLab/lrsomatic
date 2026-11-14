@@ -15,6 +15,9 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
+    // The index must sit next to the FASTA: without it every parallel `samtools mpileup -f` worker builds
+    // <reference>.fai in the task dir at once, and a worker reading a half-written index exits 1 and fails the task
+    tuple val(meta3), path(fai)
     path(centromere_bed)
 
     output:
@@ -52,9 +55,11 @@ process WAKHAN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
     def centromere = centromere_bed ? "--centromere-bed \$PWD/${centromere_bed}" : ""
+    // samtools looks for <reference>.fai; link the index under that name if it was staged under another
+    def link_fai = fai.name != reference.name + ".fai" ? "ln -sf ${fai} ${reference.name}.fai\n" : ''
 
     """
-    wakhan \\
+    ${link_fai}wakhan \\
         all \\
         --target-bam ${tumor_input} \\
         --breakpoints ${breakpoints} \\

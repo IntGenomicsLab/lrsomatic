@@ -1191,6 +1191,7 @@ workflow LRSOMATIC {
     // MODULE: WAKHAN (label: process_medium) -- haplotype-aware copy number
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
     //         ch_fasta          -- [[:], fasta]
+    //         ch_fai            -- [[:], fai]  -- staged next to the FASTA so no samtools worker builds it
     //         centromere_bed    -- BED file of centromere coordinates (for assembly anchoring)
     // Output: WAKHAN assembly reports (written to outdir)
     //
@@ -1212,6 +1213,7 @@ workflow LRSOMATIC {
         WAKHAN (
             wakhan_input,
             ch_fasta,
+            ch_fai,
             file(params.centromere_bed)
         )
 
