@@ -802,8 +802,8 @@
                 },
                 "use_gpu": {
                     "type": "boolean",
-                    "description": "Run DeepVariant, DeepSomatic, Clair3 and fibertools on a GPU (use with the gpu profile).",
-                    "help_text": "Clair3's GPU image supports NVIDIA GPUs up to compute capability 9.0 (A100, H100, RTX Ada); it fails on newer cards such as the B200, so leave this off there."
+                    "description": "Run DeepVariant/DeepSomatic call_variants and Clair3 on a GPU (use with the gpu profile).",
+                    "help_text": "Only DEEPVARIANT_CALLVARIANTS, DEEPSOMATIC_CALLVARIANTS and CLAIR3 use a GPU; every other step, fibertools-rs included, runs on the CPU either way. The DeepVariant/DeepSomatic 1.10.0-gpu images (TensorFlow 2.16.1, CUDA 12.3) and Clair3's GPU image support NVIDIA GPUs up to the Hopper generation (compute capability 9.0 or lower, e.g. A100, H100); on Blackwell cards such as the B200 (compute capability 10.0) call_variants fails with CUDA_ERROR_INVALID_PTX and Clair3 fails too, so leave this off there."
                 },
                 "skip_report": {
                     "type": "boolean",

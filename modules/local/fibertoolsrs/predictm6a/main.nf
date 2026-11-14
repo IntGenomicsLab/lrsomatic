@@ -1,7 +1,9 @@
 process FIBERTOOLSRS_PREDICTM6A {
     tag "$meta.id"
     label 'process_very_high'
-    label "${params.use_gpu ? 'process_gpu_very_high_memory' : 'process_high_memory'}"
+    // CPU only, also under --use_gpu: the image is the CPU bioconda build and no GPU option is passed, so a GPU label
+    // would only idle a GPU. Moving m6A prediction to a GPU needs a CUDA-enabled fibertools-rs image first.
+    label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
