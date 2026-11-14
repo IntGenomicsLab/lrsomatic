@@ -1,5 +1,5 @@
 name: bcftools_caller_union
-description: Union of two callers' VCFs with one record per position (CHROM:POS), preferring PASS records and then the priority caller
+description: Union of two callers' VCFs with one caller per position (CHROM:POS), preferring PASS records and then the priority caller; exact duplicates are dropped
 keywords:
   - union
   - VCF
@@ -40,7 +40,7 @@ output:
           description: Groovy Map containing sample information
       - ${prefix}.vcf.gz:
           type: file
-          description: Union VCF, one record per position
+          description: Union VCF, one caller per position
           pattern: "*.vcf.gz"
   tbi:
     - - meta:

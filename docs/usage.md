@@ -593,16 +593,17 @@ Earlier versions rejoined the split alleles after the intersection instead,
 which published records such as `C>A 0/0` or `A>G 1/0` that neither caller had
 called.
 
-`all` keeps the union by position, one record per position: the prioritised
+`all` keeps the union by position, one caller per position: the prioritised
 caller's records, plus the other caller's records at positions where the
 prioritised caller has none. Where both callers call a position, even with
-different alleles, only the prioritised caller's record is kept. A `PASS` record
+different alleles, only the prioritised caller's records are kept. A `PASS` record
 wins over a non-`PASS` one first, so with `--smallvar_filter_pass false` the
-prioritised caller's `RefCall`/`LowQual` record does not hide the other caller's
-`PASS` call. Within each caller, too, only one record per position is kept: where
-one caller has several (e.g. equivalent indels left-aligned onto one `POS`), a
-`PASS` record is preferred, and among records of equal standing the first in file
-order. Records are not split in this mode.
+prioritised caller's `LowQual` record does not hide the other caller's `PASS`
+call, and a caller's non-`PASS` record at a position where it has a `PASS` one is
+dropped. Where one caller reports several different alleles at one position (e.g.
+Clair3 calls an SNV and a deletion starting at the same base), all of them are
+kept; only exact duplicates (same `POS`, `REF` and `ALT`) are dropped. Records are
+not split in this mode.
 
 Whatever the callers and combine mode, each arm is joined to one record per
 position (`bcftools norm -m +any`) before phasing, since LongPhase cannot take two

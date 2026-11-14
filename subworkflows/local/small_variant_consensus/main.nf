@@ -192,7 +192,7 @@ workflow SMALL_VARIANT_CONSENSUS {
         //
         // MODULE: BCFTOOLS_CALLER_UNION (label: process_single)
         // Input:  [meta, prio_vcf, prio_tbi, other_vcf, other_tbi]
-        // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]  -- sorted union VCF, one record per position
+        // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]  -- sorted union VCF, one caller per position
         //
         BCFTOOLS_CALLER_UNION(combine_input)
         BCFTOOLS_CALLER_UNION.out.vcf.set{ vcf }
