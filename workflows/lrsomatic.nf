@@ -1422,21 +1422,31 @@ workflow LRSOMATIC {
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
             .join(report_wakhan_ch,     remainder: true)
-            .filter { _id, meta, _vep, _sv_vep, _severus, _somatic, _ascat, _qc_t, _qc_n, _wakhan -> meta != null }
-            .map { _id, meta, vep, sv_vep_vcf, severus, somatic, ascat, qc_t, qc_n, wakhan ->
-                return [
-                    meta,
-                    vep        ?: [],
-                    sv_vep_vcf ?: [],
-                    severus    ?: [],
-                    somatic    ?: [],
-                    ascat      ?: [],
-                    qc_t       ?: [],
-                    qc_n       ?: [],
-                    wakhan     ?: []
-                ]
+            // Index-based, not destructured: a sample missing from severus_input (lost upstream, e.g. by an
+            // errorStrategy 'ignore' leg) comes out of remainder as a short, meta-less tuple such as
+            // [id, null, [qc files], null, null], and a fixed-arity closure would throw and abort the run
+            .branch { row ->
+                reportable: row[1] != null
+                no_severus: true
+            }
+            .set { report_joined }
+
+        // Report identity is the Severus input, so such a sample gets no report; say so once instead of failing
+        report_joined.no_severus
+            .map { row -> row[0] }
+            .unique()
+            .subscribe { id ->
+                log.warn "Sample '${id}' never reached SEVERUS (an upstream step was skipped or failed), so it gets no lrsomatic report."
+            }
+
+        // [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan]: a leg absent for this sample arrives as null
+        report_joined.reportable
+            .map { row ->
+                def legs = (2..9).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }
+                return [row[1]] + legs
             }
             .set { report_input_ch }
+        // report_input_ch: [meta, vep, sv_vep, severus, somatic, ascat, qc_tumor, qc_normal, wakhan] -- [] for an absent leg
 
         // Only panel files are staged; builtin names reach the tool through ext.args (conf/modules.config)
         def report_gene_panel_files = reportGenePanelTokens(params.report_gene_panel)
