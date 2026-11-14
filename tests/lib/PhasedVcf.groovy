@@ -37,6 +37,30 @@ class PhasedVcf {
         }
     }
 
+    // CHROM:POS:REF:ALT and the unphased genotype of a record
+    static String callKey(List<String> rec) {
+        def gt = rec.size() > 9 ? format(rec, 'GT') : null
+        def alleles = gt ? gt.split(/[\/|]/).toList().sort() : ['.']
+        "${rec[0]}:${rec[1]}:${rec[3]}:${rec[4]}:${alleles.join('/')}"
+    }
+
+    // Every record of a published VCF (or those `select` picks) is a record (alleles and genotype) of one of the source VCFs
+    static void assertRecordsFrom(String vcf, List<String> sources, Closure select = { _rec -> true }) {
+        def known = sources.collectMany { src -> records(src).collect { callKey(it) } }.toSet()
+        def made = records(vcf).findAll { select(it) && !(callKey(it) in known) }
+        assert made.isEmpty() : "${vcf}: ${made.size()} record(s) not written by the source caller, e.g. ${made[0]?.take(5)}"
+    }
+
+    // Every record of both phased arms has a genotype that carries an ALT allele
+    static void assertAllAlt(String outdir, List<String> samples) {
+        samples.each { s ->
+            ['germline', 'somatic'].each { arm ->
+                def nonAlt = records("${outdir}/${s}/variants/phased/${arm}_smallvariants.vcf.gz").findAll { !isAlt(it) }
+                assert nonAlt.isEmpty() : "${s}: ${nonAlt.size()} ${arm} record(s) without an ALT allele in GT, e.g. ${nonAlt[0]?.take(5)}"
+            }
+        }
+    }
+
     // Default-mode checks: both arms all PASS, somatic records all carry SOMATIC, germline not empty
     static void assertPassOnly(String outdir, List<String> samples, List<String> tumourOnly) {
         samples.each { s ->

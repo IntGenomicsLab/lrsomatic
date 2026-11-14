@@ -1,0 +1,26 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=RefCall,Description="Genotyping model thinks this site is reference.">
+##FILTER=<ID=LowQual,Description="Confidence in this variant being real is below calling threshold.">
+##FILTER=<ID=NoCall,Description="Site has depth=0 resulting in no call.">
+##FILTER=<ID=GERMLINE,Description="Non somatic variants">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position (for use with symbolic alleles)">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Conditional genotype quality">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Read depth for each allele">
+##FORMAT=<ID=VAF,Number=A,Type=Float,Description="Variant allele fractions.">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Phred-scaled genotype likelihoods rounded to the closest integer">
+##FORMAT=<ID=NDP,Number=1,Type=Integer,Description="Number of reads in the normal sample.">
+##FORMAT=<ID=NAD,Number=R,Type=Integer,Description="Read depth in the normal sample for alleles reported in the tumor sample">
+##FORMAT=<ID=NAF,Number=R,Type=Float,Description="VAF of ALT alleles in the normal sample.">
+##contig=<ID=chr1,length=1000>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	tumor
+chr1	100	.	A	G	0.0	RefCall	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	0/0:40:30:29,1:0.03:0,40,50:25:25,0:0
+chr1	200	.	C	T	0.0	NoCall	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	./.:0:0:0,0:0:0,0,0:0:0,0:0
+chr1	200	.	C	CT	0.0	NoCall	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	./.:0:0:0,0:0:0,0,0:0:0,0:0
+chr1	300	.	G	A	20.0	GERMLINE	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	0/0:20:30:15,15:0.5:0,20,30:28:14,14:0.5
+chr1	400	.	T	C	3.0	LowQual	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	1/1:3:30:25,5:0.17:3,0,10:28:28,0:0
+chr1	500	.	A	T	40.0	PASS	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	1/1:40:30:20,10:0.33:40,30,0:28:28,0:0
+chr1	500	.	A	AT	35.0	PASS	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	1/1:35:30:22,8:0.27:35,30,0:28:28,0:0
+chr1	600	.	G	C,T	30.0	PASS	.	GT:GQ:DP:AD:VAF:PL:NDP:NAD:NAF	1/2:30:30:10,10,10:0.33,0.33:30,20,40,20,0,30:28:28,0,0:0,0

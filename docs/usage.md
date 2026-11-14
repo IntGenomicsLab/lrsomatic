@@ -160,11 +160,17 @@ For tumour-only small variants, ClairS-TO separates germline from somatic calls 
 When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
 runs DeepVariant on the **tumour** BAM, so on its own those calls mix germline and
 clonal somatic variants. When `deepsomatic` is also in `--somatic_var_keep`, the
-pipeline records DeepSomatic's verdict at each site in `INFO/DS_VERDICT` and keeps
-DeepVariant's `PASS` calls only at sites where DeepSomatic's `FILTER` includes `GERMLINE` or `PON`
-(several values are joined with `,`), matching multi-allelic sites per ALT allele; sites
-DeepSomatic calls `PASS` or `RefCall`, or never evaluated, are dropped, whatever
-`--smallvar_filter_pass` is. Without `deepsomatic`, DeepVariant's `PASS` germline calls are
+pipeline keeps a DeepVariant `PASS` record only when every allele its genotype
+carries matches (`CHROM`, `POS`, `REF`, `ALT`, after splitting and left-aligning
+both callers' records) a DeepSomatic record whose `FILTER` includes `GERMLINE` or
+`PON`, whatever `--smallvar_filter_pass` is. The record is published as
+DeepVariant wrote it, with its own genotype and all its `ALT` alleles. A
+DeepVariant record is dropped when any of its called alleles is one DeepSomatic
+calls `PASS` (somatic) or `RefCall`, or never evaluated: e.g. DeepVariant
+`C>CCG,CG 1/2` of which only `CCG` has a `GERMLINE` verdict is left out rather
+than published as `C>CCG 1/0`, and DeepVariant `G>GTT,GTTT 2/2` whose verdict
+covers only the uncalled `GTT` is left out rather than published as `G>GTT 0/0`
+(as earlier versions did). Without `deepsomatic`, DeepVariant's `PASS` germline calls are
 used without a verdict filter and may include somatic variants. Either way the
 tumour-only germline arm is a tumour-derived proxy, not a call set from normal
 tissue.
@@ -562,31 +568,61 @@ Its germline split takes the `NonSomatic` calls and those Verdict tagged
 Verdict's germline calls are kept although Verdict marks them `LowQual`. The
 germline split is then `PASS`-rewritten, with the original value kept in
 `INFO/ORIG_FILTER`. The tumour-only DeepVariant germline arm is `PASS`-only
-whatever the setting: through the DeepSomatic verdict when `deepsomatic` is
-selected, and by a `PASS` filter otherwise, so `RefCall` records never enter it.
+whatever the setting: a `PASS` filter runs before the DeepSomatic verdict
+selection, so `RefCall` records never enter it.
 The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>` are
 never filtered, so no calls are lost from the results directory.
 
-Set it to `false` to restore the previous unfiltered behaviour: each caller's
-records are passed on with their original `FILTER`, except the two tumour-only
-germline arms above, and the ClairS-TO germline split is still `PASS`-rewritten.
+Set it to `false` to pass on non-`PASS` calls as well, with their original
+`FILTER`: Clair3 and ClairS records as they are (`LowQual` included), and
+DeepVariant and DeepSomatic records whose genotype carries an alternate allele
+and whose `FILTER` is `PASS` or `LowQual`. DeepVariant and DeepSomatic records
+without a call (`RefCall`, `NoCall`; over 40 million on a 30x genome with
+DeepSomatic) are never passed on, nor are DeepSomatic's `GERMLINE` records
+(written as `0/0`) and `PON` records: like ClairS-TO's `NonSomatic` calls, they
+are its verdict that a site is not somatic. The two tumour-only germline arms
+above stay `PASS`-only, and the ClairS-TO germline split is still
+`PASS`-rewritten.
 
-`consensus` keeps only alleles called by both callers, using the prioritised
-caller's record. Multi-allelic records are split so each allele can be matched
-across callers, and rejoined before phasing. A multi-allelic call of which only one
-allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
-and its `PL` values for the dropped allele are lost.
+DeepSomatic 1.10 declares `FORMAT/NAF` as `Number=R` but writes one value per
+alternate allele. Before its records reach any step that joins records
+(`bcftools norm -m +any`), the pipeline declares the field `Number=A` in its
+working copy (`DEEPSOMATIC_PASS_FILTER`); the published DeepSomatic VCF keeps the
+caller's header.
 
-`all` keeps the union by position, one record per position: the prioritised
+`consensus` keeps the prioritised caller's records whose called alleles are all
+called by the other caller too. An allele counts as called when the record's
+genotype carries it, not merely when it is listed in `ALT`, and alleles are
+matched on `CHROM`, `POS`, `REF` and `ALT` after splitting and left-aligning, so
+a multi-allelic record can match the other caller's biallelic ones. The record
+is published as the prioritised caller wrote it, with its own genotype and all
+its `ALT` alleles, so no genotype is made up. Where the callers disagree on the
+genotype of a shared allele (e.g. `1/1` against `0/1`), the prioritised caller's
+genotype is kept. A record is left out when:
+
+- none of its called alleles is called by the other caller, for example
+  DeepVariant `C>A,G 2/2` against Clair3 `C>A 0/1` (A is listed by DeepVariant
+  but not called);
+- only some of its called alleles are shared, for example DeepVariant
+  `A>G,T 1/2` against Clair3 `A>G 1/1`: the `T` allele has only one caller's
+  support, so the site is not a consensus call;
+- its genotype carries no alternate allele (`0/0`, `./.`).
+
+Earlier versions rejoined the split alleles after the intersection instead,
+which published records such as `C>A 0/0` or `A>G 1/0` that neither caller had
+called.
+
+`all` keeps the union by position, one caller per position: the prioritised
 caller's records, plus the other caller's records at positions where the
 prioritised caller has none. Where both callers call a position, even with
-different alleles, only the prioritised caller's record is kept. A `PASS` record
+different alleles, only the prioritised caller's records are kept. A `PASS` record
 wins over a non-`PASS` one first, so with `--smallvar_filter_pass false` the
-prioritised caller's `RefCall`/`LowQual` record does not hide the other caller's
-`PASS` call. Within each caller, too, only one record per position is kept: where
-one caller has several (e.g. equivalent indels left-aligned onto one `POS`), a
-`PASS` record is preferred, and among records of equal standing the first in file
-order. Records are not split in this mode.
+prioritised caller's `LowQual` record does not hide the other caller's `PASS`
+call, and a caller's non-`PASS` record at a position where it has a `PASS` one is
+dropped. Where one caller reports several different alleles at one position (e.g.
+Clair3 calls an SNV and a deletion starting at the same base), all of them are
+kept; only exact duplicates (same `POS`, `REF` and `ALT`) are dropped. Records are
+not split in this mode.
 
 Whatever the callers and combine mode, each arm is joined to one record per
 position (`bcftools norm -m +any`) before phasing, since LongPhase cannot take two

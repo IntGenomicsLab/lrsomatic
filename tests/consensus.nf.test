@@ -54,6 +54,22 @@ nextflow_pipeline {
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
                 { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                // Consensus publishes the priority caller's (Clair's, by default) own records: alleles and genotype as
+                // the caller wrote them, never a genotype without an ALT allele. Split/rejoined records failed this
+                // (e.g. Clair3 1/2 republished as one allele with genotype 0/1: 26 records in sample1, 8 in sample2).
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                {
+                    ['sample1', 'sample2'].each { s ->
+                        PhasedVcf.assertRecordsFrom("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz",
+                            ["$outputDir/${s}/variants/clair3/merge_output.vcf.gz"])
+                        PhasedVcf.assertRecordsFrom("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz",
+                            ["$outputDir/${s}/variants/clairs/snvs.vcf.gz", "$outputDir/${s}/variants/clairs/indel.vcf.gz"])
+                    }
+                    ['germline', 'somatic'].each { arm ->
+                        PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/${arm}_smallvariants.vcf.gz",
+                            ["$outputDir/sample3/variants/clairsto/${arm}.vcf.gz"])
+                    }
+                },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {

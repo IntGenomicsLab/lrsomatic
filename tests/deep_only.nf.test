@@ -46,6 +46,10 @@ nextflow_pipeline {
 
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                // ── Tumour-only germline (DeepSomatic verdict): DeepVariant's own records, every genotype with an ALT ──
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
+                { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
+                    ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"]) },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {
@@ -96,6 +100,41 @@ nextflow_pipeline {
                     stable_name,
                     stable_path
                 ).match() }
+            )
+        }
+    }
+
+    // The deep-caller filters keep running with the PASS filter off: RefCall/NoCall (and DeepSomatic GERMLINE/PON)
+    // records must not reach phasing, where joining them at one position failed on DeepSomatic's FORMAT/NAF.
+    test("-profile test, deep callers only, smallvar_filter_pass=false") {
+
+        when {
+            params {
+                outdir               = "$outputDir"
+                germline_var_keep    = 'deepvariant'
+                somatic_var_keep     = 'deepsomatic'
+                aligned_format       = 'bam'
+                smallvar_filter_pass = false
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                {
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def germ = PhasedVcf.records("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                        def som  = PhasedVcf.records("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                        assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
+                        assert germ.every { it[6] in ['PASS', 'LowQual'] } : "${s}: germline record that is not a PASS/LowQual call"
+                        assert som.every { it[6] in ['PASS', 'LowQual'] } : "${s}: somatic record that is not a PASS/LowQual call"
+                        assert som.every { PhasedVcf.isAlt(it) } : "${s}: somatic record without an ALT allele in GT"
+                    }
+                },
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
+                { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
+                    ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"]) }
             )
         }
     }

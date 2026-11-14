@@ -81,13 +81,13 @@
                 },
                 "germline_var_combine": {
                     "type": "string",
-                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps either caller's records, one caller per position, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "somatic_var_combine": {
                     "type": "string",
-                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps one record per position from either caller, preferring PASS records and then the prioritised caller.",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps either caller's records, one caller per position, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
@@ -107,7 +107,7 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Keep only PASS records from each small variant caller for downstream use.",
-                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to also pass on non-PASS calls: Clair3 and ClairS records as they are, and DeepVariant/DeepSomatic records whose genotype carries an ALT allele and whose FILTER is PASS or LowQual. Records without a call (RefCall, NoCall) and DeepSomatic's GERMLINE and PON verdicts, which are not somatic calls, are never passed on; the tumour-only germline arms and the ClairS-TO somatic arm stay PASS-only. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
                     "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {

@@ -154,8 +154,8 @@ nextflow_workflow {
         }
     }
 
-    // DS_GERMLINE_SELECT keeps only DeepVariant PASS records, so no separate PASS filter runs
-    test("PASS filter off, DeepSomatic selected - the verdict selection keeps DeepVariant PASS calls instead") {
+    // The tumour-only germline arm stays PASS-only: the DeepVariant PASS filter runs before the verdict selection
+    test("PASS filter off, DeepSomatic selected - DeepVariant PASS calls go through the verdict selection") {
 
         options "-stub"
 
@@ -194,7 +194,7 @@ nextflow_workflow {
             assertAll(
                 { assert workflow.success },
                 { assert processes.any { name -> name.contains('DS_GERMLINE_SELECT') } },
-                { assert !processes.any { name -> name.contains('DEEPVARIANT_PASS_FILTER') } },
+                { assert processes.any { name -> name.contains('DEEPVARIANT_PASS_FILTER') } },
                 { assert workflow.out.germline_vcf.size() == 1 }
             )
         }
