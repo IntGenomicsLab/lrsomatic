@@ -971,6 +971,34 @@ Whilst the default requirements set within the pipeline will hopefully work for 
 
 To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
 
+#### Measured needs at ~30x
+
+The defaults in `conf/base.config` are sized from execution traces of whole-genome runs at ~20-33x (ONT R10 and PacBio Revio, matched pairs and tumour-only, GRCh38 and CHM13; 62-100 Gb of reads per BAM). The heaviest steps, per sample or pair, with the request they get by default:
+
+| Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                            |
+| ------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                                    |
+| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 32 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus); peak 7 GB                             |
+| `CLAIRS` (pair)                             | 24 / 144 GB / 16 h                     | 1.3-3.5 h with 17-39 cpus busy (48 given); peak 65-92 GB                                                    |
+| `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                                    |
+| `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                                |
+| `DEEPVARIANT_MAKEEXAMPLES`                  | 24 / 144 GB / 16 h                     | 1.2-1.9 h; 2.1-2.5 GB per shard                                                                             |
+| `DEEPSOMATIC_MAKEEXAMPLES`                  | 24 / 144 GB / 24 h                     | 1.5 h (tumour-only PacBio) to 3.7 h (ONT pair) with 48 shards; 2.1-3.5 GB per shard (166.5 GB at 48 shards) |
+| `DEEPSOMATIC_CALLVARIANTS` (CPU)            | 24 / 48 GB / 24 h                      | 1.1 h (tumour-only PacBio) to 5.4 h (ONT pair) with ~35 cpus busy (48 given); peak 14.5 GB                  |
+| `SAVANA_RUN` / `SAVANA_TO`                  | 12 / 96 GB / 16 h                      | 10 min / 0.6-1.3 h; reported peak 81-149 GB / 22-61 GB, summed over forked workers (see below)              |
+
+`make_examples` runs one shard per cpu and its memory grows with the number of shards, so if you give `DEEPVARIANT_MAKEEXAMPLES` or `DEEPSOMATIC_MAKEEXAMPLES` more cpus, raise memory with them (about 3.5 GB per cpu for an ONT pair). `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` are memory-bound as well: when one of their workers is killed for lack of memory they do not fail but wait until the time limit; their requests and the evidence for them are in [#237](https://github.com/IntGenomicsLab/lrsomatic/pull/237). SAVANA, Wakhan and VEP fork worker processes, so the peak memory Nextflow reports for them adds up pages the workers share and overstates what the job's memory limit (cgroup) charges; their requests are set with headroom because a worker pool that loses a worker to the OOM killer can hang instead of failing.
+
+Deeper data mostly lengthens runtimes: alignment, m6A prediction, the variant callers and `call_variants` scale roughly with the number of reads, which is why each request doubles on a retry after a time-limit or memory kill (exit codes 130-145, 104, 175-177). For 60-90x samples it is cheaper to raise the time of these steps up front than to lose a first attempt. On clusters that cap memory per core (e.g. 4 GB per cpu), a job asking for more memory than that is widened to more cpus and billed for them; the long, heavy steps ask for at most 6 GB per cpu, and the steps that need more memory than their cpus imply (`LONGPHASE_MODCALL_*`, `SAVANA_RUN`, `SAVANA_TO`, `WAKHAN`, `SEVERUS`, `LRSOMATICREPORT`) are short. You can lower them in a custom config, for example:
+
+```groovy
+process {
+    withName: '.*:SAVANA_RUN' {
+        memory = { 72.GB * task.attempt }
+    }
+}
+```
+
 ### Custom Containers
 
 In some cases, you may wish to change the container or conda environment used by a pipeline steps for a particular tool. By default, nf-core pipelines use containers and software from the [biocontainers](https://biocontainers.pro/) or [bioconda](https://bioconda.github.io/) projects. However, in some cases the pipeline specified version maybe out of date.
