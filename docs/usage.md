@@ -111,6 +111,17 @@ columns of the samplesheet. A merged file fed back in as one row also gets one r
 groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
 rows (from the original input files) if you need them kept apart.
 
+### PacBio kinetics
+
+PacBio HiFi reads written with `--keep-kinetics` carry per-base kinetics (`fi`, `fp`, `ri`, `rp`), which fibertools-rs
+uses to call m6A and which make up a large share of a BAM. By default the pipeline drops them (and the per-subread
+`ip`/`pw`, if present) from every PacBio read when the reads are converted for alignment, so no aligned or published
+file carries them: not the reads `ft predict-m6a` gave no m6A call (it strips the kinetics only from the reads it
+calls, leaving them on about 2-3 % of reads), and not the samples that never reach it (`--skip_m6a`, `--skip_fiber`,
+or normals under `--skip_normalfiber`). Base modifications (`MM`/`ML`), fibertools-rs tags and the other PacBio read
+tags, including the kinetics pass counts `fn`/`rn`, are kept. With `--keep_kinetic_data true` the kinetics are kept
+on every read instead (`ft predict-m6a --keep`, and nothing dropped at alignment).
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
