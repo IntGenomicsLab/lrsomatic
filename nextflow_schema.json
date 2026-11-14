@@ -29,6 +29,13 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "outdir_cache": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory to publish downloaded reference caches to (the VEP cache from --download_vep_cache and the SigProfiler genome payload under sigprofiler/). Defaults to `<outdir>/cache`.",
+                    "help_text": "Point it at shared storage to keep the caches outside a run's results, then pass them to later runs with --vep_cache and --sigprofiler_genome_dir.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "email": {
                     "type": "string",
                     "description": "Email address for completion summary.",
@@ -236,6 +243,17 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Pass --acf to fibertools qc to add nucleosome autocorrelation to the Fiber-seq QC output."
+                },
+                "keep_kinetic_data": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --keep to fibertools predict-m6a so the PacBio kinetics tags (fi, fp, ri, rp) stay in the reads after m6A prediction.",
+                    "help_text": "By default predict-m6a strips the kinetics once m6A is called, which makes the aligned files considerably smaller. Keep them only if you need the raw kinetics downstream."
+                },
+                "keep_all_calls": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --all-calls to fibertools predict-m6a to keep every m6A call regardless of its ML score, instead of only calls above its threshold."
                 }
             }
         },

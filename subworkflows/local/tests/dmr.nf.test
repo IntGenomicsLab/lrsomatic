@@ -86,6 +86,53 @@ nextflow_workflow {
         }
     }
 
+    test("two BAMs (tumour and normal) -> one haplotype DMR per BAM") {
+
+        when {
+            workflow {
+                """
+                // The BEDs are value channels as in the pipeline (file(...)): a single-item queue
+                // channel would itself let only one BAM through
+                def cpg_islands_bed = Channel.of('chr22\\t0\\t40001')
+                    .collectFile(name: 'cpg_islands.bed', newLine: true)
+                    .first()
+
+                def gencode_gene_bed = Channel.of('chr22\\t0\\t40001\\tTEST_GENE\\t.\\t+')
+                    .collectFile(name: 'gencode_gene.bed', newLine: true)
+                    .first()
+
+                // The same pileup as a tumour and a normal BAM of one sample
+                input[0] = MODKIT_PILEUP.out.bedgz.flatMap { meta, files ->
+                    [ [ meta, files ], [ meta + [ type: 'normal' ], files ] ]
+                }
+                input[1] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+                ])
+                input[2] = channel.value([
+                    [ id: 'test_ref' ],
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta.fai', checkIfExists: true)
+                ])
+                input[3] = cpg_islands_bed
+                input[4] = gencode_gene_bed
+                """
+            }
+        }
+
+        then {
+            def count = { proc -> workflow.trace.succeeded().count { task -> task.name.contains(":${proc} ") } }
+
+            assertAll(
+                { assert workflow.success },
+                { assert count('DMR_HAPLOTYPE_REGIONS') == 2 : "DMR_HAPLOTYPE_REGIONS tasks: ${count('DMR_HAPLOTYPE_REGIONS')}" },
+                // before #237 fasta_with_fai was a one-item queue channel, so MODKIT_DMR ran for one BAM only
+                { assert count('MODKIT_DMR') == 2 : "MODKIT_DMR tasks: ${count('MODKIT_DMR')}" },
+                { assert count('DMR_NEAREST_GENE') == 2 : "DMR_NEAREST_GENE tasks: ${count('DMR_NEAREST_GENE')}" },
+                { assert workflow.out.nearest_gene_bed.collect { meta, _bed -> meta.type }.sort() == ['normal', 'tumor'] }
+            )
+        }
+    }
+
     test("no CpG island covered in both haplotypes -> sample skipped, run succeeds") {
 
         when {
