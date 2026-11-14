@@ -1,5 +1,5 @@
 name: bcftools_caller_consensus
-description: Consensus of two callers' VCFs - the priority caller's own records whose called alleles (those in the genotype) are all called by the other caller
+description: The priority caller's own records, unchanged, whose called alleles (those in the genotype) all match an allele of a second VCF (CHROM/POS/REF/ALT after splitting and left-aligning); by default the second VCF's called alleles (caller consensus), or with ext.args2/ext.args e.g. the alleles of DeepSomatic records with a germline verdict
 keywords:
   - consensus
   - intersection

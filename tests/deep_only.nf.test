@@ -46,6 +46,10 @@ nextflow_pipeline {
 
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                // ── Tumour-only germline (DeepSomatic verdict): DeepVariant's own records, every genotype with an ALT ──
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
+                { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
+                    ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"]) },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {
@@ -127,7 +131,10 @@ nextflow_pipeline {
                         assert som.every { PhasedVcf.isAlt(it) } : "${s}: somatic record without an ALT allele in GT"
                     }
                 },
-                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) }
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
+                { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
+                    ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"]) }
             )
         }
     }

@@ -12,13 +12,7 @@ include { SMALL_VARIANT_CONSENSUS as GERMLINE_CONSENSUS } from '../../../subwork
 include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS  } from '../../../subworkflows/local/small_variant_consensus/main.nf'
 
 // Germline verdict transfer: DeepSomatic adjudicates DeepVariant's tumor-derived germline calls.
-include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DS      } from '../../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_NORM     as DS_VERDICT_SPLIT_DV      } from '../../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_NORM     as DS_GERMLINE_REJOIN       } from '../../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_VIEW     as DS_VERDICT_SITES         } from '../../../modules/nf-core/bcftools/view/main'
-include { BCFTOOLS_ANNOTATE as DS_VERDICT_ANNOTATE      } from '../../../modules/nf-core/bcftools/annotate/main'
-include { BCFTOOLS_VIEW     as DS_GERMLINE_SELECT       } from '../../../modules/nf-core/bcftools/view/main'
-
+include { BCFTOOLS_CALLER_CONSENSUS as DS_GERMLINE_SELECT } from '../../../modules/local/bcftools/callerconsensus/main'
 
 workflow TUMORONLY_SMALLVAR {
 
@@ -210,73 +204,32 @@ workflow TUMORONLY_SMALLVAR {
         )
 
         // PASS-only copy for downstream steps; published VCFs are untouched.
-        // Tumour-only germline is PASS-only: DS_GERMLINE_SELECT enforces it under the verdict, this filter otherwise.
-        def deepvariant_vcf = DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index)
-        if (params.smallvar_filter_pass || !somatic_var_keep.contains('deepsomatic')) {
-            DEEPVARIANT_PASS_FILTER ( deepvariant_vcf, [], [], [] )
-            deepvariant_vcf = DEEPVARIANT_PASS_FILTER.out.vcf
-                .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
-        }
+        // The tumour-only germline arm is PASS-only whatever --smallvar_filter_pass is.
+        DEEPVARIANT_PASS_FILTER ( DEEPVARIANT.out.vcf.join(DEEPVARIANT.out.vcf_index, failOnMismatch: true, failOnDuplicate: true), [], [], [] )
+        def deepvariant_germline = DEEPVARIANT_PASS_FILTER.out.vcf
+            .join(DEEPVARIANT_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
 
-        // Keep only DeepSomatic-adjudicated germline sites; skipped when deepsomatic isn't selected.
-        def deepvariant_germline = deepvariant_vcf
+        // Keep only DeepSomatic-adjudicated germline calls; skipped when deepsomatic isn't selected.
         if (somatic_var_keep.contains('deepsomatic')) {
             // GERMLINE VERDICT TRANSFER: DeepVariant on the tumor BAM cannot tell germline from somatic.
             //
-            // MODULES: DS_VERDICT_SPLIT_DS / DS_VERDICT_SPLIT_DV (BCFTOOLS_NORM aliases, label: process_medium)
-            // Split multi-allelics (-m -any) in both VCFs so the CHROM,POS,REF,ALT match works per ALT.
-            //
-            DS_VERDICT_SPLIT_DS ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true), fasta )
-            DS_VERDICT_SPLIT_DV ( deepvariant_vcf, fasta )
-
-            //
-            // MODULE: DS_VERDICT_SITES (BCFTOOLS_VIEW alias, label: process_medium)
-            // Input:  [meta, deepsomatic_vcf, tbi]  -- the RAW DeepSomatic VCF (split), before its PASS filter
-            // Output: .vcf/.index -- [meta, vcf.gz/tbi]  -- DeepSomatic records whose FILTER is neither PASS nor RefCall
-            //
-            DS_VERDICT_SITES (
-                DS_VERDICT_SPLIT_DS.out.vcf.join(DS_VERDICT_SPLIT_DS.out.index, failOnMismatch: true, failOnDuplicate: true),
-                [], [], []
-            )
-
-            //
-            // MODULE: DS_VERDICT_ANNOTATE (BCFTOOLS_ANNOTATE alias, label: process_medium)
-            // Copies DeepSomatic's FILTER into INFO/DS_VERDICT on each matching DeepVariant record.
-            //
-            DS_VERDICT_SPLIT_DV.out.vcf
-                .join(DS_VERDICT_SPLIT_DV.out.index, failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_SITES.out.vcf,       failOnMismatch: true, failOnDuplicate: true)
-                .join(DS_VERDICT_SITES.out.index,     failOnMismatch: true, failOnDuplicate: true)
-                .map { meta, vcf, tbi, annotations, annotations_index ->
-                    def columns      = []  // no extra column specs
-                    def header_lines = []  // no extra header lines
-                    def rename_chrs  = []  // no chromosome renaming
-                    return [ meta, vcf, tbi, annotations, annotations_index, columns, header_lines, rename_chrs ]
-                }
-                .set{ ds_verdict_annotate_input }
-
-            DS_VERDICT_ANNOTATE ( ds_verdict_annotate_input )
-
-            //
-            // MODULE: DS_GERMLINE_SELECT (BCFTOOLS_VIEW alias, label: process_medium)
-            // Keeps only the positively-adjudicated germline records (see ext.args in conf/modules.config).
+            // MODULE: DS_GERMLINE_SELECT (BCFTOOLS_CALLER_CONSENSUS alias, label: process_medium)
+            // Outputs DeepVariant's own PASS records, unchanged, whose called alleles (those in the genotype) all match
+            // (CHROM, POS, REF, ALT, after splitting and left-aligning) a DeepSomatic record with a GERMLINE or PON
+            // verdict in the RAW DeepSomatic VCF (ext.args2 in conf/modules.config).
+            // Input:  [meta, deepvariant_pass_vcf, tbi, deepsomatic_raw_vcf, tbi]
+            //         fasta / fai
+            // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
             //
             DS_GERMLINE_SELECT (
-                DS_VERDICT_ANNOTATE.out.vcf.join(DS_VERDICT_ANNOTATE.out.index, failOnMismatch: true, failOnDuplicate: true),
-                [], [], []
+                deepvariant_germline
+                    .join(DEEPSOMATIC.out.vcf, failOnMismatch: true, failOnDuplicate: true)
+                    .join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true),
+                fasta,
+                fai
             )
-
-            //
-            // MODULE: DS_GERMLINE_REJOIN (BCFTOOLS_NORM alias, label: process_medium)
-            // Rejoin split sites (-m +any) so LongPhase and Wakhan see one record per position.
-            //
-            DS_GERMLINE_REJOIN (
-                DS_GERMLINE_SELECT.out.vcf.join(DS_GERMLINE_SELECT.out.index, failOnMismatch: true, failOnDuplicate: true),
-                fasta
-            )
-
-            deepvariant_germline = DS_GERMLINE_REJOIN.out.vcf
-                .join(DS_GERMLINE_REJOIN.out.index, failOnMismatch: true, failOnDuplicate: true)
+            deepvariant_germline = DS_GERMLINE_SELECT.out.vcf
+                .join(DS_GERMLINE_SELECT.out.tbi, failOnMismatch: true, failOnDuplicate: true)
         }
 
         deepvariant_germline

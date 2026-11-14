@@ -47,6 +47,48 @@ nextflow_process {
         }
     }
 
+    // DS_GERMLINE_SELECT: DeepVariant records whose called alleles all carry a DeepSomatic GERMLINE/PON verdict
+    test("DeepSomatic verdict mode - DeepVariant's own records whose called alleles are all judged germline") {
+
+        config "./verdict.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz.tbi", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_verdict.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_verdict.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa", checkIfExists: true) ]
+                input[2] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa.fai", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def kept = path(process.out.vcf[0][1]).linesGzip
+                .findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
+
+            // Kept unchanged: 100 (GERMLINE, written 0/0 by DeepSomatic), 400 (both called alleles GERMLINE),
+            // 500 (called C has a PON verdict), 900 (both split alleles GERMLINE).
+            // Dropped: 200 (only the uncalled A is GERMLINE: the old split/rejoin chain published C>A 0/0),
+            // 300 (T is DeepSomatic PASS, i.e. somatic: the old chain published G>A 1/0), 600 (RefCall),
+            // 700 (DeepSomatic PASS).
+            assert kept == [
+                '100:A>T:0/1',
+                '400:T>C,G:1/2',
+                '500:A>G,C:2/2',
+                '900:ACG>A,ATG:1/2'
+            ]
+        }
+    }
+
     test("stub") {
 
         options "-stub"

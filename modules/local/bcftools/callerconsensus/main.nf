@@ -22,25 +22,31 @@ process BCFTOOLS_CALLER_CONSENSUS {
 
     script:
     prefix = task.ext.prefix ?: "${meta.id}_consensus"
+    // Which of the other VCF's records (ext.args2, before splitting) and split alleles (ext.args, after) count as
+    // matches; by default the alleles its genotypes carry. ext.args = '' matches every allele of the selected records.
+    def args  = task.ext.args != null ? task.ext.args : "-i 'GT=\"alt\"'"
+    def args2 = task.ext.args2 ?: ''
     """
-    # The called alleles of each caller, one allele per record: split, left-align, keep alleles the genotype carries.
-    # The priority caller's records are numbered first (in ID), so each split allele points back to its record.
+    # The called alleles of the priority caller, one allele per record: split, left-align, keep alleles the genotype carries.
+    # Its records are numbered first (in ID), so each split allele points back to its record.
     bcftools view --no-version ${prio_vcf} \\
         | awk 'BEGIN { FS = OFS = "\\t" } /^#/ { print; next } { \$3 = ++n; print }' \\
         | bcftools norm --no-version -f ${fasta} -m -any --check-ref w -Ou - \\
         | bcftools sort -T ./ -Ou \\
         | bcftools view --no-version -i 'GT="alt"' -Oz -W=tbi -o prio_called.vcf.gz
-    bcftools norm --no-version -f ${fasta} -m -any --check-ref w -Ou ${other_vcf} \\
+    # The other VCF's matching alleles, likewise split and left-aligned
+    bcftools view --no-version ${args2} -Ou ${other_vcf} \\
+        | bcftools norm --no-version -f ${fasta} -m -any --check-ref w -Ou - \\
         | bcftools sort -T ./ -Ou \\
-        | bcftools view --no-version -i 'GT="alt"' -Oz -W=tbi -o other_called.vcf.gz
+        | bcftools view --no-version ${args} -Oz -W=tbi -o other_called.vcf.gz
 
-    # Records whose called alleles the other caller also calls (same CHROM, POS, REF, ALT), and those with one it does not
+    # Records with a called allele the other VCF matches (same CHROM, POS, REF, ALT), and those with one it does not
     bcftools isec --no-version -c none -n =2 -w 1 prio_called.vcf.gz other_called.vcf.gz -Ou \\
         | bcftools query -f '%ID\\n' > shared.ids
     bcftools isec --no-version -c none -n =1 -w 1 prio_called.vcf.gz other_called.vcf.gz -Ou \\
         | bcftools query -f '%ID\\n' > prio_only.ids
 
-    # Output the priority caller's own records, unchanged, where every called allele is shared
+    # Output the priority caller's own records, unchanged, where every called allele is matched
     bcftools view --no-version ${prio_vcf} \\
         | awk 'BEGIN { FS = OFS = "\\t" }
             FILENAME == "shared.ids"    { shared[\$1] = 1; next }

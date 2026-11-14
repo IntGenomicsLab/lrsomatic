@@ -160,11 +160,17 @@ For tumour-only small variants, ClairS-TO separates germline from somatic calls 
 When `--germline_var_keep` includes `deepvariant`, the tumour-only germline arm
 runs DeepVariant on the **tumour** BAM, so on its own those calls mix germline and
 clonal somatic variants. When `deepsomatic` is also in `--somatic_var_keep`, the
-pipeline records DeepSomatic's verdict at each site in `INFO/DS_VERDICT` and keeps
-DeepVariant's `PASS` calls only at sites where DeepSomatic's `FILTER` includes `GERMLINE` or `PON`
-(several values are joined with `,`), matching multi-allelic sites per ALT allele; sites
-DeepSomatic calls `PASS` or `RefCall`, or never evaluated, are dropped, whatever
-`--smallvar_filter_pass` is. Without `deepsomatic`, DeepVariant's `PASS` germline calls are
+pipeline keeps a DeepVariant `PASS` record only when every allele its genotype
+carries matches (`CHROM`, `POS`, `REF`, `ALT`, after splitting and left-aligning
+both callers' records) a DeepSomatic record whose `FILTER` includes `GERMLINE` or
+`PON`, whatever `--smallvar_filter_pass` is. The record is published as
+DeepVariant wrote it, with its own genotype and all its `ALT` alleles. A
+DeepVariant record is dropped when any of its called alleles is one DeepSomatic
+calls `PASS` (somatic) or `RefCall`, or never evaluated: e.g. DeepVariant
+`C>CCG,CG 1/2` of which only `CCG` has a `GERMLINE` verdict is left out rather
+than published as `C>CCG 1/0`, and DeepVariant `G>GTT,GTTT 2/2` whose verdict
+covers only the uncalled `GTT` is left out rather than published as `G>GTT 0/0`
+(as earlier versions did). Without `deepsomatic`, DeepVariant's `PASS` germline calls are
 used without a verdict filter and may include somatic variants. Either way the
 tumour-only germline arm is a tumour-derived proxy, not a call set from normal
 tissue.
@@ -562,8 +568,8 @@ Its germline split takes the `NonSomatic` calls and those Verdict tagged
 Verdict's germline calls are kept although Verdict marks them `LowQual`. The
 germline split is then `PASS`-rewritten, with the original value kept in
 `INFO/ORIG_FILTER`. The tumour-only DeepVariant germline arm is `PASS`-only
-whatever the setting: through the DeepSomatic verdict when `deepsomatic` is
-selected, and by a `PASS` filter otherwise, so `RefCall` records never enter it.
+whatever the setting: a `PASS` filter runs before the DeepSomatic verdict
+selection, so `RefCall` records never enter it.
 The per-caller VCFs published under `<outdir>/<sample>/variants/<caller>` are
 never filtered, so no calls are lost from the results directory.
 

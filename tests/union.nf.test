@@ -65,6 +65,11 @@ nextflow_pipeline {
                         .find { it[0] == 'chr19' && it[1] == '24897193' }
                     assert site && site[4] == 'A' && site[7].split(';').contains('CALLER=clair3')
                 },
+                // ── Tumour-only DeepVariant germline records (DeepSomatic verdict) are DeepVariant's own ──
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
+                { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
+                    ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"],
+                    { rec -> rec[7].split(';').contains('CALLER=deepvariant') }) },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {
@@ -155,7 +160,7 @@ nextflow_pipeline {
                         def som  = PhasedVcf.records("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz")
                         assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
                         assert !som.isEmpty() : "${s}: phased somatic VCF has no records"
-                        // Tumour-only germline stays PASS: VCFSPLIT rewrites ClairS-TO's FILTER, DS_GERMLINE_SELECT keeps DeepVariant PASS
+                        // Tumour-only germline stays PASS: VCFSPLIT rewrites ClairS-TO's FILTER, DeepVariant is PASS-filtered before the verdict selection
                         if (s == 'sample3') {
                             assert germ.every { it[6] == 'PASS' } : "${s}: non-PASS record in the tumour-only germline arm"
                         } else {

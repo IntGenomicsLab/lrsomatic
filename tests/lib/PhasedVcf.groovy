@@ -44,10 +44,10 @@ class PhasedVcf {
         "${rec[0]}:${rec[1]}:${rec[3]}:${rec[4]}:${alleles.join('/')}"
     }
 
-    // Every record of a published VCF is a record (alleles and genotype) of one of the source VCFs
-    static void assertRecordsFrom(String vcf, List<String> sources) {
+    // Every record of a published VCF (or those `select` picks) is a record (alleles and genotype) of one of the source VCFs
+    static void assertRecordsFrom(String vcf, List<String> sources, Closure select = { _rec -> true }) {
         def known = sources.collectMany { src -> records(src).collect { callKey(it) } }.toSet()
-        def made = records(vcf).findAll { !(callKey(it) in known) }
+        def made = records(vcf).findAll { select(it) && !(callKey(it) in known) }
         assert made.isEmpty() : "${vcf}: ${made.size()} record(s) not written by the source caller, e.g. ${made[0]?.take(5)}"
     }
 
