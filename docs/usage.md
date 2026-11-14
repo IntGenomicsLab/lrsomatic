@@ -104,6 +104,13 @@ listed above survives the realignment; if your input carries such tags, remove t
 Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript strand, splice mode only) and
 is kept. Unaligned input only has its `RG` tag dropped, as before.
 
+Each samplesheet row gets one new read group, `@RG ID:<sample>_<type>_rep<replicate>`. For ONT input whose header
+names its basecalling model (Dorado's `DS:basecall_model=...`), the model is written into that read group as
+`DS:basecall_model=<model>`, so a BAM/CRAM published by the pipeline can be fed back in without filling the model
+columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
+groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
+rows (from the original input files) if you need them kept apart.
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:

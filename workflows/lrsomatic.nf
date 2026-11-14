@@ -459,15 +459,25 @@ workflow LRSOMATIC {
 
     def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
-    // Mark aligned input (METAEXTRACT found @SQ lines) with aligned_input: true, so MINIMAP2_ALIGN's samtools reset
-    // also drops the old alignment and phasing tags (ext.args3). Only aligned rows gain the key, so unaligned input
-    // keeps its meta and its rendered command (and its resume cache); the key is dropped again after alignment.
+    // Two MINIMAP2_ALIGN-only keys, set just for this process and dropped again by the subMap after alignment, so the
+    // meta every downstream process sees is unchanged:
+    // - aligned_input: true for aligned input (METAEXTRACT found @SQ lines), so samtools reset also drops the old
+    //   alignment and phasing tags (ext.args3). Unaligned rows do not gain it.
+    // - basecall_model: the model METAEXTRACT read from an ONT input header, written back as DS:basecall_model= in the
+    //   new @RG (ext.args), so a published BAM/CRAM fed back in still resolves its caller models. ONT rows only, and
+    //   only when a model was found.
     ch_ubams
         .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
         .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
-        .map { _key, meta, bams, aligned -> [ aligned == 'true' ? meta + [ aligned_input: true ] : meta, bams ] }
+        .join(basecall_meta.map { meta, model, _kinetics -> [ [ meta.id, meta.type, meta.replicate ], model ] }, failOnMismatch: true)
+        .map { _key, meta, bams, aligned, model ->
+            def model_str = model ? model.toString().trim() : ''
+            def extra = (aligned == 'true' ? [ aligned_input: true ] : [:]) +
+                (meta.platform == 'ont' && model_str ? [ basecall_model: model_str ] : [:])
+            return [ extra ? meta + extra : meta, bams ]
+        }
         .set { ch_minimap2_in }
-    // ch_minimap2_in: [meta_with_replicate (+ aligned_input: true for aligned input), bam_or_cram]
+    // ch_minimap2_in: [meta_with_replicate (+ aligned_input, basecall_model where they apply), bam_or_cram]
 
     MINIMAP2_ALIGN (
         ch_minimap2_in,
