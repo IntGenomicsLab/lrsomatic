@@ -33,6 +33,7 @@ lint:
   # aligned_format is a -stub wiring test that asserts on the published file names (versions are snapshotted by default);
   # kinetics_pairing is a -stub regression test of the pairing joins: it asserts on the task trace and published reports
   nf_test_content:
+    - tests/samplesheet_replicates.nf.test # -stub: launch-time samplesheet errors; asserts on the task trace, no snapshot
     - tests/sv_annotation_compose.nf.test
     - tests/aligned_format.nf.test
     - tests/kinetics_pairing.nf.test
