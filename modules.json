@@ -23,12 +23,6 @@
                         "installed_by": ["modules", "vcf_gather_bcftools"],
                         "patch": "modules/nf-core/bcftools/concat/bcftools-concat.diff"
                     },
-                    "bcftools/isec": {
-                        "branch": "master",
-                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
-                        "installed_by": ["modules"],
-                        "patch": "modules/nf-core/bcftools/isec/bcftools-isec.diff"
-                    },
                     "bcftools/merge": {
                         "branch": "master",
                         "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",

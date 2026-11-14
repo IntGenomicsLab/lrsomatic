@@ -1,0 +1,68 @@
+nextflow_process {
+
+    name "Test Process BCFTOOLS_CALLER_CONSENSUS"
+    script "../main.nf"
+    process "BCFTOOLS_CALLER_CONSENSUS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "bcftools_caller_consensus"
+    tag "small"
+
+    test("priority caller's own records where all its called alleles are shared") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz.tbi", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_other.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_other.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa", checkIfExists: true) ]
+                input[2] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa.fai", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def kept = path(process.out.vcf[0][1]).linesGzip
+                .findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
+
+            // Kept unchanged: 100 (genotypes differ, priority wins), 400 (same alleles, other order),
+            // 500 (called C shared; the uncalled G stays in ALT), 900 (ACG>ATG matches the other's 901 C>T once split).
+            // Dropped: 200 (C>A is listed but not called: the old split/rejoin path published C>A 0/0),
+            // 300 (T called by the priority caller only), 600 (RefCall 0/0), 700 (priority only), 800 (other only).
+            assert kept == [
+                '100:A>T:0/1',
+                '400:T>C,G:1/2',
+                '500:A>G,C:2/2',
+                '900:ACG>A,ATG:1/2'
+            ]
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [], [], [] ]
+                input[1] = [ [ id:'genome' ], [] ]
+                input[2] = [ [ id:'genome' ], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

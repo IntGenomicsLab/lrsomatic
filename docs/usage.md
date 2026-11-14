@@ -571,11 +571,27 @@ Set it to `false` to restore the previous unfiltered behaviour: each caller's
 records are passed on with their original `FILTER`, except the two tumour-only
 germline arms above, and the ClairS-TO germline split is still `PASS`-rewritten.
 
-`consensus` keeps only alleles called by both callers, using the prioritised
-caller's record. Multi-allelic records are split so each allele can be matched
-across callers, and rejoined before phasing. A multi-allelic call of which only one
-allele is shared (e.g. DeepVariant `1/2`) is therefore kept as that allele alone,
-and its `PL` values for the dropped allele are lost.
+`consensus` keeps the prioritised caller's records whose called alleles are all
+called by the other caller too. An allele counts as called when the record's
+genotype carries it, not merely when it is listed in `ALT`, and alleles are
+matched on `CHROM`, `POS`, `REF` and `ALT` after splitting and left-aligning, so
+a multi-allelic record can match the other caller's biallelic ones. The record
+is published as the prioritised caller wrote it, with its own genotype and all
+its `ALT` alleles, so no genotype is made up. Where the callers disagree on the
+genotype of a shared allele (e.g. `1/1` against `0/1`), the prioritised caller's
+genotype is kept. A record is left out when:
+
+- none of its called alleles is called by the other caller, for example
+  DeepVariant `C>A,G 2/2` against Clair3 `C>A 0/1` (A is listed by DeepVariant
+  but not called);
+- only some of its called alleles are shared, for example DeepVariant
+  `A>G,T 1/2` against Clair3 `A>G 1/1`: the `T` allele has only one caller's
+  support, so the site is not a consensus call;
+- its genotype carries no alternate allele (`0/0`, `./.`).
+
+Earlier versions rejoined the split alleles after the intersection instead,
+which published records such as `C>A 0/0` or `A>G 1/0` that neither caller had
+called.
 
 `all` keeps the union by position, one record per position: the prioritised
 caller's records, plus the other caller's records at positions where the
