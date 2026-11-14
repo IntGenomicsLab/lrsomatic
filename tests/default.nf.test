@@ -60,6 +60,12 @@ nextflow_pipeline {
                     assert matcher.group(1).contains("lymphoid")
                     assert matcher.group(1).contains("test_panel")
                 },
+                { // WhatsHap stats reach every report, paired (sample1, sample2) and tumour-only (sample3)
+                    ['sample1', 'sample2', 'sample3'].each { s ->
+                        def text = file("$launchDir/output/${s}/report/${s}_report.html").text
+                        assert !text.contains('WhatsHap phasing statistics not found') : "${s}_report.html has no WhatsHap stats"
+                    }
+                },
                 { // Read groups: CRAM keeps one RG per record, so each must be declared in the header. The H2009
                   // uBAM (sample1 tumour, sample3) carries dorado's RG on every record; without `samtools reset -x RG`
                   // in MINIMAP2_ALIGN that undeclared RG wins and only this fails (CRAM md5s are not snapshotted)
