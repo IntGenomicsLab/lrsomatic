@@ -47,6 +47,5 @@ process BCFTOOLS_QUERY {
     touch ${prefix}.${suffix}
     bgzip -c ${prefix}.${suffix} > ${prefix}.${suffix}.gz
     touch ${prefix}.${suffix}.gz.tbi
-    tabix -s 1 -b 2 -e 2 ${prefix}.${suffix}.gz
     """
 }
