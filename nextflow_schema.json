@@ -247,8 +247,8 @@
                 "keep_kinetic_data": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Pass --keep to fibertools predict-m6a so the PacBio kinetics tags (fi, fp, ri, rp) stay in the reads after m6A prediction.",
-                    "help_text": "By default predict-m6a strips the kinetics once m6A is called, which makes the aligned files considerably smaller. Keep them only if you need the raw kinetics downstream."
+                    "description": "Keep the PacBio kinetics tags (fi, fp, ri, rp) on every read: passes --keep to fibertools predict-m6a and turns off any removal of kinetics at alignment.",
+                    "help_text": "By default fibertools predict-m6a strips the kinetics from the reads it calls m6A on, and, once the alignment step drops kinetics from PacBio reads (IntGenomicsLab/lrsomatic#239), they are also removed from every other PacBio read before alignment. This makes the aligned files considerably smaller. With this set, no step removes them. Keep them only if you need the raw kinetics downstream."
                 },
                 "keep_all_calls": {
                     "type": "boolean",
