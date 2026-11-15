@@ -978,7 +978,7 @@ The defaults in `conf/base.config` are sized from execution traces of whole-geno
 | Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                            |
 | ------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                                    |
-| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 32 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus); peak 7 GB                             |
+| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 24 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus, so ~8-10 h at 24); peak 7 GB           |
 | `CLAIRS` (pair)                             | 24 / 144 GB / 16 h                     | 1.3-3.5 h with 17-39 cpus busy (48 given); peak 65-92 GB                                                    |
 | `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                                    |
 | `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                                |
