@@ -9,7 +9,7 @@ workflow PAIRED_SAVANA {
     tumor_normal_input // [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, phased_germline_tbi]
     fasta              // [[:], fasta]
     fai                // [[:], fai]
-    contigs            // [[:], contigs]  -- one contig per line, restricts SAVANA to canonical chromosomes
+    contigs            // [[:], contigs]  -- one contig per line, restricts SAVANA_RUN to canonical chromosomes
 
     main:
     // .first() re-establishes a value channel: fasta/fai are singletons reused for every sample,
@@ -70,7 +70,7 @@ workflow PAIRED_SAVANA {
     SAVANA_CNA (
         savana_cna_input,
         ch_fasta_fai,
-        [],  // contigs: `savana cna` has no --contigs option (only `run`/`to` do); use --savana_chromosomes to restrict CNA
+        [],  // contigs: `savana cna` has no --contigs option (only `run`/`to` do); it bins chr1-22,X,Y only (hard-coded), --savana_chromosomes narrows that
         [],  // blacklist (unused)
         []   // g1000_vcf (unused -- snp_vcf takes priority in paired mode)
     )

@@ -352,8 +352,11 @@ SAVANA reuses the haplotagged BAMs from `PHASING_HAPLOTYPING` and the same refer
 every other caller. Matched tumor/normal samples run `savana run` + `savana classify` + `savana cna`,
 using the phased germline VCF as the SNP allele-frequency source for copy-number fitting; tumor-only
 samples run `savana to` instead (which chains the equivalent steps internally), using SAVANA's bundled
-1000 Genomes population SNP set rather than the tumour's own calls. Both modes are restricted to
-canonical chromosomes via a genome-specific `--contigs` file.
+1000 Genomes population SNP set rather than the tumour's own calls. SV calling (`savana run`,
+`savana to`) is restricted to canonical chromosomes via a genome-specific `--contigs` file. Copy-number
+calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on chr1-22, chrX and chrY
+(hard-coded, also inside `savana to`), so chrM and alt, decoy and unplaced contigs are never used.
+`--savana_chromosomes` narrows copy-number calling further.
 
 | Parameter                | Description                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
