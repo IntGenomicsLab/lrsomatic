@@ -95,14 +95,18 @@ carried over stale into the new alignment:
 - `OA`, `XA`, `XS` (original alignment, other aligners' alternative hits), and the read group `RG`, which is
   replaced by the pipeline's own.
 
-Every other tag is kept, in particular base modifications (`MM`, `ML`, `MN`), PacBio kinetics (`fi`, `fp`, `ri`,
-`rp`, where the input still has them), fibertools-rs output and read-level tags written by Dorado or the PacBio
-instruments (`qs`, `ns`, `ts`, `mv`, `pi`, `sp`, `np`, `rq`, `sn`, `ec`, `zm`, ...). This is a deny-list rather than an
-allow-list on purpose: the read-level tags vary with the basecaller version and chemistry, and an allow-list would
-silently drop one a user or a downstream tool relies on. The cost is that a tag from an aligner or phasing tool not
-listed above survives the realignment; if your input carries such tags, remove them first (e.g. `samtools view -x`).
-Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript strand, splice mode only) and
-is kept. Unaligned input only has its `RG` tag dropped, as before.
+Every other tag is kept, in particular base modifications (`MM`, `ML`, `MN`), fibertools-rs output and read-level
+tags written by Dorado or the PacBio instruments (`qs`, `ns`, `ts`, `mv`, `pi`, `sp`, `np`, `rq`, `sn`, `ec`, `zm`,
+...). The one exception is the PacBio kinetics (`fi`, `fp`, `ri`, `rp`, `ip`, `pw`): they are dropped from every
+PacBio row, aligned or not, unless `--keep_kinetic_data` is set (see [PacBio kinetics](#pacbio-kinetics)). This is a
+deny-list rather than an allow-list on purpose: the read-level tags vary with the basecaller version and chemistry,
+and an allow-list would silently drop one a user or a downstream tool relies on. The cost is that a tag from an
+aligner or phasing tool not listed above survives the realignment; if your input carries such tags, remove them first
+(e.g. `samtools view -x`). Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript
+strand, splice mode only) and is kept.
+
+Unaligned input keeps every tag except `RG`, and for PacBio the kinetics: unaligned ONT input drops only `RG`,
+unaligned PacBio input drops `RG,fi,fp,ri,rp,ip,pw` unless `--keep_kinetic_data` is set.
 
 Each samplesheet row gets one new read group, `@RG ID:<sample>_<type>_rep<replicate>`. For ONT input whose header
 names its basecalling model (Dorado's `DS:basecall_model=...`), the model is written into that read group as
