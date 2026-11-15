@@ -36,6 +36,7 @@ lint:
     - tests/sv_annotation_compose.nf.test
     - tests/aligned_format.nf.test
     - tests/kinetics_pairing.nf.test
+    - tests/stub_dag_coverage.nf.test
 nf_core_version: 4.2.2
 repository_type: pipeline
 template:

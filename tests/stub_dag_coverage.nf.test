@@ -1,0 +1,78 @@
+nextflow_pipeline {
+
+    name "Test pipeline - ASCAT, Wakhan, SV and two-caller consensus legs reached in a -stub run"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The test profile skips ASCAT, Wakhan, CoRAL, Padfoot, ReConPlot and ShatterSeek and keeps one caller per arm, so
+    // the other -stub tests never reach those legs, and sv_annotation_compose only builds the DAG (-preview runs no stub
+    // block). This run turns them back on with two callers per arm and checks that each leg's stub tasks actually ran.
+    // It guards three stub bugs (#238), each of which aborted a stub run or silently cut part of the DAG:
+    //   - UNZIP stub wrote an empty directory: no ASCAT task, and the strict ASCAT joins (ECDNA, tumour-only Verdict
+    //     tagging) aborted the run.
+    //   - SEVERUS stub wrote .vcf where the outputs declare .vcf.gz: no WAKHAN, SV_VEP or *_SEVERUS_WAKHAN task.
+    //   - patched BCFTOOLS_QUERY stub touched the .tbi before tabix wrote it: *_CONSENSUS:BCFTOOLS_QUERY failed.
+    // Sample1 and sample2 are tumour/normal pairs, sample3 is tumour-only.
+
+    test("-profile test, ASCAT/CoRAL/Wakhan/Padfoot/ReConPlot/ShatterSeek on, two callers per arm, consensus - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir               = "$outputDir"
+                skip_ascat           = false
+                skip_coral           = false
+                skip_wakhan          = false
+                skip_padfoot         = false
+                skip_reconplot       = false
+                skip_shatterseek     = false
+                germline_var_keep    = 'clair,deepvariant'
+                somatic_var_keep     = 'clair,deepsomatic'
+                germline_var_combine = 'consensus'
+                somatic_var_combine  = 'consensus'
+            }
+        }
+
+        then {
+            // Succeeded tasks of a process, matched on the end of its fully qualified name (e.g. 'ECDNA:CORAL_SEED')
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} (") }*.name }
+            def samples   = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') } as Set }
+            def all       = ['sample1', 'sample2', 'sample3'] as Set
+            assertAll(
+                { assert workflow.success },
+
+                // UNZIP stub -> ASCAT inputs -> ASCAT -> CoRAL and tumour-only Verdict tagging
+                { assert ['UNZIP_ALLELES', 'UNZIP_LOCI', 'UNZIP_GC', 'UNZIP_RT'].every { proc -> succeeded(proc).size() == 1 } :
+                    "UNZIP tasks: ${['UNZIP_ALLELES', 'UNZIP_LOCI', 'UNZIP_GC', 'UNZIP_RT'].collectEntries { proc -> [proc, succeeded(proc)] }}" },
+                { assert samples('ASCAT') == all : "ASCAT tasks: ${succeeded('ASCAT')}" },
+                { assert samples('ECDNA:CORAL_SEED') == all : "CORAL_SEED tasks: ${succeeded('ECDNA:CORAL_SEED')}" },
+                { assert samples('CLAIRSTO_VERDICT_TAG') == ['sample3'] as Set : "CLAIRSTO_VERDICT_TAG tasks: ${succeeded('CLAIRSTO_VERDICT_TAG')}" },
+
+                // SEVERUS stub .vcf.gz -> Wakhan, SV annotation and the Severus+Wakhan legs
+                { assert samples('SEVERUS') == all : "SEVERUS tasks: ${succeeded('SEVERUS')}" },
+                { assert samples('WAKHAN') == all : "WAKHAN tasks: ${succeeded('WAKHAN')}" },
+                { assert samples('SV_VEP') == all : "SV_VEP tasks: ${succeeded('SV_VEP')}" },
+                { assert succeeded('PADFOOT_SEVERUS_WAKHAN').size() == 3 : "PADFOOT_SEVERUS_WAKHAN tasks: ${succeeded('PADFOOT_SEVERUS_WAKHAN')}" },
+                { assert succeeded('RECONPLOT_SEVERUS_WAKHAN').size() == 3 : "RECONPLOT_SEVERUS_WAKHAN tasks: ${succeeded('RECONPLOT_SEVERUS_WAKHAN')}" },
+                { assert succeeded('SHATTERSEEK_SEVERUS_WAKHAN').size() == 3 : "SHATTERSEEK_SEVERUS_WAKHAN tasks: ${succeeded('SHATTERSEEK_SEVERUS_WAKHAN')}" },
+
+                // patched BCFTOOLS_QUERY stub -> consensus: one query per caller and sample, then one isec per sample
+                { assert succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
+                    "paired germline BCFTOOLS_QUERY tasks: ${succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
+                    "paired somatic BCFTOOLS_QUERY tasks: ${succeeded('PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('TUMORONLY_SMALLVAR:GERMLINE_CONSENSUS:BCFTOOLS_QUERY').size() == 2 :
+                    "tumour-only germline BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 2 :
+                    "tumour-only somatic BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert samples('GERMLINE_CONSENSUS:BCFTOOLS_ISEC') == all : "germline BCFTOOLS_ISEC tasks: ${succeeded('GERMLINE_CONSENSUS:BCFTOOLS_ISEC')}" },
+                { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_ISEC') == all : "somatic BCFTOOLS_ISEC tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_ISEC')}" },
+
+                // and every sample reaches the report
+                { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" }
+            )
+        }
+    }
+}
