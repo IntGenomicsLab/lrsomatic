@@ -76,7 +76,7 @@ nextflow_pipeline {
                 { assert succeeded('RECONPLOT_SEVERUS_WAKHAN').size() == 3 : "RECONPLOT_SEVERUS_WAKHAN tasks: ${succeeded('RECONPLOT_SEVERUS_WAKHAN')}" },
                 { assert succeeded('SHATTERSEEK_SEVERUS_WAKHAN').size() == 3 : "SHATTERSEEK_SEVERUS_WAKHAN tasks: ${succeeded('SHATTERSEEK_SEVERUS_WAKHAN')}" },
 
-                // consensus: one query per caller and sample, then one isec per sample
+                // consensus: one query per caller and sample, then one consensus per sample
                 { assert succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
                     "paired germline BCFTOOLS_QUERY tasks: ${succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
                 { assert succeeded('PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
@@ -85,8 +85,8 @@ nextflow_pipeline {
                     "tumour-only germline BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
                 { assert succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 2 :
                     "tumour-only somatic BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY')}" },
-                { assert samples('GERMLINE_CONSENSUS:BCFTOOLS_ISEC') == all : "germline BCFTOOLS_ISEC tasks: ${succeeded('GERMLINE_CONSENSUS:BCFTOOLS_ISEC')}" },
-                { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_ISEC') == all : "somatic BCFTOOLS_ISEC tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_ISEC')}" },
+                { assert samples('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "germline BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
+                { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "somatic BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
 
                 { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" },
 

@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FILTER=<ID=RefCall,Description="Genotyping model thinks this site is reference.">
+##FILTER=<ID=GERMLINE,Description="Non somatic variants">
+##FILTER=<ID=PON,Description="Filtered by Panel of Normals (PON)">
+##contig=<ID=chr1,length=1000>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	tumor
+chr1	100	.	A	T	30	GERMLINE	.	GT	0/0
+chr1	200	.	C	A	30	GERMLINE	.	GT	0/0
+chr1	300	.	G	A	30	GERMLINE	.	GT	0/0
+chr1	300	.	G	T	30	PASS	.	GT	1/1
+chr1	400	.	T	C,G	30	GERMLINE	.	GT	0/0
+chr1	500	.	A	C	30	PON	.	GT	1/1
+chr1	600	.	C	T	30	RefCall	.	GT	0/0
+chr1	700	.	G	C	30	PASS	.	GT	1/1
+chr1	900	.	ACG	A	30	GERMLINE	.	GT	0/0
+chr1	901	.	C	T	30	GERMLINE	.	GT	0/0

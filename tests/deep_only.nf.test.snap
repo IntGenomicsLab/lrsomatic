@@ -44,22 +44,7 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.10.0"
                 },
-                "DS_GERMLINE_REJOIN": {
-                    "bcftools": 1.24
-                },
                 "DS_GERMLINE_SELECT": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_ANNOTATE": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SITES": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DS": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DV": {
                     "bcftools": 1.24
                 },
                 "GERMLINE_ANCHORS": {
@@ -619,10 +604,10 @@
                 "sample3/vep/somatic/sample3_SOMATIC_VEP.vcf.gz_summary.html"
             ],
             [
-                "sample1_normal.bam:md5,bffc2444a70313bb24a6b52189bbb65a",
-                "sample1_normal.bam.bai:md5,c8162096af7955d5550bb01a9a870013",
-                "sample1_tumor.bam:md5,a04100696156c1d2c66f2b69e1119048",
-                "sample1_tumor.bam.bai:md5,3cbed78851ca9d34da2cca80a680bd4a",
+                "sample1_normal.bam:md5,3f6bef0adb7007fc82fe97bb1517538d",
+                "sample1_normal.bam.bai:md5,d939bda1dd95a6b2179448e216d1f55e",
+                "sample1_tumor.bam:md5,6b7205eefdec5cceabd6d01b6ea46389",
+                "sample1_tumor.bam.bai:md5,952c24c202e80f27338d17d31d99ca8f",
                 "sample1_normal.flagstat:md5,1c41ea9923945501eb7e41f83a90502d",
                 "sample1_normal.idxstats:md5,902e503387799123ea59255e3fca172c",
                 "sample1_normal.stats:md5,d79e3c68505d39cf29641dfdf5849ef1",
@@ -638,10 +623,10 @@
                 "read_qual.txt:md5,92321a03aae1168fdce8ea921b635036",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample2_normal.bam:md5,dc00cceeb05cf7d44720022376bee8cb",
-                "sample2_normal.bam.bai:md5,53126dd3667fcd9aeb8a06ac5de1bcb2",
-                "sample2_tumor.bam:md5,565c542d2786b5ec53950ffbf0ef89d7",
-                "sample2_tumor.bam.bai:md5,a9a7606e6c48f667b4f3cbe15ce33017",
+                "sample2_normal.bam:md5,950368fae31ded39c8dc2e778631490a",
+                "sample2_normal.bam.bai:md5,5316dd6dc1a5e60d31aa9fec00e944fd",
+                "sample2_tumor.bam:md5,eb571ed57437af716a617598f80ce75e",
+                "sample2_tumor.bam.bai:md5,259a2d2fa028454b75255e4e789e3213",
                 "sample2_normal.flagstat:md5,714d0cc0c213e2640e54a16f3d0e6e7e",
                 "sample2_normal.idxstats:md5,72eb83bb11748dc863fef1a0a5497e4b",
                 "sample2_normal.stats:md5,1aeade21dc682b0c5ca284214e6fc4d0",
@@ -657,8 +642,8 @@
                 "read_qual.txt:md5,57aaac5f18f81b1cbde13e49c012651a",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
-                "sample3_tumor.bam:md5,8a6d2472ecbcb90f849b12ee14bf3a47",
-                "sample3_tumor.bam.bai:md5,78eefad4ce39c3ae1ef672cf9a8417f5",
+                "sample3_tumor.bam:md5,833778bddadffe74df86ae6a91294e04",
+                "sample3_tumor.bam.bai:md5,ee8248e743851fa1d491a49ed6e02b8e",
                 "sample3_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample3_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample3_tumor.stats:md5,9d2945cfd8813c828d702e86afbaa58b",
@@ -673,7 +658,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-29T08:28:33.602231307",
+        "timestamp": "2026-11-16T16:21:24.482435368",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

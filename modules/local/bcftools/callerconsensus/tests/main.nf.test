@@ -1,0 +1,102 @@
+nextflow_process {
+
+    name "Test Process BCFTOOLS_CALLER_CONSENSUS"
+    script "../main.nf"
+    process "BCFTOOLS_CALLER_CONSENSUS"
+
+    tag "modules"
+    tag "modules_local"
+    tag "bcftools_caller_consensus"
+    tag "small"
+
+    test("priority caller's own records where all its called alleles are shared") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz.tbi", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_other.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_other.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa", checkIfExists: true) ]
+                input[2] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa.fai", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def kept = path(process.out.vcf[0][1]).linesGzip
+                .findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
+
+            // Dropped: 200 (ALT not called), 300/700 (priority only), 600 (RefCall), 800 (other only)
+            assert kept == [
+                '100:A>T:0/1',
+                '400:T>C,G:1/2',
+                '500:A>G,C:2/2',
+                '900:ACG>A,ATG:1/2'
+            ]
+        }
+    }
+
+    test("DeepSomatic verdict mode - DeepVariant's own records whose called alleles are all judged germline") {
+
+        config "./verdict.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_prio.vcf.gz.tbi", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_verdict.vcf.gz", checkIfExists: true),
+                    file("\${projectDir}/tests/fixtures/callerconsensus_verdict.vcf.gz.tbi", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa", checkIfExists: true) ]
+                input[2] = [ [ id:'genome' ], file("\${projectDir}/tests/fixtures/callerconsensus.fa.fai", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def kept = path(process.out.vcf[0][1]).linesGzip
+                .findAll { line -> !line.startsWith('#') }
+                .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
+
+            // Dropped: 200 (only the uncalled ALT is GERMLINE), 300/700 (DeepSomatic PASS), 600 (RefCall)
+            assert kept == [
+                '100:A>T:0/1',
+                '400:T>C,G:1/2',
+                '500:A>G,C:2/2',
+                '900:ACG>A,ATG:1/2'
+            ]
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'test' ], [], [], [], [] ]
+                input[1] = [ [ id:'genome' ], [] ]
+                input[2] = [ [ id:'genome' ], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

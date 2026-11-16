@@ -1,6 +1,6 @@
 process SIGPROFILER_MATRIXGENERATOR {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_single'
 
     // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
