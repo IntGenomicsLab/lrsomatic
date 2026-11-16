@@ -34,6 +34,8 @@ lint:
   # kinetics_pairing is a -stub regression test of the pairing joins: it asserts on the task trace and published reports;
   # fiber_replicates and download_vep_cache are -stub tests: they assert on published file names and the task trace
   nf_test_content:
+    - tests/samplesheet_replicates.nf.test # -stub, asserts on the task trace
+    - tests/report_without_severus.nf.test # -stub, asserts on the task trace
     - tests/sv_annotation_compose.nf.test
     - tests/aligned_format.nf.test
     - tests/kinetics_pairing.nf.test
