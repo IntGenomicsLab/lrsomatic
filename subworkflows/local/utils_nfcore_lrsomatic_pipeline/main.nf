@@ -543,8 +543,7 @@ def getGenomeAttribute(attribute) {
 }
 
 //
-// AmpliconArchitect data repo MD5: --aa_data_repo_md5 wins; overriding the repo or its URL drops the genome default.
-// The URL is an argument: a params.aa_data_repo_url assigned in the workflow is not visible in this script.
+// AmpliconArchitect data repo MD5: --aa_data_repo_md5 wins; overriding the repo or its URL drops the genome default
 //
 def aaDataRepoMd5(repo_url) {
     def overridden = params.aa_data_repo || repo_url != getGenomeAttribute('aa_data_repo_url')

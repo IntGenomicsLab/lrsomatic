@@ -91,8 +91,7 @@ nextflow_workflow {
         when {
             workflow {
                 """
-                // The BEDs are value channels as in the pipeline (file(...)): a single-item queue
-                // channel would itself let only one BAM through
+                // Value channels as in the pipeline: a queue channel would itself pass only one BAM
                 def cpg_islands_bed = Channel.of('chr22\\t0\\t40001')
                     .collectFile(name: 'cpg_islands.bed', newLine: true)
                     .first()
@@ -101,7 +100,6 @@ nextflow_workflow {
                     .collectFile(name: 'gencode_gene.bed', newLine: true)
                     .first()
 
-                // The same pileup as a tumour and a normal BAM of one sample
                 input[0] = MODKIT_PILEUP.out.bedgz.flatMap { meta, files ->
                     [ [ meta, files ], [ meta + [ type: 'normal' ], files ] ]
                 }
@@ -125,7 +123,6 @@ nextflow_workflow {
             assertAll(
                 { assert workflow.success },
                 { assert count('DMR_HAPLOTYPE_REGIONS') == 2 : "DMR_HAPLOTYPE_REGIONS tasks: ${count('DMR_HAPLOTYPE_REGIONS')}" },
-                // before #237 fasta_with_fai was a one-item queue channel, so MODKIT_DMR ran for one BAM only
                 { assert count('MODKIT_DMR') == 2 : "MODKIT_DMR tasks: ${count('MODKIT_DMR')}" },
                 { assert count('DMR_NEAREST_GENE') == 2 : "DMR_NEAREST_GENE tasks: ${count('DMR_NEAREST_GENE')}" },
                 { assert workflow.out.nearest_gene_bed.collect { meta, _bed -> meta.type }.sort() == ['normal', 'tumor'] }

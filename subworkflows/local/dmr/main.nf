@@ -109,13 +109,12 @@ workflow DMR {
         }
         .set { modkit_dmr_input }
 
-    // .first(): combine returns a queue channel, which would give MODKIT_DMR one task per run, not per BAM
+    // .first(): as a queue channel MODKIT_DMR would run for one BAM only
     fasta
         .combine(fai)
         .map { meta, fasta_file, _meta2, fai_file -> [meta, fasta_file, fai_file] }
         .first()
         .set { fasta_with_fai }
-    // fasta_with_fai: [[:], fasta, fai]  -- value channel
 
     MODKIT_DMR (
         modkit_dmr_input.hp1,
