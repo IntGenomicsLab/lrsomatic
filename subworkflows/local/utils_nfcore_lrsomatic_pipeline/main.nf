@@ -91,7 +91,6 @@ workflow PIPELINE_INITIALISATION {
     // Columns: sample_id, bam_tumor, bam_normal, method, sex, fiber,
     //          clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate
     def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
-    // Stop on replicate encodings the per-type merge below would mis-handle without an error
     validateSampleReplicates(samplesheet_rows)
 
     channel
@@ -521,13 +520,8 @@ def validateInputSamplesheet(input) {
 }
 
 //
-// Rows of one sample are aligned one by one, then merged per type (SAMTOOLS_MERGE) under a key of the sample id,
-// paired_data (has a normal) and the replicate count; each row's files are named and read-grouped by its replicate
-// number. Reject the encodings that key mis-handles: a sample whose rows mix "has normal" and "no normal" (tumour
-// rows never merged; the run aborted after alignment with a bare "Join mismatch"), a file repeated across rows
-// (merged with itself), and rows sharing a replicate number (blank counts as 1: colliding file names and @RG IDs).
-// The schema's columns are
-// [meta, bam_tumor, bam_normal, platform, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate].
+// Reject replicate encodings that the per-type merge (key: id, paired_data, replicate count) mis-handles silently
+// row: [meta, bam_tumor, bam_normal, ..., tumor_replicate (9), normal_replicate (10)]
 //
 def validateSampleReplicates(rows) {
     def shared_normal_hint = "To use one normal with several tumour files, merge the tumour files into one BAM beforehand " +
@@ -567,7 +561,7 @@ def validateSampleReplicates(rows) {
             errors << ("Sample '${id}': bam_normal ${f} is listed on ${n} rows. Each row's files are aligned separately " +
                 "and merged per type, so the normal would be merged with itself and counted ${n} times. " + shared_normal_hint)
         }
-        // A repeated tumour file is merged with itself too, but the remote test samplesheets use it to exercise the merge
+        // Warn, not error: the remote test samplesheets repeat a tumour file to exercise the merge
         tumor_files.countBy { f -> f }.findAll { _f, n -> n > 1 }.each { f, n ->
             log.warn("Sample '${id}': bam_tumor ${f} is listed on ${n} rows; it is aligned once per row and merged with itself, " +
                 "so its reads are counted ${n} times. Remove the repeated rows unless this is intended.")
@@ -591,7 +585,6 @@ def validateSampleReplicates(rows) {
     return true
 }
 
-// Comparable form of a samplesheet file column (a Path from samplesheetToList)
 def samplesheetFileKey(f) {
     return f instanceof Path ? f.toUriString() : f.toString()
 }

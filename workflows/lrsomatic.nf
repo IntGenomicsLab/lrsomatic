@@ -1365,8 +1365,7 @@ workflow LRSOMATIC {
         def qc_files_per_bam = params.skip_qc
             ? 0
             : (params.skip_mosdepth ? 0 : 2) + (params.skip_cramino ? 0 : 1) + (params.skip_bamstats ? 0 : 2)
-        // WhatsHap stats: one TSV per sample (the phased germline VCF: the normal's in a pair, the tumour's when
-        // tumour-only), with no meta.type. It joins the tumor-side bundle; the report finds it by name anywhere.
+        // WhatsHap stats: one TSV per sample with no meta.type, so it is mixed into the tumour bundle after the filter
         def whatshap_files_per_sample = (params.skip_qc || params.skip_whatshapstats) ? 0 : 1
         def qc_tumor_files_per_sample = qc_files_per_bam + whatshap_files_per_sample
 
@@ -1422,16 +1421,13 @@ workflow LRSOMATIC {
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
             .join(report_wakhan_ch,     remainder: true)
-            // Index-based, not destructured: a sample missing from severus_input (lost upstream, e.g. by an
-            // errorStrategy 'ignore' leg) comes out of remainder as a short, meta-less tuple such as
-            // [id, null, [qc files], null, null], and a fixed-arity closure would throw and abort the run
+            // Index-based: a sample missing from severus_input comes out of remainder as a short, meta-less tuple
             .branch { row ->
                 reportable: row[1] != null
                 no_severus: true
             }
             .set { report_joined }
 
-        // Report identity is the Severus input, so such a sample gets no report; say so once instead of failing
         report_joined.no_severus
             .map { row -> row[0] }
             .unique()
@@ -1439,7 +1435,7 @@ workflow LRSOMATIC {
                 log.warn "Sample '${id}' never reached SEVERUS (an upstream step was skipped or failed), so it gets no lrsomatic report."
             }
 
-        // [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan]: a leg absent for this sample arrives as null
+        // row: [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan], absent legs null or missing
         report_joined.reportable
             .map { row ->
                 def legs = (2..9).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }

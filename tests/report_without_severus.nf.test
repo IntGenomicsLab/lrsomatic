@@ -5,13 +5,7 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // The report is keyed on severus_input and every other leg joins with remainder: true. A sample missing from
-    // severus_input but present in another leg came out of the joins as a short, meta-less tuple, and the
-    // fixed-arity .filter closure threw on it, aborting the whole run at report assembly (campaign finding G2-F1).
-    // The config skips LONGPHASE_HAPLOTAG for sample3 to stand in for such a loss. join(remainder: true) pads a key
-    // that is missing on the left with a single null for the whole left side, so the tuple only comes out short when
-    // the orphan first appears after the second leg: with VEP on, sample3's somatic VEP VCF fills the first leg and
-    // the tuple stays full length. --skip_vep makes the phased somatic VCF (fourth leg) its first appearance.
+    // skip_vep is required: with VEP on, sample3's VEP VCF fills the first join leg and the tuple is never short
 
     test("-profile test, sample3 never reaches SEVERUS, VEP skipped - stub") {
 
@@ -33,7 +27,6 @@ nextflow_pipeline {
             assertAll(
                 { assert workflow.success },
                 { assert samples('SEVERUS').sort() == ['sample1', 'sample2'] : "SEVERUS tasks: ${samples('SEVERUS')}" },
-                // the other samples are still reported, sample3 is dropped with a warning
                 { assert samples('LRSOMATICREPORT').sort() == ['sample1', 'sample2'] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" },
                 { assert (workflow.stdout + workflow.stderr).any { line -> line.contains("Sample 'sample3' never reached SEVERUS") } },
                 { assert !file("$outputDir/sample3/report/sample3_report.html").exists() }

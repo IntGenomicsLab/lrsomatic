@@ -5,12 +5,7 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // A sample's rows are aligned one by one and merged per type under a key of the sample id, paired_data and the
-    // replicate count, with file names and @RG IDs taken from the replicate number. validateSampleReplicates stops
-    // the run on the encodings that key mis-handles; the one valid paired encoding is every row with its own tumour
-    // and normal file and distinct replicate numbers. Empty files read as unaligned input in the METAEXTRACT stub.
-
-    // Writes the samplesheet with the given rows (file names resolved in a per-test input dir); returns its path
+    // Empty BAM files read as unaligned input in the METAEXTRACT stub
     def sheet = { dir, rows ->
         def input_dir = new File(dir)
         input_dir.mkdirs()
@@ -144,11 +139,10 @@ nextflow_pipeline {
             assertAll(
                 { assert workflow.success },
                 { assert samples('MINIMAP2_ALIGN') == ['sd'] * 4 : "MINIMAP2_ALIGN tasks: ${samples('MINIMAP2_ALIGN')}" },
-                // one merge per type: the two tumour files, the two normal files
+                // one merge per type (tumour, normal)
                 { assert samples('SAMTOOLS_MERGE') == ['sd', 'sd'] : "SAMTOOLS_MERGE tasks: ${samples('SAMTOOLS_MERGE')}" },
                 { assert file("$outputDir/sd/bamfiles/sd_tumor.cram").exists() },
                 { assert file("$outputDir/sd/bamfiles/sd_normal.cram").exists() },
-                // and one paired analysis, no tumour-only one
                 { assert samples('CLAIRS') == ['sd'] : "CLAIRS tasks: ${samples('CLAIRS')}" },
                 { assert samples('SEVERUS') == ['sd'] : "SEVERUS tasks: ${samples('SEVERUS')}" },
                 { assert samples('CLAIRSTO').isEmpty() : "CLAIRSTO tasks: ${samples('CLAIRSTO')}" },
