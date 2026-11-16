@@ -29,7 +29,7 @@
                     [
                         "LRSOMATICREPORT",
                         "lrsomatic_report",
-                        "2.0.0rc1"
+                        "2.0.0"
                     ]
                 ],
                 "report": [
@@ -59,7 +59,7 @@
                     [
                         "LRSOMATICREPORT",
                         "lrsomatic_report",
-                        "2.0.0rc1"
+                        "2.0.0"
                     ]
                 ]
             }
@@ -76,7 +76,7 @@
                 [
                     "LRSOMATICREPORT",
                     "lrsomatic_report",
-                    "2.0.0rc1"
+                    "2.0.0"
                 ]
             ]
         ],
