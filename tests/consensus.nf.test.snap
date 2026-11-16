@@ -5,25 +5,19 @@
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": 1.24
                 },
+                "BCFTOOLS_CALLER_CONSENSUS": {
+                    "bcftools": 1.24
+                },
                 "BCFTOOLS_CONCAT": {
                     "bcftools": 1.24
                 },
-                "BCFTOOLS_ISEC": {
-                    "bcftools": 1.24
-                },
                 "BCFTOOLS_NORM": {
-                    "bcftools": 1.24
-                },
-                "BCFTOOLS_NORM_REJOIN": {
                     "bcftools": 1.24
                 },
                 "BCFTOOLS_QUERY": {
                     "bcftools": 1.24
                 },
                 "BCFTOOLS_SORT": {
-                    "bcftools": 1.24
-                },
-                "BCFTOOLS_SORT_CONSENSUS": {
                     "bcftools": 1.24
                 },
                 "BCFTOOLS_VIEW": {
@@ -77,22 +71,7 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.10.0"
                 },
-                "DS_GERMLINE_REJOIN": {
-                    "bcftools": 1.24
-                },
                 "DS_GERMLINE_SELECT": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_ANNOTATE": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SITES": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DS": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DV": {
                     "bcftools": 1.24
                 },
                 "GERMLINE_ANCHORS": {
@@ -686,9 +665,9 @@
                 "sample1_tumor.flagstat:md5,8ff32d733c62c4910bf185ef24bf27cf",
                 "sample1_tumor.idxstats:md5,2de140e61f9e86c9c10af20dd565cc93",
                 "sample1_tumor.stats:md5,43db056b22877406bda7f2206559f05a",
-                "sample1_whatshap_stats.gtf:md5,ebc7facf20e55318eb84715b54c0e0b3",
-                "sample1_whatshap_stats.log:md5,75c5750e0f54d4e8ef1ad71ab5ae4951",
-                "sample1_whatshap_stats.tsv:md5,ec24f50578a481fcda2cea12dcfd1bae",
+                "sample1_whatshap_stats.gtf:md5,d507c1aae1c1a1c470056695eb2b1bca",
+                "sample1_whatshap_stats.log:md5,fc55bc2bad053c4c898b6b46e520e690",
+                "sample1_whatshap_stats.tsv:md5,086d5d8112350cdc8b387e5a5ef2ce42",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,c9e54fd35615ccec7afc8b18d34aecef",
@@ -701,9 +680,9 @@
                 "sample2_tumor.flagstat:md5,4344a8745efef9cc2a017024218d61c6",
                 "sample2_tumor.idxstats:md5,69467fc02c83a30084736aeea8b785fb",
                 "sample2_tumor.stats:md5,fe7ff259689c51826bf539a7c8ec87ce",
-                "sample2_whatshap_stats.gtf:md5,69e86a7cd3659c91ae37e55c0535849f",
-                "sample2_whatshap_stats.log:md5,854d77b7711a53c418cf779ac45d5b60",
-                "sample2_whatshap_stats.tsv:md5,1b2e88694c1f14f946543c191e1f75b7",
+                "sample2_whatshap_stats.gtf:md5,caf244eea515033b44fa0cc7e9dba45b",
+                "sample2_whatshap_stats.log:md5,80fbed2a9e3424650d999cd9c084d56a",
+                "sample2_whatshap_stats.tsv:md5,20027314838d2432ee89dfa4ecc2477b",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,a98f84c95ba0ebc732e2a53a311ac464",
@@ -724,7 +703,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-29T08:34:58.100546005",
+        "timestamp": "2026-11-14T19:48:20.688581857",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
