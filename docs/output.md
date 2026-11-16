@@ -237,7 +237,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                   |
 | `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary for the bam file                                                                                   |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files         |
 | `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
 | `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                  |
 | `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                     |
@@ -367,7 +367,7 @@ Present in **tumor-only** samples (no matched normal).
 | `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                           |
 | `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                   |
 
-The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -629,6 +629,8 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
 | `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
 
+The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_`, decoy and other unplaced contigs), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
+
 </details>
 
 #### `vep_plugins`
@@ -845,21 +847,21 @@ A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPl
 | `plots/*.pdf`                          | ShatterSeek figure (ideogram, SVs, copy number, summary) for every chromosome with a confidence tier (optional)                   |
 | `shatterseek.log`                      | Wrapper log: files read, SVs dropped and why, copy numbers rounded, the tiers called                                              |
 
-[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs a fork ([robert-a-forsyth/ShatterSeek](https://github.com/robert-a-forsyth/ShatterSeek/tree/chm13-support)) whose statistics follow the definitions in the PCAWG Supplementary Note, and which adds T2T-CHM13. On the bundled PCAWG example DO17373 it reproduces the published counts and calls (chr2, chr21 and chrX high confidence), which upstream ShatterSeek does not: upstream counts 1 instead of 600 translocations on chrX, pools tied clusters, and tests translocation breakpoints only for enrichment, which gives chr3 a high-confidence call PCAWG did not make. The columns:
+[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs upstream ShatterSeek (v1.1, pinned commit) unchanged, apart from a build-time patch adding T2T-CHM13 chromosome sizes and cytobands. The columns are upstream's:
 
-| Column                                                 | Meaning                                                                                                                                                |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `start`, `end`, `clusterSize`                          | Span and number of intra-chromosomal SVs of the chromosome's largest cluster (one cluster; NA/0 without one)                                           |
-| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                              |
-| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                                 |
-| `pval_fragment_joins`                                  | Chi-square test of the cluster's four SV types against equal proportions. Chromothripsis expects random joins, so this should **not** be significant   |
-| `chr_breakpoint_enrichment`                            | One-sided binomial test: more breakpoints on this chromosome than its share of the genome predicts (hg38: non-N bases; chm13: length)                  |
-| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov test of the gaps between consecutive breakpoints (chromosome / cluster) against an exponential; significant = clustered breakpoints |
-| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                      |
-| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes                                                                          |
-| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                           |
-| `HC1`, `HC2`, `HC3`                                    | PCAWG high-confidence tiers met (see below)                                                                                                            |
-| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any tier) or `none`                                                                                         |
+| Column                                                 | Meaning                                                                                                                                            |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start`, `end`                                         | Span of the chromosome's largest cluster of interleaved intra-chromosomal SVs (NA without one)                                                     |
+| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                          |
+| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                             |
+| `pval_fragment_joins`                                  | Chi-square test of the cluster's SV types (translocations typed by strand) against equal proportions; chromothripsis should **not** be significant |
+| `chr_breakpoint_enrichment`                            | Binomial test of the translocations touching this chromosome against its share of the genome                                                       |
+| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov tests of the breakpoints (chromosome / cluster) against an exponential distribution; significant = clustered breakpoints        |
+| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                  |
+| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes (added by the wrapper)                                               |
+| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                       |
+| `HC1`, `HC2`, `HC3`                                    | PCAWG high-confidence tiers met (see below)                                                                                                        |
+| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any tier) or `none`                                                                                     |
 
 The tiers use the PCAWG high-confidence cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail. Interleaved intra SVs is the sum of the four SV-type columns. PCAWG's low-confidence tier (4-6 oscillating segments) is not reported.
 
@@ -873,7 +875,7 @@ Points to keep in mind when reading the calls:
 
 - PCAWG applied HC3 only to osteosarcomas, leiomyosarcomas and liposarcomas, where amplification erodes the oscillating pattern; here it applies to every tumour. Drop it with `ext.args = '--no-hc3'`.
 - PCAWG corrected the P values once across every chromosome of all 2,658 tumours; within one sample the correction covers 23 chromosomes. The raw P values are kept, so a cohort-wide correction can be recomputed from the summaries (each row carries `sample`, `cn_source` and `sv_source`).
-- When several clusters tie for the largest on a chromosome, one is kept (the one with the most translocation breakends, then the narrowest, then the leftmost); PCAWG's own run pooled tied clusters, so a chromosome with two equal small clusters (DO17373 chr3) reports fewer SVs here.
+- Upstream's exponential tests compare against random draws; the wrapper seeds R's generator (`--seed`, default 1), so a rerun gives the same P values. Clusters of equal size are pooled before the statistics are computed, so a chromosome whose SVs are all singletons is summarised over all of them.
 - The cut-offs were set by visual inspection of PCAWG's short-read consensus calls. Long-read callers report many small SVs, whose two breakpoints a few hundred bp apart make the exponential test significant on most chromosomes; intra-chromosomal SVs shorter than `--shatterseek_min_svlen` (default 150 bp) are therefore left out, and raising it tests larger rearrangements only.
 - ShatterSeek does not mask centromeres or satellite arrays. A cluster spanning a centromere or heterochromatin block (e.g. chr16 q11.2, chr1 q12, chr9 q12) is more likely mapping artefact than chromothripsis; check the figure.
 - Tumour-only Severus calls include germline SVs that the panel of normals did not remove.
@@ -977,7 +979,7 @@ Sections:
   - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
 - **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible **Phasing** block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with `--skip_whatshapstats` or `--skip_qc`.
 
 Filtering in the browser:
 

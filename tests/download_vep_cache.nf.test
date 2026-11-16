@@ -1,0 +1,33 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --download_vep_cache wiring (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    test("-profile test, --download_vep_cache - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir             = "$outputDir"
+                download_vep_cache = true
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }*.name }
+            def samples = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') }.sort() }
+            def vep_failed = workflow.trace.failed().findAll { task -> task.name =~ /:(ENSEMBLVEP_DOWNLOAD|\w*VEP\w*) / }*.name
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('ENSEMBLVEP_DOWNLOAD').size() == 1 : "ENSEMBLVEP_DOWNLOAD tasks: ${succeeded('ENSEMBLVEP_DOWNLOAD')}" },
+                { assert vep_failed.isEmpty() : "failed VEP tasks: ${vep_failed}" },
+                { assert samples('GERMLINE_VEP') == [ 'sample1', 'sample2', 'sample3' ] : "GERMLINE_VEP tasks: ${succeeded('GERMLINE_VEP')}" },
+                { assert samples('SOMATIC_VEP') == [ 'sample1', 'sample2', 'sample3' ] : "SOMATIC_VEP tasks: ${succeeded('SOMATIC_VEP')}" },
+                { assert samples('VEP_SAVANA') == [ 'sample1', 'sample2', 'sample3' ] : "VEP_SAVANA tasks: ${succeeded('VEP_SAVANA')}" }
+            )
+        }
+    }
+}

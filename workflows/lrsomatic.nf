@@ -127,7 +127,8 @@ workflow LRSOMATIC {
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
     params.coral_ref = getGenomeAttribute('coral_ref')
     params.ac_ref = getGenomeAttribute('ac_ref')
-    params.aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
+    // A local: aaDataRepoMd5() in the utils script cannot see a param assigned here
+    def aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
 
     // Resolved once here to avoid a HEAD request per default plugin URL, and passed straight to
     // the VEP tasks: conf/modules.config closures do not see a param assigned here.
@@ -459,8 +460,22 @@ workflow LRSOMATIC {
 
     def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
+    // MINIMAP2_ALIGN-only meta keys for ext.args/ext.args3; the subMap after alignment drops them again
+    ch_ubams
+        .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+        .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
+        .join(basecall_meta.map { meta, model, _kinetics -> [ [ meta.id, meta.type, meta.replicate ], model ] }, failOnMismatch: true)
+        .map { _key, meta, bams, aligned, model ->
+            def model_str = model ? model.toString().trim() : ''
+            def extra = (aligned == 'true' ? [ aligned_input: true ] : [:]) +
+                (meta.platform == 'ont' && model_str ? [ basecall_model: model_str ] : [:])
+            return [ extra ? meta + extra : meta, bams ]
+        }
+        .set { ch_minimap2_in }
+    // ch_minimap2_in: [meta_with_replicate (+ aligned_input, basecall_model where they apply), bam_or_cram]
+
     MINIMAP2_ALIGN (
-        ch_ubams,
+        ch_minimap2_in,
         ch_fasta,
         params.aligned_format,
         aligned_index,
@@ -1191,6 +1206,7 @@ workflow LRSOMATIC {
     // MODULE: WAKHAN (label: process_medium) -- haplotype-aware copy number
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
     //         ch_fasta          -- [[:], fasta]
+    //         ch_fai            -- [[:], fai]
     //         centromere_bed    -- BED file of centromere coordinates (for assembly anchoring)
     // Output: WAKHAN assembly reports (written to outdir)
     //
@@ -1212,6 +1228,7 @@ workflow LRSOMATIC {
         WAKHAN (
             wakhan_input,
             ch_fasta,
+            ch_fai,
             file(params.centromere_bed)
         )
 
@@ -1240,8 +1257,8 @@ workflow LRSOMATIC {
         if (!params.skip_ampliconclassifier) {
             PREPARE_AA_DATA_REPO (
                 params.aa_data_repo,
-                params.aa_data_repo_url,
-                aaDataRepoMd5()
+                aa_data_repo_url,
+                aaDataRepoMd5(aa_data_repo_url)
             )
             ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
             ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)
@@ -1360,18 +1377,22 @@ workflow LRSOMATIC {
             : ch_wakhan_files.map { meta, files -> [meta.id, files] }
         // report_wakhan_ch: [id, [files]]
 
-        // One emission per sample per tool, none optional: mosdepth 2, cramino 1, samtools 2.
-        // Adding another per-sample emission to either mix below must bump this count.
-        def qc_files_per_sample = params.skip_qc
+        // One emission per sample and BAM type per tool, none optional: mosdepth 2, cramino 1, samtools 2.
+        // Adding another per-sample emission to either mix below must bump the matching count.
+        def qc_files_per_bam = params.skip_qc
             ? 0
             : (params.skip_mosdepth ? 0 : 2) + (params.skip_cramino ? 0 : 1) + (params.skip_bamstats ? 0 : 2)
+        // WhatsHap stats: one TSV per sample with no meta.type, so it is mixed into the tumour bundle after the filter
+        def whatshap_files_per_sample = (params.skip_qc || params.skip_whatshapstats) ? 0 : 1
+        def qc_tumor_files_per_sample = qc_files_per_bam + whatshap_files_per_sample
 
         // Tumor-side QC, keyed by the sample id (= report id)
         // groupKey: emit a sample's bundle on its own files; toString() restores a plain String key
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'tumor' }
-            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
+            .mix(whatshap_stats_txt)
+            .map { meta, f -> [groupKey(meta.id, qc_tumor_files_per_sample), f] }
             .groupTuple()
             .map { key, files -> [key.toString(), files] }
             .set { report_qc_tumor_grouped }
@@ -1381,13 +1402,13 @@ workflow LRSOMATIC {
         ch_mosdepth_summary
             .mix(ch_mosdepth_global, ch_cramino_post_txt, ch_bam_stats, ch_bam_flagstat)
             .filter { meta, _f -> meta.type == 'normal' }
-            .map { meta, f -> [groupKey(meta.id, qc_files_per_sample), f] }
+            .map { meta, f -> [groupKey(meta.id, qc_files_per_bam), f] }
             .groupTuple()
             .map { key, files -> [key.toString(), files] }
             .set { report_qc_normal_grouped }
         // report_qc_normal_grouped: [id, [qc_file, ...]]  -- paired samples only
 
-        def report_qc_tumor_ch = qc_files_per_sample == 0
+        def report_qc_tumor_ch = qc_tumor_files_per_sample == 0
             ? report_empty_slot.call()
             : report_qc_tumor_grouped
 
@@ -1400,7 +1421,7 @@ workflow LRSOMATIC {
             }
             .set { report_roster }
 
-        def report_qc_normal_ch = qc_files_per_sample == 0
+        def report_qc_normal_ch = qc_files_per_bam == 0
             ? report_empty_slot.call()
             : report_roster.paired
                 .join(report_qc_normal_grouped)
@@ -1417,21 +1438,28 @@ workflow LRSOMATIC {
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
             .join(report_wakhan_ch,     remainder: true)
-            .filter { _id, meta, _vep, _sv_vep, _severus, _somatic, _ascat, _qc_t, _qc_n, _wakhan -> meta != null }
-            .map { _id, meta, vep, sv_vep_vcf, severus, somatic, ascat, qc_t, qc_n, wakhan ->
-                return [
-                    meta,
-                    vep        ?: [],
-                    sv_vep_vcf ?: [],
-                    severus    ?: [],
-                    somatic    ?: [],
-                    ascat      ?: [],
-                    qc_t       ?: [],
-                    qc_n       ?: [],
-                    wakhan     ?: []
-                ]
+            // Index-based: a sample missing from severus_input comes out of remainder as a short, meta-less tuple
+            .branch { row ->
+                reportable: row[1] != null
+                no_severus: true
+            }
+            .set { report_joined }
+
+        report_joined.no_severus
+            .map { row -> row[0] }
+            .unique()
+            .subscribe { id ->
+                log.warn "Sample '${id}' never reached SEVERUS (an upstream step was skipped or failed), so it gets no lrsomatic report."
+            }
+
+        // row: [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan], absent legs null or missing
+        report_joined.reportable
+            .map { row ->
+                def legs = (2..9).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }
+                return [row[1]] + legs
             }
             .set { report_input_ch }
+        // report_input_ch: [meta, vep, sv_vep, severus, somatic, ascat, qc_tumor, qc_normal, wakhan] -- [] for an absent leg
 
         // Only panel files are staged; builtin names reach the tool through ext.args (conf/modules.config)
         def report_gene_panel_files = reportGenePanelTokens(params.report_gene_panel)

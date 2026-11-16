@@ -78,14 +78,14 @@ process SEVERUS {
     touch ${prefix}/read_ids.csv
     touch ${prefix}/read_qual.txt
     touch ${prefix}/breakpoints_double.csv
-    touch ${prefix}/all_SVs/severus_all.vcf
-    touch ${prefix}/all_SVs/breakpoints_clusters_list.tsv
-    touch ${prefix}/all_SVs/breakpoints_clusters.tsv
+    echo "" | gzip > ${prefix}/all_SVs/severus_all.vcf.gz
+    touch ${prefix}/all_SVs/breakpoint_clusters_list.tsv
+    touch ${prefix}/all_SVs/breakpoint_clusters.tsv
     touch ${prefix}/all_SVs/plots/severus_0.html
     touch ${prefix}/all_SVs/plots/severus_1.html
-    touch ${prefix}/somatic_SVs/severus_somatic.vcf
-    touch ${prefix}/somatic_SVs/breakpoints_clusters_list.tsv
-    touch ${prefix}/somatic_SVs/breakpoints_clusters.tsv
+    echo "" | gzip > ${prefix}/somatic_SVs/severus_somatic.vcf.gz
+    touch ${prefix}/somatic_SVs/breakpoint_clusters_list.tsv
+    touch ${prefix}/somatic_SVs/breakpoint_clusters.tsv
     touch ${prefix}/somatic_SVs/plots/severus_0.html
     touch ${prefix}/somatic_SVs/plots/severus_1.html
     """
