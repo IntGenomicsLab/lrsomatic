@@ -1,6 +1,6 @@
 process CORAL_PLOT {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     // Plotting is cosmetic: never let it fail a run that reconstructed successfully
     errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }

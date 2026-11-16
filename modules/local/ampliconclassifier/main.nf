@@ -1,6 +1,6 @@
 process AMPLICONCLASSIFIER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     // As for CoRAL: one unclassifiable sample should not fail the cohort
     errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
