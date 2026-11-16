@@ -71,22 +71,7 @@
                 "DEEPVARIANT_POSTPROCESSVARIANTS": {
                     "deepvariant": "1.10.0"
                 },
-                "DS_GERMLINE_REJOIN": {
-                    "bcftools": 1.24
-                },
                 "DS_GERMLINE_SELECT": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_ANNOTATE": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SITES": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DS": {
-                    "bcftools": 1.24
-                },
-                "DS_VERDICT_SPLIT_DV": {
                     "bcftools": 1.24
                 },
                 "GERMLINE_ANCHORS": {
@@ -718,7 +703,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-10-29T08:35:26.717679294",
+        "timestamp": "2026-11-14T19:15:46.946581303",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
