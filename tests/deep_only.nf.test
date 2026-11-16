@@ -46,7 +46,7 @@ nextflow_pipeline {
 
                 // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
                 { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
-                // ── Tumour-only germline (DeepSomatic verdict): DeepVariant's own records, every genotype with an ALT ──
+                // ── Tumour-only germline (DeepSomatic verdict): DeepVariant's own records ──
                 { PhasedVcf.assertAllAlt("$outputDir", ['sample3']) },
                 { PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/germline_smallvariants.vcf.gz",
                     ["$outputDir/sample3/variants/deepvariant/sample3_germline.vcf.gz"]) },
@@ -104,8 +104,6 @@ nextflow_pipeline {
         }
     }
 
-    // The deep-caller filters keep running with the PASS filter off: RefCall/NoCall (and DeepSomatic GERMLINE/PON)
-    // records must not reach phasing, where joining them at one position failed on DeepSomatic's FORMAT/NAF.
     test("-profile test, deep callers only, smallvar_filter_pass=false") {
 
         when {

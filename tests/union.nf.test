@@ -142,8 +142,6 @@ nextflow_pipeline {
                 { assert workflow.success },
 
                 // ── Only the DeepVariant/DeepSomatic filters run ─────────────
-                // With the param false the Clair PASS filters do not run; the deep callers' filters still drop
-                // RefCall/NoCall/GERMLINE/PON records (and repair DeepSomatic's NAF declaration).
                 {
                     def versions = file("$outputDir/pipeline_info/lrsomatic_software_mqc_versions.yml")
                     assert versions.exists()
@@ -160,7 +158,7 @@ nextflow_pipeline {
                         def som  = PhasedVcf.records("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz")
                         assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
                         assert !som.isEmpty() : "${s}: phased somatic VCF has no records"
-                        // Tumour-only germline stays PASS: VCFSPLIT rewrites ClairS-TO's FILTER, DeepVariant is PASS-filtered before the verdict selection
+                        // Tumour-only germline stays PASS: VCFSPLIT rewrites ClairS-TO's FILTER, DeepVariant is PASS-filtered
                         if (s == 'sample3') {
                             assert germ.every { it[6] == 'PASS' } : "${s}: non-PASS record in the tumour-only germline arm"
                         } else {
@@ -170,7 +168,6 @@ nextflow_pipeline {
                         if (s != 'sample3') {
                             assert som.any { it[6] != 'PASS' } : "${s}: no non-PASS somatic record with the filter off"
                         }
-                        // DeepSomatic records without a call or with a germline/PON verdict never reach the somatic arm
                         assert som.every { rec -> !rec[6].split(';').any { it in ['RefCall', 'NoCall', 'GERMLINE', 'PON'] } } :
                             "${s}: DeepSomatic RefCall/NoCall/GERMLINE/PON record in the somatic arm"
                         assert som.every { PhasedVcf.hasFlag(it, 'SOMATIC') } : "${s}: somatic record without INFO/SOMATIC"

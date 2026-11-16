@@ -6,13 +6,7 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // PR CI runs only `small` tests, and the one real run there (default) keeps the Clair callers only. The record-level
-    // checks of the deep-caller paths (consensus, union, deep_only) are `extended`. These -stub runs put both callers in
-    // each arm so every filter and combine step runs on every PR, and check what conf/modules.config resolved per task
-    // (smallvar_wiring.config records it): the withName selectors of the DeepVariant/DeepSomatic filters (paired germline,
-    // tumour-only germline and both somatic arms differ), which caller SMALL_VARIANT_CONSENSUS passes first, the fasta/fai
-    // inputs of BCFTOOLS_CALLER_CONSENSUS and the DS_GERMLINE_SELECT knobs. The test samplesheet has two pairs (sample1,
-    // sample2) and one tumour-only sample (sample3).
+    // Both callers per arm so PR CI (`small` only) runs every filter/combine step; the deep-caller tests are `extended`
 
     test("-profile test, both callers, consensus, deep germline priority, smallvar_filter_pass=false - stub") {
 
@@ -45,7 +39,7 @@ nextflow_pipeline {
             def select    = TaskRecord.of(work, 'DS_GERMLINE_SELECT')
             assertAll(
                 { assert workflow.success },
-                // Paired germline DeepVariant: alt-genotype PASS/LowQual calls; tumour-only germline stays PASS-only
+                // Tumour-only germline stays PASS-only
                 { assert dv_paired.keySet() == paired as Set : "paired DEEPVARIANT_PASS_FILTER: ${dv_paired}" },
                 { assert dv_paired.values().every { r -> r.args == unfilter + ' --output-type z --write-index=tbi' } : "${dv_paired}" },
                 { assert dv_to.keySet() == ['sample3'] as Set : "tumour-only DEEPVARIANT_PASS_FILTER: ${dv_to}" },
@@ -53,10 +47,8 @@ nextflow_pipeline {
                 // DeepSomatic, both arms: DEEPSOMATIC_FILTER adds the output options itself
                 { assert ds.keySet() == all as Set : "DEEPSOMATIC_PASS_FILTER: ${ds}" },
                 { assert ds.values().every { r -> r.args == unfilter } : "${ds}" },
-                // The Clair PASS filters are off
                 { assert TaskRecord.of(work, 'CLAIR3_PASS_FILTER').isEmpty() },
                 { assert TaskRecord.of(work, 'CLAIRS_PASS_FILTER').isEmpty() },
-                // Consensus, the priority caller's VCF first; the module's own defaults (no ext.args)
                 { assert germ.keySet() == all as Set : "germline BCFTOOLS_CALLER_CONSENSUS: ${germ}" },
                 { assert som.keySet() == all as Set : "somatic BCFTOOLS_CALLER_CONSENSUS: ${som}" },
                 {
@@ -73,7 +65,6 @@ nextflow_pipeline {
                     }
                 },
                 { assert TaskRecord.of(work, 'BCFTOOLS_CALLER_UNION').isEmpty() },
-                // Tumour-only germline: DeepVariant's PASS records with a GERMLINE/PON DeepSomatic verdict (raw DeepSomatic VCF)
                 { assert select.keySet() == ['sample3'] as Set : "DS_GERMLINE_SELECT: ${select}" },
                 {
                     def r = select.sample3
@@ -121,7 +112,6 @@ nextflow_pipeline {
                 { assert ds.keySet() == all as Set && ds.values().every { r -> r.args == '--apply-filters PASS' } : "DEEPSOMATIC_PASS_FILTER: ${ds}" },
                 { assert clair3.keySet() == paired as Set && clair3.values().every { r -> r.args == pass_view } : "CLAIR3_PASS_FILTER: ${clair3}" },
                 { assert clairs.keySet() == paired as Set && clairs.values().every { r -> r.args == pass_view } : "CLAIRS_PASS_FILTER: ${clairs}" },
-                // Union, the priority caller's VCF first
                 { assert germ.keySet() == all as Set : "germline BCFTOOLS_CALLER_UNION: ${germ}" },
                 { assert som.keySet() == all as Set : "somatic BCFTOOLS_CALLER_UNION: ${som}" },
                 {

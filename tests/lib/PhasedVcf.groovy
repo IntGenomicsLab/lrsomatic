@@ -44,7 +44,7 @@ class PhasedVcf {
         "${rec[0]}:${rec[1]}:${rec[3]}:${rec[4]}:${alleles.join('/')}"
     }
 
-    // Every record of a published VCF (or those `select` picks) is a record (alleles and genotype) of one of the source VCFs
+    // Every (selected) record of a VCF matches a record, alleles and genotype, of one of the source VCFs
     static void assertRecordsFrom(String vcf, List<String> sources, Closure select = { _rec -> true }) {
         def known = sources.collectMany { src -> records(src).collect { callKey(it) } }.toSet()
         def made = records(vcf).findAll { select(it) && !(callKey(it) in known) }

@@ -34,10 +34,7 @@ nextflow_process {
                 .findAll { line -> !line.startsWith('#') }
                 .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
 
-            // Kept unchanged: 100 (genotypes differ, priority wins), 400 (same alleles, other order),
-            // 500 (called C shared; the uncalled G stays in ALT), 900 (ACG>ATG matches the other's 901 C>T once split).
-            // Dropped: 200 (C>A is listed but not called: the old split/rejoin path published C>A 0/0),
-            // 300 (T called by the priority caller only), 600 (RefCall 0/0), 700 (priority only), 800 (other only).
+            // Dropped: 200 (ALT not called), 300/700 (priority only), 600 (RefCall), 800 (other only)
             assert kept == [
                 '100:A>T:0/1',
                 '400:T>C,G:1/2',
@@ -47,7 +44,6 @@ nextflow_process {
         }
     }
 
-    // DS_GERMLINE_SELECT: DeepVariant records whose called alleles all carry a DeepSomatic GERMLINE/PON verdict
     test("DeepSomatic verdict mode - DeepVariant's own records whose called alleles are all judged germline") {
 
         config "./verdict.config"
@@ -75,11 +71,7 @@ nextflow_process {
                 .findAll { line -> !line.startsWith('#') }
                 .collect { line -> def f = line.split('\t'); "${f[1]}:${f[3]}>${f[4]}:${f[9]}" }
 
-            // Kept unchanged: 100 (GERMLINE, written 0/0 by DeepSomatic), 400 (both called alleles GERMLINE),
-            // 500 (called C has a PON verdict), 900 (both split alleles GERMLINE).
-            // Dropped: 200 (only the uncalled A is GERMLINE: the old split/rejoin chain published C>A 0/0),
-            // 300 (T is DeepSomatic PASS, i.e. somatic: the old chain published G>A 1/0), 600 (RefCall),
-            // 700 (DeepSomatic PASS).
+            // Dropped: 200 (only the uncalled ALT is GERMLINE), 300/700 (DeepSomatic PASS), 600 (RefCall)
             assert kept == [
                 '100:A>T:0/1',
                 '400:T>C,G:1/2',

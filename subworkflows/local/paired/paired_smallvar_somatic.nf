@@ -118,8 +118,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             ds_pon_channel
         )
 
-        // Filtered copy for downstream steps (PASS, or with --smallvar_filter_pass false the alt-genotype PASS/LowQual
-        // records, never RefCall/NoCall/GERMLINE), with the FORMAT/NAF declaration repaired; published VCFs are untouched.
+        // Filtered copy for downstream steps; published VCFs are untouched.
         DEEPSOMATIC_PASS_FILTER ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true) )
         def deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
             .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)

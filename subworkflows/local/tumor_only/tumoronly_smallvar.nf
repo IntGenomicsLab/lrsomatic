@@ -161,8 +161,7 @@ workflow TUMORONLY_SMALLVAR {
             [[:],[]],  // GZI (empty if FASTA is uncompressed)
             ds_pon_channel
         )
-        // Filtered copy for downstream steps (PASS, or with --smallvar_filter_pass false the alt-genotype PASS/LowQual
-        // records, never RefCall/NoCall/GERMLINE/PON), with the FORMAT/NAF declaration repaired; published VCFs are untouched.
+        // Filtered copy for downstream steps; published VCFs are untouched.
         DEEPSOMATIC_PASS_FILTER ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true) )
         def deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
             .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
@@ -214,9 +213,7 @@ workflow TUMORONLY_SMALLVAR {
             // GERMLINE VERDICT TRANSFER: DeepVariant on the tumor BAM cannot tell germline from somatic.
             //
             // MODULE: DS_GERMLINE_SELECT (BCFTOOLS_CALLER_CONSENSUS alias, label: process_medium)
-            // Outputs DeepVariant's own PASS records, unchanged, whose called alleles (those in the genotype) all match
-            // (CHROM, POS, REF, ALT, after splitting and left-aligning) a DeepSomatic record with a GERMLINE or PON
-            // verdict in the RAW DeepSomatic VCF (ext.args2 in conf/modules.config).
+            // DeepVariant PASS records whose called alleles all have a GERMLINE/PON verdict in the RAW DeepSomatic VCF
             // Input:  [meta, deepvariant_pass_vcf, tbi, deepsomatic_raw_vcf, tbi]
             //         fasta / fai
             // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]

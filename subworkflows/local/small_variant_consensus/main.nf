@@ -176,8 +176,7 @@ workflow SMALL_VARIANT_CONSENSUS {
     if (combine_method == 'consensus') {
         //
         // MODULE: BCFTOOLS_CALLER_CONSENSUS (label: process_medium)
-        // Splits each caller's records only to match called alleles (in the genotype) on CHROM, POS, REF and ALT;
-        // outputs the priority caller's own records, unchanged, whose called alleles the other caller all calls.
+        // The priority caller's own records, unchanged, whose called alleles the other caller also calls
         // Input:  [meta, prio_vcf, prio_tbi, other_vcf, other_tbi]
         //         fasta / fai
         // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]  -- consensus VCF, sorted

@@ -33,10 +33,7 @@ nextflow_process {
                 .collect { line -> def f = line.split('\t'); "${f[1]}:${f[4]}:${f[6]}:${f[7]}" }
 
             // 200: the other caller's PASS beats the priority LowQual; 300: both non-PASS, priority wins;
-            // 800: one caller's two alleles at one position are both kept (the phasing rejoin joins them);
-            // 900: a PASS record hides the same caller's non-PASS record at its position;
-            // 1000: an exact duplicate is kept once; 1100: the priority caller's SNV and insertion at one POS
-            // are both kept, and the other caller's record there is not
+            // 800/1100: a caller's two alleles at one POS are both kept; 900: PASS hides non-PASS; 1000: exact dup
             assert kept == [
                 '100:T:PASS:CALLER=clair3',
                 '200:A:PASS:CALLER=deepvariant',

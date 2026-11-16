@@ -9,8 +9,7 @@ nextflow_process {
     tag "deepsomatic_filter"
     tag "small"
 
-    // The fixture carries DeepSomatic 1.10's header (FORMAT/NAF declared Number=R, one value per ALT written)
-    // and one record per FILTER class, with two NoCall and two PASS records sharing a position.
+    // Fixture: DeepSomatic 1.10 header (NAF Number=R), one record per FILTER, NoCall and PASS pairs at one POS
     test("PASS filter off - keeps alt PASS/LowQual calls, drops RefCall/NoCall/GERMLINE, repairs NAF") {
 
         config "./unfiltered.config"

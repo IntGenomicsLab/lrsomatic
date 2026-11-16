@@ -22,8 +22,7 @@ process DEEPSOMATIC_FILTER {
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}_deepsomatic_filtered"
     """
-    # DeepSomatic 1.10 declares FORMAT/NAF as Number=R but writes one value per ALT allele, so bcftools
-    # cannot join two records at one position (norm -m +any). Declare it Number=A when the records say so.
+    # DeepSomatic 1.10 declares FORMAT/NAF Number=R but writes Number=A values, which breaks norm -m +any
     bcftools view -h ${vcf} > header.txt
     naf=\$( { bcftools query -i 'FMT/NAF!="."' -f '%ALT\\t[%NAF]\\n' ${vcf} || true; } | head -n 1 )
     if [ -n "\${naf}" ] && grep -q '^##FORMAT=<ID=NAF,Number=R,' header.txt; then

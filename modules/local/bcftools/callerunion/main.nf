@@ -22,8 +22,7 @@ process BCFTOOLS_CALLER_UNION {
     prefix = task.ext.prefix ?: "${meta.id}_union"
     """
     # One caller per CHROM:POS: PASS first, then the rest; the priority caller wins within each tier.
-    # Within a caller only exact duplicates (same POS, REF and ALT) are dropped: two alleles at one POS are both
-    # kept, and PHASING_HAPLOTYPING joins them into one record (norm -m +any) before LongPhase.
+    # -d exact: a caller's two alleles at one POS are both kept; PHASING_HAPLOTYPING joins them later.
     bcftools view --no-version -f PASS ${prio_vcf} -Ou \\
         | bcftools norm --no-version -d exact -Oz -W=tbi -o prio_pass.vcf.gz
     bcftools view --no-version -f PASS -T ^prio_pass.vcf.gz ${other_vcf} -Ou \\
