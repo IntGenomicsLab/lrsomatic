@@ -365,7 +365,6 @@
                 "sample1/qc/whatshap_stats/sample1_whatshap_stats.tsv",
                 "sample1/report",
                 "sample1/report/sample1_report.html",
-                "sample1/report/sample1_small_variants.tsv.gz",
                 "sample1/variants",
                 "sample1/variants/clair3",
                 "sample1/variants/clair3/merge_output.vcf.gz",
@@ -506,7 +505,6 @@
                 "sample2/qc/whatshap_stats/sample2_whatshap_stats.tsv",
                 "sample2/report",
                 "sample2/report/sample2_report.html",
-                "sample2/report/sample2_small_variants.tsv.gz",
                 "sample2/variants",
                 "sample2/variants/clair3",
                 "sample2/variants/clair3/merge_output.vcf.gz",
@@ -610,7 +608,6 @@
                 "sample3/qc/whatshap_stats/sample3_whatshap_stats.tsv",
                 "sample3/report",
                 "sample3/report/sample3_report.html",
-                "sample3/report/sample3_small_variants.tsv.gz",
                 "sample3/variants",
                 "sample3/variants/clairsto",
                 "sample3/variants/clairsto/germline.vcf.gz",
@@ -706,7 +703,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-11-14T19:15:46.946581303",
+        "timestamp": "2026-11-16T23:59:30.95733578",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"
