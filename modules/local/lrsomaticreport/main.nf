@@ -4,7 +4,6 @@ process LRSOMATICREPORT {
 
     // No conda: the image ships render_report.R itself, not just its dependencies (guard in `script:`).
     // TODO: switch to bioconda `lrsomatic-report` once the recipe in ljwharbers/lrsomatic_report is merged. Version bump = these two tags.
-    // TODO: pin to 2.0.0 once released
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
         ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.0.0'
         : 'ghcr.io/ljwharbers/lrsomatic-report:2.0.0'}"
