@@ -15,6 +15,8 @@ process WAKHAN {
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
+    // Staged next to the FASTA, else parallel samtools workers race to build the .fai and fail the task
+    tuple val(meta3), path(fai)
     path(centromere_bed)
 
     output:
@@ -52,9 +54,10 @@ process WAKHAN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
     def centromere = centromere_bed ? "--centromere-bed \$PWD/${centromere_bed}" : ""
+    def link_fai = fai.name != reference.name + ".fai" ? "ln -sf ${fai} ${reference.name}.fai\n" : ''
 
     """
-    wakhan \\
+    ${link_fai}wakhan \\
         all \\
         --target-bam ${tumor_input} \\
         --breakpoints ${breakpoints} \\

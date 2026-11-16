@@ -29,6 +29,13 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "outdir_cache": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory to publish downloaded reference caches to (the VEP cache from --download_vep_cache and the SigProfiler genome payload under sigprofiler/). Defaults to `<outdir>/cache`.",
+                    "help_text": "Point it at shared storage to keep the caches outside a run's results, then pass them to later runs with --vep_cache and --sigprofiler_genome_dir.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "email": {
                     "type": "string",
                     "description": "Email address for completion summary.",
@@ -107,7 +114,7 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Keep only PASS records from each small variant caller for downstream use.",
-                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to consume each caller's unfiltered output, with one exception: in tumour-only mode the ClairS-TO somatic split (`VCFSPLIT`) always keeps only `PASS` calls, so ClairS-TO's `LowQual` somatic candidates are dropped either way (paired ClairS keeps them with false). The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
                     "fa_icon": "fas fa-filter"
                 },
                 "generate_gvcf": {
@@ -236,6 +243,17 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Pass --acf to fibertools qc to add nucleosome autocorrelation to the Fiber-seq QC output."
+                },
+                "keep_kinetic_data": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep the PacBio kinetics tags (fi, fp, ri, rp) on every read: passes --keep to fibertools predict-m6a and turns off any removal of kinetics at alignment.",
+                    "help_text": "By default fibertools predict-m6a strips the kinetics from the reads it calls m6A on, and the alignment step removes them from every other PacBio read. This makes the aligned files considerably smaller. With this set, no step removes them. Keep them only if you need the raw kinetics downstream."
+                },
+                "keep_all_calls": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --all-calls to fibertools predict-m6a to keep every m6A call regardless of its ML score, instead of only calls above its threshold."
                 }
             }
         },
@@ -430,7 +448,8 @@
                 },
                 "savana_chromosomes": {
                     "type": "string",
-                    "description": "Restrict SAVANA's allele counting and binning to given chromosome numbers (SAVANA's -c/--chromosomes), e.g. '19'. Applies to both `savana cna` and `savana to`."
+                    "description": "Restrict SAVANA's allele counting and binning to given chromosome numbers (SAVANA's -c/--chromosomes), e.g. '19'. Applies to both `savana cna` and `savana to`.",
+                    "help_text": "Space-separated chromosome numbers, with 23 for chrX and 24 for chrY, e.g. `'1 4 23'`. Without it SAVANA already uses only chr1-22, chrX and chrY for copy number (chrM and alt, decoy and unplaced contigs are never binned), so this is only needed to narrow that further, as the test profiles do with `'19'`. SV calling is not affected; it is limited by the genome's contigs file."
                 },
                 "savana_allele_min_reads": {
                     "type": "integer",
@@ -746,7 +765,7 @@
                 },
                 "skip_ascat": {
                     "type": "boolean",
-                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's."
+                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's. Either way Verdict tags nothing when the purity is above 0.6."
                 },
                 "skip_savana": {
                     "type": "boolean",
@@ -802,8 +821,8 @@
                 },
                 "use_gpu": {
                     "type": "boolean",
-                    "description": "Run DeepVariant, DeepSomatic, Clair3 and fibertools on a GPU (use with the gpu profile).",
-                    "help_text": "Clair3's GPU image supports NVIDIA GPUs up to compute capability 9.0 (A100, H100, RTX Ada); it fails on newer cards such as the B200, so leave this off there."
+                    "description": "Run DeepVariant/DeepSomatic call_variants and Clair3 on a GPU (use with the gpu profile).",
+                    "help_text": "Only DEEPVARIANT_CALLVARIANTS, DEEPSOMATIC_CALLVARIANTS and CLAIR3 use a GPU; every other step, fibertools-rs included, runs on the CPU either way. The DeepVariant/DeepSomatic 1.10.0-gpu images (TensorFlow 2.16.1, CUDA 12.3) and Clair3's GPU image support NVIDIA GPUs up to the Hopper generation (compute capability 9.0 or lower, e.g. A100, H100); on Blackwell cards such as the B200 (compute capability 10.0) call_variants fails with CUDA_ERROR_INVALID_PTX and Clair3 fails too, so leave this off there."
                 },
                 "skip_report": {
                     "type": "boolean",

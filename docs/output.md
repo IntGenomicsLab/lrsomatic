@@ -238,7 +238,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                   |
 | `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary for the bam file                                                                                   |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files         |
 | `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
 | `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                  |
 | `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                     |
@@ -369,7 +369,7 @@ Present in **tumor-only** samples (no matched normal).
 | `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                           |
 | `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                   |
 
-The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -630,6 +630,8 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_VEP_SAVANA.vcf.gz`              | Annotated SAVANA somatic structural variant vcf file                    |
 | `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
 | `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
+
+The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_`, decoy and other unplaced contigs), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
 
 </details>
 
@@ -973,7 +975,7 @@ Tier cut-offs, the q/P choice and SV filters can be changed with `ext.args` on `
 
 </details>
 
-This is the final step of the pipeline, run after every tool it reads. It renders each sample only once the run's last SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot, ReConPlot, Wakhan and WhatsHap output has been written, because several of those are optional per sample. Disable it with `--skip_report`.
+This is the final step of the pipeline, run after every tool it reads. It renders each sample only once the run's last SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot, ReConPlot and Wakhan output has been written, because several of those are optional per sample. Disable it with `--skip_report`.
 
 The report reads these published outputs of the sample (a skipped tool's section shows a notice):
 
@@ -998,7 +1000,7 @@ Sections:
 - **Circos** — genome-wide SNV density, SVs and copy number, with the tier 1–2 key-finding genes of the ticked gene list(s) labelled around the outside; the labels follow the panel checkboxes, so with no list ticked there are none.
 - **ReConPlot figures** — by default (the report's `--embed slim`) no genome-wide strip, and per-chromosome figures only for chromosomes with a ShatterSeek chromothripsis call, an SV with a Padfoot `HIGH_ONCO`/`HIGH_TSG` rating, or a tier 1–2 SV or copy-number key finding of a ticked gene list. The report option `--embed full` ([usage](usage.md#report-options)) embeds every figure; all of them remain under [`reconplot`](#reconplot).
 - **Copy number** — ASCAT purity/ploidy, whole-genome doubling and LOH (from `metrics.txt`) plus its diagnostic plots, SAVANA's fitted purity/ploidy, and, when WAKHAN ran, its ranked purity/ploidy solutions with the top-ranked solution's copy-number profile and gene copy-number states.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A **Phasing** block shows the WhatsHap statistics of the phased germline VCF.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible **Phasing** block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with `--skip_whatshapstats` or `--skip_qc`.
 
 Filtering in the browser:
 
