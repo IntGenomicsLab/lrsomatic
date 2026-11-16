@@ -108,14 +108,16 @@ spans like the other builtins (no half-open conversion). `TRA/D` is not an HGNC 
 
 The 106 twist-only genes are `snv`-scoped, so a deletion that removes `MYD88` or `NOTCH1`
 entirely does not appear in the panel-filtered SV table; that is a one-cell edit per gene to change.
+Since lrsomatic_report 2.0 these rows carry gene spans too (GENCODE v46 basic on hg38, Liftoff
+v5.1 on CHM13), which the report uses for gene-level copy number only: SV matching still reads
+the `sv`-scoped rows alone. An optional `role` column (`oncogene`, `tsg`, `both`) carries the
+twist list's OG/TSG class and refines the report's key-finding tiers.
 
 The two source lists live in the report tool's repository, so this pair is re-synced from its
-`assets/gene_lists/` rather than rebuilt here.
+`assets/gene_lists/` rather than rebuilt here. As of lrsomatic_report 2.0 the pair is a
+byte-for-byte copy: the corrections below were first made here and are now applied upstream.
 
-#### Corrections applied on top of the upstream lists
-
-This pair is **not** a byte-for-byte copy of the upstream files; re-syncing means re-applying
-these, or fixing them upstream first:
+#### Corrections carried by both copies
 
 | Row                      | Problem                                          | Fix                      |
 | ------------------------ | ------------------------------------------------ | ------------------------ |

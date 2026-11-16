@@ -6,8 +6,8 @@ process LRSOMATICREPORT {
     // TODO: switch to bioconda `lrsomatic-report` once the recipe in ljwharbers/lrsomatic_report is merged. Version bump = these two tags.
     // TODO: pin to 2.0.0 once released
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.0.0-rc1'
-        : 'ghcr.io/ljwharbers/lrsomatic-report:2.0.0-rc1'}"
+        ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.0.0rc1'
+        : 'ghcr.io/ljwharbers/lrsomatic-report:2.0.0rc1'}"
 
     input:
     // Every path input is optional (`[]` when skipped); tumor/normal QC stage apart because a pair shares meta.id.
