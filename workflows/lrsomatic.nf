@@ -460,8 +460,22 @@ workflow LRSOMATIC {
 
     def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
+    // MINIMAP2_ALIGN-only meta keys for ext.args/ext.args3; the subMap after alignment drops them again
+    ch_ubams
+        .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
+        .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
+        .join(basecall_meta.map { meta, model, _kinetics -> [ [ meta.id, meta.type, meta.replicate ], model ] }, failOnMismatch: true)
+        .map { _key, meta, bams, aligned, model ->
+            def model_str = model ? model.toString().trim() : ''
+            def extra = (aligned == 'true' ? [ aligned_input: true ] : [:]) +
+                (meta.platform == 'ont' && model_str ? [ basecall_model: model_str ] : [:])
+            return [ extra ? meta + extra : meta, bams ]
+        }
+        .set { ch_minimap2_in }
+    // ch_minimap2_in: [meta_with_replicate (+ aligned_input, basecall_model where they apply), bam_or_cram]
+
     MINIMAP2_ALIGN (
-        ch_ubams,
+        ch_minimap2_in,
         ch_fasta,
         params.aligned_format,
         aligned_index,
@@ -1192,6 +1206,7 @@ workflow LRSOMATIC {
     // MODULE: WAKHAN (label: process_medium) -- haplotype-aware copy number
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
     //         ch_fasta          -- [[:], fasta]
+    //         ch_fai            -- [[:], fai]
     //         centromere_bed    -- BED file of centromere coordinates (for assembly anchoring)
     // Output: WAKHAN assembly reports (written to outdir)
     //
@@ -1213,6 +1228,7 @@ workflow LRSOMATIC {
         WAKHAN (
             wakhan_input,
             ch_fasta,
+            ch_fai,
             file(params.centromere_bed)
         )
 

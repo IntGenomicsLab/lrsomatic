@@ -31,11 +31,14 @@ lint:
     - validation.summary.afterText
   # a -preview run publishes nothing, so this test asserts on the workflow graph instead of a versions.yml snapshot;
   # aligned_format is a -stub wiring test that asserts on the published file names (versions are snapshotted by default);
-  # kinetics_pairing is a -stub regression test of the pairing joins: it asserts on the task trace and published reports
+  # kinetics_pairing is a -stub regression test of the pairing joins: it asserts on the task trace and published reports;
+  # fiber_replicates and download_vep_cache are -stub tests: they assert on published file names and the task trace
   nf_test_content:
     - tests/sv_annotation_compose.nf.test
     - tests/aligned_format.nf.test
     - tests/kinetics_pairing.nf.test
+    - tests/fiber_replicates.nf.test
+    - tests/download_vep_cache.nf.test
     - tests/stub_dag_coverage.nf.test
 nf_core_version: 4.2.2
 repository_type: pipeline
