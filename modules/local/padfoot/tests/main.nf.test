@@ -180,6 +180,53 @@ nextflow_process {
         }
     }
 
+    test("severus + wakhan - real, custom --gff/--rm (chm13 preset), 50-column FASTA") {
+
+        // the iGenomes CHM13 FASTA is wrapped at 50 columns; the result must match the chm13-preset test above
+        when {
+            process {
+                """
+                def src = file("${projectDir}/tests/fixtures/padfoot_reconplot/chr19_1-2Mb.fasta", checkIfExists: true).readLines()
+                def seq = src.drop(1).join('')
+                def w50 = file("\${workDir}/fasta_w50/chr19_1-2Mb.fasta")
+                w50.parent.mkdirs()
+                w50.text = ([src[0]] + (0..<seq.length()).step(50).collect { i -> seq.substring(i, [i + 50, seq.length()].min()) }).join('\\n') + '\\n'
+                def w50_fai = file("\${workDir}/fasta_w50/chr19_1-2Mb.fasta.fai")
+                w50_fai.text = "chr19\\t\${seq.length()}\\t7\\t50\\t51\\n"
+
+                input[0] = [
+                    [ id:'test', paired_data:'test' ],
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/severus_somatic.vcf.gz", checkIfExists: true),
+                    'severus',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solution_rank_1/integer_profile.vcf", checkIfExists: true),
+                    'wakhan',
+                    file("${projectDir}/tests/fixtures/padfoot_reconplot/wakhan/solutions_ranks.tsv", checkIfExists: true)
+                ]
+                input[1] = [ [ id:'ref' ], w50 ]
+                input[2] = [ [ id:'ref' ], w50_fai ]
+                input[3] = [ [:], 'chm13',
+                             file("${projectDir}/tests/fixtures/padfoot_reconplot/custom_annotation/chr19_1-2Mb.gff3.gz", checkIfExists: true),
+                             file("${projectDir}/tests/fixtures/padfoot_reconplot/custom_annotation/chr19_1-2Mb_rm.fa.out.gz", checkIfExists: true) ]
+                """
+            }
+        }
+
+        then {
+            def svs = path(process.out.annotated_svs.get(0).get(1)).readLines()
+            def svs_by_id = svs.drop(1).collectEntries { line -> def f = line.split('\t', -1); [(f[0]): f] }
+            assertAll(
+                { assert process.success },
+                { assert svs_by_id.keySet() == ['severus_BND1_1', 'severus_BND2_1', 'severus_INS1', 'severus_INS2', 'severus_DEL1', 'severus_DUP1'] as Set },
+                { assert svs_by_id['severus_DEL1'][9] == 'HIGH_ONCO' && svs_by_id['severus_DEL1'][11] == 'STK11' && svs_by_id['severus_DEL1'][20] == 'between_exons' },
+                { assert snapshot(
+                    process.out.annotated_svs,
+                    process.out.by_gene,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+
     test("savana + savana - real, RepeatMasker off") {
 
         when {

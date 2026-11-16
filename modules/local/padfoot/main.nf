@@ -42,12 +42,23 @@ process PADFOOT {
     def ploidy_arg = ploidy_file ? "--ploidy-file ${ploidy_file}" : ''
 
     """
+    # Padfoot reads each 51-bp faidx window as one line: re-wrap FASTAs narrower than that (iGenomes CHM13: 50)
+    ref=${fasta}
+    if awk -F'\\t' '\$4 < 51 && \$2 > \$4 { n++ } END { exit !n }' ${fai}; then
+        trap 'rm -f padfoot_ref.fa padfoot_ref.fa.fai padfoot_contigs.txt' EXIT
+        echo "Re-wrapping ${fasta} to 60 columns for Padfoot" >&2
+        cut -f1 ${fai} > padfoot_contigs.txt
+        samtools faidx -n 60 -r padfoot_contigs.txt -o padfoot_ref.fa ${fasta}
+        samtools faidx padfoot_ref.fa
+        ref=padfoot_ref.fa
+    fi
+
     python3 ${padfoot}/padfoot.py \\
         --sv-vcf ${sv_vcf} \\
         --sv-caller ${sv_caller} \\
         --cna-file ${cna_file} \\
         --cna-caller ${cna_caller} \\
-        --ref ${fasta} \\
+        --ref \$ref \\
         --genome ${genome} \\
         ${gff_arg} \\
         ${rm_arg} \\
