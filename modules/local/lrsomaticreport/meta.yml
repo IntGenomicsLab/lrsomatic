@@ -46,9 +46,18 @@ input:
     - qc_normal_files:
         type: file
         description: Collected normal-sample QC files (matched mode only)
-    - wakhan_files:
+    - extra_relpaths:
+        type: list
+        description: |
+          Relative path under the tool's sample directory for each entry of `extra_files`, in the same order, mirroring
+          the published `<outdir>/<sample>/` layout (e.g. `padfoot/savana/by_gene.tsv`). Must be unique and relative;
+          `[]` when there are none
+    - extra_files:
         type: file
-        description: Collected Wakhan outputs (solutions_ranks.tsv, heatmap HTML, `solution_<rank>/` directories)
+        description: |
+          Every other output the report reads (WhatsHap stats, SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot,
+          ReConPlot PNGs, Wakhan's ranked solutions and top-ranked BEDs), one file per `extra_relpaths` entry. Each stages
+          in its own numbered directory, so files sharing a base name do not collide; `[]` when there are none
   - - gene_lists:
         type: directory
         description: Builtin gene panel TSVs from `assets/gene_lists` (`<name>.tsv` or a `<name>.hg38.tsv` / `<name>.t2t.tsv` pair), passed as `--gene-lists-dir` and replacing the container's set
@@ -67,6 +76,24 @@ output:
           type: file
           description: Self-contained per-sample HTML report
           pattern: "*_report.html"
+  small_variants:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+      - "*_small_variants.tsv.gz":
+          type: file
+          description: Full small-variant table behind the report's variant section, written whenever a somatic VEP file is given
+          pattern: "*_small_variants.tsv.gz"
+  staged:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+      - "staged.txt":
+          type: file
+          description: Stub only, for the tests -- every file under the tool's sample directory with the md5 of its content
+          pattern: "staged.txt"
   versions_lrsomaticreport:
     - - "${task.process}":
           type: string

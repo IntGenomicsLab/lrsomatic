@@ -77,6 +77,9 @@ nextflow_workflow {
                 { assert tasks.count { name -> name.contains('PADFOOT_SAVANA') } == 1 },
                 { assert tasks.any { name -> name.contains('PADFOOT_SAVANA (sample1:') } },
                 { assert staged('sample1/padfoot/savana') == ['sample1.classified.somatic.vcf', 'sample1_segmented_absolute_copy_number.tsv', 'sample1_fitted_purity_ploidy.tsv'] },
+                // Both pairs' tables, each under its <pair>/ dir for LRSOMATICREPORT
+                { assert workflow.out.annotated_svs.collect { _meta, f -> f.tokenize('/')[-2..-1].join('/') }.sort() == ['savana/annotated_svs.tsv', 'severus_wakhan/annotated_svs.tsv'] },
+                { assert workflow.out.by_gene.collect { _meta, f -> f.tokenize('/')[-2..-1].join('/') }.sort() == ['savana/by_gene.tsv', 'severus_wakhan/by_gene.tsv'] },
                 { assert workflow.out.versions.size() >= 1 }
             )
         }

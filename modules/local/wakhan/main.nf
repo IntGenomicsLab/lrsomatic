@@ -39,8 +39,8 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*rephased.vcf.gz.csi")                , emit: rephased_vcf_index
     tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
-    // Whole directories, not the plots inside: every solution's plot has the same basename,
-    // and LRSOMATICREPORT resolves them by rank directory
+    // Whole directories, not the files inside: every solution's files share their basenames,
+    // so Padfoot, ReConPlot, ShatterSeek and the report resolve the top-ranked ones by rank directory
     tuple val(meta), path("solution_rank_*", type: 'dir')                       , emit: solution_dirs
     tuple val("${task.process}"), val('wakhan'), eval("wakhan --version 2>/dev/null | sed 's/^wakhan //'"), topic: versions, emit: versions_wakhan
 

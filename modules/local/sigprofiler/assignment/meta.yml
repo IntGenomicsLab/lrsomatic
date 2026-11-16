@@ -88,6 +88,14 @@ output:
         type: file
         description: Per-mutation probability of each COSMIC signature (Sample Names, Chr without the chr prefix, Pos, MutationType, one column per signature), one per fitted context
         pattern: "*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt"
+  solution_stats:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*/*/Assignment_Solution/Solution_Stats/*_Samples_Stats.txt":
+        type: file
+        description: Per-sample fit statistics (total mutations, cosine similarity, L1/L2 norms, KL divergence, correlation), one per fitted matrix type
+        pattern: "*/*/Assignment_Solution/Solution_Stats/*_Samples_Stats.txt"
   versions_sigprofilerassignment:
     - - ${task.process}:
           type: string

@@ -333,6 +333,16 @@ def reportGenePanelIsFile(tok) {
 }
 
 //
+// LRSOMATICREPORT extra inputs as [[relpath, file], ...]: relpath = base + the file's last `depth` path components,
+// mirroring publishDir (base) + the output glob (depth), so sample_dir matches the published <outdir>/<id>/ layout
+//
+def reportEntries(base, depth, files) {
+    return [files].flatten().findAll { f -> f }.collect { f ->
+        ["${base}/${f.subpath(f.getNameCount() - depth, f.getNameCount())}".toString(), f]
+    }
+}
+
+//
 // Builtin panel names shipped in assets/gene_lists, reference suffix dropped
 //
 def reportBuiltinGenePanels() {

@@ -113,6 +113,13 @@ workflow ECDNA {
     }
     // ch_for_classifier: [meta, dir]
 
+    // The amplicon summary of the cycles the classifier reads (reconstruct/ or cycles/), lists amplicons without AC
+    ch_for_classifier
+        .map { meta, dir -> [meta, dir.listFiles().find { f -> f.name.endsWith('_amplicon_summary.txt') }] }
+        .filter { _meta, summary -> summary != null }
+        .set { ch_summary }
+    // ch_summary: [meta, <reconstruct|cycles>/<id>_amplicon_summary.txt]
+
     //
     // MODULE: CORAL_PLOT (label: process_medium)
     // Runs beside the classifier rather than in front of it: plotting is cosmetic
@@ -138,6 +145,8 @@ workflow ECDNA {
     // Output: .classification -- [meta, tsv]  -- amplicon_classification_profiles.tsv
     //
     ch_classification = channel.empty()
+    ch_gene_list      = channel.empty()
+    ch_result_table   = channel.empty()
     if (!params.skip_ampliconclassifier) {
         AMPLICONCLASSIFIER (
             ch_for_classifier,
@@ -145,10 +154,16 @@ workflow ECDNA {
             ac_ref
         )
         ch_classification = AMPLICONCLASSIFIER.out.classification
+        ch_gene_list      = AMPLICONCLASSIFIER.out.gene_list
+        ch_result_table   = AMPLICONCLASSIFIER.out.result_table
     }
 
     emit:
     classification = ch_classification                    // [meta, tsv]
+    gene_list      = ch_gene_list                         // [meta, tsv]  -- genes per amplicon feature
+    result_table   = ch_result_table                      // [meta, tsv]  -- one row per amplicon feature
     reconstruction = CORAL_RECONSTRUCT.out.reconstruction // [meta, dir]
+    summary        = ch_summary                           // [meta, txt]  -- amplicon summary of the classified cycles
     plots          = ch_plots                             // [meta, [files]]
+    seeds          = CORAL_SEED.out.seeds                 // [meta, bed]  -- amplified intervals; empty when none pass --gain
 }

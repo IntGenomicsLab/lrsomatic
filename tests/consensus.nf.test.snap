@@ -119,7 +119,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "1.6.1"
+                    "lrsomatic_report": "2.0.0-rc1"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.24
@@ -386,6 +386,7 @@
                 "sample1/qc/whatshap_stats/sample1_whatshap_stats.tsv",
                 "sample1/report",
                 "sample1/report/sample1_report.html",
+                "sample1/report/sample1_small_variants.tsv.gz",
                 "sample1/variants",
                 "sample1/variants/clair3",
                 "sample1/variants/clair3/merge_output.vcf.gz",
@@ -526,6 +527,7 @@
                 "sample2/qc/whatshap_stats/sample2_whatshap_stats.tsv",
                 "sample2/report",
                 "sample2/report/sample2_report.html",
+                "sample2/report/sample2_small_variants.tsv.gz",
                 "sample2/variants",
                 "sample2/variants/clair3",
                 "sample2/variants/clair3/merge_output.vcf.gz",
@@ -629,6 +631,7 @@
                 "sample3/qc/whatshap_stats/sample3_whatshap_stats.tsv",
                 "sample3/report",
                 "sample3/report/sample3_report.html",
+                "sample3/report/sample3_small_variants.tsv.gz",
                 "sample3/variants",
                 "sample3/variants/clairsto",
                 "sample3/variants/clairsto/germline.vcf.gz",

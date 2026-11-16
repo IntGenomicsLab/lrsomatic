@@ -229,8 +229,9 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   ├── normal                          # paired samples only
 │   │   └── [same subdirectories as tumor]
 │   ├── whatshap_stats
-│   │   ├── sample.stats.tsv
-│   │   ├── sample.blocklist.tsv
+│   │   ├── sample_whatshap_stats.tsv
+│   │   ├── sample_whatshap_stats.gtf
+│   │   ├── sample_whatshap_stats.log
 ```
 
 | File                                                              | Description                                                                                                              |
@@ -247,8 +248,9 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | `samtools/sample_{type}.flagstat`                                 | a summary of the counts of different samtools flags                                                                      |
 | `samtools/sample_{type}.idxstats`                                 | a summary of the number of mapped and unmapped reads                                                                     |
 | `samtools/sample_{type}.stats`                                    | summary statistics from the bamfile                                                                                      |
-| `whatshap_stats/sample.stats.tsv`                                 | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
-| `whatshap_stats/sample.blocklist.tsv`                             | list of all phase blocks with their genomic coordinates                                                                  |
+| `whatshap_stats/sample_whatshap_stats.tsv`                        | WhatsHap phasing statistics of the phased germline VCF, per chromosome and overall (`ALL`), including phase block N50   |
+| `whatshap_stats/sample_whatshap_stats.gtf`                        | Phase blocks as GTF features with their genomic coordinates                                                              |
+| `whatshap_stats/sample_whatshap_stats.log`                        | WhatsHap log                                                                                                             |
 
 </details>
 
@@ -961,23 +963,40 @@ Tier cut-offs, the q/P choice and SV filters can be changed with `ext.args` on `
 ```
 ├── report
 │   ├── {sample}_report.html
+│   ├── {sample}_small_variants.tsv.gz
 ```
 
-| File                   | Description                                                                                                                                                                                                                                                                                                                                         |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{sample}_report.html` | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report), run from `ghcr.io/ljwharbers/lrsomatic-report`): circos plot, small/structural variant tables, copy-number summary, and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+| File                               | Description                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{sample}_report.html`             | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report), run from `ghcr.io/ljwharbers/lrsomatic-report`): clinical overview, circos plot, small/structural variant tables, copy number, genomic instability, signatures and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+| `{sample}_small_variants.tsv.gz`   | The full small-variant table behind the report's variant section, every row and column, as gzipped TSV. Written whenever a somatic VEP file exists (not with `--skip_vep`). The HTML may embed only part of it (see `--embed` in [usage](usage.md#report-options)); this file is always complete.                                                    |
 
 </details>
 
-This is the final step of the pipeline, run after SNV/SV calling, ASCAT, WAKHAN and QC. Disable it with `--skip_report`.
+This is the final step of the pipeline, run after every tool it reads. It renders each sample only once the run's last SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot, ReConPlot, Wakhan and WhatsHap output has been written, because several of those are optional per sample. Disable it with `--skip_report`.
+
+The report reads these published outputs of the sample (a skipped tool's section shows a notice):
+
+| Report section                       | Files read                                                                                                                                                                                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Small variants                       | `vep/somatic/{sample}_SOMATIC_VEP.vcf.gz`, `variants/phased/` somatic VCF                                                                                                                                                                          |
+| Structural variants                  | `variants/severus/somatic_SVs/severus_somatic.vcf.gz`, `vep/SVs/{sample}_SV_VEP.vcf.gz`; SAVANA's `variants/savana/{sample}[.pon_filtered].classified.somatic.vcf` (PoN-filtered for PacBio tumour-only) and `vep/SVs/{sample}_VEP_SAVANA.vcf.gz` |
+| SV annotation and figures            | `padfoot/{pair}/{annotated_svs,by_gene}.tsv`, `reconplot/{pair}/{genome_wide,per_chromosome}/*.png`                                                                                                                                                |
+| Copy number                          | `ascat/{sample}.{purityploidy,segments_raw,metrics}.txt` and plots, `variants/savana/{sample}_fitted_purity_ploidy.tsv`, `wakhan/solutions_ranks.tsv`, `wakhan/solution_rank_1/{integer_profile.bed,genes/genes_copynumber_states.bed}`             |
+| Chromothripsis                       | `shatterseek/{pair}/{sample}.shatterseek.tsv`                                                                                                                                                                                                      |
+| ecDNA                                | `ecdna/amplicon_classifier/{sample}_{amplicon_classification_profiles,gene_list,result_table}.tsv`, `ecdna/coral/{sample}_CNV_SEEDS.bed`, `ecdna/coral/{reconstruct,cycles}/{sample}_amplicon_summary.txt`, `ecdna/coral/plots/*_{graph,cycles}.png` |
+| Mutational signatures                | `signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/`, `signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all`                                                                          |
+| QC and phasing                       | mosdepth, cramino and samtools files under `qc/{tumor,normal}/`, `qc/whatshap_stats/{sample}_whatshap_stats.tsv`                                                                                                                                  |
+
+Wakhan's interactive HTML plots (`wakhan/solution_*/integer_profile.html`, the subclonal profiles and `{sample}_heatmap_ploidy_purity.html`) are no longer embedded in the report, which draws the top-ranked solution's copy-number profile from `integer_profile.bed` instead; open them from the [`wakhan`](#wakhan) directory.
 
 Sections:
 
 - **Small variants** — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set from the phased somatic VCF; a footnote names the file those columns came from and, after a consensus run, notes that a multi-caller variant's VAF comes from whichever caller won the merge. Unfiltered by default; see `--report_gene_panel` in [usage](usage.md#report-options).
   - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
 - **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
-- **Copy number** — ASCAT purity/ploidy plus its diagnostic plots, and, when WAKHAN ran, its ranked purity/ploidy solutions with the interactive per-solution genome copy-number/breakpoint plots and the ploidy/purity heatmap.
-- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side.
+- **Copy number** — ASCAT purity/ploidy, whole-genome doubling and LOH (from `metrics.txt`) plus its diagnostic plots, SAVANA's fitted purity/ploidy, and, when WAKHAN ran, its ranked purity/ploidy solutions with the top-ranked solution's copy-number profile and gene copy-number states.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A **Phasing** block shows the WhatsHap statistics of the phased germline VCF.
 
 Filtering in the browser:
 

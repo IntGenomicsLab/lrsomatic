@@ -18,6 +18,7 @@ process SIGPROFILER_ASSIGNMENT {
     tuple val(meta), path("*/ID83")                                                                               , emit: id83                      , optional: true
     tuple val(meta), path("*/*/Assignment_Solution/Activities/*_Activities.txt")                                  , emit: activities                , optional: true
     tuple val(meta), path("*/*/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/*.txt")           , emit: probabilities_per_mutation, optional: true
+    tuple val(meta), path("*/*/Assignment_Solution/Solution_Stats/*_Samples_Stats.txt")                           , emit: solution_stats            , optional: true
     tuple val("${task.process}"), val('sigprofilerassignment'), eval("python -c 'import importlib.metadata as m; print(m.version(\"SigProfilerAssignment\"))'"), topic: versions, emit: versions_sigprofilerassignment
 
     when:
@@ -84,8 +85,9 @@ process SIGPROFILER_ASSIGNMENT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sample = meta.id.toString().replaceAll(/[^A-Za-z0-9_-]/, '_')
     """
-    mkdir -p ${prefix}/SBS96/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities
+    mkdir -p ${prefix}/SBS96/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities ${prefix}/SBS96/Assignment_Solution/Solution_Stats
     touch ${prefix}/SBS96/Assignment_Solution/Activities/Assignment_Solution_Activities.txt
     touch ${prefix}/SBS96/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/Decomposed_Mutation_Probabilities_${sample}.txt
+    touch ${prefix}/SBS96/Assignment_Solution/Solution_Stats/Assignment_Solution_Samples_Stats.txt
     """
 }

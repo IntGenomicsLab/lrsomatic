@@ -46,7 +46,13 @@ nextflow_workflow {
                 { assert names.contains('ECDNA:AMPLICONCLASSIFIER') },
                 // Cycle re-extraction is opt-in
                 { assert !names.contains('ECDNA:CORAL_CYCLE') },
-                { assert workflow.out.classification.size() == 1 }
+                { assert workflow.out.classification.size() == 1 },
+                // The files LRSOMATICREPORT stages: AC's gene list and result table, the seeds and the amplicon summary
+                { assert workflow.out.gene_list.size() == 1 },
+                { assert workflow.out.result_table.size() == 1 },
+                { assert workflow.out.seeds.size() == 1 },
+                { assert workflow.out.summary.size() == 1 },
+                { assert workflow.out.summary[0][1].endsWith('/reconstruct/sample1_amplicon_summary.txt') }
             )
         }
     }
@@ -81,7 +87,10 @@ nextflow_workflow {
                 { assert names.contains('ECDNA:CORAL_CYCLE') },
                 { assert names.contains('ECDNA:CORAL_PLOT') },
                 { assert names.contains('ECDNA:AMPLICONCLASSIFIER') },
-                { assert workflow.out.plots.size() == 1 }
+                { assert workflow.out.plots.size() == 1 },
+                // The summary comes from the cycles the classifier read
+                { assert workflow.out.summary.size() == 1 },
+                { assert workflow.out.summary[0][1].endsWith('/cycles/sample1_amplicon_summary.txt') }
             )
         }
     }
@@ -153,7 +162,10 @@ nextflow_workflow {
                 { assert !names.contains('ECDNA:CORAL_PLOT') },
                 { assert !names.contains('ECDNA:AMPLICONCLASSIFIER') },
                 { assert workflow.out.reconstruction.size() == 0 },
-                { assert workflow.out.classification.size() == 0 }
+                { assert workflow.out.classification.size() == 0 },
+                // The empty seed BED is still emitted (and published), but no summary
+                { assert workflow.out.seeds.size() == 1 },
+                { assert workflow.out.summary.size() == 0 }
             )
         }
     }
@@ -189,7 +201,10 @@ nextflow_workflow {
                 { assert names.contains('ECDNA:CORAL_RECONSTRUCT') },
                 { assert !names.contains('ECDNA:AMPLICONCLASSIFIER') },
                 { assert workflow.out.reconstruction.size() == 1 },
-                { assert workflow.out.classification.size() == 0 }
+                { assert workflow.out.classification.size() == 0 },
+                // Without AC the summary is what lists the amplicons
+                { assert workflow.out.gene_list.size() == 0 },
+                { assert workflow.out.summary.size() == 1 }
             )
         }
     }
