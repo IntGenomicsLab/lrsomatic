@@ -70,7 +70,7 @@ workflow PAIRED_SAVANA {
     SAVANA_CNA (
         savana_cna_input,
         ch_fasta_fai,
-        [],  // contigs: `savana cna` has no --contigs option (only `run`/`to` do); it bins chr1-22,X,Y only (hard-coded), --savana_chromosomes narrows that
+        [],  // contigs: `savana cna` has no --contigs option
         [],  // blacklist (unused)
         []   // g1000_vcf (unused -- snp_vcf takes priority in paired mode)
     )
