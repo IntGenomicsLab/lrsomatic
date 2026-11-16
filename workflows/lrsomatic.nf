@@ -127,7 +127,8 @@ workflow LRSOMATIC {
     params.sigprofiler_genome_url = getGenomeAttribute('sigprofiler_genome_url')
     params.coral_ref = getGenomeAttribute('coral_ref')
     params.ac_ref = getGenomeAttribute('ac_ref')
-    params.aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
+    // A local: aaDataRepoMd5() in the utils script cannot see a param assigned here
+    def aa_data_repo_url = getGenomeAttribute('aa_data_repo_url')
 
     // Resolved once here to avoid a HEAD request per default plugin URL, and passed straight to
     // the VEP tasks: conf/modules.config closures do not see a param assigned here.
@@ -1240,8 +1241,8 @@ workflow LRSOMATIC {
         if (!params.skip_ampliconclassifier) {
             PREPARE_AA_DATA_REPO (
                 params.aa_data_repo,
-                params.aa_data_repo_url,
-                aaDataRepoMd5()
+                aa_data_repo_url,
+                aaDataRepoMd5(aa_data_repo_url)
             )
             ch_aa_data_repo = PREPARE_AA_DATA_REPO.out.data_repo
             ch_versions = ch_versions.mix(PREPARE_AA_DATA_REPO.out.versions)

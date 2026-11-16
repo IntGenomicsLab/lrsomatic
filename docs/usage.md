@@ -250,14 +250,15 @@ On any other genome, DMR is skipped with a `log.warn` (not a hard failure) unles
 
 #### VEP options:
 
-| Parameter              | Description                                                                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
-| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                         |
-| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`          |
-| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
-| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
-| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                        |
+| Parameter              | Description                                                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/).               |
+| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                                       |
+| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`                        |
+| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                              |
+| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                                            |
+| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                                      |
+| `--outdir_cache`       | Directory the downloaded VEP cache (`--download_vep_cache`) and SigProfiler genome payload (`sigprofiler/volume`) are published to. Default = `<outdir>/cache` |
 
 #### VEP plugin options:
 
@@ -332,9 +333,11 @@ Use `--aligned_format bam` if a tool you run on the results cannot read CRAM, or
 
 #### Fibertools Options
 
-| Parameter           | Description                                                                      |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `--autocorrelation` | A boolean to enable autocorrelation computation in fibertools. Default = `false` |
+| Parameter             | Description                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--autocorrelation`   | A boolean to enable autocorrelation computation in fibertools. Default = `false`                                                                                                                                                                                                                                                                                                                                                        |
+| `--keep_kinetic_data` | A boolean to keep the PacBio kinetics tags (`fi`, `fp`, `ri`, `rp`) on every read. It passes `--keep` to `ft predict-m6a`, which otherwise strips them from the reads it calls m6A on, and it also turns off the removal of kinetics from PacBio reads at alignment (added in [#239](https://github.com/IntGenomicsLab/lrsomatic/pull/239)). By default they are removed, which keeps the aligned files much smaller. Default = `false` |
+| `--keep_all_calls`    | A boolean to keep every m6A call regardless of its ML score (`ft predict-m6a --all-calls`). Default = `false`                                                                                                                                                                                                                                                                                                                           |
 
 #### SEVERUS Options
 
@@ -440,7 +443,7 @@ Checked at launch:
 
 Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline:
 
-- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`;
+- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume` (or `<outdir_cache>/sigprofiler/volume` with `--outdir_cache`);
 - `--sigprofiler_genome_dir` points at an existing SigProfilerMatrixGenerator volume instead (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run). It takes precedence over the download, so pass it on later runs to skip the ~3 GB fetch.
 
 Running with `--download_sigprofiler_genome false` and no `--sigprofiler_genome_dir`, or with a `--genome` that has no SigProfilerMatrixGenerator genome and no `--sigprofiler_genome`, stops the pipeline at start-up unless `--skip_signatures` is set.
@@ -971,6 +974,8 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 ### Resource requests
 
 Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the pipeline steps, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher resources request (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
+
+The defaults are sized for ~30x whole genomes, and several steps ask for well over 100 GB of memory. The pipeline sets no limit on what a step may request, so on a machine or cluster with less memory, or fewer cpus, set [`resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) (in a custom config passed with `-c`, or through an institutional profile) to the largest job it can run; requests above the limit are then lowered to it. Without it, the local executor refuses a task that asks for more than the machine has, and Slurm may leave it pending. `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` request memory per cpu, at least 8 cpus' worth: 16 GB per cpu for a DeepSomatic tumour-normal pair and 8 GB per cpu for DeepVariant and tumour-only DeepSomatic, i.e. 192 GB and 96 GB at the default 12 cpus. They are the steps where the limit matters most: when one of their workers is killed for lack of memory they do not fail but wait, idle, until the time limit (4 h, doubled on a retry). A 30x ONT pair with `--generate_gvcf` used 134 GB in paired DeepSomatic and 69 GB in DeepVariant on the normal (12 cpus); a 30x PacBio tumour-only sample used 39 GB and 29 GB. Pairs or gVCF output at that depth need a machine with that much memory.
 
 To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
 
