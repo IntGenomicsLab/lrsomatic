@@ -107,6 +107,53 @@ embeds its reference or matches `--fasta`. Otherwise `SAMTOOLS_VIEW_FIBERPREP` f
 `Failed to populate reference` error, unless its `UR:` path or `REF_PATH` is reachable: write the CRAM with
 `--output-fmt-option embed_ref=1`, convert it to BAM, or run with the `--fasta` it was aligned to.
 
+### Aligned input
+
+Aligned input (BAM or CRAM with `@SQ` lines) is turned back into reads before alignment: `MINIMAP2_ALIGN` runs
+`samtools reset | samtools fastq -T '*'` and `minimap2 -y`, which copies every read tag into the new records. For
+aligned input the reset step drops the tags that describe the old alignment or its phasing, so none is duplicated or
+carried over stale into the new alignment:
+
+- everything `samtools reset` drops by default (`AS`, `CC`, `CG`, `CP`, `H0`, `H1`, `H2`, `HI`, `IH`, `MC`, `MD`, `MQ`,
+  `NM`, `SA`, `TS`);
+- minimap2's tags `tp`, `cm`, `s1`, `s2`, `nn`, `ms`, `de`, `dv`, `rl`, `zd`, `cs`, `cg`, `ds`, which minimap2 writes
+  again for the new alignment;
+- phasing tags `HP`, `PS`, `PQ`, `PC` (from WhatsHap, LongPhase or HiPhase, including the pipeline's own haplotagged
+  output), which would otherwise give Severus, SAVANA, Wakhan and modkit the phasing of the old alignment;
+- `OA`, `XA`, `XS` (original alignment, other aligners' alternative hits), and the read group `RG`, which is
+  replaced by the pipeline's own.
+
+Every other tag is kept, in particular base modifications (`MM`, `ML`, `MN`), fibertools-rs output and read-level
+tags written by Dorado or the PacBio instruments (`qs`, `ns`, `ts`, `mv`, `pi`, `sp`, `np`, `rq`, `sn`, `ec`, `zm`,
+...). The one exception is the PacBio kinetics (`fi`, `fp`, `ri`, `rp`, `ip`, `pw`): they are dropped from every
+PacBio row, aligned or not, unless `--keep_kinetic_data` is set (see [PacBio kinetics](#pacbio-kinetics)). This is a
+deny-list rather than an allow-list on purpose: the read-level tags vary with the basecaller version and chemistry,
+and an allow-list would silently drop one a user or a downstream tool relies on. The cost is that a tag from an
+aligner or phasing tool not listed above survives the realignment; if your input carries such tags, remove them first
+(e.g. `samtools view -x`). Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript
+strand, splice mode only) and is kept.
+
+Unaligned input keeps every tag except `RG`, and for PacBio the kinetics: unaligned ONT input drops only `RG`,
+unaligned PacBio input drops `RG,fi,fp,ri,rp,ip,pw` unless `--keep_kinetic_data` is set.
+
+Each samplesheet row gets one new read group, `@RG ID:<sample>_<type>_rep<replicate>`. For ONT input whose header
+names its basecalling model (Dorado's `DS:basecall_model=...`), the model is written into that read group as
+`DS:basecall_model=<model>`, so a BAM/CRAM published by the pipeline can be fed back in without filling the model
+columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
+groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
+rows (from the original input files) if you need them kept apart.
+
+### PacBio kinetics
+
+PacBio HiFi reads written with `--keep-kinetics` carry per-base kinetics (`fi`, `fp`, `ri`, `rp`), which fibertools-rs
+uses to call m6A and which make up a large share of a BAM. By default the pipeline drops them (and the per-subread
+`ip`/`pw`, if present) from every PacBio read when the reads are converted for alignment, so no aligned or published
+file carries them: not the reads `ft predict-m6a` gave no m6A call (it strips the kinetics only from the reads it
+calls, leaving them on about 2-3 % of reads), and not the samples that never reach it (`--skip_m6a`, `--skip_fiber`,
+or normals under `--skip_normalfiber`). Base modifications (`MM`/`ML`), fibertools-rs tags and the other PacBio read
+tags, including the kinetics pass counts `fn`/`rn`, are kept. With `--keep_kinetic_data true` the kinetics are kept
+on every read instead (`ft predict-m6a --keep`, and nothing dropped at alignment).
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
@@ -288,14 +335,15 @@ On any other genome, DMR is skipped with a `log.warn` (not a hard failure) unles
 
 #### VEP options:
 
-| Parameter              | Description                                                                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/). |
-| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                         |
-| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`          |
-| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                |
-| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                              |
-| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                        |
+| Parameter              | Description                                                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--vep_cache`          | Full path to a vep cache. If left blank, this will default to pulling from this [Annotation Cache Storage](https://annotation-cache.github.io/).               |
+| `--vep_cache_version`  | Integer specifying version of vep cache. Default = `113`                                                                                                       |
+| `--vep_args`           | A string specifying arguments to vep. Default = `"--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"`                        |
+| `--vep_custom`         | A full path to a vcf file containing custom variants for annotation. Must be bgzipped and have `.vcf.gz` format. Default = `null`                              |
+| `--vep_custom_tbi`     | A full path to a index file for cutom vcf for vep. Default = `null`                                                                                            |
+| `--download_vep_cache` | A boolean to automatically download the VEP cache if not found locally. Default = `false`                                                                      |
+| `--outdir_cache`       | Directory the downloaded VEP cache (`--download_vep_cache`) and SigProfiler genome payload (`sigprofiler/volume`) are published to. Default = `<outdir>/cache` |
 
 #### VEP plugin options:
 
@@ -370,9 +418,11 @@ Use `--aligned_format bam` if a tool you run on the results cannot read CRAM, or
 
 #### Fibertools Options
 
-| Parameter           | Description                                                                      |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `--autocorrelation` | A boolean to enable autocorrelation computation in fibertools. Default = `false` |
+| Parameter             | Description                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--autocorrelation`   | A boolean to enable autocorrelation computation in fibertools. Default = `false`                                                                                                                                                                                                                                                                                |
+| `--keep_kinetic_data` | A boolean to keep the PacBio kinetics tags (`fi`, `fp`, `ri`, `rp`) on every read. It passes `--keep` to `ft predict-m6a`, which otherwise strips them from the reads it calls m6A on, and it also turns off the removal of kinetics from PacBio reads at alignment. By default they are removed, which keeps the aligned files much smaller. Default = `false` |
+| `--keep_all_calls`    | A boolean to keep every m6A call regardless of its ML score (`ft predict-m6a --all-calls`). Default = `false`                                                                                                                                                                                                                                                   |
 
 #### SEVERUS Options
 
@@ -390,8 +440,11 @@ SAVANA reuses the haplotagged BAMs from `PHASING_HAPLOTYPING` and the same refer
 every other caller. Matched tumor/normal samples run `savana run` + `savana classify` + `savana cna`,
 using the phased germline VCF as the SNP allele-frequency source for copy-number fitting; tumor-only
 samples run `savana to` instead (which chains the equivalent steps internally), using SAVANA's bundled
-1000 Genomes population SNP set rather than the tumour's own calls. Both modes are restricted to
-canonical chromosomes via a genome-specific `--contigs` file.
+1000 Genomes population SNP set rather than the tumour's own calls. SV calling (`savana run`,
+`savana to`) is restricted to canonical chromosomes via a genome-specific `--contigs` file. Copy-number
+calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on chr1-22, chrX and chrY
+(hard-coded, also inside `savana to`), so chrM and alt, decoy and unplaced contigs are never used.
+`--savana_chromosomes` narrows copy-number calling further.
 
 | Parameter                | Description                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -475,7 +528,7 @@ Checked at launch:
 
 Mutational signature analysis runs [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) on the PASS SNVs and indels of each sample's phased somatic VCF and fits COSMIC signatures per sample with [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment). It needs SigProfilerMatrixGenerator's per-genome payload (~3 GB), which is not shipped with the pipeline:
 
-- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume`;
+- by default (`--download_sigprofiler_genome true`) the payload is downloaded during the run, checksum-verified and published to `<outdir>/cache/sigprofiler/volume` (or `<outdir_cache>/sigprofiler/volume` with `--outdir_cache`);
 - `--sigprofiler_genome_dir` points at an existing SigProfilerMatrixGenerator volume instead (a directory containing `tsb/<genome>/`, e.g. one created with `SigProfilerMatrixGenerator install GRCh38 --volume <dir>` or the published cache from a previous run). It takes precedence over the download, so pass it on later runs to skip the ~3 GB fetch.
 
 Running with `--download_sigprofiler_genome false` and no `--sigprofiler_genome_dir`, or with a `--genome` that has no SigProfilerMatrixGenerator genome and no `--sigprofiler_genome`, stops the pipeline at start-up unless `--skip_signatures` is set.
@@ -671,10 +724,10 @@ lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
 
 #### Advanced Options
 
-| Parameter         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--use_gpu`       | A boolean to run DeepVariant, DeepSomatic, Clair3 and the fibertools steps (m6A prediction, nucleosomes, FIRE) on a GPU, with their GPU container images. Needs a GPU-enabled compute environment; add the `gpu` profile (`-profile <...>,gpu`) so the containers can see the GPU. Clair3's GPU image (`hkubal/clair3:v2.0.5_gpu`) is built for NVIDIA GPUs up to compute capability 9.0 (for example A100, H100 or RTX Ada) and fails on newer cards such as the B200; there, leave `--use_gpu` off. Default = `false` |
-| `--generate_gvcf` | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false`                                                                                                                                                                                                                                                                                                                                             |
+| Parameter         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--use_gpu`       | A boolean to run the GPU-capable steps on a GPU, with their GPU container images: DeepVariant and DeepSomatic `call_variants` (`DEEPVARIANT_CALLVARIANTS`, `DEEPSOMATIC_CALLVARIANTS`; their `make_examples` step uses the same `-gpu` image but stays on the CPU) and Clair3 (`CLAIR3`). Every other step, including the fibertools-rs steps (m6A prediction, nucleosomes, FIRE), runs on the CPU either way. Needs a GPU-enabled compute environment; add the `gpu` profile (`-profile <...>,gpu`) so the containers can see the GPU. The DeepVariant/DeepSomatic `1.10.0-gpu` images (TensorFlow 2.16.1, CUDA 12.3) and Clair3's GPU image (`hkubal/clair3:v2.0.5_gpu`) support NVIDIA GPUs up to the Hopper generation (compute capability 9.0 or lower, for example A100, H100 or RTX Ada). On Blackwell cards such as the B200 (compute capability 10.0) `call_variants` fails with `CUDA_ERROR_INVALID_PTX` and Clair3 fails too; there, leave `--use_gpu` off. Default = `false` |
+| `--generate_gvcf` | A boolean to enable gVCF output from DeepVariant (germline) and DeepSomatic (somatic). gVCF files include calls at all positions, not just variant sites. Default = `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 #### Genome-Derived Parameters
 
@@ -1009,6 +1062,8 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 ### Resource requests
 
 Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the pipeline steps, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher resources request (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
+
+The defaults are sized for ~30x whole genomes, and several steps ask for well over 100 GB of memory. The pipeline sets no limit on what a step may request, so on a machine or cluster with less memory, or fewer cpus, set [`resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) (in a custom config passed with `-c`, or through an institutional profile) to the largest job it can run; requests above the limit are then lowered to it. Without it, the local executor refuses a task that asks for more than the machine has, and Slurm may leave it pending. `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` request memory per cpu, at least 8 cpus' worth: 16 GB per cpu for a DeepSomatic tumour-normal pair and 8 GB per cpu for DeepVariant and tumour-only DeepSomatic, i.e. 192 GB and 96 GB at the default 12 cpus. They are the steps where the limit matters most: when one of their workers is killed for lack of memory they do not fail but wait, idle, until the time limit (4 h, doubled on a retry). A 30x ONT pair with `--generate_gvcf` used 134 GB in paired DeepSomatic and 69 GB in DeepVariant on the normal (12 cpus); a 30x PacBio tumour-only sample used 39 GB and 29 GB. Pairs or gVCF output at that depth need a machine with that much memory.
 
 To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
 

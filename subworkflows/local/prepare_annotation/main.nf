@@ -32,7 +32,8 @@ workflow PREPARE_ANNOTATION {
 				false  // preflight_check: skip the CHECKSUMS lookup
 			)
 
-			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache
+			// Value channel without meta, like the local-cache branch: a queue channel would feed only one VEP task
+			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> cache }.collect()
 
 		}
 		else {
@@ -52,10 +53,10 @@ workflow PREPARE_ANNOTATION {
 			// Collect the resolved cache root as a channel value
 			ensemblvep_cache = channel.fromPath(file("${vep_cache}/${vep_annotation_cache_key}"), checkIfExists: true).collect()
 		}
-		// ensemblvep_cache: path (or list-of-paths) to the VEP cache root directory
+		// ensemblvep_cache: value channel, [cache_root_path]  -- the VEP cache root directory (downloaded or local)
 
 	emit:
-		vep_cache = ensemblvep_cache  // path  -- VEP cache directory (downloaded or validated local)
+		vep_cache = ensemblvep_cache  // value channel: [path]  -- VEP cache root directory (downloaded or validated local)
 		versions = ch_versions
 
 }

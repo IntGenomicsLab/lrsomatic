@@ -237,7 +237,7 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                   |
 | `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary for the bam file                                                                                   |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files         |
 | `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
 | `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                  |
 | `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                     |
@@ -628,6 +628,8 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_VEP_SAVANA.vcf.gz`              | Annotated SAVANA somatic structural variant vcf file                    |
 | `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
 | `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
+
+The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_`, decoy and other unplaced contigs), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
 
 </details>
 
