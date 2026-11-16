@@ -430,7 +430,8 @@
                 },
                 "savana_chromosomes": {
                     "type": "string",
-                    "description": "Restrict SAVANA's allele counting and binning to given chromosome numbers (SAVANA's -c/--chromosomes), e.g. '19'. Applies to both `savana cna` and `savana to`."
+                    "description": "Restrict SAVANA's allele counting and binning to given chromosome numbers (SAVANA's -c/--chromosomes), e.g. '19'. Applies to both `savana cna` and `savana to`.",
+                    "help_text": "Space-separated chromosome numbers, with 23 for chrX and 24 for chrY, e.g. `'1 4 23'`. Without it SAVANA already uses only chr1-22, chrX and chrY for copy number (chrM and alt, decoy and unplaced contigs are never binned), so this is only needed to narrow that further, as the test profiles do with `'19'`. SV calling is not affected; it is limited by the genome's contigs file."
                 },
                 "savana_allele_min_reads": {
                     "type": "integer",
