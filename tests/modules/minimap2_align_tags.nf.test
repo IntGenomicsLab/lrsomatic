@@ -1,0 +1,100 @@
+nextflow_workflow {
+
+    name "Test MINIMAP2_ALIGN with the pipeline's conf/modules.config: tags on realigned aligned input"
+    script "./minimap2_align_tags.nf"
+    workflow "MINIMAP2_ALIGN_PIPELINE_CONFIG"
+
+    tag "modules"
+    tag "minimap2"
+    tag "small"
+
+    setup {
+        run("TAGGED_BAM_FIXTURE") {
+            script "./minimap2_align_tags.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'HS578T' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+    }
+
+    test("aligned PacBio and ONT input - phasing, kinetics and repeated minimap2 tags dropped, model in the ONT read group") {
+
+        when {
+            params {
+                aligned_format = 'bam'
+            }
+            workflow {
+                """
+                input[0] = TAGGED_BAM_FIXTURE.out.bam.flatMap { _meta, bam -> [
+                    [ [ id:'pb', type:'tumor', replicate:1, platform:'pb', aligned_input:true ], bam ],
+                    [ [ id:'ont', type:'tumor', replicate:1, platform:'ont', aligned_input:true,
+                        basecall_model:'dna_r10.4.1_e8.2_400bps_sup@v5.0.0' ], bam ]
+                ] }
+                input[1] = TAGGED_BAM_FIXTURE.out.fasta
+                """
+            }
+        }
+
+        then {
+            def out = workflow.out.bam.collectEntries { meta, bam -> [ (meta.id): BamTags.read(bam.toString()) ] }
+            def primary = { id -> out[id].records.findAll { rec -> (rec.flag & 0x900) == 0 } }
+            def with = { id, tag -> primary(id).count { rec -> tag in rec.tags } }
+            def repeated = { id -> primary(id).findAll { rec -> rec.tags.size() != (rec.tags as Set).size() }
+                .collect { rec -> "${rec.name}: ${rec.tags}" } }
+            def rg = { id -> out[id].header.readLines().findAll { line -> line.startsWith('@RG') } }
+            def mapped = { id -> primary(id).findAll { rec -> (rec.flag & 0x4) == 0 } }
+            assertAll(
+                { assert workflow.success },
+                { assert out.keySet() == [ 'pb', 'ont' ] as Set },
+                { assert primary('pb').size() == 200 && primary('ont').size() == 200 },
+                { assert mapped('pb').size() > 0 && mapped('ont').size() > 0 },
+                { assert repeated('pb').isEmpty() : "pb records with a repeated tag: ${repeated('pb').take(3)}" },
+                { assert repeated('ont').isEmpty() : "ont records with a repeated tag: ${repeated('ont').take(3)}" },
+                { assert mapped('pb').every { rec -> 'tp' in rec.tags } && mapped('ont').every { rec -> 'tp' in rec.tags } },
+                { assert [ 'HP', 'PS', 'PQ' ].collect { tag -> with('pb', tag) + with('ont', tag) } == [ 0, 0, 0 ] },
+                { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with('pb', tag) } == [ 0, 0, 0, 0 ] },
+                { assert [ 'fn', 'rn', 'rq' ].collect { tag -> with('pb', tag) } == [ 200, 200, 200 ] },
+                { assert [ 'fn', 'rn', 'rq' ].collect { tag -> with('ont', tag) } == [ 200, 200, 200 ] },
+                { assert rg('pb') == [ '@RG\tID:pb_tumor_rep1\tSM:pb\tLB:pb_tumor\tPL:PACBIO' ] },
+                { assert rg('ont') == [ '@RG\tID:ont_tumor_rep1\tSM:ont\tLB:ont_tumor\tPL:ONT\tDS:basecall_model=dna_r10.4.1_e8.2_400bps_sup@v5.0.0' ] }
+            )
+        }
+    }
+
+    test("aligned PacBio input with --keep_kinetic_data - kinetics kept, phasing still dropped") {
+
+        when {
+            params {
+                aligned_format    = 'bam'
+                keep_kinetic_data = true
+            }
+            workflow {
+                """
+                input[0] = TAGGED_BAM_FIXTURE.out.bam.map { _meta, bam ->
+                    [ [ id:'pbkeep', type:'tumor', replicate:1, platform:'pb', aligned_input:true ], bam ]
+                }
+                input[1] = TAGGED_BAM_FIXTURE.out.fasta
+                """
+            }
+        }
+
+        then {
+            def out = BamTags.read(workflow.out.bam[0][1].toString())
+            def primary = out.records.findAll { rec -> (rec.flag & 0x900) == 0 }
+            def with = { tag -> primary.count { rec -> tag in rec.tags } }
+            assertAll(
+                { assert workflow.success },
+                { assert primary.size() == 200 },
+                { assert primary.every { rec -> rec.tags.size() == (rec.tags as Set).size() } },
+                { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with(tag) } == [ 200, 200, 200, 200 ] },
+                { assert [ 'HP', 'PS', 'PQ' ].collect { tag -> with(tag) } == [ 0, 0, 0 ] }
+            )
+        }
+    }
+}

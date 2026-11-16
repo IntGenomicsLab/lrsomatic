@@ -56,6 +56,20 @@ input:
         type: file
         description: Reference genome fasta file
         pattern: "*.{fasta,fa,fna}"
+  - - meta3:
+        type: map
+        description: |
+          Groovy Map containing reference information
+    - fai:
+        type: file
+        description: |
+          samtools index of the reference FASTA, staged as <reference>.fai so Wakhan's
+          parallel samtools mpileup workers never build it themselves
+        pattern: "*.fai"
+  - centromere_bed:
+      type: file
+      description: BED file of centromere coordinates (optional)
+      pattern: "*.bed"
 
 output:
   integer_profile_html:
