@@ -39,6 +39,7 @@ lint:
     - tests/kinetics_pairing.nf.test
     - tests/fiber_replicates.nf.test
     - tests/download_vep_cache.nf.test
+    - tests/stub_dag_coverage.nf.test
 nf_core_version: 4.2.2
 repository_type: pipeline
 template:
