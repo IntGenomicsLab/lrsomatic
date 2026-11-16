@@ -8,13 +8,6 @@ nextflow_workflow {
     tag "minimap2"
     tag "small"
 
-    // What MINIMAP2_ALIGN's ext.args (-R read group) and ext.args3 (samtools reset -x) in conf/modules.config do to the
-    // reads, on a realistic input: a minimap2-aligned PacBio BAM given the phasing and kinetics tags a pipeline-published
-    // haplotagged kinetics file carries. The meta keys aligned_input and basecall_model are the ones workflows/lrsomatic.nf
-    // sets for MINIMAP2_ALIGN; tests/default.nf.test checks that it sets them. Without the fix, `samtools fastq -T '*'`
-    // and `minimap2 -y` carried every tag across: the old minimap2 tags a second time next to the new ones, stale
-    // HP/PS/PQ phasing, and the kinetics. BamTags reads the records directly, as htsjdk would hide a repeated tag.
-
     setup {
         run("TAGGED_BAM_FIXTURE") {
             script "./minimap2_align_tags.nf"
@@ -61,18 +54,13 @@ nextflow_workflow {
                 { assert out.keySet() == [ 'pb', 'ont' ] as Set },
                 { assert primary('pb').size() == 200 && primary('ont').size() == 200 },
                 { assert mapped('pb').size() > 0 && mapped('ont').size() > 0 },
-                // minimap2 wrote its tags afresh and none of the input's came along a second time
                 { assert repeated('pb').isEmpty() : "pb records with a repeated tag: ${repeated('pb').take(3)}" },
                 { assert repeated('ont').isEmpty() : "ont records with a repeated tag: ${repeated('ont').take(3)}" },
                 { assert mapped('pb').every { rec -> 'tp' in rec.tags } && mapped('ont').every { rec -> 'tp' in rec.tags } },
-                // stale phasing dropped from aligned input
                 { assert [ 'HP', 'PS', 'PQ' ].collect { tag -> with('pb', tag) + with('ont', tag) } == [ 0, 0, 0 ] },
-                // PacBio kinetics dropped by default (--keep_kinetic_data false)
                 { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with('pb', tag) } == [ 0, 0, 0, 0 ] },
-                // read-level tags kept (deny-list), including the kinetics pass counts fn/rn
                 { assert [ 'fn', 'rn', 'rq' ].collect { tag -> with('pb', tag) } == [ 200, 200, 200 ] },
                 { assert [ 'fn', 'rn', 'rq' ].collect { tag -> with('ont', tag) } == [ 200, 200, 200 ] },
-                // one read group per row; ONT rows with a basecall model carry it as DS, last
                 { assert rg('pb') == [ '@RG\tID:pb_tumor_rep1\tSM:pb\tLB:pb_tumor\tPL:PACBIO' ] },
                 { assert rg('ont') == [ '@RG\tID:ont_tumor_rep1\tSM:ont\tLB:ont_tumor\tPL:ONT\tDS:basecall_model=dna_r10.4.1_e8.2_400bps_sup@v5.0.0' ] }
             )

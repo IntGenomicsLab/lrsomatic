@@ -459,13 +459,7 @@ workflow LRSOMATIC {
 
     def aligned_index = params.aligned_format == 'cram' ? 'crai' : 'bai'
 
-    // Two MINIMAP2_ALIGN-only keys, set just for this process and dropped again by the subMap after alignment, so the
-    // meta every downstream process sees is unchanged:
-    // - aligned_input: true for aligned input (METAEXTRACT found @SQ lines), so samtools reset also drops the old
-    //   alignment and phasing tags (ext.args3). Unaligned rows do not gain it.
-    // - basecall_model: the model METAEXTRACT read from an ONT input header, written back as DS:basecall_model= in the
-    //   new @RG (ext.args), so a published BAM/CRAM fed back in still resolves its caller models. ONT rows only, and
-    //   only when a model was found.
+    // MINIMAP2_ALIGN-only meta keys for ext.args/ext.args3; the subMap after alignment drops them again
     ch_ubams
         .map { meta, bams -> [ [ meta.id, meta.type, meta.replicate ], meta, bams ] }
         .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
@@ -1211,7 +1205,7 @@ workflow LRSOMATIC {
     // MODULE: WAKHAN (label: process_medium) -- haplotype-aware copy number
     // Input:  [meta, tumor_bam, tumor_bai, normal_bam, normal_bai, phased_germline_vcf, severus_all_vcf]
     //         ch_fasta          -- [[:], fasta]
-    //         ch_fai            -- [[:], fai]  -- staged next to the FASTA so no samtools worker builds it
+    //         ch_fai            -- [[:], fai]
     //         centromere_bed    -- BED file of centromere coordinates (for assembly anchoring)
     // Output: WAKHAN assembly reports (written to outdir)
     //

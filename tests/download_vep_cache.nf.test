@@ -5,12 +5,6 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // With --download_vep_cache, PREPARE_ANNOTATION used to emit ENSEMBLVEP_DOWNLOAD's [meta, cache] queue channel, which
-    // the workflow wrapped again as [[:], [meta, cache]]: GERMLINE_VEP failed with "Not a valid path value type:
-    // java.util.ArrayList" and the run aborted. As a queue channel it could also have fed only one VEP task. The
-    // download branch must emit a value channel shaped like the local-cache branch, so that every VEP task of every
-    // sample runs on the one downloaded cache.
-
     test("-profile test, --download_vep_cache - stub") {
 
         options "-stub"

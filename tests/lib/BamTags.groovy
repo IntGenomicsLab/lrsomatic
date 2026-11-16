@@ -2,8 +2,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.GZIPInputStream
 
-// Header text and the aux tag names of every record of a BAM, in file order and as written. htsjdk's SAMRecord keeps
-// one value per tag name, so it cannot show a record that carries a tag twice; this reads the records directly.
+// Reads aux tag names directly: htsjdk's SAMRecord cannot show a tag that a record carries twice
 class BamTags {
 
     // [header: String, records: [[name: String, flag: int, tags: [String]]]]

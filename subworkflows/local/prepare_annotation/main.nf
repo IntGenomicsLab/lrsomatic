@@ -32,9 +32,7 @@ workflow PREPARE_ANNOTATION {
 				false  // preflight_check: skip the CHECKSUMS lookup
 			)
 
-			// Drop the module's meta and make it a value channel, the shape the local-cache branch emits: the caller wraps
-			// it as [[:], cache], and a queue channel would feed only the first of the VEP tasks (germline, somatic, SV,
-			// SAVANA, every sample) that read it
+			// Value channel without meta, like the local-cache branch: a queue channel would feed only one VEP task
 			ensemblvep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> cache }.collect()
 
 		}

@@ -1,6 +1,4 @@
-// Test helpers, not part of the pipeline: MINIMAP2_ALIGN called from inside a workflow, so its name matches the
-// pipeline's '.*:MINIMAP2_ALIGN' selector and it runs with the ext.args/ext.args3 of conf/modules.config (nf-test loads
-// the pipeline's nextflow.config), and the tagged input those tests realign
+// Test helper: wrapped in a workflow so the '.*:MINIMAP2_ALIGN' selector of conf/modules.config applies
 include { MINIMAP2_ALIGN } from '../../modules/nf-core/minimap2/align/main'
 
 workflow MINIMAP2_ALIGN_PIPELINE_CONFIG {
@@ -33,8 +31,7 @@ process TAGGED_BAM_FIXTURE {
     script:
     """
     zcat -f ${fasta} > reference.fa
-    # The first 200 primary records, each given what a pipeline-published haplotagged PacBio kinetics file carries on
-    # top of its minimap2 tags: phasing (HP, PS, PQ), per-strand kinetics (fi, fp, ri, rp) and read-level tags (fn, rn, rq)
+    # 200 primary records plus the phasing, kinetics and read tags of a published haplotagged PacBio file
     samtools view -h -F 0x900 ${bam} \\
         | awk -F'\\t' -v OFS='\\t' '/^@/ { print; next }
             n < 200 { print \$0, "HP:i:1", "PS:i:1000", "PQ:i:30", "fi:B:C,1,2,3", "fp:B:C,4,5,6", "ri:B:C,1,2,3",

@@ -5,10 +5,6 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // FIBERTOOLSRS_QC runs once per input file. Its output used to be <id>_qc.txt for every replicate, so a sample's
-    // replicates overwrote each other in <outdir>/<id>/qc/<type>/fibertoolsrs/ and only one survived. Replicates now
-    // publish <id>_rep<N>_qc.txt; a sample with a single input file keeps <id>_qc.txt.
-
     test("-profile test, fiber-seq sample with two replicates and one with a single file - stub") {
 
         options "-stub"

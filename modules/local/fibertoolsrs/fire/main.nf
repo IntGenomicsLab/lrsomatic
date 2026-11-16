@@ -1,7 +1,7 @@
 process FIBERTOOLSRS_FIRE {
     tag "$meta.id"
     label 'process_very_high'
-    // CPU only, also under --use_gpu: fibertools-rs has no GPU code path for this step, so a GPU label would only idle a GPU
+    // CPU only, also under --use_gpu: no GPU code path for this step
     label 'process_high_memory'
 
     conda "${moduleDir}/environment.yml"
