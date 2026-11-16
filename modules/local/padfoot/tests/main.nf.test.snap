@@ -268,5 +268,35 @@
             "nextflow": "25.10.7"
         },
         "timestamp": "2026-10-05T16:24:12.803470668"
+    },
+    "severus + wakhan - real, custom --gff/--rm (chm13 preset), 50-column FASTA": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test",
+                        "paired_data": "test"
+                    },
+                    "annotated_svs.tsv:md5,bcb4213b41c979e0aabde62a18bf030d"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test",
+                        "paired_data": "test"
+                    },
+                    "by_gene.tsv:md5,26d5d161651f8954d9308ad067bd9939"
+                ]
+            ],
+            [
+                "versions.yml:md5,5300b4e844aed47d7e1b82e5ececebcf"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        },
+        "timestamp": "2026-11-16T15:54:21.780122805"
     }
 }
