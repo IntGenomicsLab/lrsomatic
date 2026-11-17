@@ -59,7 +59,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "1.6.1"
+                    "lrsomatic_report": "2.0.0"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.24

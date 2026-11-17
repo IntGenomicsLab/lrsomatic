@@ -67,5 +67,7 @@ workflow PADFOOT_ANNOTATION {
     ch_versions = ch_versions.mix(PADFOOT_SAVANA.out.versions)
 
     emit:
-    versions = ch_versions // [versions.yml]
+    annotated_svs = PADFOOT_SEVERUS_WAKHAN.out.annotated_svs.mix(PADFOOT_SAVANA.out.annotated_svs) // [meta, <pair>/annotated_svs.tsv]
+    by_gene       = PADFOOT_SEVERUS_WAKHAN.out.by_gene.mix(PADFOOT_SAVANA.out.by_gene)             // [meta, <pair>/by_gene.tsv]
+    versions      = ch_versions                                                                    // [versions.yml]
 }

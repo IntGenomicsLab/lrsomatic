@@ -32,6 +32,32 @@ nextflow_pipeline {
             def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} (") }*.name }
             def samples   = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') } as Set }
             def all       = ['sample1', 'sample2', 'sample3'] as Set
+
+            // The report stub's staged.txt lists each file under sample_dir/ as the tool would see it. Each extra leg
+            // (workflows/lrsomatic.nf, report_leg) must land at the path the tool publishes it to, or the report
+            // silently shows that section as "not available" while the run still succeeds.
+            def staged = all.collectEntries { id ->
+                [id, path("$outputDir/${id}/report/staged.txt").readLines()*.tokenize('\t')*.getAt(0)*.minus('sample_dir/')]
+            }
+            def extra_root = ~/^(signatures|shatterseek|ecdna|variants\/savana|vep\/SVs|padfoot|reconplot|wakhan)\/.*/
+            // One pattern per leg reached by this run (SigProfiler is off in the test profile)
+            def legs = { id -> [
+                ~/ecdna\/amplicon_classifier\/${id}_gene_list\.tsv/,
+                ~/ecdna\/coral\/plots\/${id}_amplicon\d+_(graph|cycles)\.png/,
+                ~/ecdna\/coral\/${id}_CNV_SEEDS\.bed/,
+                ~/ecdna\/coral\/(reconstruct|cycles)\/${id}_amplicon_summary\.txt/,
+                ~/variants\/savana\/${id}(\.pon_filtered)?\.classified\.somatic\.vcf/,
+                ~/variants\/savana\/${id}_fitted_purity_ploidy\.tsv/,
+                ~/padfoot\/(severus_wakhan|savana)\/annotated_svs\.tsv/,
+                ~/reconplot\/(severus_wakhan|savana)\/genome_wide\/[^\/]+\.png/,
+                ~/reconplot\/(severus_wakhan|savana)\/per_chromosome\/[^\/]+\.png/,
+                ~/shatterseek\/(severus_wakhan|savana)\/${id}\.shatterseek\.tsv/,
+                ~/wakhan\/solutions_ranks\.tsv/,
+                ~/wakhan\/solution_rank_1\/integer_profile\.bed/,
+                ~/wakhan\/solution_rank_1\/genes\/genes_copynumber_states\.bed/,
+                ~/qc\/tumor\/${id}_whatshap_stats\.tsv/
+            ] + (id == 'sample3' ? [] : [~/vep\/SVs\/${id}_VEP_SAVANA\.vcf\.gz/]) }  // no SAVANA VEP for the tumour-only sample here
+
             assertAll(
                 { assert workflow.success },
 
@@ -62,7 +88,13 @@ nextflow_pipeline {
                 { assert samples('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "germline BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
                 { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "somatic BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
 
-                { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" }
+                { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" },
+
+                // Report staging: every reached leg is present, and every extra file sits where the pipeline published it
+                { assert all.every { id -> legs(id).every { leg -> staged[id].any { rel -> rel ==~ leg } } } :
+                    "legs missing from staged.txt: ${all.collectEntries { id -> [id, legs(id).findAll { leg -> !staged[id].any { rel -> rel ==~ leg } }*.toString()] }}" },
+                { assert all.every { id -> staged[id].findAll { rel -> rel ==~ extra_root }.every { rel -> file("$outputDir/${id}/${rel}").exists() } } :
+                    "staged extra files not at their published path: ${all.collectEntries { id -> [id, staged[id].findAll { rel -> rel ==~ extra_root && !file("$outputDir/${id}/${rel}").exists() }] }}" }
             )
         }
     }

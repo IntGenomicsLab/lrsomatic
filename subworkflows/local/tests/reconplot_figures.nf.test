@@ -113,6 +113,10 @@ nextflow_workflow {
                 { assert staged('sample3/reconplot/savana') == ['cn_input/sample3.classified.somatic.vcf', 'cn_input/sample3_fitted_purity_ploidy.tsv',
                                                                 'cn_input/sample3_segmented_absolute_copy_number.tsv'] },
                 { assert !tasks.any { name -> name.contains('(sample4:') } },
+                // One genome-wide and one per-chromosome emission per task (5), each under <pair>/<panel>/ for LRSOMATICREPORT
+                { assert workflow.out.genome_wide.size() == 5 },
+                { assert workflow.out.per_chromosome.size() == 5 },
+                { assert workflow.out.genome_wide.collect { _meta, figs -> figs.collect { f -> f.tokenize('/')[-3..-1].join('/') } }.flatten().contains('severus_wakhan/genome_wide/sample1_genome_wide.png') },
                 { assert workflow.out.versions.size() >= 1 }
             )
         }

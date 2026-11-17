@@ -524,6 +524,26 @@ Checked at launch:
 - A panel file that does not exist, or a builtin name that is not bundled, is an error.
 - Two panel files sharing a base name cannot be combined; rename one.
 
+##### Embedding every small variant in the HTML
+
+The report's `--embed` option decides which small-variant rows the HTML table carries: `slim`
+(the default) keeps the HTML small on samples with many variants, `full` embeds every row. The
+complete table is written beside the HTML as `{sample}_small_variants.tsv.gz` either way. There is
+no pipeline parameter for it; pass it through `ext.args` in a custom config (`-c`):
+
+```groovy
+process {
+    withName: '.*:LRSOMATICREPORT' {
+        ext.args = { "--embed full" }
+    }
+}
+```
+
+This replaces the `--gene-panel` arguments the pipeline builds from `--report_gene_panel`, so name
+the panels in the same string instead: a builtin as `--gene-panel 'lymphoid'`, a panel file given
+to `--report_gene_panel` as `--gene-panel 'gene_panels/<file name>'` (keep `--report_gene_panel`
+set, since it is what stages the file).
+
 #### WAKHAN Options
 
 | Parameter         | Description                                                                                             |

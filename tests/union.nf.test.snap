@@ -98,7 +98,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "1.6.1"
+                    "lrsomatic_report": "2.0.0"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.24
@@ -703,7 +703,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-11-14T19:15:46.946581303",
+        "timestamp": "2026-11-16T23:59:30.95733578",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

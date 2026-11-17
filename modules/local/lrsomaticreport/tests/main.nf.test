@@ -7,6 +7,7 @@ nextflow_process {
     tag "modules"
     tag "modules_local"
     tag "lrsomaticreport"
+    tag "small"
 
     test("no optional inputs - stub") {
 
@@ -24,7 +25,8 @@ nextflow_process {
                     [], // ascat_files
                     [], // qc_tumor_files
                     [], // qc_normal_files
-                    []  // wakhan_files
+                    [], // extra_relpaths
+                    []  // extra_files
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
@@ -56,7 +58,8 @@ nextflow_process {
                     [], // ascat_files
                     [], // qc_tumor_files
                     [], // qc_normal_files
-                    []  // wakhan_files
+                    [], // extra_relpaths
+                    []  // extra_files
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
@@ -71,7 +74,91 @@ nextflow_process {
                 // HTML is not snapshotted (Quarto embeds timestamps); assert on required content
                 { assert path(process.out.report.get(0).get(1)).readLines().size() > 0 },
                 { assert path(process.out.report.get(0).get(1)).text.contains("TP53") },
+                // The small-variant table is written beside the HTML whenever a somatic VEP file is given (gzip: not byte-stable)
+                { assert process.out.small_variants.size() == 1 },
+                { assert process.out.small_variants.get(0).get(1).endsWith("_small_variants.tsv.gz") },
+                { assert path(process.out.small_variants.get(0).get(1)).linesGzip.size() > 1 },
                 { assert snapshot(process.out.versions_lrsomaticreport).match("versions") }
+            )
+        }
+
+    }
+
+    // Same-named files from different tools (Padfoot's per-pair by_gene.tsv, ReConPlot's per-pair figures) must land at
+    // their own relpaths, and >9 files must keep extra_files[i] paired with extra_relpaths[i] (extra/10/, extra/11/, ...)
+    test("extra files sharing a base name land at their relpaths - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                def tests_dir = "${projectDir}/modules/local/lrsomaticreport/tests"
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    file("\${tests_dir}/test_SOMATIC_VEP.vcf.gz", checkIfExists: true),
+                    [], // sv_vep
+                    [], // severus_vcf
+                    [], // somatic_vcf
+                    [], // ascat_files
+                    [], // qc_tumor_files
+                    [], // qc_normal_files
+                    // extra_relpaths: two meta.yml from different modules, then ten files alternating between two panels
+                    [ 'padfoot/severus_wakhan/meta.yml', 'padfoot/savana/meta.yml' ] + (1..10).collect { i -> 'many/' + i + '/panel.tsv' },
+                    // extra_files, in the same order
+                    [ file("${projectDir}/modules/local/lrsomaticreport/meta.yml", checkIfExists: true),
+                      file("${projectDir}/modules/local/wakhan/meta.yml", checkIfExists: true) ] +
+                        (1..10).collect { i -> file(i % 2 ? "\${tests_dir}/test_panel.tsv" : "\${tests_dir}/test_panel_b.tsv", checkIfExists: true) }
+                ]
+                input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
+                input[2] = [] // gene_panels
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            // staged.txt: one `<path under sample_dir>\t<md5 of the linked file>` line per file the tool would see
+            def staged = path(process.out.staged.get(0).get(1)).readLines().collectEntries { line -> line.tokenize('\t') }
+            def md5 = { rel -> path("${baseDir}/${rel}").md5 }
+            def tests_dir = 'modules/local/lrsomaticreport/tests'
+            assertAll(
+                { assert staged.size() == 13 },
+                { assert staged['sample_dir/padfoot/severus_wakhan/meta.yml'] == md5('modules/local/lrsomaticreport/meta.yml') },
+                { assert staged['sample_dir/padfoot/savana/meta.yml'] == md5('modules/local/wakhan/meta.yml') },
+                { assert (1..10).every { i -> staged["sample_dir/many/${i}/panel.tsv"] == md5(i % 2 ? "${tests_dir}/test_panel.tsv" : "${tests_dir}/test_panel_b.tsv") } },
+                // the legacy slots still link flat (nf-test's md5 of a .gz is of its decompressed content, so presence only)
+                { assert staged.containsKey('sample_dir/test_SOMATIC_VEP.vcf.gz') },
+                { assert process.out.small_variants.size() == 1 }
+            )
+        }
+
+    }
+
+    // A relpath without its file (or the reverse) must fail the task rather than shift every later link by one
+    test("extra lists of different lengths fail - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    [], [], [], [], [], [], [],
+                    [ 'padfoot/savana/by_gene.tsv', 'padfoot/severus_wakhan/by_gene.tsv' ],
+                    [ file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true) ]
+                ]
+                input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
+                input[2] = [] // gene_panels
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                { assert process.errorReport.contains('2 extra_relpaths for 1 extra_files') }
             )
         }
 
@@ -94,7 +181,8 @@ nextflow_process {
                     [], // ascat_files
                     [], // qc_tumor_files
                     [], // qc_normal_files
-                    []  // wakhan_files
+                    [], // extra_relpaths
+                    []  // extra_files
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [ file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true) ]
@@ -130,7 +218,8 @@ nextflow_process {
                     [], // ascat_files
                     [], // qc_tumor_files
                     [], // qc_normal_files
-                    []  // wakhan_files
+                    [], // extra_relpaths
+                    []  // extra_files
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [

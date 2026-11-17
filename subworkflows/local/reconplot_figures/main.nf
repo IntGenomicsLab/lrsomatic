@@ -96,5 +96,7 @@ workflow RECONPLOT_FIGURES {
     ch_versions = ch_versions.mix(RECONPLOT_SAVANA.out.versions)
 
     emit:
-    versions = ch_versions // [versions.yml]
+    genome_wide    = RECONPLOT_SEVERUS_ASCAT.out.genome_wide.mix(RECONPLOT_SEVERUS_WAKHAN.out.genome_wide, RECONPLOT_SAVANA.out.genome_wide)          // [meta, [<pair>/genome_wide/*.{pdf,png}]]
+    per_chromosome = RECONPLOT_SEVERUS_ASCAT.out.per_chromosome.mix(RECONPLOT_SEVERUS_WAKHAN.out.per_chromosome, RECONPLOT_SAVANA.out.per_chromosome) // [meta, [<pair>/per_chromosome/*.{pdf,png}]]
+    versions       = ch_versions                                                                                                                     // [versions.yml]
 }

@@ -12,6 +12,7 @@ include { getGenomeAttribute     } from '../subworkflows/local/utils_nfcore_lrso
 include { aaDataRepoMd5          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelTokens  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { reportGenePanelIsFile  } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { reportEntries          } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { isCram                 } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
@@ -639,12 +640,13 @@ workflow LRSOMATIC {
             .set { ascat_tumoronly_ch }
         // ascat_tumoronly_ch: [meta, purityploidy, segments]
 
-        // All ASCAT files per sample for the report module, which globs by suffix
+        // All ASCAT files per sample for the report module, which globs by suffix (metrics.txt: WGD and LOH)
         // Joined per sample; segments_raw is optional, so it arrives as null when absent
         ch_ascat_files = ASCAT.out.purityploidy
+            .join(ASCAT.out.metrics)
             .join(ASCAT.out.png)
             .join(ASCAT.out.segments_raw, remainder: true)
-            .map { meta, purityploidy, png, segments_raw -> [meta, [purityploidy, png, segments_raw ?: []].flatten()] }
+            .map { meta, purityploidy, metrics, png, segments_raw -> [meta, [purityploidy, metrics, png, segments_raw ?: []].flatten()] }
         // ch_ascat_files: [meta, [file, file, ...]]
 
         // CoRAL seeds from ASCAT's total copy number. Built from ascat_ch so the meta
@@ -868,6 +870,9 @@ workflow LRSOMATIC {
         ch_somatic_vep_vcf = SOMATIC_VEP.out.vcf
     }
 
+    ch_signature_matrices   = channel.empty()
+    ch_signature_assignment = channel.empty()
+
     if (!params.skip_signatures) {
 
         // SUBWORKFLOW: PREPARE_SIGNATURES -- validates or installs the SigProfilerMatrixGenerator payload, tsb/<sigprofiler_genome>/
@@ -925,6 +930,14 @@ workflow LRSOMATIC {
             params.sigprofiler_genome,
             params.sigprofiler_cosmic_version
         )
+
+        // For the report: the matrices and each context's activities and fit statistics
+        ch_signature_matrices = SIGPROFILER_MATRIXGENERATOR.out.sbs96
+            .mix(SIGPROFILER_MATRIXGENERATOR.out.dbs78, SIGPROFILER_MATRIXGENERATOR.out.id83)
+        // ch_signature_matrices: [meta, output/<SBS|DBS|ID>/<sample>.<ctx>.all]
+        ch_signature_assignment = SIGPROFILER_ASSIGNMENT.out.activities
+            .mix(SIGPROFILER_ASSIGNMENT.out.solution_stats)
+        // ch_signature_assignment: [meta, [COSMIC_v<ver>/<ctx>/Assignment_Solution/{Activities,Solution_Stats}/*.txt]]
     }
 
     // SEVERUS input: tumor-only and paired samples with their phased germline VCF; [] normal BAM/BAI = tumor-only mode.
@@ -1117,6 +1130,7 @@ workflow LRSOMATIC {
     savana_cna                  = channel.empty()
     savana_fitted_purity_ploidy = channel.empty()
     savana_allele_counts        = channel.empty()
+    ch_savana_vep_vcf           = channel.empty()
 
     if (!params.skip_savana) {
         // SAVANA shares severus_input: haplotagged BAMs with the phased germline VCF
@@ -1199,6 +1213,8 @@ workflow LRSOMATIC {
                 vep_custom,
                 vep_custom_tbi
             )
+
+            ch_savana_vep_vcf = VEP_SAVANA.out.vcf
         }
     }
 
@@ -1211,7 +1227,8 @@ workflow LRSOMATIC {
     // Output: WAKHAN assembly reports (written to outdir)
     //
 
-    ch_wakhan_files = channel.empty()
+    ch_wakhan_ranks         = channel.empty()
+    ch_wakhan_solution_dirs = channel.empty()
 
     if (!params.skip_wakhan) {
 
@@ -1232,13 +1249,10 @@ workflow LRSOMATIC {
             file(params.centromere_bed)
         )
 
-        // The WAKHAN outputs the report renders: ranked solutions, heatmap, per-solution plots
-        // Joined per sample; all three outputs are required
-        ch_wakhan_files = WAKHAN.out.solutions_ranks
-            .join(WAKHAN.out.heatmap_html)
-            .join(WAKHAN.out.solution_dirs)
-            .map { meta, ranks, heatmap, dirs -> [meta, [ranks, heatmap, dirs].flatten()] }  // dirs may be a list
-        // ch_wakhan_files: [meta, [file_or_dir, ...]]
+        // For the report: the ranked solutions table, and the ranked solution dirs it picks the top-ranked files from
+        ch_wakhan_ranks         = WAKHAN.out.solutions_ranks
+        ch_wakhan_solution_dirs = WAKHAN.out.solution_dirs
+        // ch_wakhan_ranks: [meta, solutions_ranks.tsv]  ch_wakhan_solution_dirs: [meta, [solution_rank_N/, ...]]
     }
 
     //
@@ -1250,6 +1264,10 @@ workflow LRSOMATIC {
     //
 
     ch_ecdna_classification = channel.empty()
+    ch_ecdna_ac_files       = channel.empty()
+    ch_ecdna_plots          = channel.empty()
+    ch_ecdna_seeds          = channel.empty()
+    ch_ecdna_summary        = channel.empty()
 
     if (!params.skip_coral) {
         // The data repo is only fetched when the classifier will actually use it
@@ -1275,6 +1293,12 @@ workflow LRSOMATIC {
 
         ch_ecdna_classification = ECDNA.out.classification
         // ch_ecdna_classification: [meta, tsv]
+        ch_ecdna_ac_files = ECDNA.out.classification.mix(ECDNA.out.gene_list, ECDNA.out.result_table)
+        ch_ecdna_plots    = ECDNA.out.plots
+        ch_ecdna_seeds    = ECDNA.out.seeds
+        ch_ecdna_summary  = ECDNA.out.summary
+        // ch_ecdna_ac_files: [meta, tsv]  ch_ecdna_plots: [meta, [pdf/png]]  ch_ecdna_seeds: [meta, bed]
+        // ch_ecdna_summary: [meta, <reconstruct|cycles>/<id>_amplicon_summary.txt]
     }
 
     //
@@ -1286,6 +1310,11 @@ workflow LRSOMATIC {
     def padfoot_annot_ok = padfootAnnotationOk()
     // Padfoot and ReConPlot ship only inside their containers (validateSvAnnotationParams() warns under conda/mamba)
     def sv_annot_container_ok = workflow.containerEngine != null
+
+    ch_padfoot_files            = channel.empty()
+    ch_reconplot_genome_wide    = channel.empty()
+    ch_reconplot_per_chromosome = channel.empty()
+    ch_shatterseek_summary      = channel.empty()
 
     if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
         PADFOOT_ANNOTATION (
@@ -1302,6 +1331,8 @@ workflow LRSOMATIC {
              params.padfoot_rm  ? file(params.padfoot_rm,  checkIfExists: true) : []]
         )
         ch_versions = ch_versions.mix(PADFOOT_ANNOTATION.out.versions)
+        ch_padfoot_files = PADFOOT_ANNOTATION.out.annotated_svs.mix(PADFOOT_ANNOTATION.out.by_gene)
+        // ch_padfoot_files: [meta, <pair>/{annotated_svs,by_gene}.tsv]
     }
 
     //
@@ -1322,6 +1353,9 @@ workflow LRSOMATIC {
             params.reconplot_genome ?: (params.genome == 'CHM13' ? 'T2T' : 'hg38')
         )
         ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
+        ch_reconplot_genome_wide    = RECONPLOT_FIGURES.out.genome_wide
+        ch_reconplot_per_chromosome = RECONPLOT_FIGURES.out.per_chromosome
+        // ch_reconplot_genome_wide / ch_reconplot_per_chromosome: [meta, [<pair>/<panel>/*.{pdf,png}]]
     }
 
     // ShatterSeek chromothripsis tiers, same CN/SV pairs as ReConPlot
@@ -1329,6 +1363,8 @@ workflow LRSOMATIC {
         SHATTERSEEK_CHROMOTHRIPSIS(SEVERUS.out.somatic_vcf, params.skip_ascat ? channel.empty() : ASCAT.out.segments,
             params.skip_wakhan ? channel.empty() : WAKHAN.out.solution_dirs, savana_cna, savana_somatic_vcf, shatterseekGenome())
         ch_versions = ch_versions.mix(SHATTERSEEK_CHROMOTHRIPSIS.out.versions)
+        ch_shatterseek_summary = SHATTERSEEK_CHROMOTHRIPSIS.out.summary
+        // ch_shatterseek_summary: [meta, <pair>/<id>.shatterseek.tsv]
     }
 
     //
@@ -1371,11 +1407,6 @@ workflow LRSOMATIC {
             ? report_empty_slot.call()
             : ch_ascat_files.map { meta, files -> [meta.id, files] }
         // report_ascat_ch: [id, [files]]
-
-        def report_wakhan_ch = params.skip_wakhan
-            ? report_empty_slot.call()
-            : ch_wakhan_files.map { meta, files -> [meta.id, files] }
-        // report_wakhan_ch: [id, [files]]
 
         // One emission per sample and BAM type per tool, none optional: mosdepth 2, cramino 1, samtools 2.
         // Adding another per-sample emission to either mix below must bump the matching count.
@@ -1429,6 +1460,51 @@ workflow LRSOMATIC {
                 .mix(report_roster.tumor_only.map { id, _meta -> [id, []] })
         // report_qc_normal_ch: [id, [files] | []]  -- full roster
 
+        // Every other file the report reads, as [id, [relpath, file]]; relpath mirrors <outdir>/<id>/ (reportEntries()).
+        // Each channel is empty unless its tool ran, so a skipped tool adds nothing.
+        def report_leg = { ch, base, depth ->
+            ch.flatMap { meta, files -> reportEntries(base, depth, files).collect { entry -> [meta.id, entry] } }
+        }
+        // A file of the top-ranked Wakhan solution, read through its solution_rank_1 link ([] when absent)
+        def report_wakhan_best = { relpath ->
+            ch_wakhan_solution_dirs.map { meta, dirs ->
+                def best = [dirs].flatten().find { dir -> dir.name == 'solution_rank_1' }
+                def f = best ? best.resolve(relpath) : null
+                return [meta, f?.exists() ? f : []]
+            }
+        }
+        // PNG figures only: the report embeds images, and the PDFs duplicate them
+        def report_png = { ch, pattern -> ch.map { meta, files -> [meta, [files].flatten().findAll { f -> f.name ==~ pattern }] } }
+        def report_coral_plots = report_png.call(ch_ecdna_plots, /.*_amplicon.*_(graph|cycles)\.png/)
+        def report_reconplot   = report_png.call(ch_reconplot_genome_wide.mix(ch_reconplot_per_chromosome), /.*\.png/)
+
+        channel.empty()
+            .mix(
+                report_leg.call(ch_signature_assignment,                                      'signatures/assignment',     5),
+                report_leg.call(ch_signature_matrices,                                        'signatures/matrices',       3),
+                report_leg.call(ch_shatterseek_summary,                                       'shatterseek',               2),
+                report_leg.call(ch_ecdna_ac_files,                                            'ecdna/amplicon_classifier', 1),
+                report_leg.call(report_coral_plots,                                           'ecdna/coral/plots',         1),
+                report_leg.call(ch_ecdna_seeds,                                               'ecdna/coral',               1),
+                report_leg.call(ch_ecdna_summary,                                             'ecdna/coral',               2),
+                report_leg.call(savana_somatic_vcf.mix(savana_fitted_purity_ploidy),          'variants/savana',           1),
+                report_leg.call(ch_savana_vep_vcf,                                            'vep/SVs',                   1),
+                report_leg.call(ch_padfoot_files,                                             'padfoot',                   2),
+                report_leg.call(report_reconplot,                                             'reconplot',                 3),
+                report_leg.call(ch_wakhan_ranks,                                              'wakhan',                    1),
+                report_leg.call(report_wakhan_best.call('integer_profile.bed'),               'wakhan',                    2),
+                report_leg.call(report_wakhan_best.call('genes/genes_copynumber_states.bed'), 'wakhan',                    3)
+            )
+            // Optional outputs and errorStrategy 'ignore' leave no per-sample count, so this waits for every leg to close
+            .groupTuple()
+            .map { id, entries ->
+                // Sorted by relpath so the task hash, and with it -resume, does not depend on arrival order
+                def sorted = entries.sort(false) { entry -> entry[0] }
+                return [id, [sorted.collect { entry -> entry[0] }, sorted.collect { entry -> entry[1] }]]
+            }
+            .set { report_extra_ch }
+        // report_extra_ch: [id, [[relpath, ...], [file, ...]]]  -- samples with no extra file are absent
+
         report_id_meta
             .join(report_vep_ch,        remainder: true)
             .join(report_sv_vep_ch,     remainder: true)
@@ -1437,7 +1513,7 @@ workflow LRSOMATIC {
             .join(report_ascat_ch,      remainder: true)
             .join(report_qc_tumor_ch,   remainder: true)
             .join(report_qc_normal_ch,  remainder: true)
-            .join(report_wakhan_ch,     remainder: true)
+            .join(report_extra_ch,      remainder: true)
             // Index-based: a sample missing from severus_input comes out of remainder as a short, meta-less tuple
             .branch { row ->
                 reportable: row[1] != null
@@ -1452,14 +1528,15 @@ workflow LRSOMATIC {
                 log.warn "Sample '${id}' never reached SEVERUS (an upstream step was skipped or failed), so it gets no lrsomatic report."
             }
 
-        // row: [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, wakhan], absent legs null or missing
+        // row: [id, meta, vep, sv_vep, severus, somatic, ascat, qc_t, qc_n, extra], absent legs null or missing
         report_joined.reportable
             .map { row ->
-                def legs = (2..9).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }
-                return [row[1]] + legs
+                def legs  = (2..8).collect { i -> i < row.size() && row[i] != null ? row[i] : [] }
+                def extra = row.size() > 9 && row[9] != null ? row[9] : [[], []]
+                return [row[1]] + legs + extra  // extra: [extra_relpaths, extra_files]
             }
             .set { report_input_ch }
-        // report_input_ch: [meta, vep, sv_vep, severus, somatic, ascat, qc_tumor, qc_normal, wakhan] -- [] for an absent leg
+        // report_input_ch: [meta, vep, sv_vep, severus, somatic, ascat, qc_tumor, qc_normal, extra_relpaths, extra_files] -- [] for an absent leg
 
         // Only panel files are staged; builtin names reach the tool through ext.args (conf/modules.config)
         def report_gene_panel_files = reportGenePanelTokens(params.report_gene_panel)

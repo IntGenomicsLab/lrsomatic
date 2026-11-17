@@ -34,6 +34,7 @@ nextflow_process {
                 { assert process.success },
                 { assert process.out.activities.size() == 1 },
                 { assert process.out.probabilities_per_mutation.size() == 1 },
+                { assert process.out.solution_stats.size() == 1 },
                 { assert process.out.versions_sigprofilerassignment.size() == 1 },
                 { assert process.out.versions_sigprofilerassignment[0][2] ==~ /\d+\.\d+.*/ }
             )
@@ -66,6 +67,7 @@ nextflow_process {
                 def tables  = process.out.probabilities_per_mutation[0][1]
                 assert process.success
                 assert process.out.activities[0][1].size() == 3
+                assert process.out.solution_stats[0][1].size() == 3
                 assert tables.size() == 3
                 ['SBS96', 'DBS78', 'ID83'].each { ctx ->
                     def lines = path(tables.find { it.contains("/${ctx}/") }).readLines()
