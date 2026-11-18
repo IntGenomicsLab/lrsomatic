@@ -117,6 +117,29 @@ nextflow_pipeline {
         }
     }
 
+    test("-profile test, rows of a sample with different sex - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = sheet("${outputDir}/../input_sex_mismatch", [
+                    'sf,T1.bam,N1.bam,pb,female,n,,,,1,1',
+                    'sf,T2.bam,N2.bam,pb,male,n,,,,2,2'
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'sf': its rows differ in sex (sex: rep1=female, rep2=male)") },
+                { assert workflow.trace.succeeded().isEmpty() }
+            )
+        }
+    }
+
     test("-profile test, paired replicates with their own normals - stub") {
 
         options "-stub"

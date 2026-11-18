@@ -57,7 +57,10 @@ This gives one merged tumour, one merged normal and one paired analysis. The pip
 
 - some rows of a sample have a `bam_normal` and others do not (the tumour rows would not be merged with each other, and the sample could not be paired correctly);
 - the same normal file is listed on more than one row (it would be merged with itself), or one file is listed as both `bam_tumor` and `bam_normal`;
-- two rows of a sample share a `tumor_replicate`, or two rows with a normal share a `normal_replicate`. A blank replicate counts as `1`, so a sample with several rows needs both columns filled in.
+- two rows of a sample share a `tumor_replicate`, or two rows with a normal share a `normal_replicate`. A blank replicate counts as `1`, so a sample with several rows needs both columns filled in;
+- rows of a sample differ in `platform`, `sex` or `fiber`.
+
+The model columns are checked later, once each file's basecaller model has been read from its header (after `METAEXTRACT`): the run stops if a sample's files resolve to different `clair3_model`, `clairSTO_model` or `clairS_model` values, whether set in the samplesheet or detected from the headers.
 
 The same tumour file on more than one row only gives a warning, since it is merged with itself as well. To use one normal with several tumour files, merge the tumour files into one BAM beforehand (`samtools merge`) and give the sample a single row, or split the normal into one file per row.
 
