@@ -995,8 +995,8 @@ nextflow_function {
             function {
                 """
                 input[0] = [
-                    [id: 's1', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'false'],
-                    [id: 's1', type: 'normal', clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'true']
+                    [id: 's1', type: 'tumor',  replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'false'],
+                    [id: 's1', type: 'normal', replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'true']
                 ]
                 """
             }
@@ -1018,9 +1018,9 @@ nextflow_function {
             function {
                 """
                 input[0] = [
-                    [id: 's1', type: 'tumor',  clair3_model: 'r1041_e82_400bps_sup_v500', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
-                    [id: 's1', type: 'normal', clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
-                    [id: 's2', type: 'tumor',  clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs']
+                    [id: 's1', type: 'tumor',  replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v500', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'normal', replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's2', type: 'tumor',  replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs']
                 ]
                 """
             }
@@ -1030,6 +1030,93 @@ nextflow_function {
             assertAll(
                 { assert function.failed },
                 { assert (function.stdout + function.stderr).any { line -> line.contains("Sample 's1'") && line.contains('clair3_model') } }
+            )
+        }
+    }
+
+    test("validateSampleModels names each replicate of a tumour model mismatch") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor', replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v520', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'tumor', replicate: 2, clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz']
+                ]
+                """
+            }
+        }
+
+        then {
+            def out = function.stdout + function.stderr
+            assertAll(
+                { assert function.failed },
+                { assert out.any { line -> line.contains('clair3_model: tumor_rep1=r1041_e82_400bps_sup_v520, tumor_rep2=r1041_e82_400bps_sup_v430') } },
+                { assert out.any { line -> line.contains('Give every row of this sample the same clair3_model, set explicitly in the samplesheet if the models detected from the BAM headers differ') } },
+                { assert !out.any { line -> line.contains('clairS_model:') } }
+            )
+        }
+    }
+
+    // --- validateSampleReplicates: platform, sex and fiber must agree across a sample's rows
+    // row: [meta, bam_tumor, bam_normal, platform, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate]
+
+    test("validateSampleReplicates stops when a sample's rows differ in platform or sex") {
+
+        function "validateSampleReplicates"
+
+        when {
+            params {
+                input = 'samplesheet.csv'
+            }
+            function {
+                """
+                input[0] = [
+                    [[id: 's1'], 'T1.bam', 'N1.bam', 'ont', 'female', 'n', null, null, null, 1, 1],
+                    [[id: 's1'], 'T2.bam', 'N2.bam', 'pb',  'male',   'n', null, null, null, 2, 2],
+                    [[id: 's2'], 'T3.bam', null,     'pb',  'female', 'y', null, null, null, 1, 1],
+                    [[id: 's2'], 'T4.bam', null,     'pb',  'female', 'n', null, null, null, 2, 1]
+                ]
+                """
+            }
+        }
+
+        then {
+            def out = function.stdout + function.stderr
+            assertAll(
+                { assert function.failed },
+                { assert out.any { line -> line.contains("Sample 's1': its rows differ in platform, sex (platform: rep1=ont, rep2=pb; sex: rep1=female, rep2=male)") } },
+                { assert out.any { line -> line.contains("Sample 's2': its rows differ in fiber (fiber: rep1=y, rep2=n)") } },
+                { assert out.any { line -> line.contains('give every row of a sample the same platform, sex and fiber') } }
+            )
+        }
+    }
+
+    test("validateSampleReplicates passes when a sample's rows agree on platform, sex and fiber") {
+
+        function "validateSampleReplicates"
+
+        when {
+            params {
+                input = 'samplesheet.csv'
+            }
+            function {
+                """
+                input[0] = [
+                    [[id: 's1'], 'T1.bam', 'N1.bam', 'pb',  'male',   'y', null, null, null, 1, 1],
+                    [[id: 's1'], 'T2.bam', 'N2.bam', 'pb',  'male',   'y', null, null, null, 2, 2],
+                    [[id: 's2'], 'T3.bam', null,     'ont', 'female', 'n', null, null, null, 1, 1]
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
             )
         }
     }

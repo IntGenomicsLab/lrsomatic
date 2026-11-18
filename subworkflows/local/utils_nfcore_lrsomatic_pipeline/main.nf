@@ -531,7 +531,7 @@ def validateInputSamplesheet(input) {
 
 //
 // Reject replicate encodings that the per-type merge (key: id, paired_data, replicate count) mis-handles silently
-// row: [meta, bam_tumor, bam_normal, ..., tumor_replicate (9), normal_replicate (10)]
+// row: [meta, bam_tumor, bam_normal, platform, sex, fiber, ..., tumor_replicate (9), normal_replicate (10)]
 //
 def validateSampleReplicates(rows) {
     def shared_normal_hint = "To use one normal with several tumour files, merge the tumour files into one BAM beforehand " +
@@ -554,6 +554,13 @@ def validateSampleReplicates(rows) {
         }
         if (entries.size() < 2) {
             return
+        }
+
+        def differing = [platform: 3, sex: 4, fiber: 5].findAll { _col, idx -> sample_rows.collect { row -> row[idx] }.unique().size() > 1 }
+        if (differing) {
+            def detail = differing.collect { col, idx -> "${col}: ${sample_rows.collect { row -> "rep${row[9]}=${row[idx]}" }.join(', ')}" }.join('; ')
+            errors << ("Sample '${id}': its rows differ in ${differing.keySet().join(', ')} (${detail}). " +
+                "A sample's files are merged per type, so give every row of a sample the same platform, sex and fiber.")
         }
 
         def with_normal = entries.findAll { e -> e.normal }
@@ -607,8 +614,9 @@ def validateSampleModels(metas) {
     metas.groupBy { meta -> meta.id }.each { id, rows ->
         def differing = model_keys.findAll { key -> rows.collect { meta -> meta[key] }.unique().size() > 1 }
         if (differing) {
-            def detail = differing.collect { key -> "${key}: ${rows.collect { meta -> "${meta.type}=${meta[key]}" }.join(', ')}" }.join('; ')
-            error("Sample '${id}': its BAMs resolve to different caller models (${detail}). Set ${differing.join(', ')} explicitly in the samplesheet for every row of this sample.")
+            def detail = differing.collect { key -> "${key}: ${rows.collect { meta -> "${meta.type}_rep${meta.replicate}=${meta[key]}" }.join(', ')}" }.join('; ')
+            error("Sample '${id}': its BAMs resolve to different caller models (${detail}). " +
+                "Give every row of this sample the same ${differing.join(', ')}, set explicitly in the samplesheet if the models detected from the BAM headers differ.")
         }
     }
     return true
