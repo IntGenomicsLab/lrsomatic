@@ -2,9 +2,6 @@ process AMPLICONCLASSIFIER {
     tag "$meta.id"
     label 'process_low'
 
-    // As for CoRAL: one unclassifiable sample should not fail the cohort
-    errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
-
     // No conda: bioconda's `ampliconclassifier` recipe is stuck at 0.4.14 (2023) and
     // predates CoRAL support; this image carries the CHM13 fork of v2.0.0. See meta.yml
     container "docker.io/robertaforsyth/ampliconclassifier:2.0.0-chm13-cdeaa63"

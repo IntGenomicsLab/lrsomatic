@@ -1,0 +1,38 @@
+nextflow_workflow {
+
+    name "Test conf/modules.config error policy - optional downstream steps retry a kill once, then ignore"
+    script "./fixtures/error_policy/main.nf"
+    workflow "ERROR_POLICY_PROBE"
+    tag "pipeline"
+    tag "small"
+
+    // Integer.MAX_VALUE (a task the scheduler lost) cannot be produced by a local task; it shares the kill codes' branch
+    test("a killed task is retried, a tool failure and a repeated kill are ignored") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+            workflow {
+                """
+                input[0] = channel.of(
+                    [id: 'killed',   exit: 143, always: false],
+                    [id: 'toolfail', exit: 1,   always: false],
+                    [id: 'killed2x', exit: 137, always: true]
+                )
+                """
+            }
+        }
+
+        then {
+            def names = ['PADFOOT_SEVERUS_WAKHAN', 'PADFOOT_SAVANA', 'RECONPLOT_SEVERUS_ASCAT', 'RECONPLOT_SEVERUS_WAKHAN',
+                         'RECONPLOT_SAVANA', 'SHATTERSEEK_SEVERUS_ASCAT', 'SHATTERSEEK_SEVERUS_WAKHAN', 'SHATTERSEEK_SAVANA',
+                         'CORAL_RECONSTRUCT', 'CORAL_CYCLE', 'CORAL_PLOT', 'AMPLICONCLASSIFIER']
+            def done = workflow.out.done.collect { meta, txt -> "${meta.id} ${path(txt).text.trim()}".toString() } as Set
+            assertAll(
+                { assert workflow.success },
+                { assert done == names.collect { name -> "killed ${name} 2".toString() } as Set }
+            )
+        }
+    }
+}

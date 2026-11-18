@@ -2,9 +2,6 @@ process CORAL_CYCLE {
     tag "$meta.id"
     label 'process_low'
 
-    // As for CORAL_RECONSTRUCT: the subworkflow warns on the missing output
-    errorStrategy { task.exitStatus in 130..145 && task.attempt <= task.maxRetries ? 'retry' : 'ignore' }
-
     container "docker.io/robertaforsyth/coral:3.0.0-chm13-847f3d4"
 
     input:
