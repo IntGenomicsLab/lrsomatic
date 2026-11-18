@@ -67,6 +67,39 @@ nextflow_workflow {
         }
     }
 
+    test("unaligned ONT input carrying minimap2 tags - none repeated, read tags kept") {
+
+        when {
+            params {
+                aligned_format = 'bam'
+            }
+            workflow {
+                """
+                input[0] = TAGGED_BAM_FIXTURE.out.bam.map { _meta, bam ->
+                    [ [ id:'ontu', type:'tumor', replicate:1, platform:'ont', aligned_input:false ], bam ]
+                }
+                input[1] = TAGGED_BAM_FIXTURE.out.fasta
+                """
+            }
+        }
+
+        then {
+            def out = BamTags.read(workflow.out.bam[0][1].toString())
+            def primary = out.records.findAll { rec -> (rec.flag & 0x900) == 0 }
+            def mapped = primary.findAll { rec -> (rec.flag & 0x4) == 0 }
+            def with = { tag -> primary.count { rec -> tag in rec.tags } }
+            def repeated = primary.findAll { rec -> rec.tags.size() != (rec.tags as Set).size() }
+                .collect { rec -> "${rec.name}: ${rec.tags}" }
+            assertAll(
+                { assert workflow.success },
+                { assert primary.size() == 200 && mapped.size() > 0 },
+                { assert repeated.isEmpty() : "records with a repeated tag: ${repeated.take(3)}" },
+                { assert mapped.every { rec -> 'tp' in rec.tags } },
+                { assert [ 'HP', 'PS', 'PQ', 'fi', 'fn', 'rn', 'rq' ].collect { tag -> with(tag) } == [ 200 ] * 7 }
+            )
+        }
+    }
+
     test("aligned PacBio input with --keep_kinetic_data - kinetics kept, phasing still dropped") {
 
         when {
