@@ -1132,17 +1132,17 @@ To change the resource requests, please see the [max resources](https://nf-co.re
 
 The defaults in `conf/base.config` are sized from execution traces of whole-genome runs at ~20-33x (ONT R10 and PacBio Revio, matched pairs and tumour-only, GRCh38 and CHM13; 62-100 Gb of reads per BAM). The heaviest steps, per sample or pair, with the request they get by default:
 
-| Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                            |
-| ------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                                    |
-| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 24 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus, so ~8-10 h at 24); peak 7 GB           |
-| `CLAIRS` (pair)                             | 24 / 144 GB / 16 h                     | 1.3-3.5 h with 17-39 cpus busy (48 given); peak 65-92 GB                                                    |
-| `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                                    |
-| `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                                |
-| `DEEPVARIANT_MAKEEXAMPLES`                  | 24 / 144 GB / 16 h                     | 1.2-1.9 h; 2.1-2.5 GB per shard                                                                             |
-| `DEEPSOMATIC_MAKEEXAMPLES`                  | 24 / 144 GB / 24 h                     | 1.5 h (tumour-only PacBio) to 3.7 h (ONT pair) with 48 shards; 2.1-3.5 GB per shard (166.5 GB at 48 shards) |
-| `DEEPSOMATIC_CALLVARIANTS` (CPU)            | 24 / 48 GB / 24 h                      | 1.1 h (tumour-only PacBio) to 5.4 h (ONT pair) with ~35 cpus busy (48 given); peak 14.5 GB                  |
-| `SAVANA_RUN` / `SAVANA_TO`                  | 12 / 96 GB / 16 h                      | 10 min / 0.6-1.3 h; reported peak 81-149 GB / 22-61 GB, summed over forked workers (see below)              |
+| Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                    |
+| ------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                            |
+| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 24 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus, so ~8-10 h at 24); peak 7 GB   |
+| `CLAIRS` (pair)                             | 24 / 144 GB / 16 h                     | 1.3-3.5 h with 17-39 cpus busy (48 given); peak 65-92 GB                                            |
+| `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                            |
+| `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                        |
+| `DEEPVARIANT_MAKEEXAMPLES`                  | 24 / 144 GB / 16 h                     | 1.2-1.9 h; 2.1-2.5 GB per shard                                                                     |
+| `DEEPSOMATIC_MAKEEXAMPLES`                  | 24 / 192 GB / 24 h                     | 1.3 h (tumour-only PacBio) to 6.4 h (ONT pair) with 24 shards; peak 62-120 GB (2026-11-17 campaign) |
+| `DEEPSOMATIC_CALLVARIANTS` (CPU)            | 24 / 48 GB / 24 h                      | 1.1 h (tumour-only PacBio) to 5.4 h (ONT pair) with ~35 cpus busy (48 given); peak 14.5 GB          |
+| `SAVANA_RUN` / `SAVANA_TO`                  | 12 / 128 GB / 16 h, 12 / 96 GB / 16 h  | 11-15 min / 0.8-2.1 h; peak 52-118 GB / 15-42 GB (2026-11-17 campaign; see below)                   |
 
 `make_examples` runs one shard per cpu and its memory grows with the number of shards, so if you give `DEEPVARIANT_MAKEEXAMPLES` or `DEEPSOMATIC_MAKEEXAMPLES` more cpus, raise memory with them (about 3.5 GB per cpu for an ONT pair). `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` are memory-bound as well: when one of their workers is killed for lack of memory they do not fail but wait until the time limit; their requests and the evidence for them are in [#237](https://github.com/IntGenomicsLab/lrsomatic/pull/237). SAVANA, Wakhan and VEP fork worker processes, so the peak memory Nextflow reports for them adds up pages the workers share and overstates what the job's memory limit (cgroup) charges; their requests are set with headroom because a worker pool that loses a worker to the OOM killer can hang instead of failing.
 
@@ -1150,8 +1150,8 @@ Deeper data mostly lengthens runtimes: alignment, m6A prediction, the variant ca
 
 ```groovy
 process {
-    withName: '.*:SAVANA_RUN' {
-        memory = { 72.GB * task.attempt }
+    withName: '.*:SAVANA_TO' {
+        memory = { 64.GB * task.attempt }
     }
 }
 ```
