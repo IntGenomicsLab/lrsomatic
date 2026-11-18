@@ -120,7 +120,7 @@ carried over stale into the new alignment:
 - everything `samtools reset` drops by default (`AS`, `CC`, `CG`, `CP`, `H0`, `H1`, `H2`, `HI`, `IH`, `MC`, `MD`, `MQ`,
   `NM`, `SA`, `TS`);
 - minimap2's tags `tp`, `cm`, `s1`, `s2`, `nn`, `ms`, `de`, `dv`, `rl`, `zd`, `cs`, `cg`, `ds`, which minimap2 writes
-  again for the new alignment;
+  again for the new alignment (dropped from unaligned input too, see below);
 - phasing tags `HP`, `PS`, `PQ`, `PC` (from WhatsHap, LongPhase or HiPhase, including the pipeline's own haplotagged
   output), which would otherwise give Severus, SAVANA, Wakhan and modkit the phasing of the old alignment;
 - `OA`, `XA`, `XS` (original alignment, other aligners' alternative hits), and the read group `RG`, which is
@@ -136,8 +136,10 @@ aligner or phasing tool not listed above survives the realignment; if your input
 (e.g. `samtools view -x`). Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript
 strand, splice mode only) and is kept.
 
-Unaligned input keeps every tag except `RG`, and for PacBio the kinetics: unaligned ONT input drops only `RG`,
-unaligned PacBio input drops `RG,fi,fp,ri,rp,ip,pw` unless `--keep_kinetic_data` is set.
+Unaligned input keeps every tag except `RG`, minimap2's tags above and, for PacBio, the kinetics (unless
+`--keep_kinetic_data` is set). An unaligned BAM can still carry minimap2's tags: Dorado writes them when it aligns,
+and a uBAM made from such a file may keep some (e.g. `zd`, minimap2's z-drop split flag, which Dorado itself treats as
+an alignment tag); `minimap2 -y` would then write them twice.
 
 Each samplesheet row gets one new read group, `@RG ID:<sample>_<type>_rep<replicate>`. For ONT input whose header
 names its basecalling model (Dorado's `DS:basecall_model=...`), the model is written into that read group as

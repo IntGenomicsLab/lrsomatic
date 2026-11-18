@@ -67,6 +67,53 @@ nextflow_workflow {
         }
     }
 
+    test("unaligned ONT and PacBio input carrying minimap2 tags - none repeated, PacBio kinetics dropped, read tags kept") {
+
+        when {
+            params {
+                aligned_format = 'bam'
+            }
+            workflow {
+                """
+                input[0] = TAGGED_BAM_FIXTURE.out.bam.flatMap { _meta, bam -> [
+                    [ [ id:'ontu', type:'tumor', replicate:1, platform:'ont', aligned_input:false ], bam ],
+                    [ [ id:'pbu', type:'tumor', replicate:1, platform:'pb', aligned_input:false ], bam ]
+                ] }
+                input[1] = TAGGED_BAM_FIXTURE.out.fasta
+                """
+            }
+        }
+
+        then {
+            def out = workflow.out.bam.collectEntries { meta, bam -> [ (meta.id): BamTags.read(bam.toString()) ] }
+            def primary = { id -> out[id].records.findAll { rec -> (rec.flag & 0x900) == 0 } }
+            def mapped = { id -> primary(id).findAll { rec -> (rec.flag & 0x4) == 0 } }
+            def with = { id, tag -> primary(id).count { rec -> tag in rec.tags } }
+            def repeated = { id -> primary(id).findAll { rec -> rec.tags.size() != (rec.tags as Set).size() }
+                .collect { rec -> "${rec.name}: ${rec.tags}" } }
+            def minimap2 = 'RG,tp,cm,s1,s2,nn,ms,de,dv,rl,zd,cs,cg,ds'
+            def rendered = (new File("$launchDir/work").listFiles() ?: [])
+                .collectMany { dir -> (dir.listFiles() ?: []) as List }
+                .collect { dir -> new File(dir, '.command.sh') }
+                .findAll { script -> script.exists() && script.text.contains('samtools reset') && script.text.contains('minimap2') }
+                .collectEntries { script ->
+                    [ ((script.text =~ /-R '@RG\\tID:([^\\]+)/)[0][1]): (script.text =~ /samtools reset .*?-x (\S+)/)[0][1] ]
+                }
+            assertAll(
+                { assert workflow.success },
+                { assert rendered == [ ontu_tumor_rep1: minimap2, pbu_tumor_rep1: minimap2 + ',fi,fp,ri,rp,ip,pw' ] },
+                { assert primary('ontu').size() == 200 && primary('pbu').size() == 200 },
+                { assert mapped('ontu').size() > 0 && mapped('pbu').size() > 0 },
+                { assert repeated('ontu').isEmpty() : "ontu records with a repeated tag: ${repeated('ontu').take(3)}" },
+                { assert repeated('pbu').isEmpty() : "pbu records with a repeated tag: ${repeated('pbu').take(3)}" },
+                { assert mapped('ontu').every { rec -> 'tp' in rec.tags } && mapped('pbu').every { rec -> 'tp' in rec.tags } },
+                { assert [ 'HP', 'PS', 'PQ', 'fi', 'fn', 'rn', 'rq' ].collect { tag -> with('ontu', tag) } == [ 200 ] * 7 },
+                { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with('pbu', tag) } == [ 0, 0, 0, 0 ] },
+                { assert [ 'HP', 'PS', 'PQ', 'fn', 'rn', 'rq' ].collect { tag -> with('pbu', tag) } == [ 200 ] * 6 }
+            )
+        }
+    }
+
     test("aligned PacBio input with --keep_kinetic_data - kinetics kept, phasing still dropped") {
 
         when {

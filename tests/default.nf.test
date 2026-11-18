@@ -81,7 +81,7 @@ nextflow_pipeline {
                     }
                 },
                 { // Effect on the reads is tested in tests/modules/minimap2_align_tags.nf.test
-                    def aligned = 'RG,HP,PS,PQ,PC,tp,cm,s1,s2,nn,ms,de,dv,rl,zd,cs,cg,ds,OA,XA,XS'
+                    def aligned = 'RG,tp,cm,s1,s2,nn,ms,de,dv,rl,zd,cs,cg,ds,HP,PS,PQ,PC,OA,XA,XS'
                     def model = 'DS:basecall_model=dna_r10.4.1_e8.2_400bps_sup@v5.0.0'
                     def expected = [
                         sample1_normal_rep1: [ reset: aligned, ds: model ],
