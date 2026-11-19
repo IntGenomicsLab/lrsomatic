@@ -137,6 +137,9 @@ and an allow-list would silently drop one a user or a downstream tool relies on.
 aligner or phasing tool not listed above survives the realignment; if your input carries such tags, remove them first
 (e.g. `samtools view -x`). Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript
 strand, splice mode only) and is kept.
+For aligned and unaligned input alike, float tags (type `f`, e.g. Dorado's `qs`, `du`, `sd`) pass through FASTQ header text, which samtools writes with 6
+significant digits and has no option to widen, so their binary values can differ from the input in the last digits
+(`qs:f:22.1447` prints the same before and after).
 
 Unaligned input keeps every tag except `RG`, minimap2's tags above and, for PacBio, the kinetics (unless
 `--keep_kinetic_data` is set). An unaligned BAM can still carry minimap2's tags: Dorado writes them when it aligns,
@@ -457,13 +460,25 @@ Use `--aligned_format bam` if a tool you run on the results cannot read CRAM, or
 
 #### SEVERUS Options
 
-| Parameter                  | Description                                                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--severus_minsupport`     | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3`                                                                                                 |
-| `--severus_whitelist`      | BED file of regions in which every SV is reported (Severus `--whitelist`). Passed to `SEVERUS` as `--whitelist`; its VCFs feed SV VEP, Wakhan and the report as usual. Default = off |
-| `--severus_whitelist_args` | Extra arguments for `SEVERUS`, only used with `--severus_whitelist`, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Default = none    |
+| Parameter                  | Description                                                                                                                                                                                                                 |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--severus_minsupport`     | Minimum number of supporting reads required for SEVERUS to call an SV. Default = `3`                                                                                                                                        |
+| `--severus_whitelist`      | BED file of regions in which SVs are reported past Severus' filters (Severus `--whitelist`; see below). Its VCFs feed SV VEP, Wakhan, Padfoot, ReConPlot, ShatterSeek and the report as usual. Default = off                |
+| `--severus_whitelist_args` | Extra arguments for `SEVERUS`, only used with `--severus_whitelist`: the `--whitelist-*` options below, or e.g. `--write-alignments`. Appended after `--min-support <severus_minsupport> --output-read-ids`. Default = none |
 
-`SEVERUS` runs a patched Severus 1.7 build ([AmberVerhasselt/Severus](https://github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration)) from `oras://docker.io/amberverhasselt/severus-sif` (`docker.io/amberverhasselt/severus` under Docker); without `--severus_whitelist` its output is identical to stock Severus 1.7. Inside the whitelisted regions it skips the read-quality, minimum-support and VNTR filters, and keeps a junction supported by a single read only when a reciprocal or independently supported junction corroborates it. This is meant for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads. **`--severus_whitelist` is not supported under Conda**, which installs stock Severus.
+`SEVERUS` runs a patched Severus 1.7 build ([AmberVerhasselt/Severus](https://github.com/AmberVerhasselt/Severus/tree/whitelist-reciprocal-corroboration)) from `oras://docker.io/amberverhasselt/severus-sif` (`docker.io/amberverhasselt/severus` under Docker); without `--severus_whitelist` its output is identical to stock Severus 1.7. Inside the whitelisted regions it skips the read-quality (mapping quality, mismatch rate, aligned length), minimum-support and VNTR filters. Every SV within a whitelisted region carries `INFO/INSIDE_WHITELIST=TRUE`, and one that was kept only because of the whitelist carries `INFO/WL_RESCUE` with the reason: `WHITELIST` (inside a region), `RECIPROCAL` (a reciprocal junction corroborates it) or `SUPPORTED_NEIGHBOUR` (a neighbouring junction with independent read support does). This is meant for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads. **`--severus_whitelist` is not supported under Conda**, which installs stock Severus.
+
+The whitelist build adds these options, passed through `--severus_whitelist_args` (e.g. `--severus_whitelist_args '--whitelist-reciprocal-dist 2000 --whitelist-enforce-mapq'`):
+
+| Severus option                                 | Effect                                                                                                                                                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--whitelist-single-read reciprocal\|any\|off` | What to do with a whitelisted junction supported by a single read: keep it only when a reciprocal or independently supported junction corroborates it (`reciprocal`), keep it unconditionally (`any`) or drop it (`off`). Default = `reciprocal` |
+| `--whitelist-reciprocal-dist <int>`            | Maximum distance (bp) at both breakends to a corroborating junction for `reciprocal`. Default = `1000`                                                                                                                                           |
+| `--whitelist-allow-intra-region`               | Also rescue single-read junctions with both breakends in the same whitelisted region. Physiological V(D)J recombination inside an IG/TCR locus is then reported as somatic. Default = off                                                        |
+| `--whitelist-enforce-mapq`                     | Apply Severus' `--min-mapq` (default 10) inside whitelisted regions too, so the whitelist exempts only the mismatch-rate and aligned-length checks. Default = off                                                                                |
+
+> [!WARNING]
+> `--whitelist-single-read any` floods 30x whole-genome data with single-read artefacts. On a 30x ONT pair with a non-Hodgkin lymphoma gene whitelist it gave 9,711 somatic SVs, 9,388 of them rescued, against 314 without a whitelist; the default `reciprocal` rescued 47-444 SVs per sample on the same kind of data. Rescued SVs are not filtered out downstream: they reach SV VEP, Padfoot, ShatterSeek (where they can produce chromothripsis calls) and ReConPlot. Use `any` only on small targeted regions, and check `INFO/WL_RESCUE` when reading the results.
 
 #### SAVANA Options
 
@@ -849,6 +864,15 @@ To further assist in reproducibility, you can use share and reuse [parameter fil
 > [!TIP]
 > If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
 
+#### Small differences between runs
+
+A few callers do not give identical output on identical input, in particular when their thread count changes (a different `cpus` request or a [`resourceLimits`](#resource-requests) cap). The differences are small and expected; keep them in mind when comparing runs or versions. On 30x pairs and tumour-only samples rerun with byte-identical BAMs:
+
+- **ClairS and DeepSomatic:** ±1-2 PASS records between 24 and 48 threads (ClairS 2,486 vs 2,485 PASS SNVs; DeepSomatic one PASS site exchanged for another, +235 non-PASS records out of 43.7 M). DeepVariant's output was identical.
+- **SAVANA copy number (`SAVANA_CNA`):** from byte-identical read and allele counts the segmentation changed (458 vs 443 segments) and the fit moved by 0.01 in purity (0.78 vs 0.79, ploidy 3.38). Padfoot, ReConPlot and ShatterSeek results on SAVANA copy number follow it.
+- **SAVANA SVs:** paired `classified.vcf` 103,201 vs 103,198 records, all of the differing ones `PREDICTED_NOISE`; tumour-only (`SAVANA_TO`) somatic sets ±1-2 records (e.g. 41,092 vs 41,090), which carry through the PacBio PoN filter and Padfoot.
+- **Severus:** ±1-2 somatic SVs.
+
 ## VEP plugins
 
 VEP is given extra pathogenicity and clinical-significance annotation through plugins. On
@@ -1152,21 +1176,21 @@ To change the resource requests, please see the [max resources](https://nf-co.re
 
 The defaults in `conf/base.config` are sized from execution traces of whole-genome runs at ~20-33x (ONT R10 and PacBio Revio, matched pairs and tumour-only, GRCh38 and CHM13; 62-100 Gb of reads per BAM). The heaviest steps, per sample or pair, with the request they get by default:
 
-| Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                    |
-| ------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                            |
-| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 24 / 16 GB / 24 h                      | ~185 cpu-hours per 326-343 GB kinetics uBAM (3.9 h at ~48 busy cpus, so ~8-10 h at 24); peak 7 GB   |
-| `CLAIRS` (pair)                             | 24 / 144 GB / 16 h                     | 1.3-3.5 h with 17-39 cpus busy (48 given); peak 65-92 GB                                            |
-| `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                            |
-| `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                        |
-| `DEEPVARIANT_MAKEEXAMPLES`                  | 24 / 144 GB / 16 h                     | 1.2-1.9 h; 2.1-2.5 GB per shard                                                                     |
-| `DEEPSOMATIC_MAKEEXAMPLES`                  | 24 / 192 GB / 24 h                     | 1.3 h (tumour-only PacBio) to 6.4 h (ONT pair) with 24 shards; peak 62-120 GB (2026-11-17 campaign) |
-| `DEEPSOMATIC_CALLVARIANTS` (CPU)            | 24 / 48 GB / 24 h                      | 1.1 h (tumour-only PacBio) to 5.4 h (ONT pair) with ~35 cpus busy (48 given); peak 14.5 GB          |
-| `SAVANA_RUN` / `SAVANA_TO`                  | 12 / 128 GB / 16 h, 12 / 96 GB / 16 h  | 11-15 min / 0.8-2.1 h; peak 52-118 GB / 15-42 GB (2026-11-17 campaign; see below)                   |
+| Step                                        | Default request (cpus / memory / time) | Observed at ~30x                                                                                                          |
+| ------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `MINIMAP2_ALIGN`                            | 24 / 144 GB / 16 h                     | 10-90 min with 30-37 cpus busy (48 given); peak 69-93 GB                                                                  |
+| `FIBERTOOLSRS_PREDICTM6A` (PacBio kinetics) | 48 / 16 GB / 24 h                      | 130-185 cpu-hours per 304-343 GB kinetics uBAM: 5.7-6.3 h at 24 cpus (97 % busy), 3.8-3.9 h at 64 (~48 busy); peak 3-7 GB |
+| `CLAIRS` (pair)                             | 48 / 144 GB / 16 h                     | ONT 2.1-2.8 h at 24 cpus, 1.3-2.2 h at 48; PacBio 6.2-6.4 h at 24, 3.6 h at 48; peak 36-50 GB at 24, 65-92 GB at 48       |
+| `CLAIRSTO` (tumour-only)                    | 24 / 144 GB / 16 h                     | 0.5-1.8 h with 16-36 cpus busy (48 given); peak 22-54 GB                                                                  |
+| `CLAIR3`                                    | 24 / 144 GB / 16 h                     | 0.5-1.7 h with 9-15 cpus busy; peak 33-48 GB                                                                              |
+| `DEEPVARIANT_MAKEEXAMPLES`                  | 24 / 144 GB / 16 h                     | 1.2-1.9 h; 2.1-2.5 GB per shard                                                                                           |
+| `DEEPSOMATIC_MAKEEXAMPLES`                  | 48 / 192 GB / 24 h                     | ONT pair 6.4 h with 24 shards (peak 120 GB), 3.7 h with 48 (peak 167 GB); tumour-only 1.3-1.5 h, peak 62-100 GB           |
+| `DEEPSOMATIC_CALLVARIANTS` (CPU)            | 48 / 48 GB / 24 h                      | ONT pair 8.5 h at 24 cpus, 5.4 h at 48; tumour-only 1.1-1.6 h; peak 8-15 GB                                               |
+| `SAVANA_RUN` / `SAVANA_TO`                  | 12 / 128 GB / 16 h, 12 / 96 GB / 16 h  | 11-15 min / 0.8-2.1 h; peak 52-118 GB / 15-42 GB (2026-11-17 campaign; see below)                                         |
 
-`make_examples` runs one shard per cpu and its memory grows with the number of shards, so if you give `DEEPVARIANT_MAKEEXAMPLES` or `DEEPSOMATIC_MAKEEXAMPLES` more cpus, raise memory with them (about 5 GB per cpu for an ONT pair: 120 GB at 24 shards). `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` are memory-bound as well: when one of their workers is killed for lack of memory they do not fail but wait until the time limit; their requests and the evidence for them are in [#237](https://github.com/IntGenomicsLab/lrsomatic/pull/237). SAVANA, Wakhan and VEP fork worker processes, so the peak memory Nextflow reports for them adds up pages the workers share and overstates what the job's memory limit (cgroup) charges; their requests are set with headroom because a worker pool that loses a worker to the OOM killer can hang instead of failing.
+`make_examples` runs one shard per cpu and its memory grows with the number of shards, so if you give `DEEPVARIANT_MAKEEXAMPLES` or `DEEPSOMATIC_MAKEEXAMPLES` more cpus, raise memory with them (an ONT pair peaked at 120 GB with 24 shards and 167 GB with 48). `DEEPVARIANT_POSTPROCESSVARIANTS` and `DEEPSOMATIC_POSTPROCESSVARIANTS` are memory-bound as well: when one of their workers is killed for lack of memory they do not fail but wait until the time limit; their requests and the evidence for them are in [#237](https://github.com/IntGenomicsLab/lrsomatic/pull/237). SAVANA, Wakhan and VEP fork worker processes, so the peak memory Nextflow reports for them adds up pages the workers share and overstates what the job's memory limit (cgroup) charges; their requests are set with headroom because a worker pool that loses a worker to the OOM killer can hang instead of failing.
 
-Deeper data mostly lengthens runtimes: alignment, m6A prediction, the variant callers and `call_variants` scale roughly with the number of reads, which is why each request doubles on a retry after a time-limit or memory kill (exit codes 130-145, 104, 175-177). For 60-90x samples it is cheaper to raise the time of these steps up front than to lose a first attempt. On clusters that cap memory per core (e.g. 4 GB per cpu), a job asking for more memory than that is widened to more cpus and billed for them; the steps that need more memory than their cpus imply (`LONGPHASE_MODCALL_*`, `SAVANA_RUN`, `SAVANA_TO`, `WAKHAN`, `SEVERUS`, `LRSOMATICREPORT`) are short, and of the long, heavy steps only `DEEPSOMATIC_MAKEEXAMPLES` asks for more than 6 GB per cpu (192 GB on 24 cpus, 8 GB per cpu, for 1.3-6.4 h). Its 192 GB is sized for an ONT pair; tumour-only and PacBio samples peaked at 62 GB, so on such a cluster you can lower it for those. You can lower any of them in a custom config, for example:
+Deeper data mostly lengthens runtimes: alignment, m6A prediction, the variant callers and `call_variants` scale roughly with the number of reads, which is why each request doubles on a retry after a time-limit or memory kill (exit codes 130-145, 104, 175-177). For 60-90x samples it is cheaper to raise the time of these steps up front than to lose a first attempt. On clusters that cap memory per core (e.g. 4 GB per cpu), a job asking for more memory than that is widened to more cpus and billed for them; the steps that need more memory than their cpus imply (`LONGPHASE_MODCALL_*`, `SAVANA_RUN`, `SAVANA_TO`, `WAKHAN`, `SEVERUS`, `LRSOMATICREPORT`) are short, and none of the long, heavy steps asks for more than 6 GB per cpu (`DEEPSOMATIC_MAKEEXAMPLES`: 192 GB on 48 cpus, sized for an ONT pair; tumour-only samples peaked at 62-100 GB). `CLAIRS`, `DEEPSOMATIC_MAKEEXAMPLES`, `DEEPSOMATIC_CALLVARIANTS` and `FIBERTOOLSRS_PREDICTM6A` get 48 cpus because they sit on the critical path of a pair: at 24 cpus each takes about 1.5-2 times as long. On a machine with fewer cpus, lower them (and `DEEPSOMATIC_MAKEEXAMPLES`' memory with them) or set `resourceLimits`. You can lower any of them in a custom config, for example:
 
 ```groovy
 process {

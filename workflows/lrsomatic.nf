@@ -1591,7 +1591,12 @@ workflow LRSOMATIC {
     // Output: .report -- [meta, html]  -- MultiQC HTML report
     //
     summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
+    // Per-launch values (run name, report timestamp) would make MULTIQC re-run on every -resume
+    def mqc_summary_params = summary_params.collectEntries { group, group_params ->
+        def kept = group_params.findAll { key, _value -> !(key in ['runName', 'trace_report_suffix']) }
+        [group, group == 'Core Nextflow options' ? [sessionId: workflow.sessionId.toString()] + kept : kept]
+    }
+    ch_workflow_summary = channel.value(paramsSummaryMultiqc(mqc_summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
 
@@ -1626,7 +1631,9 @@ workflow LRSOMATIC {
     MULTIQC (
         ch_multiqc_files
             .collect()
-            .map { files ->
+            .map { all_files ->
+                // Completion order varies between runs; a fixed order keeps the task cached on -resume
+                def files = all_files.sort(false) { a, b -> a.name <=> b.name ?: a.toString() <=> b.toString() }
                 def multiqc_config_files = [file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)]
                 if (params.multiqc_config) {
                     multiqc_config_files += [file(params.multiqc_config, checkIfExists: true)]

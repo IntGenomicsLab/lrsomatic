@@ -963,7 +963,9 @@ def toolBibliographyText() {
 def methodsDescriptionText(mqc_methods_yaml) {
     // Convert  to a named map so can be used as with familiar NXF ${workflow} variable syntax in the MultiQC YML file
     def meta = [:]
-    meta.workflow = workflow.toMap()
+    // Without -resume the text, and so MULTIQC's inputs, stay the same when a run is resumed
+    def command_line = workflow.commandLine.replaceAll(/\s+-resume(\s+[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})?(?=\s|$)/, '')
+    meta.workflow = workflow.toMap() + [commandLine: command_line]
     meta["manifest_map"] = workflow.manifest.toMap()
 
     // Pipeline DOI
