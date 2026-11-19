@@ -22,13 +22,16 @@ process FIBERTOOLSRS_FIRE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    // ft logs one WARN per read without MSPs (millions on reads without m6A); count them instead
     """
+    set -o pipefail
     ft \\
         fire \\
         $args \\
         -t $task.cpus \\
         $bam \\
-        ${prefix}_fire.bam
+        ${prefix}_fire.bam \\
+        2>&1 | awk '/FIRE: no msp annotations on record; skipping/ { n++; next } { print } END { if (n) print "FIRE: skipped " n " records without msp annotations" }' >&2
     """
 
     stub:
