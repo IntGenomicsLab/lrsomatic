@@ -16,6 +16,7 @@ workflow FIBERSEQ {
     ch_input_reads    // [meta_with_replicate, bam_or_cram] -- input reads, one per replicate (unaligned or aligned)
     ch_aligned_input  // [meta, 'true'|'false']  -- METAEXTRACT: the input has @SQ lines
     ch_decode_fasta   // [meta, 'true'|'false']  -- METAEXTRACT: decode this CRAM with --fasta (its M5s match)
+    ch_m6a_calls      // [meta, 'true'|'false'|'unknown']  -- METAEXTRACT: the first reads' MM tags carry m6A
     ch_fasta          // [[:], fasta]
     ch_fai            // [[:], fai]
 
@@ -38,19 +39,32 @@ workflow FIBERSEQ {
         .join(
             ch_aligned_input
                 .join(ch_decode_fasta, failOnMismatch: true)
-                .map { meta, aligned, decode -> [ [ meta.id, meta.type, meta.replicate ], aligned, decode ] },
+                .join(ch_m6a_calls, failOnMismatch: true)
+                .map { meta, aligned, decode, m6a -> [ [ meta.id, meta.type, meta.replicate ], aligned, decode, m6a ] },
             failOnMismatch: true
         )
-        .branch { _key, meta, _bams, aligned, _decode ->
+        .branch { _key, meta, _bams, aligned, _decode, m6a ->
+            // --skip_m6a on reads without m6A calls: nucleosome and FIRE calling would find nothing
+            no_m6a: params.skip_m6a && m6a == 'false' && fibertoolsReadsInput(meta, meta.kinetics)
             prep: aligned == 'true' && fibertoolsReadsInput(meta, meta.kinetics)
             as_given: true
         }
         .set { ch_fiber_input }
 
+    ch_no_m6a = ch_fiber_input.no_m6a
+        .map { _key, meta, bams, _aligned, _decode, _m6a ->
+            def replicate = meta.n_replicates > 1 ? " replicate ${meta.replicate}" : ''
+            def hint = meta.platform == 'pb' && meta.kinetics == 'true' ? ' Run without --skip_m6a to predict m6A from its kinetics.' : ''
+            log.warn "Sample '${meta.id}' (${meta.type}${replicate}): --skip_m6a is set but the first 1000 reads carry no m6A calls " +
+                "(no A+a entry in their MM tags), so the fibertools-rs nucleosome, FIRE and QC steps are skipped for it.${hint}"
+            [ meta, bams ]
+        }
+    // ch_no_m6a: [meta_with_replicate, bam_or_cram]  -- input reads as given, rejoined after FIRE
+
     ch_fiber_input.prep
         .combine(ch_fasta)
         .combine(ch_fai)
-        .multiMap { _key, meta, bams, _aligned, decode, meta_fasta, fasta, _meta_fai, fai ->
+        .multiMap { _key, meta, bams, _aligned, decode, _m6a, meta_fasta, fasta, _meta_fai, fai ->
             reads: [ meta, bams, [] ]
             fasta: decode == 'true' ? [ meta_fasta, fasta, fai ] : [ [:], [], [] ]
         }
@@ -65,7 +79,7 @@ workflow FIBERSEQ {
     )
 
     ch_samplesheet = ch_fiber_input.as_given
-        .map { _key, meta, bams, _aligned, _decode -> [ meta, bams ] }
+        .map { _key, meta, bams, _aligned, _decode, _m6a -> [ meta, bams ] }
         .mix(SAMTOOLS_VIEW_FIBERPREP.out.bam)
     // ch_samplesheet: [meta_with_replicate, bam_or_cram]  -- fibertools-rs input is now unaligned or primary-only BAM
 
@@ -169,6 +183,7 @@ workflow FIBERSEQ {
     if (!params.skip_normalfiber){
         // Re-merge fiber and non-fiber samples after FIRE annotation
         fiber_branch.nonFiber
+        .mix(ch_no_m6a)
         .mix(FIBERTOOLSRS_FIRE.out.bam)
         .set{ch_ubams}
     }
@@ -176,6 +191,7 @@ workflow FIBERSEQ {
         // Re-merge fiber, non-fiber, and held-out normal samples
         fiber_branch.nonFiber
         .mix(normal_bams)
+        .mix(ch_no_m6a)
         .mix(FIBERTOOLSRS_FIRE.out.bam)
         .set{ch_ubams}
     }

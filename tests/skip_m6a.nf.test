@@ -1,0 +1,100 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --skip_m6a skips the fiber steps of reads without m6A calls (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The METAEXTRACT stub runs the real m6A check on the first reads, so SAM text in a .bam file stands in for each
+    // input (htslib reads the format from the content); stub tasks never open the reads. A header-only file reads as
+    // 'unknown', which keeps the fiber steps.
+    def writeSheet = { outputDir ->
+        def input_dir = new File("${outputDir}/../skip_m6a_input")
+        input_dir.mkdirs()
+        def header = '@HD\tVN:1.6\tSO:unknown\n'
+        def read = { mm -> "r1\t4\t*\t0\t0\t*\t*\t0\t0\tACGTACGT\t*\tMM:Z:${mm}\tML:B:C,200,200\n" }
+        def files = [
+            withm6a:   header + read('C+m?,0;A+a?,1;'),
+            nom6a:     header + read('C+m?,0,1;'),
+            // aligned: would go through SAMTOOLS_VIEW_FIBERPREP if the fiber steps ran
+            alnnom6a:  '@HD\tVN:1.6\tSO:coordinate\n@SQ\tSN:chr19\tLN:58617616\n' +
+                       "r1\t0\tchr19\t100\t60\t8M\t*\t0\t0\tACGTACGT\t*\tMM:Z:C+m?,0,1;\tML:B:C,200,200\n",
+            unknown:   header,
+            plainnom6a: header + read('C+m?,0,1;')
+        ].collectEntries { name, text ->
+            def f = new File(input_dir, "${name}.bam")
+            f.text = text
+            [ (name): f.canonicalPath ]
+        }
+        def sheet = new File(input_dir, 'samplesheet_skip_m6a.csv')
+        sheet.text = [
+            'sample,bam_tumor,bam_normal,platform,sex,fiber',
+            "withm6a,${files.withm6a},,pb,female,y",
+            "nom6a,${files.nom6a},,pb,female,y",
+            "alnnom6a,${files.alnnom6a},,ont,female,y",
+            "unknown,${files.unknown},,pb,female,y",
+            "plain,${files.plainnom6a},,pb,female,n"
+        ].join('\n') + '\n'
+        return sheet.canonicalPath
+    }
+
+    test("-profile test, --skip_m6a, fiber-seq rows with and without m6A calls - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir   = "$outputDir"
+                input    = writeSheet(outputDir)
+                skip_m6a = true
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }.sort()
+            }
+            def log = (workflow.stdout + workflow.stderr).join('\n')
+            assertAll(
+                { assert workflow.success },
+                { assert samples('FIBERTOOLSRS_NUCLEOSOMES') == [ 'unknown', 'withm6a' ] : "FIBERTOOLSRS_NUCLEOSOMES tasks: ${samples('FIBERTOOLSRS_NUCLEOSOMES')}" },
+                { assert samples('FIBERTOOLSRS_FIRE') == [ 'unknown', 'withm6a' ] : "FIBERTOOLSRS_FIRE tasks: ${samples('FIBERTOOLSRS_FIRE')}" },
+                { assert samples('FIBERTOOLSRS_QC') == [ 'unknown', 'withm6a' ] : "FIBERTOOLSRS_QC tasks: ${samples('FIBERTOOLSRS_QC')}" },
+                { assert samples('FIBERTOOLSRS_PREDICTM6A').isEmpty() },
+                { assert samples('SAMTOOLS_VIEW_FIBERPREP').isEmpty() : "SAMTOOLS_VIEW_FIBERPREP tasks: ${samples('SAMTOOLS_VIEW_FIBERPREP')}" },
+                // the skipped samples still reach alignment and the report
+                { assert samples('MINIMAP2_ALIGN') == [ 'alnnom6a', 'nom6a', 'plain', 'unknown', 'withm6a' ] : "MINIMAP2_ALIGN tasks: ${samples('MINIMAP2_ALIGN')}" },
+                { assert samples('LRSOMATICREPORT') == [ 'alnnom6a', 'nom6a', 'plain', 'unknown', 'withm6a' ] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" },
+                { assert log.contains("Sample 'nom6a' (tumor): --skip_m6a is set but the first 1000 reads carry no m6A calls") },
+                { assert log.contains("Sample 'alnnom6a' (tumor): --skip_m6a is set") },
+                { assert !log.contains("Sample 'withm6a'") && !log.contains("Sample 'unknown'") && !log.contains("Sample 'plain'") }
+            )
+        }
+    }
+
+    test("-profile test, fiber-seq rows without m6A calls, no --skip_m6a - stub, fiber steps run") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                input  = writeSheet(outputDir)
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }.sort()
+            }
+            assertAll(
+                { assert workflow.success },
+                { assert samples('FIBERTOOLSRS_FIRE') == [ 'alnnom6a', 'nom6a', 'unknown', 'withm6a' ] : "FIBERTOOLSRS_FIRE tasks: ${samples('FIBERTOOLSRS_FIRE')}" },
+                { assert samples('SAMTOOLS_VIEW_FIBERPREP') == [ 'alnnom6a' ] : "SAMTOOLS_VIEW_FIBERPREP tasks: ${samples('SAMTOOLS_VIEW_FIBERPREP')}" },
+                { assert !(workflow.stdout + workflow.stderr).any { line -> line.contains('--skip_m6a is set') } }
+            )
+        }
+    }
+}

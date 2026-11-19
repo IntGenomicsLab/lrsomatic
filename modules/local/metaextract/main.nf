@@ -15,6 +15,7 @@ process METAEXTRACT {
     tuple val(meta), env(basecall_model), env(kinetics)  , emit: meta_ext
     tuple val(meta), env(decode_with_fasta)              , emit: decode_with_fasta
     tuple val(meta), env(aligned_input)                  , emit: aligned_input
+    tuple val(meta), env(m6a_calls)                      , emit: m6a_calls
     tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d;s/.* //'"), topic: versions, emit: versions_samtools
 
     when:
@@ -23,10 +24,12 @@ process METAEXTRACT {
     script:
     def args = task.ext.args ?: ''
     def ont = meta.platform == 'ont'
+    def m6a_check = m6aCallsCheck(bam)
     basecall_model = ''
     kinetics = ''
     decode_with_fasta = ''
     aligned_input = ''
+    m6a_calls = ''
     // aligned_input: 'true' when the input (BAM or CRAM) has @SQ lines. Such input is prepared before fibertools-rs,
     // which takes no reference to decode a CRAM and panics on the SEQ-less secondary alignments minimap2 writes.
     // decode_with_fasta: 'true' when an aligned CRAM shares no contig name with the reference under a different M5,
@@ -51,6 +54,7 @@ process METAEXTRACT {
         aligned_input=true
     fi
     ${cram_ref_check}
+    ${m6a_check}
     if [ $ont = 'true' ]; then
         basecall_model=\$(samtools view -H "${bam}" ${args} | awk -F'basecall_model=' '/basecall_model=/ {print \$2; exit}' | awk '{print \$1}' | tr -d '[:space:]')
     else
@@ -63,6 +67,7 @@ process METAEXTRACT {
     // A real model name, so the Clair3/ClairS model lookups resolve and -stub runs reach the callers
     def stub_model = meta.platform == 'ont' ? 'dna_r10.4.1_e8.2_400bps_sup@v5.0.0' : 'hifi_revio'
     def ont = meta.platform == 'ont'
+    def m6a_check = m6aCallsCheck(bam)
     // The real kinetics header check, so a -stub run can give a sample's BAMs different kinetics
     // (tests/kinetics_pairing.nf.test); an empty placeholder reads as 'false'
     """
@@ -78,5 +83,20 @@ process METAEXTRACT {
     if [ -s input_sq.txt ]; then
         aligned_input=true
     fi
+    ${m6a_check}
+    """
+}
+
+// m6a_calls: 'true' when an MM tag of the first 1000 records has an m6A entry (A+a, T-a or ChEBI 28871), 'false'
+// when none has, 'unknown' when the records could not all be read. Only aux fields are decoded, so no CRAM needs a reference.
+def m6aCallsCheck(bam) {
+    """
+    m6a_calls=\$( (samtools head -h 0 -n 1000 --input-fmt-option required_fields=0x800 ${bam} || echo '#read_failed') | awk -F'\\t' '
+        \$0 == "#read_failed" { failed = 1; next }
+        { n++; for (i = 12; i <= NF; i++) if (\$i ~ /^M[Mm]:Z:/) {
+            k = split(substr(\$i, 6), e, ";")
+            for (j = 1; j <= k; j++) if (e[j] ~ /^(A[+]|T-)([a-z]*a[a-z]*|28871)[.?]?(,|\$)/) found = 1
+        } }
+        END { print (found ? "true" : (failed || !n ? "unknown" : "false")) }')
     """
 }

@@ -792,7 +792,8 @@
                 },
                 "skip_m6a": {
                     "type": "boolean",
-                    "description": "Skip m6a calling by Fibertools"
+                    "description": "Skip m6a calling by Fibertools",
+                    "help_text": "For fiber-seq reads that already carry m6A calls. A fiber-seq file whose first 1000 reads carry no m6A calls (no A+a entry in their MM tags) then skips the nucleosome, FIRE and fibertools-rs QC steps, with a warning naming the sample."
                 },
                 "skip_vep": {
                     "type": "boolean",
