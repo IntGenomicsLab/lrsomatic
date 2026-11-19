@@ -91,6 +91,9 @@ nextflow_pipeline {
                 { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "somatic BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
 
                 { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" },
+                // The stub report holds the --run-mode the pipeline passed: from meta.paired_data, not inferred from QC files
+                { assert all.collectEntries { id -> [id, path("$outputDir/${id}/report/${id}_report.html").text.trim()] } ==
+                    [sample1: '--run-mode paired', sample2: '--run-mode paired', sample3: '--run-mode tumour_only'] },
 
                 // Report staging: every reached leg is present, and every extra file sits where the pipeline published it
                 { assert all.every { id -> legs(id).every { leg -> staged[id].any { rel -> rel ==~ leg } } } :

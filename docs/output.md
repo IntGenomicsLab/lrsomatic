@@ -992,6 +992,8 @@ The report reads these published outputs of the sample (a skipped tool's section
 | Mutational signatures     | `signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/`, `signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all`                                                                            |
 | QC and phasing            | mosdepth, cramino and samtools files under `qc/{tumor,normal}/`, `qc/whatshap_stats/{sample}_whatshap_stats.tsv`                                                                                                                                     |
 
+The pipeline passes each sample's run mode, `--run-mode paired` for a tumour/normal pair and `--run-mode tumour_only` otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.
+
 Wakhan's interactive HTML plots (`wakhan/solution_*/integer_profile.html`, the subclonal profiles and `{sample}_heatmap_ploidy_purity.html`) are no longer embedded in the report, which draws the top-ranked solution's copy-number profile from `integer_profile.bed` instead; open them from the [`wakhan`](#wakhan) directory.
 
 Sections:
