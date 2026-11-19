@@ -445,6 +445,7 @@ workflow LRSOMATIC {
             ch_samplesheet,
             METAEXTRACT.out.aligned_input,
             METAEXTRACT.out.decode_with_fasta,
+            METAEXTRACT.out.m6a_calls,
             ch_fasta,
             ch_fai
         )
