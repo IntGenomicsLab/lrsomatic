@@ -99,7 +99,9 @@ In practice the `UR:` path is often enough: it works whenever that path is visib
 filesystem your profile binds). Some tools (e.g. cramino in `CRAMINO_PRE`) first try the EBI reference server and log a
 failed request before falling back to `UR:`; where the server is reachable, they download the contigs from it. A CRAM
 whose reference differs from `--fasta` in any contig checksum (e.g. a masked chrY or another chrM) is not decoded with
-`--fasta`, even when the assembly name is the same.
+`--fasta`, even when the assembly name is the same. A CRAM aligned to the GATK GRCh38 FASTA passes that check against
+the default [GRCh38 reference](#grch38-reference) and is decoded with it, but its reads on ALT, HLA and decoy contigs,
+which the default lacks, still need the embedded reference, `UR:` or `REF_PATH`.
 
 Fiber-seq samples (`fiber` = `y`) and PacBio data with kinetics are read by fibertools-rs before alignment, and
 fibertools-rs cannot take a reference. Aligned input for these samples, BAM or CRAM, therefore first goes through
@@ -198,6 +200,24 @@ genome: 'GRCh37'
 ```
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
+
+## GRCh38 reference
+
+`--genome GRCh38` aligns to the NCBI no-ALT analysis set,
+[`GCA_000001405.15_GRCh38_no_alt_analysis_set`](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/),
+staged from the iGenomes copy at `${igenomes_base}/Homo_sapiens/NCBI/GRCh38/Sequence/WholeGenomeFasta/genome.fa`
+(byte-identical to NCBI's `.fna.gz` once decompressed). It has 195 chr-named contigs: chr1-22, chrX, chrY, chrM, 127
+unlocalized and unplaced contigs (`*_random`, `chrUn_*`) and chrEBV, with no ALT, HLA or decoy contigs. The chrY PARs
+and the duplicated centromeric arrays are hard-masked, as in other analysis sets.
+
+Up to lrsomatic 1.1.0 the default was the GATK `Homo_sapiens_assembly38.fasta`, which adds 261 ALT, 525 HLA and 2,385
+decoy contigs. minimap2 is not ALT-aware, so reads from regions with an ALT haplotype were split between the primary
+contig and the ALT contig, mostly at mapping quality 0, and variant calling in those regions (the MHC most of all) lost
+most of its calls. Every contig of the no-ALT set is in the GATK FASTA under the same name, length and `M5`, so all
+other GRCh38 resources (ASCAT, panels of normals, VEP, SigProfiler, Padfoot, SAVANA, Wakhan) apply unchanged. Results
+differ from earlier runs in ALT regions, and `-resume` from an earlier version realigns every sample. To keep the
+previous reference, pass
+`--fasta s3://ngi-igenomes/igenomes/Homo_sapiens/GATK/GRCh38/Sequence/WholeGenomeFasta/Homo_sapiens_assembly38.fasta`.
 
 ## CHM13 Support
 
@@ -796,7 +816,7 @@ The following parameters are automatically populated from the `--genome` iGenome
 
 | Parameter                                                                          | Description                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--fasta`                                                                          | Full path to the reference FASTA file. Auto-populated from `--genome`. Override for custom genomes.                                                                                                                                                 |
+| `--fasta`                                                                          | Full path to the reference FASTA file (may be gzipped). Auto-populated from `--genome`; on GRCh38 the NCBI no-ALT analysis set (see [GRCh38 reference](#grch38-reference)). Override for custom genomes.                                            |
 | `--bed_file`                                                                       | BED file of callable/target regions passed to SEVERUS for SV calling. Auto-populated from `--genome`.                                                                                                                                               |
 | `--pon_file`                                                                       | Panel of Normals breakpoint table (bgzipped CSV) for SEVERUS somatic SV filtering in tumor-only mode. Auto-populated from `--genome`.                                                                                                               |
 | `--centromere_bed`                                                                 | BED file of centromere coordinates passed to WAKHAN. Auto-populated from `--genome`.                                                                                                                                                                |
