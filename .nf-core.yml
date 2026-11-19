@@ -43,6 +43,7 @@ lint:
     - tests/download_vep_cache.nf.test
     - tests/stub_dag_coverage.nf.test
     - tests/smallvar_wiring.nf.test
+    - tests/skip_m6a.nf.test
     - tests/error_policy.nf.test # fixture workflow, asserts on which attempts produced output
 nf_core_version: 4.2.2
 repository_type: pipeline
