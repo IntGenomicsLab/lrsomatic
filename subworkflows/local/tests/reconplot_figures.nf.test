@@ -21,6 +21,8 @@ nextflow_workflow {
         when {
             params {
                 outdir = "$outputDir"
+                // conf/modules.config adds the focus panel (ext.args3) only with regions
+                reconplot_regions = 'chr1'
             }
             workflow {
                 """
@@ -117,6 +119,8 @@ nextflow_workflow {
                 { assert workflow.out.genome_wide.size() == 5 },
                 { assert workflow.out.per_chromosome.size() == 5 },
                 { assert workflow.out.genome_wide.collect { _meta, figs -> figs.collect { f -> f.tokenize('/')[-3..-1].join('/') } }.flatten().contains('severus_wakhan/genome_wide/sample1_genome_wide.png') },
+                { assert workflow.out.focus.size() == 5 },
+                { assert workflow.out.focus.collect { _meta, figs -> figs.collect { f -> f.tokenize('/')[-3..-1].join('/') } }.flatten().contains('severus_wakhan/focus/sample1_focus.png') },
                 { assert workflow.out.versions.size() >= 1 }
             )
         }

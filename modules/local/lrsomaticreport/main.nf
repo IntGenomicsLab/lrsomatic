@@ -37,6 +37,7 @@ process LRSOMATICREPORT {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
+    def run_mode = meta.paired_data ? 'paired' : 'tumour_only'
     def link_sample_dir = reportSampleDirCommands(vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, extra_relpaths, extra_files)
 
     """
@@ -52,6 +53,7 @@ process LRSOMATICREPORT {
         --sample-id "${prefix}" \\
         --sex "${sex}" \\
         --reference auto \\
+        --run-mode ${run_mode} \\
         --gene-lists-dir gene_lists \\
         --output "${prefix}_report.html" \\
         ${args}
@@ -59,6 +61,7 @@ process LRSOMATICREPORT {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def run_mode = meta.paired_data ? 'paired' : 'tumour_only'
     // Builds the same sample_dir as the script, so a -stub run shows what the tool would discover
     def link_sample_dir = reportSampleDirCommands(vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, extra_relpaths, extra_files)
     def touch_small_variants = vep_somatic ? "echo '' | gzip > ${prefix}_small_variants.tsv.gz" : ''
@@ -68,7 +71,7 @@ process LRSOMATICREPORT {
     find -L sample_dir -type f | LC_ALL=C sort | while read -r f; do
         printf '%s\\t%s\\n' "\$f" "\$(md5sum < "\$f" | cut -d' ' -f1)"
     done > staged.txt
-    touch ${prefix}_report.html
+    echo "--run-mode ${run_mode}" > ${prefix}_report.html
     ${touch_small_variants}
     """
 }

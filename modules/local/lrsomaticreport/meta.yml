@@ -20,7 +20,8 @@ input:
   - - meta:
         type: map
         description: |
-          Groovy Map containing sample information, e.g. `[ id:'sample1' ]`
+          Groovy Map containing sample information, e.g. `[ id:'sample1', paired_data:true, sex:'female' ]`.
+          paired_data picks the report's run mode (`--run-mode paired`, else `tumour_only`); sex its `--sex`
     - vep_somatic:
         type: file
         description: VEP-annotated somatic small-variant VCF (SOMATIC_VEP output)

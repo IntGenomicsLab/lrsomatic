@@ -21,6 +21,7 @@ nextflow_pipeline {
                 skip_padfoot         = false
                 skip_reconplot       = false
                 skip_shatterseek     = false
+                reconplot_regions    = 'chr22'
                 germline_var_keep    = 'clair,deepvariant'
                 somatic_var_keep     = 'clair,deepsomatic'
                 germline_var_combine = 'consensus'
@@ -39,7 +40,7 @@ nextflow_pipeline {
             def staged = all.collectEntries { id ->
                 [id, path("$outputDir/${id}/report/staged.txt").readLines()*.tokenize('\t')*.getAt(0)*.minus('sample_dir/')]
             }
-            def extra_root = ~/^(signatures|shatterseek|ecdna|variants\/savana|vep\/SVs|padfoot|reconplot|wakhan)\/.*/
+            def extra_root = ~/^(signatures|shatterseek|ecdna|variants\/savana|variants\/clairsto|vep\/SVs|padfoot|reconplot|wakhan)\/.*/
             // One pattern per leg reached by this run (SigProfiler is off in the test profile)
             def legs = { id -> [
                 ~/ecdna\/amplicon_classifier\/${id}_gene_list\.tsv/,
@@ -51,12 +52,13 @@ nextflow_pipeline {
                 ~/padfoot\/(severus_wakhan|savana)\/annotated_svs\.tsv/,
                 ~/reconplot\/(severus_wakhan|savana)\/genome_wide\/[^\/]+\.png/,
                 ~/reconplot\/(severus_wakhan|savana)\/per_chromosome\/[^\/]+\.png/,
+                ~/reconplot\/(severus_wakhan|savana)\/focus\/[^\/]+\.png/,
                 ~/shatterseek\/(severus_wakhan|savana)\/${id}\.shatterseek\.tsv/,
                 ~/wakhan\/solutions_ranks\.tsv/,
                 ~/wakhan\/solution_rank_1\/integer_profile\.bed/,
                 ~/wakhan\/solution_rank_1\/genes\/genes_copynumber_states\.bed/,
                 ~/qc\/tumor\/${id}_whatshap_stats\.tsv/
-            ] + (id == 'sample3' ? [] : [~/vep\/SVs\/${id}_VEP_SAVANA\.vcf\.gz/]) }  // no SAVANA VEP for the tumour-only sample here
+            ] + (id == 'sample3' ? [~/variants\/clairsto\/${id}\.verdict_status\.tsv/] : [~/vep\/SVs\/${id}_VEP_SAVANA\.vcf\.gz/]) }  // tumour-only: Verdict status, no SAVANA VEP here
 
             assertAll(
                 { assert workflow.success },
@@ -89,6 +91,9 @@ nextflow_pipeline {
                 { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "somatic BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
 
                 { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" },
+                // The stub report holds the --run-mode the pipeline passed: from meta.paired_data, not inferred from QC files
+                { assert all.collectEntries { id -> [id, path("$outputDir/${id}/report/${id}_report.html").text.trim()] } ==
+                    [sample1: '--run-mode paired', sample2: '--run-mode paired', sample3: '--run-mode tumour_only'] },
 
                 // Report staging: every reached leg is present, and every extra file sits where the pipeline published it
                 { assert all.every { id -> legs(id).every { leg -> staged[id].any { rel -> rel ==~ leg } } } :

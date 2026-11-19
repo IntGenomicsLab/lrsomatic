@@ -27,6 +27,7 @@ process CLAIRSTO {
     // What Verdict tagged from, when it ran inside ClairS-TO (--skip_ascat); absent otherwise
     tuple val(meta), path("*_Tumor_Purity_Ploidy.txt"), emit: purity_ploidy, optional: true
     tuple val(meta), path("*_Tumor_CNA.txt"),           emit: cna,           optional: true
+    tuple val(meta), path("*.verdict_status.tsv"),      emit: verdict_status
     tuple val("${task.process}"), val('clairsto'), eval("run_clairs_to  --version |& sed '1!d ; s/run_clairs_to //'"), topic: versions, emit: versions_clairsto
 
     when:
@@ -72,6 +73,14 @@ process CLAIRSTO {
         fi
     done
 
+    # Verdict's tagging logs exist only if it ran, and it logs a skip without failing
+    verdict_status.py \\
+        --out ${prefix}.verdict_status.tsv \\
+        --purity_source clairsto_internal \\
+        --purity_ploidy ${prefix}_Tumor_Purity_Ploidy.txt \\
+        --verdict_log logs_*/6_CGT.log logs_*/10_CGT_INDEL.log \\
+        --run_log run_clairs_to*.log
+
     # The intermediate haplotagged copy of the tumor reads (phased_bam_output/, always BAM, so larger than a
     # CRAM input) is unused once ClairS-TO exits; --remove_intermediate_dir would also take cna_output above.
     # 0.5.1 names the directory tmp_<sample_name>.
@@ -79,11 +88,14 @@ process CLAIRSTO {
     """
 
     stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def stub_status = (task.ext.args ?: '').contains('--disable_verdict') ? 'not_run\\tNA\\tNA\\tnone' : 'applied\\tNA\\tNA\\tclairsto_internal'
     """
     mkdir -p output
     echo "" | gzip > snv.vcf.gz
     touch snv.vcf.gz.tbi
     echo "" | gzip > indel.vcf.gz
     touch indel.vcf.gz.tbi
+    printf 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\n${stub_status}\\t\\n' > ${prefix}.verdict_status.tsv
     """
 }
