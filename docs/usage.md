@@ -829,6 +829,15 @@ To further assist in reproducibility, you can use share and reuse [parameter fil
 > [!TIP]
 > If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
 
+#### Small differences between runs
+
+A few callers do not give identical output on identical input, in particular when their thread count changes (a different `cpus` request or a [`resourceLimits`](#resource-requests) cap). The differences are small and expected; keep them in mind when comparing runs or versions. On 30x pairs and tumour-only samples rerun with byte-identical BAMs:
+
+- **ClairS and DeepSomatic:** ±1-2 PASS records between 24 and 48 threads (ClairS 2,486 vs 2,485 PASS SNVs; DeepSomatic one PASS site exchanged for another, +235 non-PASS records out of 43.7 M). DeepVariant's output was identical.
+- **SAVANA copy number (`SAVANA_CNA`):** from byte-identical read and allele counts the segmentation changed (458 vs 443 segments) and the fit moved by 0.01 in purity (0.78 vs 0.79, ploidy 3.38). Padfoot, ReConPlot and ShatterSeek results on SAVANA copy number follow it.
+- **SAVANA SVs:** paired `classified.vcf` 103,201 vs 103,198 records, all of the differing ones `PREDICTED_NOISE`; tumour-only (`SAVANA_TO`) somatic sets ±1-2 records (e.g. 41,092 vs 41,090), which carry through the PacBio PoN filter and Padfoot.
+- **Severus:** ±1-2 somatic SVs.
+
 ## VEP plugins
 
 VEP is given extra pathogenicity and clinical-significance annotation through plugins. On
