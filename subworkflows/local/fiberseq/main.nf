@@ -53,7 +53,7 @@ workflow FIBERSEQ {
 
     ch_no_m6a = ch_fiber_input.no_m6a
         .map { _key, meta, bams, _aligned, _decode, _m6a ->
-            def replicate = meta.replicate ? " replicate ${meta.replicate}" : ''
+            def replicate = meta.n_replicates > 1 ? " replicate ${meta.replicate}" : ''
             def hint = meta.platform == 'pb' && meta.kinetics == 'true' ? ' Run without --skip_m6a to predict m6A from its kinetics.' : ''
             log.warn "Sample '${meta.id}' (${meta.type}${replicate}): --skip_m6a is set but the first 1000 reads carry no m6A calls " +
                 "(no A+a entry in their MM tags), so the fibertools-rs nucleosome, FIRE and QC steps are skipped for it.${hint}"
