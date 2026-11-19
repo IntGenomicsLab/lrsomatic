@@ -20,6 +20,7 @@ process CLAIRSTO_VERDICT_TAG {
     // What the tags were computed from; absent when ASCAT found no solution
     tuple val(meta), path("*_Tumor_Purity_Ploidy.txt"),  emit: purity_ploidy, optional: true
     tuple val(meta), path("*_Tumor_CNA.txt"),            emit: cna
+    tuple val(meta), path("*.verdict_status.tsv"),       emit: verdict_status
     tuple val("${task.process}"), val('clairsto'), eval("run_clairs_to --version |& sed '1!d ; s/run_clairs_to //'"), topic: versions, emit: versions_clairsto
 
     when:
@@ -37,15 +38,16 @@ process CLAIRSTO_VERDICT_TAG {
         --vcf untagged/snv.vcf.gz \\
         --sample ${prefix} \\
         --purity_out ${prefix}_Tumor_Purity_Ploidy.txt \\
-        --cna_out ${prefix}_Tumor_CNA.txt
+        --cna_out ${prefix}_Tumor_CNA.txt 2>&1 | tee verdict.log
 
+    status=skipped
     for kind in snv indel; do
         if [ -s ${prefix}_Tumor_Purity_Ploidy.txt ]; then
             python3 /opt/bin/src/verdict/tag_germline_variant.py \\
                 --input_vcf_fn untagged/\${kind}.vcf.gz \\
                 --output_fn \${kind}.vcf \\
                 --tumor_purity_ploidy_output_file ${prefix}_Tumor_Purity_Ploidy.txt \\
-                --tumor_cna_output_file ${prefix}_Tumor_CNA.txt
+                --tumor_cna_output_file ${prefix}_Tumor_CNA.txt | tee -a verdict.log
         fi
         # Verdict's bgzip/tabix run unchecked and bgzip removes its input on success, so a leftover plain VCF means compression failed
         if [ -e \${kind}.vcf ]; then
@@ -57,8 +59,18 @@ process CLAIRSTO_VERDICT_TAG {
         if [ ! -e \${kind}.vcf.gz ]; then
             cp untagged/\${kind}.vcf.gz \${kind}.vcf.gz
             tabix -f -p vcf \${kind}.vcf.gz
+        elif [ \$kind = snv ]; then
+            status=applied
         fi
     done
+
+    # Verdict writes its output only when it tags, so whether it wrote one is the status
+    verdict_status.py \\
+        --out ${prefix}.verdict_status.tsv \\
+        --status \$status \\
+        --purity_source ascat \\
+        --purity_ploidy ${prefix}_Tumor_Purity_Ploidy.txt \\
+        --verdict_log verdict.log
     """
 
     stub:
@@ -70,5 +82,6 @@ process CLAIRSTO_VERDICT_TAG {
     touch indel.vcf.gz.tbi
     printf 'Sample\\tPurity\\tPloidy\\tGoodnessOfFit\\n${prefix}\\t0.5\\t2.0\\tNA\\n' > ${prefix}_Tumor_Purity_Ploidy.txt
     printf 'Sample\\tChromosome\\tStartPosition\\tEndPosition\\tnMajor\\tnMinor\\n' > ${prefix}_Tumor_CNA.txt
+    printf 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\napplied\\t0.5\\t2.0\\tascat\\t\\n' > ${prefix}.verdict_status.tsv
     """
 }

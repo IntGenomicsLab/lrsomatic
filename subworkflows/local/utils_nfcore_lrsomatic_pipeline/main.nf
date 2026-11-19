@@ -346,6 +346,22 @@ def reportEntries(base, depth, files) {
 }
 
 //
+// Warning for a <sample>.verdict_status.tsv (text) whose ClairS-TO Verdict tagged nothing; null when it tagged
+//
+def verdictStatusWarning(id, status_text) {
+    def lines = status_text.readLines()
+    def row = [lines[0].tokenize('\t'), lines[1].split('\t', -1).toList()].transpose().collectEntries()
+    def caveat = "Its ClairS-TO somatic calls may include germline variants."
+    if (row.status == 'skipped') {
+        return "ClairS-TO Verdict tagged no germline variants in tumour-only sample '${id}' (purity ${row.purity}, source ${row.purity_source}). Verdict: ${row.message} ${caveat}".toString()
+    }
+    if (row.status == 'not_run') {
+        return "ClairS-TO Verdict did not run for tumour-only sample '${id}'.${row.message ? ' Verdict: ' + row.message : ''} ${caveat}".toString()
+    }
+    return null
+}
+
+//
 // Builtin panel names shipped in assets/gene_lists, reference suffix dropped
 //
 def reportBuiltinGenePanels() {

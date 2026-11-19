@@ -62,6 +62,8 @@ nextflow_process {
                 { assert path(process.out.purity_ploidy[0][1]).text == 'Sample\tPurity\tPloidy\tGoodnessOfFit\nsample3\t0.5\t2.0123\tNA\n' },
                 { assert path(process.out.cna[0][1]).readLines()[1] == 'sample3\tchr1\t1\t1000000\t1\t1' },
                 { assert path(process.out.cna[0][1]).readLines()[3] == 'sample3\tchr2\t1\t1000000\t1\t1' },
+                { assert process.out.verdict_status[0][1].endsWith('/sample3.verdict_status.tsv') },
+                { assert path(process.out.verdict_status[0][1]).readLines() == ['status\tpurity\tploidy\tpurity_source\tmessage', 'applied\t0.5\t2.0123\tascat\t'] },
 
                 { assert snapshot(
                     snv,
@@ -98,7 +100,10 @@ nextflow_process {
                 { assert path(process.out.snv_tbi[0][1]).exists() },
                 { assert path(process.out.indel_tbi[0][1]).exists() },
                 // The purity is recorded even though nothing was tagged
-                { assert path(process.out.purity_ploidy[0][1]).readLines()[1] == 'sample3\t0.7\t1.98\tNA' }
+                { assert path(process.out.purity_ploidy[0][1]).readLines()[1] == 'sample3\t0.7\t1.98\tNA' },
+                // ... and the skip, with Verdict's own reason
+                { assert path(process.out.verdict_status[0][1]).readLines()[1] ==
+                    'skipped\t0.7\t1.98\tascat\tTumor purity estimation 0.7 is higher than 0.6, not applying verdict tagging!' }
             )
         }
     }
@@ -127,7 +132,8 @@ nextflow_process {
                 { assert path(process.out.indel_vcf[0][1]).linesGzip == path("${projectDir}/modules/local/clairsto/verdict_tag/tests/fixtures/indel.vcf.gz").linesGzip },
                 // A purity of 0 must not reach Verdict, which would take it literally
                 { assert process.out.purity_ploidy == [] },
-                { assert path(process.out.cna[0][1]).readLines() == ['Sample\tChromosome\tStartPosition\tEndPosition\tnMajor\tnMinor'] }
+                { assert path(process.out.cna[0][1]).readLines() == ['Sample\tChromosome\tStartPosition\tEndPosition\tnMajor\tnMinor'] },
+                { assert path(process.out.verdict_status[0][1]).readLines()[1].startsWith('skipped\tNA\tNA\tascat\tASCAT found no purity/ploidy solution') }
             )
         }
     }

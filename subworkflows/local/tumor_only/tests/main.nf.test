@@ -58,7 +58,11 @@ nextflow_workflow {
                 // and VCFSPLIT was fed from it
                 { assert processes.any { name -> name.contains('VCFSPLIT') } },
                 { assert workflow.out.somatic_vcf.size() == 1 },
-                { assert workflow.out.germline_vcf.size() == 1 }
+                { assert workflow.out.germline_vcf.size() == 1 },
+                // The Verdict status comes from the tagging step
+                { assert workflow.out.verdict_status.size() == 1 },
+                { assert workflow.out.verdict_status[0][1].endsWith('/sample3.verdict_status.tsv') },
+                { assert path(workflow.out.verdict_status[0][1]).readLines()[1].tokenize('\t')[3] == 'ascat' }
             )
         }
     }
@@ -103,7 +107,10 @@ nextflow_workflow {
                 { assert !processes.any { name -> name.contains('CLAIRSTO_VERDICT_TAG') } },
                 { assert processes.any { name -> name.contains('VCFSPLIT') } },
                 { assert workflow.out.somatic_vcf.size() == 1 },
-                { assert workflow.out.germline_vcf.size() == 1 }
+                { assert workflow.out.germline_vcf.size() == 1 },
+                // ... and the Verdict status from CLAIRSTO itself
+                { assert workflow.out.verdict_status.size() == 1 },
+                { assert path(workflow.out.verdict_status[0][1]).readLines()[1].tokenize('\t')[3] == 'clairsto_internal' }
             )
         }
     }

@@ -1,0 +1,78 @@
+nextflow_function {
+
+    name "Test the ClairS-TO Verdict status warning"
+    script "../main.nf"
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "verdict_status"
+
+    // Rows as CLAIRSTO_VERDICT_TAG / CLAIRSTO write them (bin/verdict_status.py), from campaign-2 work dirs
+
+    test("applied - no warning") {
+        function "verdictStatusWarning"
+        when {
+            function {
+                """
+                input[0] = 'BL5'
+                input[1] = 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\napplied\\t0.43\\t2.02\\tclairsto_internal\\t\\n'
+                """
+            }
+        }
+        then {
+            assert function.success
+            assert function.result == null
+        }
+    }
+
+    test("skipped above purity 0.6 - names the sample, purity, source and Verdict's reason") {
+        function "verdictStatusWarning"
+        when {
+            function {
+                """
+                input[0] = 'CLL4'
+                input[1] = 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\nskipped\\t0.82\\t1.98\\tascat\\tTumor purity estimation 0.82 is higher than 0.6, not applying verdict tagging!\\n'
+                """
+            }
+        }
+        then {
+            assert function.success
+            assert function.result == "ClairS-TO Verdict tagged no germline variants in tumour-only sample 'CLL4' (purity 0.82, source ascat). " +
+                "Verdict: Tumor purity estimation 0.82 is higher than 0.6, not applying verdict tagging! Its ClairS-TO somatic calls may include germline variants."
+        }
+    }
+
+    test("skipped without a purity estimate") {
+        function "verdictStatusWarning"
+        when {
+            function {
+                """
+                input[0] = 'CLL4_noembed'
+                input[1] = 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\nskipped\\tNA\\tNA\\tclairsto_internal\\tCould not find an optimal purity and ploidy value for tumor! Verdict can not obtain final results, not applying verdict tagging!\\n'
+                """
+            }
+        }
+        then {
+            assert function.success
+            assert function.result.contains("'CLL4_noembed' (purity NA, source clairsto_internal)")
+            assert function.result.contains('Could not find an optimal purity')
+        }
+    }
+
+    test("not_run with no reason logged") {
+        function "verdictStatusWarning"
+        when {
+            function {
+                """
+                input[0] = 'sample3'
+                input[1] = 'status\\tpurity\\tploidy\\tpurity_source\\tmessage\\nnot_run\\tNA\\tNA\\tnone\\t\\n'
+                """
+            }
+        }
+        then {
+            assert function.success
+            assert function.result == "ClairS-TO Verdict did not run for tumour-only sample 'sample3'. Its ClairS-TO somatic calls may include germline variants."
+        }
+    }
+}
