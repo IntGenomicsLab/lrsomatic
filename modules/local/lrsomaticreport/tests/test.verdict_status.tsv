@@ -1,0 +1,2 @@
+status	purity	ploidy	purity_source	message
+skipped	0.82	1.98521991787877	ascat	Tumor purity estimation 0.82 is higher than 0.6, not applying verdict tagging!
