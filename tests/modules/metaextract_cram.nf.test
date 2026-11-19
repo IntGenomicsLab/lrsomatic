@@ -49,10 +49,13 @@ nextflow_process {
         then {
             def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
             def aligned = process.out.aligned_input.collectEntries { meta, value -> [ (meta.id): value ] }
+            def m6a     = process.out.m6a_calls.collectEntries { meta, value -> [ (meta.id): value ] }
             assertAll(
                 { assert process.success },
                 { assert decode == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
-                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" }
+                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" },
+                // the test BAM has no MM tags; 'false', not 'unknown', means the records were read, the no-reference CRAM too
+                { assert m6a == [ embedded: 'false', noref: 'false', unaligned: 'false' ] : "m6a_calls: ${m6a}" }
             )
         }
     }
@@ -102,6 +105,44 @@ nextflow_process {
                 { assert process.success },
                 { assert process.out.decode_with_fasta == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] },
                 { assert process.out.aligned_input == [ [ [ id:'bam', platform:'pb' ], 'true' ] ] : "aligned BAM: ${process.out.aligned_input}" }
+            )
+        }
+    }
+
+    // m6a_calls: an m6A entry (A+a, T-a or ChEBI 28871) in the MM tag of any of the first 1000 records. SAM text
+    // stands in for BAM/CRAM; htslib reads the format from the content.
+    test("m6A calls in the MM tags - true, false, unknown") {
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../m6a_input")
+                input_dir.mkdirs()
+                def header = '@HD\tVN:1.6\tSO:unknown\n'
+                def read = { mm -> "r1\t4\t*\t0\t0\t*\t*\t0\t0\tACGTACGT\t*\tMM:Z:${mm}\tML:B:C,200,200\n" }
+                [
+                    a_plus_a:   header + read('C+m?,0;A+a?,1;'),
+                    t_minus_a:  header + read('C+m?,0;T-a?,1;'),
+                    chebi:      header + read('A+28871?,0,1;'),
+                    cpg_only:   header + read('C+m?,0,1;'),
+                    no_mm:      header + 'r1\t4\t*\t0\t0\t*\t*\t0\t0\tACGTACGT\t*\n',
+                    header_only: header
+                ].each { name, text -> new File(input_dir, "${name}.bam").text = text }
+                m6a_input_dir = input_dir.canonicalPath
+            }
+            process {
+                """
+                input[0] = channel.of('a_plus_a', 't_minus_a', 'chebi', 'cpg_only', 'no_mm', 'header_only')
+                    .map { name -> [ [ id:name, platform:'pb' ], file("\${params.m6a_input_dir}/\${name}.bam", checkIfExists: true) ] }
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            def m6a = process.out.m6a_calls.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert m6a == [ a_plus_a: 'true', t_minus_a: 'true', chebi: 'true', cpg_only: 'false', no_mm: 'false', header_only: 'unknown' ] : "m6a_calls: ${m6a}" }
             )
         }
     }
