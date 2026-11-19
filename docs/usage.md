@@ -135,6 +135,9 @@ and an allow-list would silently drop one a user or a downstream tool relies on.
 aligner or phasing tool not listed above survives the realignment; if your input carries such tags, remove them first
 (e.g. `samtools view -x`). Dorado's `ts:i` (trimmed samples) has the same name as minimap2's `ts:A` (transcript
 strand, splice mode only) and is kept.
+For aligned and unaligned input alike, float tags (type `f`, e.g. Dorado's `qs`, `du`, `sd`) pass through FASTQ header text, which samtools writes with 6
+significant digits and has no option to widen, so their binary values can differ from the input in the last digits
+(`qs:f:22.1447` prints the same before and after).
 
 Unaligned input keeps every tag except `RG`, minimap2's tags above and, for PacBio, the kinetics (unless
 `--keep_kinetic_data` is set). An unaligned BAM can still carry minimap2's tags: Dorado writes them when it aligns,
