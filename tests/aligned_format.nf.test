@@ -115,8 +115,9 @@ nextflow_pipeline {
 
     // Aligned input of fiber-seq rows goes through SAMTOOLS_VIEW_FIBERPREP (primary records, CRAM decoded) before
     // fibertools-rs (both inside FIBERSEQ); every other row reaches fibertools-rs as given. The METAEXTRACT stub runs
-    // the real @SQ check, so the aligned CRAM here is a SAM header in a .cram file (htslib reads the format from the
-    // content), and the empty .cram reads as unaligned. The filter and the decoding: tests/modules/samtools_view_fiberprep.nf.test.
+    // the real @SQ and m6A checks, so the aligned CRAM and BAM here are SAM text (htslib reads the format from the
+    // content), and the empty .cram reads as unaligned. The CRAMs hold no reads, so their m6A calls read as 'unknown',
+    // which keeps the fiber steps. The filter and the decoding: tests/modules/samtools_view_fiberprep.nf.test.
     test("-profile test, fiber-seq rows given as aligned CRAM, aligned BAM and unaligned CRAM - stub") {
 
         options "-stub"
@@ -127,15 +128,19 @@ nextflow_pipeline {
                 input_dir.mkdirs()
                 def aligned_cram   = new File(input_dir, 'fibercram.cram')
                 def unaligned_cram = new File(input_dir, 'fiberucram.cram')
+                def aligned_bam    = new File(input_dir, 'fiberbam.bam')
                 aligned_cram.text   = '@HD\tVN:1.6\tSO:coordinate\n@SQ\tSN:chr19\tLN:58617616\n'
                 unaligned_cram.text = ''
+                // an m6A call (A+a in MM), or the fiber steps would be skipped for it (tests/skip_m6a.nf.test)
+                aligned_bam.text    = '@HD\tVN:1.6\tSO:coordinate\n@SQ\tSN:chr19\tLN:58617616\n' +
+                    "r1\t0\tchr19\t100\t60\t8M\t*\t0\t0\tACGTACGT\t*\tMM:Z:C+m?,0;A+a?,1;\tML:B:C,200,200\n"
                 def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
                 def sheet = new File(input_dir, 'samplesheet_fiber.csv')
                 sheet.text = [
                     'sample,bam_tumor,bam_normal,platform,sex,fiber',
                     "fibercram,${aligned_cram.canonicalPath},,ont,female,y",
                     "fiberucram,${unaligned_cram.canonicalPath},,ont,female,y",
-                    "fiberbam,${data}/HS578T_HIFI_chr19.bam,,pb,female,y",
+                    "fiberbam,${aligned_bam.canonicalPath},,pb,female,y",
                     "plain,${data}/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,n"
                 ].join('\n') + '\n'
 
