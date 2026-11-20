@@ -85,7 +85,7 @@ nextflow_process {
     }
 
     // The Verdict status and ReConPlot focus figures are staged at the relpaths the report reads
-    // (variants/clairsto/, reconplot/<pair>/focus/); a report that does not read them must still render
+    // (variants/clairsto/, reconplot/<pair>/focus/); report 2.1.0 must render the Verdict warning and the focus block
     test("Verdict status and ReConPlot focus figure staged - real render") {
 
         when {
@@ -115,6 +115,8 @@ nextflow_process {
             assert process.success
             assertAll(
                 { assert path(process.out.report.get(0).get(1)).text.contains("TP53") },
+                { assert path(process.out.report.get(0).get(1)).text.contains("ClairS-TO germline tagging (Verdict) was skipped") },
+                { assert path(process.out.report.get(0).get(1)).text.contains("Your regions") },
                 { assert process.out.small_variants.size() == 1 }
             )
         }
