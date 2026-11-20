@@ -427,15 +427,35 @@ def isCram(reads) {
 }
 
 //
+// Whether FIBERSEQ processes this sample at all (not under --skip_fiber, nor a normal under --skip_normalfiber)
+//
+def fibertoolsEnabled(meta) {
+    return !(params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal'))
+}
+
+//
+// Whether FIBERSEQ predicts m6A for this sample (FIBERTOOLSRS_PREDICTM6A): PacBio reads with kinetics, without
+// --skip_m6a. ONT reads only carry the m6A calls of their basecaller.
+//
+def m6aPredicted(meta, kinetics) {
+    return fibertoolsEnabled(meta) && meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a
+}
+
+//
 // Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
 // while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
 // fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
 //
 def fibertoolsReadsInput(meta, kinetics) {
-    if (params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal')) {
-        return false
-    }
-    return meta.fiber == 'y' || (meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a)
+    return fibertoolsEnabled(meta) && (meta.fiber == 'y' || m6aPredicted(meta, kinetics))
+}
+
+//
+// Whether FIBERSEQ skips the nucleosome, FIRE and QC steps of a fiber-seq row: its first reads carry no m6A calls
+// (m6a_calls 'false' from METAEXTRACT) and the run predicts none for it. 'unknown' keeps the steps.
+//
+def fiberStepsSkipped(meta, kinetics, m6a_calls) {
+    return fibertoolsEnabled(meta) && meta.fiber == 'y' && m6a_calls == 'false' && !m6aPredicted(meta, kinetics)
 }
 
 //
