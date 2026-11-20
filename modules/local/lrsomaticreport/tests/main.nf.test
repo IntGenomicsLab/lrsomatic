@@ -84,6 +84,45 @@ nextflow_process {
 
     }
 
+    // The Verdict status and ReConPlot focus figures are staged at the relpaths the report reads
+    // (variants/clairsto/, reconplot/<pair>/focus/); report 2.1.0 must render the Verdict warning and the focus block
+    test("Verdict status and ReConPlot focus figure staged - real render") {
+
+        when {
+            process {
+                """
+                def tests_dir = "${projectDir}/modules/local/lrsomaticreport/tests"
+                input[0] = [
+                    [ id:'test', paired_data: false, sex: 'male' ],
+                    file("\${tests_dir}/test_SOMATIC_VEP.vcf.gz", checkIfExists: true),
+                    [], // sv_vep
+                    [], // severus_vcf
+                    [], // somatic_vcf
+                    [], // ascat_files
+                    [], // qc_tumor_files
+                    [], // qc_normal_files
+                    [ 'variants/clairsto/test.verdict_status.tsv', 'reconplot/severus_ascat/focus/test_chr17.png' ],
+                    [ file("\${tests_dir}/test.verdict_status.tsv", checkIfExists: true),
+                      file("\${tests_dir}/test_focus.png", checkIfExists: true) ]
+                ]
+                input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
+                input[2] = [] // gene_panels
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert path(process.out.report.get(0).get(1)).text.contains("TP53") },
+                { assert path(process.out.report.get(0).get(1)).text.contains("ClairS-TO germline tagging (Verdict) was skipped") },
+                { assert path(process.out.report.get(0).get(1)).text.contains("Your regions") },
+                { assert process.out.small_variants.size() == 1 }
+            )
+        }
+
+    }
+
     // Same-named files from different tools (Padfoot's per-pair by_gene.tsv, ReConPlot's per-pair figures) must land at
     // their own relpaths, and >9 files must keep extra_files[i] paired with extra_relpaths[i] (extra/10/, extra/11/, ...)
     test("extra files sharing a base name land at their relpaths - stub") {

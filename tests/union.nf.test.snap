@@ -98,7 +98,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "2.0.0"
+                    "lrsomatic_report": "2.1.0"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.24
@@ -614,6 +614,7 @@
                 "sample3/variants/clairsto/germline.vcf.gz.tbi",
                 "sample3/variants/clairsto/indel.vcf.gz",
                 "sample3/variants/clairsto/indel.vcf.gz.tbi",
+                "sample3/variants/clairsto/sample3.verdict_status.tsv",
                 "sample3/variants/clairsto/snv.vcf.gz",
                 "sample3/variants/clairsto/snv.vcf.gz.tbi",
                 "sample3/variants/clairsto/somatic.vcf.gz",
@@ -695,6 +696,7 @@
                 "sample3_whatshap_stats.gtf:md5,e5bf3cd208a6db9b66c2b29a637797ff",
                 "sample3_whatshap_stats.log:md5,8905429dcd10367f632430339363068f",
                 "sample3_whatshap_stats.tsv:md5,2dad37f19eea1a9cb75a1b07f584a5ed",
+                "sample3.verdict_status.tsv:md5,40cca76b7f23c3cd07527eaa6b83b4ab",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,379afb9d8868d9b7cf5335f855c0f272",
@@ -703,7 +705,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-11-16T23:59:30.95733578",
+        "timestamp": "2026-11-19T13:30:25.552157738",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

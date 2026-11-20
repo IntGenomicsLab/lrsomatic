@@ -445,6 +445,7 @@ workflow LRSOMATIC {
             ch_samplesheet,
             METAEXTRACT.out.aligned_input,
             METAEXTRACT.out.decode_with_fasta,
+            METAEXTRACT.out.m6a_calls,
             ch_fasta,
             ch_fai
         )
@@ -1314,6 +1315,7 @@ workflow LRSOMATIC {
     ch_padfoot_files            = channel.empty()
     ch_reconplot_genome_wide    = channel.empty()
     ch_reconplot_per_chromosome = channel.empty()
+    ch_reconplot_focus          = channel.empty()
     ch_shatterseek_summary      = channel.empty()
 
     if (!params.skip_padfoot && padfoot_annot_ok && sv_annot_container_ok) {
@@ -1355,7 +1357,8 @@ workflow LRSOMATIC {
         ch_versions = ch_versions.mix(RECONPLOT_FIGURES.out.versions)
         ch_reconplot_genome_wide    = RECONPLOT_FIGURES.out.genome_wide
         ch_reconplot_per_chromosome = RECONPLOT_FIGURES.out.per_chromosome
-        // ch_reconplot_genome_wide / ch_reconplot_per_chromosome: [meta, [<pair>/<panel>/*.{pdf,png}]]
+        ch_reconplot_focus          = RECONPLOT_FIGURES.out.focus
+        // ch_reconplot_genome_wide / ch_reconplot_per_chromosome / ch_reconplot_focus: [meta, [<pair>/<panel>/*.{pdf,png}]]
     }
 
     // ShatterSeek chromothripsis tiers, same CN/SV pairs as ReConPlot
@@ -1476,7 +1479,7 @@ workflow LRSOMATIC {
         // PNG figures only: the report embeds images, and the PDFs duplicate them
         def report_png = { ch, pattern -> ch.map { meta, files -> [meta, [files].flatten().findAll { f -> f.name ==~ pattern }] } }
         def report_coral_plots = report_png.call(ch_ecdna_plots, /.*_amplicon.*_(graph|cycles)\.png/)
-        def report_reconplot   = report_png.call(ch_reconplot_genome_wide.mix(ch_reconplot_per_chromosome), /.*\.png/)
+        def report_reconplot   = report_png.call(ch_reconplot_genome_wide.mix(ch_reconplot_per_chromosome, ch_reconplot_focus), /.*\.png/)
 
         channel.empty()
             .mix(
@@ -1488,6 +1491,7 @@ workflow LRSOMATIC {
                 report_leg.call(ch_ecdna_seeds,                                               'ecdna/coral',               1),
                 report_leg.call(ch_ecdna_summary,                                             'ecdna/coral',               2),
                 report_leg.call(savana_somatic_vcf.mix(savana_fitted_purity_ploidy),          'variants/savana',           1),
+                report_leg.call(TUMORONLY_SMALLVAR.out.verdict_status,                        'variants/clairsto',         1),
                 report_leg.call(ch_savana_vep_vcf,                                            'vep/SVs',                   1),
                 report_leg.call(ch_padfoot_files,                                             'padfoot',                   2),
                 report_leg.call(report_reconplot,                                             'reconplot',                 3),
@@ -1590,7 +1594,12 @@ workflow LRSOMATIC {
     // Output: .report -- [meta, html]  -- MultiQC HTML report
     //
     summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
+    // Per-launch values (run name, report timestamp) would make MULTIQC re-run on every -resume
+    def mqc_summary_params = summary_params.collectEntries { group, group_params ->
+        def kept = group_params.findAll { key, _value -> !(key in ['runName', 'trace_report_suffix']) }
+        [group, group == 'Core Nextflow options' ? [sessionId: workflow.sessionId.toString()] + kept : kept]
+    }
+    ch_workflow_summary = channel.value(paramsSummaryMultiqc(mqc_summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
 
@@ -1625,7 +1634,9 @@ workflow LRSOMATIC {
     MULTIQC (
         ch_multiqc_files
             .collect()
-            .map { files ->
+            .map { all_files ->
+                // Completion order varies between runs; a fixed order keeps the task cached on -resume
+                def files = all_files.sort(false) { a, b -> a.name <=> b.name ?: a.toString() <=> b.toString() }
                 def multiqc_config_files = [file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)]
                 if (params.multiqc_config) {
                     multiqc_config_files += [file(params.multiqc_config, checkIfExists: true)]

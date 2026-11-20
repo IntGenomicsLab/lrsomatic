@@ -234,23 +234,23 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   │   ├── sample_whatshap_stats.log
 ```
 
-| File                                                              | Description                                                                                                              |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                   |
-| `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files         |
-| `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
-| `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                  |
-| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                     |
-| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html`             | NanoPlot interactive HTML report for the aligned BAM file                                                                |
-| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                   |
-| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                              |
-| `samtools/sample_{type}.flagstat`                                 | a summary of the counts of different samtools flags                                                                      |
-| `samtools/sample_{type}.idxstats`                                 | a summary of the number of mapped and unmapped reads                                                                     |
-| `samtools/sample_{type}.stats`                                    | summary statistics from the bamfile                                                                                      |
-| `whatshap_stats/sample_whatshap_stats.tsv`                        | WhatsHap phasing statistics of the phased germline VCF, per chromosome and overall (`ALL`), including phase block N50    |
-| `whatshap_stats/sample_whatshap_stats.gtf`                        | Phase blocks as GTF features with their genomic coordinates                                                              |
-| `whatshap_stats/sample_whatshap_stats.log`                        | WhatsHap log                                                                                                             |
+| File                                                              | Description                                                                                                                                                                                         |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                                                                                              |
+| `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                                                                                           |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files; absent for a file skipped under `--skip_m6a` because its reads carry no m6A calls |
+| `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value                                                                            |
+| `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                                                                                             |
+| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                                                                                                |
+| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html`             | NanoPlot interactive HTML report for the aligned BAM file                                                                                                                                           |
+| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                                                                                              |
+| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                                                                                                         |
+| `samtools/sample_{type}.flagstat`                                 | a summary of the counts of different samtools flags                                                                                                                                                 |
+| `samtools/sample_{type}.idxstats`                                 | a summary of the number of mapped and unmapped reads                                                                                                                                                |
+| `samtools/sample_{type}.stats`                                    | summary statistics from the bamfile                                                                                                                                                                 |
+| `whatshap_stats/sample_whatshap_stats.tsv`                        | WhatsHap phasing statistics of the phased germline VCF, per chromosome and overall (`ALL`), including phase block N50                                                                               |
+| `whatshap_stats/sample_whatshap_stats.gtf`                        | Phase blocks as GTF features with their genomic coordinates                                                                                                                                         |
+| `whatshap_stats/sample_whatshap_stats.log`                        | WhatsHap log                                                                                                                                                                                        |
 
 </details>
 
@@ -352,24 +352,26 @@ Present in **tumor-only** samples (no matched normal).
 │   ├── snv.vcf.gz.tbi
 │   ├── {sample}_Tumor_Purity_Ploidy.txt
 │   ├── {sample}_Tumor_CNA.txt
+│   ├── {sample}.verdict_status.tsv
 │   ├── somatic.vcf.gz
 │   ├── somatic.vcf.gz.tbi
 ```
 
-| File                               | Description                                                                                                                             |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `germline.vcf.gz`                  | SNV and indel calls marked as germline (will not include variants QC)                                                                   |
-| `germline.vcf.gz.tbi`              | Index file for germline small variant calls                                                                                             |
-| `indel.vcf.gz`                     | Raw indel calls in vcf format                                                                                                           |
-| `indel.vcf.gz.tbi`                 | Index for somatic indel calls                                                                                                           |
-| `snv.vcf.gz`                       | Raw SNV calls in vcf format                                                                                                             |
-| `snv.vcf.gz.tbi`                   | Index for SNV calls                                                                                                                     |
-| `{sample}_Tumor_Purity_Ploidy.txt` | Purity and ploidy the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`. Absent when no solution was found |
-| `{sample}_Tumor_CNA.txt`           | Allele-specific copy number segments the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`                 |
-| `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                           |
-| `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                   |
+| File                               | Description                                                                                                                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `germline.vcf.gz`                  | SNV and indel calls marked as germline (will not include variants QC)                                                                                                                                  |
+| `germline.vcf.gz.tbi`              | Index file for germline small variant calls                                                                                                                                                            |
+| `indel.vcf.gz`                     | Raw indel calls in vcf format                                                                                                                                                                          |
+| `indel.vcf.gz.tbi`                 | Index for somatic indel calls                                                                                                                                                                          |
+| `snv.vcf.gz`                       | Raw SNV calls in vcf format                                                                                                                                                                            |
+| `snv.vcf.gz.tbi`                   | Index for SNV calls                                                                                                                                                                                    |
+| `{sample}_Tumor_Purity_Ploidy.txt` | Purity and ploidy the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`. Absent when no solution was found                                                                |
+| `{sample}_Tumor_CNA.txt`           | Allele-specific copy number segments the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`                                                                                |
+| `{sample}.verdict_status.tsv`      | Whether Verdict tagged the calls: `status` (`applied`, `skipped` or `not_run`), `purity`, `ploidy`, `purity_source` (`ascat`, `clairsto_internal` or `none`) and Verdict's `message` explaining a skip |
+| `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                                                                                          |
+| `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                                                                                  |
 
-The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. See [CHM13 support](usage.md#chm13-support).
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. `{sample}.verdict_status.tsv` records which of these happened, and the pipeline log warns, naming the sample, purity and source, whenever Verdict tagged nothing (`skipped`) or did not run (`not_run`). See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -631,7 +633,7 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
 | `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
 
-The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_`, decoy and other unplaced contigs), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
+The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_` and chrEBV on the default GRCh38 FASTA, and ALT, HLA or decoy contigs of a custom one), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
 
 </details>
 
@@ -981,14 +983,16 @@ The report reads these published outputs of the sample (a skipped tool's section
 
 | Report section            | Files read                                                                                                                                                                                                                                           |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Small variants            | `vep/somatic/{sample}_SOMATIC_VEP.vcf.gz`, `variants/phased/` somatic VCF                                                                                                                                                                            |
+| Small variants            | `vep/somatic/{sample}_SOMATIC_VEP.vcf.gz`, `variants/phased/` somatic VCF, `variants/clairsto/{sample}.verdict_status.tsv` (tumour-only)                                                                                                             |
 | Structural variants       | `variants/severus/somatic_SVs/severus_somatic.vcf.gz`, `vep/SVs/{sample}_SV_VEP.vcf.gz`; SAVANA's `variants/savana/{sample}[.pon_filtered].classified.somatic.vcf` (PoN-filtered for PacBio tumour-only) and `vep/SVs/{sample}_VEP_SAVANA.vcf.gz`    |
-| SV annotation and figures | `padfoot/{pair}/{annotated_svs,by_gene}.tsv`, `reconplot/{pair}/{genome_wide,per_chromosome}/*.png`                                                                                                                                                  |
+| SV annotation and figures | `padfoot/{pair}/{annotated_svs,by_gene}.tsv`, `reconplot/{pair}/{genome_wide,per_chromosome,focus}/*.png`                                                                                                                                            |
 | Copy number               | `ascat/{sample}.{purityploidy,segments_raw,metrics}.txt` and plots, `variants/savana/{sample}_fitted_purity_ploidy.tsv`, `wakhan/solutions_ranks.tsv`, `wakhan/solution_rank_1/{integer_profile.bed,genes/genes_copynumber_states.bed}`              |
 | Chromothripsis            | `shatterseek/{pair}/{sample}.shatterseek.tsv`                                                                                                                                                                                                        |
 | ecDNA                     | `ecdna/amplicon_classifier/{sample}_{amplicon_classification_profiles,gene_list,result_table}.tsv`, `ecdna/coral/{sample}_CNV_SEEDS.bed`, `ecdna/coral/{reconstruct,cycles}/{sample}_amplicon_summary.txt`, `ecdna/coral/plots/*_{graph,cycles}.png` |
 | Mutational signatures     | `signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/`, `signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all`                                                                            |
 | QC and phasing            | mosdepth, cramino and samtools files under `qc/{tumor,normal}/`, `qc/whatshap_stats/{sample}_whatshap_stats.tsv`                                                                                                                                     |
+
+The pipeline passes each sample's run mode, `--run-mode paired` for a tumour/normal pair and `--run-mode tumour_only` otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.
 
 Wakhan's interactive HTML plots (`wakhan/solution_*/integer_profile.html`, the subclonal profiles and `{sample}_heatmap_ploidy_purity.html`) are no longer embedded in the report, which draws the top-ranked solution's copy-number profile from `integer_profile.bed` instead; open them from the [`wakhan`](#wakhan) directory.
 

@@ -114,6 +114,16 @@
                 ],
                 "6": [
                     [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3.verdict_status.tsv:md5,c7cfced9e6063bcbc0298b48c239d263"
+                    ]
+                ],
+                "7": [
+                    [
                         "CLAIRSTO_VERDICT_TAG",
                         "clairsto",
                         "0.5.1"
@@ -179,6 +189,16 @@
                         "snv.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
                     ]
                 ],
+                "verdict_status": [
+                    [
+                        {
+                            "id": "sample3",
+                            "paired_data": false,
+                            "sex": "XX"
+                        },
+                        "sample3.verdict_status.tsv:md5,c7cfced9e6063bcbc0298b48c239d263"
+                    ]
+                ],
                 "versions_clairsto": [
                     [
                         "CLAIRSTO_VERDICT_TAG",
@@ -188,7 +208,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-09-18T11:32:59.564452108",
+        "timestamp": "2026-11-19T13:05:16.283237183",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

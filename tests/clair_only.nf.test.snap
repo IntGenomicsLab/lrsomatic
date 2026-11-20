@@ -72,7 +72,7 @@
                     "longphase": "2.0.1"
                 },
                 "LRSOMATICREPORT": {
-                    "lrsomatic_report": "2.0.0"
+                    "lrsomatic_report": "2.1.0"
                 },
                 "METAEXTRACT": {
                     "samtools": 1.24
@@ -579,6 +579,7 @@
                 "sample3/variants/clairsto/germline.vcf.gz.tbi",
                 "sample3/variants/clairsto/indel.vcf.gz",
                 "sample3/variants/clairsto/indel.vcf.gz.tbi",
+                "sample3/variants/clairsto/sample3.verdict_status.tsv",
                 "sample3/variants/clairsto/snv.vcf.gz",
                 "sample3/variants/clairsto/snv.vcf.gz.tbi",
                 "sample3/variants/clairsto/somatic.vcf.gz",
@@ -680,6 +681,7 @@
                 "sample4/variants/clairsto/germline.vcf.gz.tbi",
                 "sample4/variants/clairsto/indel.vcf.gz",
                 "sample4/variants/clairsto/indel.vcf.gz.tbi",
+                "sample4/variants/clairsto/sample4.verdict_status.tsv",
                 "sample4/variants/clairsto/snv.vcf.gz",
                 "sample4/variants/clairsto/snv.vcf.gz.tbi",
                 "sample4/variants/clairsto/somatic.vcf.gz",
@@ -768,6 +770,7 @@
                 "sample5/variants/clairsto/germline.vcf.gz.tbi",
                 "sample5/variants/clairsto/indel.vcf.gz",
                 "sample5/variants/clairsto/indel.vcf.gz.tbi",
+                "sample5/variants/clairsto/sample5.verdict_status.tsv",
                 "sample5/variants/clairsto/snv.vcf.gz",
                 "sample5/variants/clairsto/snv.vcf.gz.tbi",
                 "sample5/variants/clairsto/somatic.vcf.gz",
@@ -843,6 +846,7 @@
                 "sample3_whatshap_stats.gtf:md5,46a97067376b06b476d180709bc9e3d8",
                 "sample3_whatshap_stats.log:md5,376254ec9c98f9ba204895e7085516ed",
                 "sample3_whatshap_stats.tsv:md5,f7cc79156f23e884ead18e50b8434dbf",
+                "sample3.verdict_status.tsv:md5,40cca76b7f23c3cd07527eaa6b83b4ab",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,9d9a287d3ec37df3d0bf7ecee93eba25",
@@ -855,6 +859,7 @@
                 "sample4_whatshap_stats.gtf:md5,12eb4bb226ce7a27a611a0e98bfcdf9d",
                 "sample4_whatshap_stats.log:md5,0fe7091e29d1ce88667a9fa507399522",
                 "sample4_whatshap_stats.tsv:md5,804922ca6ebd94ae71a7a4058fa9e156",
+                "sample4.verdict_status.tsv:md5,40cca76b7f23c3cd07527eaa6b83b4ab",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,20ef2dff8c2cc8e57a698cb71d9c1f02",
@@ -867,6 +872,7 @@
                 "sample5_whatshap_stats.gtf:md5,f2d10de299c23dcbe384479bc2ecf064",
                 "sample5_whatshap_stats.log:md5,20d6af982949afbdfa666a33b4e1751d",
                 "sample5_whatshap_stats.tsv:md5,0ec14e83f9ad788104de1c6ef3f021f2",
+                "sample5.verdict_status.tsv:md5,40cca76b7f23c3cd07527eaa6b83b4ab",
                 "breakpoint_clusters.tsv:md5,d36a70de292ee130ef30da4a58bced18",
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50",
                 "breakpoints_double.csv:md5,48fe9011793aa2457dc6e54eab00d208",
@@ -875,7 +881,7 @@
                 "breakpoint_clusters_list.tsv:md5,0c0ce62e329f8de492487e8414c30a50"
             ]
         ],
-        "timestamp": "2026-11-16T23:53:56.52208477",
+        "timestamp": "2026-11-19T14:37:18.904206489",
         "meta": {
             "nf-test": "0.9.4",
             "nextflow": "26.04.3"

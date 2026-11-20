@@ -89,8 +89,10 @@ process RECONPLOT {
 
     stub:
     prefix = task.ext.prefix ?: (cn_source == sv_source ? "${cn_source}" : "${sv_source}_${cn_source}")
+    def focus_stub = task.ext.args3 ? "mkdir -p ${prefix}/focus && touch ${prefix}/focus/${meta.id}_focus.pdf ${prefix}/focus/${meta.id}_focus.png" : ''
     """
     mkdir -p ${prefix}/per_chromosome ${prefix}/genome_wide
+    ${focus_stub}
     touch ${prefix}/per_chromosome/${meta.id}_chr1.pdf ${prefix}/per_chromosome/${meta.id}_chr1.png
     touch ${prefix}/genome_wide/${meta.id}_genome_wide.pdf ${prefix}/genome_wide/${meta.id}_genome_wide.png
     touch ${prefix}/${meta.id}.reconplot_cn.tsv ${prefix}/${meta.id}.reconplot_sv.tsv ${prefix}/reconplot.log

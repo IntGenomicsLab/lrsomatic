@@ -5,6 +5,9 @@ include { CLAIRSTO                  } from '../../../modules/local/clairsto/main
 include { CLAIRSTO_VERDICT_TAG      } from '../../../modules/local/clairsto/verdict_tag/main.nf'
 include { VCFSPLIT                  } from '../../../modules/local/vcfsplit/main.nf'
 
+// IMPORT FUNCTIONS
+include { verdictStatusWarning } from '../utils_nfcore_lrsomatic_pipeline'
+
 // IMPORT SUBWORKFLOWS
 include { DEEPVARIANT                                   } from '../../../subworkflows/nf-core/deepvariant/main.nf'
 include { DEEPSOMATIC                                   } from '../../../subworkflows/local/deepsomatic/main.nf'
@@ -39,6 +42,7 @@ workflow TUMORONLY_SMALLVAR {
     clairsto_somatic_ch = channel.empty()
     deepvariant_ch = channel.empty()
     deepsomatic_ch = channel.empty()
+    verdict_status = channel.empty()
 
     // CLAIRS-TO: somatic and germline calling from a tumor-only BAM, split with a panel of normals
 
@@ -92,13 +96,24 @@ workflow TUMORONLY_SMALLVAR {
             CLAIRSTO_VERDICT_TAG.out.indel_vcf
                 .join(CLAIRSTO_VERDICT_TAG.out.snv_vcf)
                 .set { clairsto_combined_vcf }
+            verdict_status = CLAIRSTO_VERDICT_TAG.out.verdict_status
         }
         else {
             CLAIRSTO.out.indel_vcf
                 .join(CLAIRSTO.out.snv_vcf)
                 .set { clairsto_combined_vcf }
+            verdict_status = CLAIRSTO.out.verdict_status
         }
         // clairsto_combined_vcf: [meta, indel_vcf, snv_vcf]
+        // verdict_status: [meta, <id>.verdict_status.tsv]
+
+        // Verdict tags nothing above purity 0.6 or without a purity estimate, and says so only in its task log
+        verdict_status.subscribe { meta, tsv ->
+            def warning = verdictStatusWarning(meta.id, tsv.text)
+            if (warning) {
+                log.warn(warning)
+            }
+        }
 
         // SPLIT CLAIRSTO GERMLINE AND SOMATIC VARIATION
         // ClairS-TO tags somatic/germline status in FILTER; VCFSPLIT splits on it
@@ -330,6 +345,7 @@ workflow TUMORONLY_SMALLVAR {
     emit:
     somatic_vcf  // [meta, vcf, tbi]  -- final somatic VCF (ClairS-TO, DeepSomatic, or consensus)
     germline_vcf // [meta, vcf, tbi]  -- final germline VCF (ClairS-TO germline, DeepVariant, or consensus)
+    verdict_status // [meta, <id>.verdict_status.tsv]  -- whether Verdict tagged the ClairS-TO calls; empty without ClairS-TO
 
 
 }

@@ -102,6 +102,18 @@ output:
           type: file
           description: ASCAT's segments in the layout Verdict reads, contigs spelled as in the VCF
           pattern: "*_Tumor_CNA.txt"
+  verdict_status:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.verdict_status.tsv":
+          type: file
+          description: |
+            Whether Verdict tagged the calls: one header line (status, purity, ploidy, purity_source,
+            message) and one row. status is applied when Verdict wrote tagged VCFs, otherwise skipped
+            (ASCAT's purity above 0.6, or no ASCAT solution); purity/ploidy are ASCAT's or NA; message
+            holds the log lines explaining a skip.
+          pattern: "*.verdict_status.tsv"
   versions_clairsto:
     - - "${task.process}":
           type: string

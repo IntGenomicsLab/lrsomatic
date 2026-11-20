@@ -346,6 +346,22 @@ def reportEntries(base, depth, files) {
 }
 
 //
+// Warning for a <sample>.verdict_status.tsv (text) whose ClairS-TO Verdict tagged nothing; null when it tagged
+//
+def verdictStatusWarning(id, status_text) {
+    def lines = status_text.readLines()
+    def row = [lines[0].tokenize('\t'), lines[1].split('\t', -1).toList()].transpose().collectEntries()
+    def caveat = "Its ClairS-TO somatic calls may include germline variants."
+    if (row.status == 'skipped') {
+        return "ClairS-TO Verdict tagged no germline variants in tumour-only sample '${id}' (purity ${row.purity}, source ${row.purity_source}). Verdict: ${row.message} ${caveat}".toString()
+    }
+    if (row.status == 'not_run') {
+        return "ClairS-TO Verdict did not run for tumour-only sample '${id}'.${row.message ? ' Verdict: ' + row.message : ''} ${caveat}".toString()
+    }
+    return null
+}
+
+//
 // Builtin panel names shipped in assets/gene_lists, reference suffix dropped
 //
 def reportBuiltinGenePanels() {
@@ -963,7 +979,9 @@ def toolBibliographyText() {
 def methodsDescriptionText(mqc_methods_yaml) {
     // Convert  to a named map so can be used as with familiar NXF ${workflow} variable syntax in the MultiQC YML file
     def meta = [:]
-    meta.workflow = workflow.toMap()
+    // Without -resume the text, and so MULTIQC's inputs, stay the same when a run is resumed
+    def command_line = workflow.commandLine.replaceAll(/\s+-resume(\s+[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})?(?=\s|$)/, '')
+    meta.workflow = workflow.toMap() + [commandLine: command_line]
     meta["manifest_map"] = workflow.manifest.toMap()
 
     // Pipeline DOI
