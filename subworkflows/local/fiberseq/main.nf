@@ -8,7 +8,7 @@ include { FIBERTOOLSRS_FIRE        } from '../../../modules/local/fibertoolsrs/f
 include { FIBERTOOLSRS_NUCLEOSOMES } from '../../../modules/local/fibertoolsrs/nucleosomes'
 include { FIBERTOOLSRS_QC          } from '../../../modules/local/fibertoolsrs/qc'
 include { SAMTOOLS_VIEW as SAMTOOLS_VIEW_FIBERPREP } from '../../../modules/nf-core/samtools/view/main'
-include { fibertoolsReadsInput     } from '../utils_nfcore_lrsomatic_pipeline'
+include { fibertoolsReadsInput; m6aPredicted; fiberStepsSkipped } from '../utils_nfcore_lrsomatic_pipeline'
 
 workflow FIBERSEQ {
 
@@ -44,8 +44,8 @@ workflow FIBERSEQ {
             failOnMismatch: true
         )
         .branch { _key, meta, _bams, aligned, _decode, m6a ->
-            // --skip_m6a on reads without m6A calls: nucleosome and FIRE calling would find nothing
-            no_m6a: params.skip_m6a && m6a == 'false' && fibertoolsReadsInput(meta, meta.kinetics)
+            // fiber-seq reads without m6A calls and none predicted: nucleosome and FIRE calling would find nothing
+            no_m6a: fiberStepsSkipped(meta, meta.kinetics, m6a)
             prep: aligned == 'true' && fibertoolsReadsInput(meta, meta.kinetics)
             as_given: true
         }
@@ -54,9 +54,11 @@ workflow FIBERSEQ {
     ch_no_m6a = ch_fiber_input.no_m6a
         .map { _key, meta, bams, _aligned, _decode, _m6a ->
             def replicate = meta.n_replicates > 1 ? " replicate ${meta.replicate}" : ''
-            def hint = meta.platform == 'pb' && meta.kinetics == 'true' ? ' Run without --skip_m6a to predict m6A from its kinetics.' : ''
-            log.warn "Sample '${meta.id}' (${meta.type}${replicate}): --skip_m6a is set but the first 1000 reads carry no m6A calls " +
-                "(no A+a entry in their MM tags), so the fibertools-rs nucleosome, FIRE and QC steps are skipped for it.${hint}"
+            def cause = meta.platform == 'ont' ? 'ONT reads get m6A calls only from the basecaller; these look basecalled without a 6mA model.'
+                : meta.kinetics != 'true' ? 'They have no kinetics to predict m6A from either (no --keep-kinetics in the header).'
+                : '--skip_m6a is set; run without it to predict m6A from their kinetics.'
+            log.warn "Sample '${meta.id}' (${meta.type}${replicate}): the first 1000 reads carry no m6A calls (no A+a entry in " +
+                "their MM tags), so the fibertools-rs nucleosome, FIRE and QC steps are skipped for it. ${cause}"
             [ meta, bams ]
         }
     // ch_no_m6a: [meta_with_replicate, bam_or_cram]  -- input reads as given, rejoined after FIRE
@@ -102,51 +104,27 @@ workflow FIBERSEQ {
         normal_bams = ch_ubams_normal_branching.normal
         ubams = ch_ubams_normal_branching.tumor
     }
-        // Branch by sequencing platform: PacBio needs m6A prediction, ONT does not
-        ubams
-        .branch{ meta, _bams ->
-            pacBio: meta.platform == "pb"
-            ont: meta.platform == "ont"
+    // m6A prediction: PacBio reads with kinetics, unless --skip_m6a (m6aPredicted); ONT reads carry the basecaller's
+    ubams
+        .branch { meta, _bams ->
+            predict: m6aPredicted(meta, meta.kinetics)
+            as_given: true
         }
-        .set{ch_ubams_pacbio_ont_branching}
-    // ch_ubams_pacbio_ont_branching.pacBio: [meta, bam]  -- PacBio samples
-    // ch_ubams_pacbio_ont_branching.ont:    [meta, bam]  -- ONT samples (skip m6A)
+        .set { ch_m6a_branch }
+    // ch_m6a_branch.predict:  [meta, bam]  -- PacBio with kinetics (fi/fp/ri/rp tags); m6A predicted
+    // ch_m6a_branch.as_given: [meta, bam]  -- ONT, PacBio without kinetics, or --skip_m6a
 
-    pacbio_bams = ch_ubams_pacbio_ont_branching.pacBio
-    // Branch PacBio samples: only those with kinetics tags can have m6A predicted
-    pacbio_bams
-        .branch{meta, _bams ->
-            kinetics: meta.kinetics == "true"
-            noKinetics: meta.kinetics == "false"
-        }
-        .set{pacbio_bams}
-    // pacbio_bams.kinetics:   [meta, bam]  -- PacBio with kinetics (mm/ml tags); m6A predictable
-    // pacbio_bams.noKinetics: [meta, bam]  -- PacBio without kinetics; skip PREDICTM6A
+    //
+    // MODULE: FIBERTOOLSRS_PREDICTM6A (label: process_high)
+    // Input:  [meta, bam]  -- PacBio BAM with kinetics tags
+    // Output: .bam -- [meta, bam]  -- BAM with m6A (MM/ML) tags added
+    //
+    FIBERTOOLSRS_PREDICTM6A (
+        ch_m6a_branch.predict
+    )
 
-    if (!params.skip_m6a) {
-        //
-        // MODULE: FIBERTOOLSRS_PREDICTM6A (label: process_high)
-        // Input:  [meta, bam]  -- PacBio BAM with kinetics tags
-        // Output: .bam -- [meta, bam]  -- BAM with m6A (MM/ML) tags added
-        //
-        FIBERTOOLSRS_PREDICTM6A (
-            pacbio_bams.kinetics
-        )
-        // Merge PacBio with and without kinetics: both now have (or skip) m6A tags
-        pacbio_bams.noKinetics
-            .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
-            .set{predicted_bams}
-    }
-    else {
-        pacbio_bams.noKinetics
-            .mix(pacbio_bams.kinetics)
-            .set{predicted_bams}
-    }
-    // predicted_bams: [meta, bam]  -- all PacBio samples (m6A tags present where applicable)
-
-    // Re-merge ONT and PacBio before fiber-seq branching
-    ch_ubams_pacbio_ont_branching.ont
-        .mix(predicted_bams)
+    ch_m6a_branch.as_given
+        .mix(FIBERTOOLSRS_PREDICTM6A.out.bam)
         .set{fiber_branch}
     // fiber_branch (pre-split): [meta, bam]  -- all samples (ONT + PacBio, with m6A if applicable)
 
