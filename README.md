@@ -46,11 +46,15 @@ b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`]
 
 c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
 
+d. Phasing somatic SNVs and indels from the haplotagged tumour reads ([`pysam`](https://github.com/pysam-developers/pysam))
+
 **2ii) Tumour only mode: small variant calling:**
 
 a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
 
 b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
+
+c. Phasing somatic SNVs and indels from the haplotagged tumour reads ([`pysam`](https://github.com/pysam-developers/pysam))
 
 **3) Large variant calling:**
 
