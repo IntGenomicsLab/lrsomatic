@@ -84,8 +84,8 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 
 ### CRAM input
 
-The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned, so it
-can be unaligned or aligned to any assembly. An **unaligned** CRAM (e.g. `samtools reset -O cram`) needs no reference.
+The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned (unless
+[`--skip_alignment`](#skipping-alignment) is set), so it can be unaligned or aligned to any assembly. An **unaligned** CRAM (e.g. `samtools reset -O cram`) needs no reference.
 An **aligned** CRAM can only be read with the reference it was written against:
 
 - a CRAM with the reference embedded (`--output-fmt-option embed_ref=1`, as lrsomatic writes) always works;
@@ -152,6 +152,36 @@ names its basecalling model (Dorado's `DS:basecall_model=...`), the model is wri
 columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
 groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
 rows (from the original input files) if you need them kept apart.
+
+### Skipping alignment
+
+`--skip_alignment` uses the input files as the alignment instead of realigning them with minimap2, which saves the
+most expensive step of the run. It is meant for files that were already aligned to the pipeline reference. We still
+recommend realigning: the variant-calling models assume minimap2 alignments made with the pipeline's settings, and
+other aligners or presets can change the calls.
+
+Every input file must meet all of these conditions, or the run stops:
+
+- it is aligned (has `@SQ` lines);
+- every `@SQ` contig is in `--fasta` with the same length. The check uses names and lengths only, so a masked or
+  otherwise edited copy of the same assembly passes;
+- it is coordinate-sorted (`SO:coordinate` in the `@HD` line);
+- it is not read by fibertools-rs, which runs before alignment. This excludes `fiber` = `y` rows and PacBio rows with
+  kinetics. Use `--skip_fiber` or `--skip_m6a` to run those rows without the Fiber-seq or m6A steps, or run without
+  `--skip_alignment`.
+
+The files are not used as they are. `PREPARE_ALIGNED` makes one samtools pass over each file that:
+
+- replaces its read groups with the pipeline's own (`@RG ID:<sample>_<type>_rep<replicate>`, with
+  `DS:basecall_model=` for ONT input whose header names the model, as after alignment);
+- drops the phasing tags `HP`, `PS`, `PQ` and `PC`, and for PacBio the kinetics unless `--keep_kinetic_data` is set,
+  as the realignment does (see [Aligned input](#aligned-input));
+- writes `--aligned_format` (CRAM 3.0 with the reference embedded, by default) and indexes it.
+
+An aligned CRAM input is decoded as described in [CRAM input](#cram-input). All other records and tags are kept as they
+are, including secondary alignments, hard-clipped supplementary alignments and the aligner's own tags. Replicates of
+a sample are merged as usual. `CRAMINO_PRE` and `NANOPLOT_PRE` do not run, since the input is the alignment that
+`CRAMINO_POST` reports on.
 
 ### PacBio kinetics
 
@@ -435,12 +465,13 @@ symbol and the protein variant (e.g. `V2L`) split into those three columns; see 
 
 #### Minimap2 Options
 
-| Parameter                    | Description                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
-| `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
-| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true` |
-| `--aligned_format`           | `cram` or `bam`: format of the aligned and haplotagged reads. Default = `cram` (see below)  |
+| Parameter                    | Description                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                                          |
+| `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`                                       |
+| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true`                           |
+| `--aligned_format`           | `cram` or `bam`: format of the aligned and haplotagged reads. Default = `cram` (see below)                            |
+| `--skip_alignment`           | Use the input alignments instead of realigning them; see [Skipping alignment](#skipping-alignment). Default = `false` |
 
 `--aligned_format cram` writes CRAM 3.0 with the reference embedded, from alignment onwards and in `bamfiles/`. On
 long reads this is a third (ONT) to two thirds (PacBio Revio) smaller than BAM, with identical records and the same

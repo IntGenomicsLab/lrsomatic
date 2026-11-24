@@ -91,7 +91,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-Each row is a sample. BAMs must be unaligned, all fields except `bam_normal` are required, and an empty `bam_normal` runs the sample in tumour-only mode. `platform` is `ont` or `pb`, `sex` is `female` or `male`, and `fiber` is `y` or `n` for Fiber-seq; see the [usage documentation](/docs/usage.md#full-description-of-samplesheet-columns).
+Each row is a sample. BAMs/CRAMs may be unaligned or aligned (every input is realigned unless `--skip_alignment` is set), all fields except `bam_normal` are required, and an empty `bam_normal` runs the sample in tumour-only mode. `platform` is `ont` or `pb`, `sex` is `female` or `male`, and `fiber` is `y` or `n` for Fiber-seq; see the [usage documentation](/docs/usage.md#full-description-of-samplesheet-columns).
 
 Now, you can run the pipeline using:
 
