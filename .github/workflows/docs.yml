@@ -15,7 +15,8 @@ on:
       - "CHANGELOG.md"
       - "CITATIONS.md"
       - "assets/samplesheet.csv"
-      - "assets/lrsomatic_1.0.png"
+      - "assets/*.png"
+      - "assets/*.svg"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
@@ -27,6 +28,8 @@ on:
       - "README.md"
       - "CHANGELOG.md"
       - "CITATIONS.md"
+      - "assets/*.png"
+      - "assets/*.svg"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
     inputs:
@@ -57,13 +60,16 @@ jobs:
         if: env.TAG != ''
         run: |
           git checkout "refs/tags/$TAG" -- README.md CHANGELOG.md CITATIONS.md nextflow_schema.json \
-            docs/usage.md docs/output.md docs/CONTRIBUTING.md assets/samplesheet.csv assets/lrsomatic_1.0.png
+            docs/usage.md docs/output.md docs/CONTRIBUTING.md assets/samplesheet.csv
+          git ls-tree --name-only "refs/tags/$TAG" assets/ | grep -E '\.(png|svg|jpg)$' \
+            | xargs -r git checkout "refs/tags/$TAG" --
           echo "DOCS_REF=$TAG" >> "$GITHUB_ENV"
 
       - name: Copy linked assets into the docs tree
         run: |
           mkdir -p docs/assets
-          cp assets/samplesheet.csv assets/lrsomatic_1.0.png docs/assets/
+          cp assets/samplesheet.csv docs/assets/
+          find assets -maxdepth 1 \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' \) -exec cp {} docs/assets/ \;
 
       - uses: actions/setup-python@v5
         with:
