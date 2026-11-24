@@ -1,0 +1,104 @@
+name: Docs
+# Versioned site with mike: /latest/ = newest release, /<tag>/ per release, /dev/ = dev branch.
+on:
+  release:
+    types: [published]
+  push:
+    branches: [dev]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "schema_render.py"
+      - "requirements-docs.txt"
+      - "nextflow_schema.json"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CITATIONS.md"
+      - "assets/samplesheet.csv"
+      - "assets/lrsomatic_1.0.png"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "schema_render.py"
+      - "requirements-docs.txt"
+      - "nextflow_schema.json"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CITATIONS.md"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to (re)build, e.g. 1.1.0"
+        required: true
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.number) || 'gh-pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # site tooling comes from this checkout; page content comes from the tag, so tags older than the tooling still build
+      - name: Overlay content from the release tag
+        if: env.TAG != ''
+        run: |
+          git checkout "refs/tags/$TAG" -- README.md CHANGELOG.md CITATIONS.md nextflow_schema.json \
+            docs/usage.md docs/output.md docs/CONTRIBUTING.md assets/samplesheet.csv assets/lrsomatic_1.0.png
+          echo "DOCS_REF=$TAG" >> "$GITHUB_ENV"
+
+      - name: Copy linked assets into the docs tree
+        run: |
+          mkdir -p docs/assets
+          cp assets/samplesheet.csv assets/lrsomatic_1.0.png docs/assets/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - run: pip install -r requirements-docs.txt
+
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+      - name: Upload site for review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/
+          retention-days: 7
+
+      - name: Deploy with mike
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages --depth=1 || true
+          if [ -z "$TAG" ]; then
+            DOCS_REF=dev mike deploy --push dev
+            exit 0
+          fi
+          latest=$(gh release view --json tagName -q .tagName)
+          prerelease=$(gh release view "$TAG" --json isPrerelease -q .isPrerelease)
+          if [ "$TAG" = "$latest" ] && [ "$prerelease" = "false" ]; then
+            mike deploy --push --update-aliases "$TAG" latest
+            mike set-default --push latest
+          else
+            mike deploy --push "$TAG"
+          fi
