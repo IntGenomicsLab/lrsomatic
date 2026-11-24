@@ -1,0 +1,77 @@
+{
+    "stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "fixture"
+                        },
+                        "fixture.somatic_phased.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "fixture"
+                        },
+                        "fixture.somatic_phased.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "2": [
+                    [
+                        "PHASE_SOMATIC_FROM_READS",
+                        "pysam",
+                        "0.24.1"
+                    ]
+                ],
+                "tbi": [
+                    [
+                        {
+                            "id": "fixture"
+                        },
+                        "fixture.somatic_phased.vcf.gz.tbi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "vcf": [
+                    [
+                        {
+                            "id": "fixture"
+                        },
+                        "fixture.somatic_phased.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "versions_pysam": [
+                    [
+                        "PHASE_SOMATIC_FROM_READS",
+                        "pysam",
+                        "0.24.1"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-24T08:18:38.741349384",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "BAM - phases from alt-read haplotags, leaves the rest unphased": {
+        "content": [
+            {
+                "versions_pysam": [
+                    [
+                        "PHASE_SOMATIC_FROM_READS",
+                        "pysam",
+                        "0.24.1"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-24T08:18:27.113478102",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

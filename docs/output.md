@@ -575,7 +575,7 @@ DeepSomatic somatic small variant calls. Present in all samples.
 
 #### `phased`
 
-Phased variant calls produced by Longphase. Present in all samples.
+Phased small variants. Present in all samples. The germline VCF is phased by Longphase; the somatic VCF is phased from the haplotagged tumour reads, so both share one phase frame (see [usage](usage.md#somatic-phasing)).
 
 ```
 ├── phased
@@ -585,12 +585,12 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── somatic_smallvariants.vcf.gz.tbi
 ```
 
-| File                                | Description                                                                                                |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                                           |
-| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                                          |
-| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags; `0/0` and `./.` records are left unphased |
-| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                                           |
+| File                                | Description                                                                                                                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                                                                                                                                     |
+| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                                                                                                                                    |
+| `somatic_smallvariants.vcf.gz`      | Somatic SNV/indel VCF; heterozygous records with enough haplotagged ALT reads are phased (`GT` `1\|0`/`0\|1`, `PS` = germline block), the rest left unphased; `FORMAT/AHP` holds the ALT read counts |
+| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                                                                                                                                     |
 
 </details>
 

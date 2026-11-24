@@ -795,37 +795,29 @@ Clair3 calls an SNV and a deletion starting at the same base), all of them are
 kept; only exact duplicates (same `POS`, `REF` and `ALT`) are dropped. Records are
 not split in this mode.
 
-Whatever the callers and combine mode, each arm is joined to one record per
-position (`bcftools norm -m +any`) before phasing, since LongPhase cannot take two
-records at one `POS`.
+Whatever the callers and combine mode, the germline set is joined to one record
+per position (`bcftools norm -m +any`) before phasing, since LongPhase cannot
+take two records at one `POS`. The somatic set keeps the callers' records.
 
-#### Germline and somatic provenance
+#### Somatic phasing
 
-Germline and somatic small variants are merged into one VCF for somatic phasing,
-because Longphase needs all variant sites in a single file to produce consistent
-phase blocks. The somatic arm is then recovered from the phased result by an
-`INFO/SOMATIC` flag stamped on each arm before the merge, not by position, since a
-germline record at the same coordinate as a somatic call would otherwise be kept.
-Tagging leaves `FILTER` unchanged.
+LongPhase phases the germline variants (on the normal, or on the tumour without
+one), and every BAM is haplotagged from that phased germline VCF. Somatic
+variants are then phased from the haplotagged tumour reads, so their haplotype
+and phase set agree with the germline VCF and with the `HP`/`PS` read tags:
 
-Longphase phases by position, so a germline record at the position of a somatic
-call would lend the somatic record its genotype and phase set. Germline records
-at the position of any somatic call with an alternate genotype are therefore
-left out of somatic phasing. Somatic records without an alternate genotype
-(`0/0` or `./.`, present only with `--smallvar_filter_pass false`) are not
-phased: they are added back to `somatic_smallvariants.vcf.gz` unchanged.
-
-Three INFO fields carry this provenance:
-
-| Field         | Meaning                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `SOMATIC`     | Record came from the somatic call set                                                                                 |
-| `GERMLINE`    | Record came from the germline call set                                                                                |
-| `ORIG_FILTER` | Original `FILTER` of ClairS-TO germline records, before normalisation to `PASS`. Multiple filters are joined with `,` |
-
-Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
-lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
-`vep/germline/`, and in the unfiltered per-caller VCFs under `variants/<caller>/`.
+- For each heterozygous somatic SNV, deletion or insertion, the reads carrying
+  the ALT allele are counted per haplotype (`HP`) and phase block (`PS`). Only
+  ALT reads count: reference reads come from both haplotypes and from normal
+  cells, so they say nothing about where the mutation sits.
+- With at least 3 tagged ALT reads, of which at least 80 % share one `HP` and
+  `PS`, the record gets `GT` `1|0` (`HP` 1) or `0|1` (`HP` 2) and that `PS`,
+  the germline block's ID.
+- Otherwise the record is left unphased, as are homozygous, multi-allelic,
+  complex and `0/0`/`./.` records.
+- `FORMAT/AHP` gives the ALT reads on haplotype 1, on haplotype 2 and without a
+  haplotag, so an unphased record shows why (no tagged reads, or reads split
+  across the haplotypes).
 
 #### PON Options
 

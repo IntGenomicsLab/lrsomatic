@@ -1,23 +1,11 @@
 // Import modules
 include { LONGPHASE_PHASE as LONGPHASE_PHASE_GERMLINE       } from '../../../modules/nf-core/longphase/phase/main.nf'
-include { LONGPHASE_PHASE as LONGPHASE_PHASE_SOMATIC        } from '../../../modules/nf-core/longphase/phase/main.nf'
 include { LONGPHASE_HAPLOTAG                                } from '../../../modules/nf-core/longphase/haplotag/main.nf'
 include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_GERMLINE   } from '../../../modules/local/longphase/modcall/main.nf'
-include { LONGPHASE_MODCALL as LONGPHASE_MODCALL_SOMATIC    } from '../../../modules/local/longphase/modcall/main.nf'
 include { SAMTOOLS_INDEX                                    } from '../../../modules/nf-core/samtools/index/main.nf'
-include { BCFTOOLS_CONCAT                                   } from '../../../modules/nf-core/bcftools/concat/main'
-include { BCFTOOLS_CONCAT as CONCAT_SOMATIC_UNPHASED        } from '../../../modules/nf-core/bcftools/concat/main'
-include { BCFTOOLS_SORT                                     } from '../../../modules/nf-core/bcftools/sort/main'
 include { BCFTOOLS_REHEADER as REHEADER_GERMLINE            } from '../../../modules/nf-core/bcftools/reheader/main'
-include { BCFTOOLS_SORT as SORT_SOMATIC_PHASED              } from '../../../modules/nf-core/bcftools/sort/main'
-include { BCFTOOLS_VIEW                                     } from '../../../modules/local/bcftools/view/main.nf'
-include { BCFTOOLS_VIEW as SOMATIC_ALT                      } from '../../../modules/local/bcftools/view/main.nf'
-include { BCFTOOLS_VIEW as SOMATIC_NONALT                   } from '../../../modules/local/bcftools/view/main.nf'
-include { BCFTOOLS_EXCLUDE_SITES as GERMLINE_ANCHORS        } from '../../../modules/local/bcftools/excludesites/main.nf'
-include { BCFTOOLS_NORM as REJOIN_SOMATIC                    } from '../../../modules/nf-core/bcftools/norm/main'
-include { BCFTOOLS_NORM as REJOIN_GERMLINE                   } from '../../../modules/nf-core/bcftools/norm/main'
-include { VCFTAG as TAG_SOMATIC                             } from '../../../modules/local/vcftag/main.nf'
-include { VCFTAG as TAG_GERMLINE                            } from '../../../modules/local/vcftag/main.nf'
+include { BCFTOOLS_NORM as REJOIN_GERMLINE                  } from '../../../modules/nf-core/bcftools/norm/main'
+include { PHASE_SOMATIC_FROM_READS                          } from '../../../modules/local/phase_somatic_from_reads/main.nf'
 
 
 workflow PHASING_HAPLOTYPING {
@@ -30,6 +18,9 @@ workflow PHASING_HAPLOTYPING {
 
     main:
 
+    // Meta keys shared by every stream once 'type' is dropped, so BAMs, VCFs and modcall output join
+    def meta_keys = ['id', 'paired_data', 'platform', 'sex', 'fiber', 'clair3_model', 'clairS_model', 'clairSTO_model']
+
     // SPLIT INTO PAIRED AND TUMOR ONLY
     // paired_data is set to the matched sample ID for paired samples, null/false for tumor-only
     tumor_normal_bams
@@ -41,27 +32,14 @@ workflow PHASING_HAPLOTYPING {
     // branched_bams.paired:     [meta, bam, bai]  -- tumor + normal from paired runs
     // branched_bams.tumor_only: [meta, bam, bai]  -- tumor-only samples
 
-    branched_bams.paired
-        .set{ paired_ch }
-
     // Strip 'type' from tumor-only meta (no type distinction needed in this stream)
     branched_bams.tumor_only
-        .map { meta, bam, bai ->
-                def new_meta = meta.subMap('id',
-                                        'paired_data',
-                                        'platform',
-                                        'sex',
-                                        'fiber',
-                                        'clair3_model',
-                                        'clairS_model',
-                                        'clairSTO_model')
-                    return [ new_meta, bam, bai ]
-            }
+        .map { meta, bam, bai -> [ meta.subMap(meta_keys), bam, bai ] }
         .set{ tumor_only_ch }
     // tumor_only_ch: [meta (no type), bam, bai]
 
     // Split paired samples into normal and tumor streams for separate handling
-    paired_ch
+    branched_bams.paired
         .branch { meta, _bam, _bai ->
             normal: meta.type == "normal"
             tumor:  meta.type == "tumor"
@@ -72,47 +50,18 @@ workflow PHASING_HAPLOTYPING {
 
     // Strip 'type' from paired normal/tumor meta to allow joining with tumor-only channel
     paired_ch_branched.normal
-        .map { meta, bam, bai ->
-                def new_meta = meta.subMap('id',
-                                        'paired_data',
-                                        'platform',
-                                        'sex',
-                                        'fiber',
-                                        'clair3_model',
-                                        'clairS_model',
-                                        'clairSTO_model')
-                    return [ new_meta, bam, bai ]
-            }
+        .map { meta, bam, bai -> [ meta.subMap(meta_keys), bam, bai ] }
         .set{ paired_normal_ch }
-    // paired_normal_ch: [meta (no type), bam, bai]
-
     paired_ch_branched.tumor
-        .map { meta, bam, bai ->
-                def new_meta = meta.subMap('id',
-                                        'paired_data',
-                                        'platform',
-                                        'sex',
-                                        'fiber',
-                                        'clair3_model',
-                                        'clairS_model',
-                                        'clairSTO_model')
-                    return [ new_meta, bam, bai ]
-            }
+        .map { meta, bam, bai -> [ meta.subMap(meta_keys), bam, bai ] }
         .set{ paired_tumor_ch }
-    // paired_tumor_ch: [meta (no type), bam, bai]
+    // paired_normal_ch / paired_tumor_ch: [meta (no type), bam, bai]
 
     // Germline phasing uses normal BAMs (+ tumor-only BAMs used as their own "normal" proxy)
     tumor_only_ch
         .mix(paired_normal_ch)
         .set { normal_bams_w_tumoronly_ch }
     // normal_bams_w_tumoronly_ch: [meta, bam, bai]
-    //   -- normal BAMs from T/N pairs + tumor-only BAMs (both phased with germline VCF)
-
-    // Somatic phasing uses tumor BAMs (+ tumor-only BAMs)
-    tumor_only_ch
-        .mix(paired_tumor_ch)
-        .set{ tumor_bams_ch}
-    // tumor_bams_ch: [meta, bam, bai]  -- tumor BAMs from T/N pairs + tumor-only BAMs
 
     // MODCALL: Longphase base-modification calls, used as extra phasing evidence
 
@@ -129,27 +78,7 @@ workflow PHASING_HAPLOTYPING {
             fasta,
             fai
         )
-
-        //
-        // MODULE: LONGPHASE_MODCALL_SOMATIC (label: process_high)
-        // Input:  [meta, bam, bai]  -- tumor BAMs (+ tumor-only BAMs)
-        //         fasta / fai
-        // Output: .mod_vcf -- [meta, vcf]  -- base modification calls for tumor
-        //
-
-        LONGPHASE_MODCALL_SOMATIC (
-            tumor_bams_ch,
-            fasta,
-            fai
-        )
-
     }
-
-    //
-    // MODULE: BCFTOOLS_NORM (label: process_medium), aliased REJOIN_SOMATIC / REJOIN_GERMLINE
-    // Join records sharing a POS (-m +any) for every caller path; LongPhase cannot take two records at one POS.
-    //
-    REJOIN_SOMATIC ( somatic_vcf,  fasta )
 
     //
     // MODULE: BCFTOOLS_REHEADER (label: process_low), aliased REHEADER_GERMLINE
@@ -169,130 +98,32 @@ workflow PHASING_HAPLOTYPING {
         .set{ reheadered_germline_vcf }
     // reheadered_germline_vcf: [meta, vcf, tbi]  -- germline VCF with all reference contigs in the header
 
+    //
+    // MODULE: BCFTOOLS_NORM (label: process_medium), aliased REJOIN_GERMLINE
+    // Join records sharing a POS (-m +any); LongPhase cannot take two records at one POS.
+    //
     REJOIN_GERMLINE( reheadered_germline_vcf, fasta )
 
-    //
-    // MODULE: VCFTAG (label: process_single), aliased TAG_SOMATIC / TAG_GERMLINE
-    // Stamp each arm with an INFO provenance flag before the merge; LongPhase keeps it through phasing.
-    //
-    TAG_SOMATIC (
-        REJOIN_SOMATIC.out.vcf.join(REJOIN_SOMATIC.out.index, failOnMismatch: true, failOnDuplicate: true),
-        'SOMATIC'
-    )
-    TAG_GERMLINE(
-        REJOIN_GERMLINE.out.vcf.join(REJOIN_GERMLINE.out.index, failOnMismatch: true, failOnDuplicate: true),
-        'GERMLINE'
-    )
+    REJOIN_GERMLINE.out.vcf
+        .join(REJOIN_GERMLINE.out.index, failOnMismatch: true, failOnDuplicate: true)
+        .set{ rejoined_germline_vcf }
+    // rejoined_germline_vcf: [meta, vcf, tbi]
 
-    TAG_SOMATIC.out.vcf
-        .join(TAG_SOMATIC.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .set{ tagged_somatic_vcf }
-    TAG_GERMLINE.out.vcf
-        .join(TAG_GERMLINE.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .set{ tagged_germline_vcf }
-    // tagged_*_vcf: [meta, vcf, tbi]
-
-    // LongPhase phases by position, so a germline record at a somatic call's POS would lend it its phase.
-    // Only alt-genotype somatic records are phased; 0/0 and ./. records rejoin unphased after the split.
-    SOMATIC_ALT   ( tagged_somatic_vcf )
-    SOMATIC_NONALT( tagged_somatic_vcf )
-
-    SOMATIC_ALT.out.vcf
-        .join(SOMATIC_ALT.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .set{ somatic_alt_vcf }
-    SOMATIC_NONALT.out.vcf
-        .join(SOMATIC_NONALT.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .set{ somatic_nonalt_vcf }
-    // somatic_alt_vcf / somatic_nonalt_vcf: [meta, vcf, tbi]
-
-    //
-    // MODULE: GERMLINE_ANCHORS (BCFTOOLS_EXCLUDE_SITES alias) -- germline records not at an alt somatic POS
-    // Input:  [meta, germline_vcf, tbi, somatic_alt_vcf, tbi]
-    // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
-    //
-    GERMLINE_ANCHORS (
-        tagged_germline_vcf.join(somatic_alt_vcf, failOnMismatch: true, failOnDuplicate: true)
-    )
-
-    // Somatic phasing needs germline and somatic sites in one VCF for consistent phase blocks
-    GERMLINE_ANCHORS.out.vcf
-        .join(GERMLINE_ANCHORS.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .join(somatic_alt_vcf)
-        .map { meta, germ_vcf, germ_tbi, som_vcf, som_tbi ->
-                // Order is cosmetic: BCFTOOLS_CONCAT sorts its inputs by name.
-                def vcfs = [som_vcf, germ_vcf]
-                def tbis = [som_tbi, germ_tbi]
-                return [ meta, vcfs, tbis]
-        }
-        .set{germline_somatic_vcfs}
-    // germline_somatic_vcfs (pre-concat): [meta, [somatic_alt_vcf, germline_anchor_vcf], [tbis...]]
-
-    //
-    // MODULE: BCFTOOLS_CONCAT (label: process_medium)
-    // Input:  [meta, [vcfs...], [tbis...]]  -- somatic + germline VCFs to concatenate
-    // Output: .vcf -- [meta, vcf]  -- unsorted concatenated VCF
-    //
-        BCFTOOLS_CONCAT(germline_somatic_vcfs)
-        BCFTOOLS_CONCAT.out.vcf
-            .set{concat_out}
-    // concat_out: [meta, vcf]  -- concatenated (unsorted) somatic+germline VCF
-
-    //
-    // MODULE: BCFTOOLS_SORT (label: process_medium)
-    // Input:  [meta, vcf]  -- unsorted concatenated VCF
-    // Output: .vcf -- [meta, vcf]  -- coordinate-sorted VCF
-    //         .tbi -- [meta, tbi]
-    //
-        BCFTOOLS_SORT(concat_out)
-        BCFTOOLS_SORT.out.vcf
-            .set{germline_somatic_vcfs}
-    // germline_somatic_vcfs (final): [meta, vcf]  -- sorted combined somatic+germline VCF for somatic phasing
-
-    // PHASING: germline (normal BAMs + germline VCF) builds the phase blocks; somatic (tumor BAMs + merged VCF) transfers them
+    // PHASING: germline (normal BAMs + germline VCF) builds the phase blocks every BAM is haplotagged with
     if (!params.skip_modcall) {
-        // With modcall: include base-modification VCF as additional phasing evidence
         normal_bams_w_tumoronly_ch
-            .join(tagged_germline_vcf)
+            .join(rejoined_germline_vcf)
             .join(LONGPHASE_MODCALL_GERMLINE.out.mod_vcf)
-            .map { meta, bam, bai, vcf, _tbi, mods->
-                def svs = []  // SVs for phasing are not used here
-                return [ meta, bam, bai, vcf, svs, mods ]
-            }
+            .map { meta, bam, bai, vcf, _tbi, mods -> [ meta, bam, bai, vcf, [], mods ] }
             .set{ longphase_phase_germline_input_ch }
-        // longphase_phase_germline_input_ch: [meta, bam, bai, germline_vcf, [], mod_vcf]
-
-        tumor_bams_ch
-            .join(germline_somatic_vcfs)
-            .join(LONGPHASE_MODCALL_SOMATIC.out.mod_vcf)
-            .map { meta, bam, bai, vcf, mods->
-                def svs = []
-                return [ meta, bam, bai, vcf, svs, mods ]
-            }
-            .set{ longphase_phase_somatic_input_ch }
-        // longphase_phase_somatic_input_ch: [meta, bam, bai, somatic+germline_vcf, [], mod_vcf]
     }
     else {
-        // Without modcall: empty lists for SVs and mods
         normal_bams_w_tumoronly_ch
-            .join(tagged_germline_vcf)
-            .map { meta, bam, bai, vcf, _tbi ->
-                def svs = []
-                def mods = []
-                return [ meta, bam, bai, vcf, svs, mods ]
-            }
+            .join(rejoined_germline_vcf)
+            .map { meta, bam, bai, vcf, _tbi -> [ meta, bam, bai, vcf, [], [] ] }
             .set{ longphase_phase_germline_input_ch }
-        // longphase_phase_germline_input_ch: [meta, bam, bai, germline_vcf, [], []]
-
-        tumor_bams_ch
-            .join(germline_somatic_vcfs)
-            .map { meta, bam, bai, vcf ->
-                def svs = []
-                def mods = []
-                return [ meta, bam, bai, vcf, svs, mods ]
-            }
-            .set{ longphase_phase_somatic_input_ch }
-        // longphase_phase_somatic_input_ch: [meta, bam, bai, somatic+germline_vcf, [], []]
     }
+    // longphase_phase_germline_input_ch: [meta, bam, bai, germline_vcf, [] (svs), mod_vcf or []]
 
     //
     // MODULE: LONGPHASE_PHASE_GERMLINE (label: process_medium)
@@ -312,147 +143,26 @@ workflow PHASING_HAPLOTYPING {
         .set{ phased_germline_vcf }
     // phased_germline_vcf: [meta, vcf, tbi]  -- Longphase-phased germline VCF
 
-    //
-    // MODULE: LONGPHASE_PHASE_SOMATIC (label: process_medium)
-    // Input:  [meta, bam, bai, combined_vcf, svs, mods]  -- tumor BAMs + somatic+germline VCF (± mod VCF)
-    //         fasta / fai
-    // Output: .snv_vcf       -- [meta, vcf]  -- phased somatic (+ germline) VCF
-    //         .snv_vcf_index -- [meta, tbi]
-    //
-    LONGPHASE_PHASE_SOMATIC (
-        longphase_phase_somatic_input_ch,
-        fasta,
-        fai
-    )
-
-    LONGPHASE_PHASE_SOMATIC.out.snv_vcf
-        .join(LONGPHASE_PHASE_SOMATIC.out.snv_vcf_index)
-        .set{ phased_somatic_germline_vcf }
-    // phased_somatic_germline_vcf: [meta, vcf, tbi]  -- Longphase-phased somatic+germline VCF (unfiltered)
-
-    //
-    // MODULE: BCFTOOLS_VIEW (label: process_medium)
-    // Keep the somatic arm by its INFO/SOMATIC flag, not by position; PS/HP tags survive.
-    // Input:  [meta, phased_combined_vcf, phased_combined_tbi]
-    // Output: .vcf -- [meta, vcf.gz]  -- phased somatic-only VCF
-    //         .tbi -- [meta, tbi]
-    //
-    BCFTOOLS_VIEW ( phased_somatic_germline_vcf )
-
-    // Add the unphased 0/0 and ./. somatic records back (only present with --smallvar_filter_pass false)
-    BCFTOOLS_VIEW.out.vcf
-        .join(BCFTOOLS_VIEW.out.tbi, failOnMismatch: true, failOnDuplicate: true)
-        .join(somatic_nonalt_vcf, failOnMismatch: true, failOnDuplicate: true)
-        .map { meta, phased_vcf, phased_tbi, nonalt_vcf, nonalt_tbi ->
-            return [ meta, [phased_vcf, nonalt_vcf], [phased_tbi, nonalt_tbi] ]
-        }
-        .set{ somatic_parts }
-    // somatic_parts: [meta, [phased_alt_vcf, nonalt_vcf], [tbis...]]
-
-    CONCAT_SOMATIC_UNPHASED ( somatic_parts )
-    SORT_SOMATIC_PHASED ( CONCAT_SOMATIC_UNPHASED.out.vcf )
-
-    SORT_SOMATIC_PHASED.out.vcf
-        .join(SORT_SOMATIC_PHASED.out.index, failOnMismatch: true, failOnDuplicate: true)
-        .set{ phased_somatic_vcf }
-    // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- phased somatic-only VCF (germline removed)
-
     // HAPLOTAGGING: every sample is tagged from the germline phase blocks; 'type' goes back into meta for output naming
+    // A paired tumour and its normal share the type-less meta, so they meet the germline VCF via combine, not join
+    tumor_only_ch.map { meta, bam, bai -> [ meta, bam, bai, 'tumor' ] }
+        .mix(paired_tumor_ch.map { meta, bam, bai -> [ meta, bam, bai, 'tumor' ] })
+        .mix(paired_normal_ch.map { meta, bam, bai -> [ meta, bam, bai, 'normal' ] })
+        .combine(LONGPHASE_PHASE_GERMLINE.out.snv_vcf, by: 0)
+        .set { haplotag_bams_vcf_ch }
+    // haplotag_bams_vcf_ch: [meta (no type), bam, bai, type, phased_germline_vcf]
 
-    if(!params.skip_modcall) {
-        // Strip 'type' so modcall output joins the type-less channels
-        LONGPHASE_MODCALL_GERMLINE.out.mod_vcf
-            .map { meta, mods ->
-                def new_meta = meta.subMap('id',
-                                    'paired_data',
-                                    'platform',
-                                    'sex',
-                                    'fiber',
-                                    'clair3_model',
-                                    'clairS_model',
-                                    'clairSTO_model')
-                return [ new_meta, mods ]
-            }
-            .set{modcall_vcf_ch}
-        // modcall_vcf_ch: [meta (no type), mod_vcf]  -- base modification VCF from germline modcall
-
-            // Build haplotag input for tumor-only samples (re-add type:"tumor")
-            tumor_only_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .join(modcall_vcf_ch)
-                .map { meta, bam, bai, vcf, mods ->
-                    def new_meta = meta + [type : "tumor"]
-                    def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ tumor_only_ch }
-            // tumor_only_ch (updated): [meta+type:tumor, bam, bai, phased_germline_vcf, [], mod_vcf]
-
-            paired_tumor_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .join(modcall_vcf_ch)
-                .map { meta, bam, bai, vcf, mods ->
-                    def new_meta = meta + [type : "tumor"]
-                    def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ paired_tumor_ch }
-            // paired_tumor_ch (updated): [meta+type:tumor, bam, bai, phased_germline_vcf, [], mod_vcf]
-
-            paired_normal_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .join(modcall_vcf_ch)
-                .map { meta, bam, bai, vcf, mods ->
-                    def new_meta = meta + [type : "normal"]
-                    def svs = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ paired_normal_ch }
-            // paired_normal_ch (updated): [meta+type:normal, bam, bai, phased_germline_vcf, [], mod_vcf]
-
+    if (!params.skip_modcall) {
+        haplotag_bams_vcf_ch
+            .combine(LONGPHASE_MODCALL_GERMLINE.out.mod_vcf.map { meta, mods -> [ meta.subMap(meta_keys), mods ] }, by: 0)
+            .map { meta, bam, bai, type, vcf, mods -> [ meta + [ type: type ], bam, bai, vcf, [], mods ] }
+            .set { longphase_haplotag_input_ch }
     }
     else {
-        // Without modcall: empty lists for mods
-            tumor_only_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .map { meta, bam, bai, vcf ->
-                    def new_meta = meta + [type : "tumor"]
-                    def svs = []
-                    def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ tumor_only_ch }
-            // tumor_only_ch (updated): [meta+type:tumor, bam, bai, phased_germline_vcf, [], []]
-
-            paired_tumor_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .map { meta, bam, bai, vcf ->
-                    def new_meta = meta + [type : "tumor"]
-                    def svs = []
-                    def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ paired_tumor_ch }
-            // paired_tumor_ch (updated): [meta+type:tumor, bam, bai, phased_germline_vcf, [], []]
-
-            paired_normal_ch
-                .join(LONGPHASE_PHASE_GERMLINE.out.snv_vcf)
-                .map { meta, bam, bai, vcf ->
-                    def new_meta = meta + [type : "normal"]
-                    def svs = []
-                    def mods = []
-                    return [new_meta, bam, bai, vcf, svs, mods]
-                }
-                .set{ paired_normal_ch }
-            // paired_normal_ch (updated): [meta+type:normal, bam, bai, phased_germline_vcf, [], []]
-
+        haplotag_bams_vcf_ch
+            .map { meta, bam, bai, type, vcf -> [ meta + [ type: type ], bam, bai, vcf, [], [] ] }
+            .set { longphase_haplotag_input_ch }
     }
-
-    // Merge all sample types for haplotagging in a single LONGPHASE_HAPLOTAG call
-    tumor_only_ch
-        .mix(paired_tumor_ch)
-        .mix(paired_normal_ch)
-        .set {longphase_haplotag_input_ch}
     // longphase_haplotag_input_ch: [meta(+type), bam, bai, phased_germline_vcf, [], mod_vcf_or_[]]
     //   -- all samples (tumor-only, paired tumor, paired normal)
 
@@ -468,22 +178,41 @@ workflow PHASING_HAPLOTYPING {
         fai
     )
 
-    LONGPHASE_HAPLOTAG.out.bam
-        .set{ tumor_normal_hapbams_ch }
-    // tumor_normal_hapbams_ch (pre-index): [meta, bam]  -- haplotagged BAM (no index yet)
-
     //
     // MODULE: SAMTOOLS_INDEX (label: process_medium)
     // Input:  [meta, bam]  -- haplotagged BAM
     // Output: .index -- [meta, index]  -- .bai or .crai, whichever matches the haplotag output format
     //
     SAMTOOLS_INDEX (
-        tumor_normal_hapbams_ch
+        LONGPHASE_HAPLOTAG.out.bam
     )
-    tumor_normal_hapbams_ch
+    LONGPHASE_HAPLOTAG.out.bam
         .join(SAMTOOLS_INDEX.out.index)
         .set{ tumor_normal_hapbams_ch }
-    // tumor_normal_hapbams_ch (final): [meta, bam, bai]  -- haplotagged BAM with index
+    // tumor_normal_hapbams_ch: [meta, bam, bai]  -- haplotagged BAM with index
+
+    //
+    // MODULE: PHASE_SOMATIC_FROM_READS (label: process_low)
+    // Somatic GT/PS from the HP/PS of each call's alt reads in the haplotagged tumour BAM, so they share the germline phase.
+    // Input:  [meta, somatic_vcf, tbi, hap_bam, index] / fasta / fai
+    // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
+    //
+    somatic_vcf
+        .join(
+            tumor_normal_hapbams_ch
+                .filter { meta, _bam, _bai -> meta.type == 'tumor' }
+                .map { meta, bam, bai -> [ meta.subMap(meta_keys), bam, bai ] },
+            failOnMismatch: true, failOnDuplicate: true
+        )
+        .set{ somatic_phase_input_ch }
+    // somatic_phase_input_ch: [meta, somatic_vcf, tbi, hap_bam, index]
+
+    PHASE_SOMATIC_FROM_READS ( somatic_phase_input_ch, fasta, fai )
+
+    PHASE_SOMATIC_FROM_READS.out.vcf
+        .join(PHASE_SOMATIC_FROM_READS.out.tbi, failOnMismatch: true, failOnDuplicate: true)
+        .set{ phased_somatic_vcf }
+    // phased_somatic_vcf: [meta, vcf.gz, tbi]  -- somatic VCF phased from the haplotagged tumour reads
 
 
     emit:
