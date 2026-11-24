@@ -20,6 +20,11 @@ lint:
     - docs/README.md
     - .github/workflows/branch.yml
     - .github/workflows/linting.yml
+  # MkDocs Jinja templates and macros for the documentation site
+  template_strings:
+    - docs/overrides/main.html
+    - docs/parameters.md
+    - schema_render.py
   multiqc_config:
     - report_comment
   nextflow_config:

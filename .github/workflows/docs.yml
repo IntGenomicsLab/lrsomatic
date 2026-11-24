@@ -1,0 +1,123 @@
+name: Docs
+# Versioned site with mike: /latest/ = newest release, /<tag>/ per release, /dev/ = dev branch.
+on:
+  release:
+    types: [published]
+  push:
+    branches: [dev]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "schema_render.py"
+      - "requirements-docs.txt"
+      - "nextflow_schema.json"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CITATIONS.md"
+      - "assets/samplesheet.csv"
+      - "assets/*.png"
+      - "assets/*.svg"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "schema_render.py"
+      - "requirements-docs.txt"
+      - "nextflow_schema.json"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CITATIONS.md"
+      - "assets/*.png"
+      - "assets/*.svg"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to (re)build, e.g. 1.1.0"
+        required: true
+
+# a group keeps only one pending run, so release builds get their own group per tag and are never dropped;
+# a newer dev or PR run supersedes an older one. Pushes from different groups are reconciled by the retry below.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.number) || (github.event.release.tag_name || inputs.tag) && format('docs-release-{0}', github.event.release.tag_name || inputs.tag) || 'docs-dev' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # site tooling comes from this checkout; page content comes from the tag, so tags older than the tooling still build
+      - name: Overlay content from the release tag
+        if: env.TAG != ''
+        run: |
+          git checkout "refs/tags/$TAG" -- README.md CHANGELOG.md CITATIONS.md nextflow_schema.json \
+            docs/usage.md docs/output.md docs/CONTRIBUTING.md assets/samplesheet.csv
+          git ls-tree --name-only "refs/tags/$TAG" assets/ | grep -E '\.(png|svg|jpg)$' \
+            | xargs -r git checkout "refs/tags/$TAG" --
+          echo "DOCS_REF=$TAG" >> "$GITHUB_ENV"
+
+      - name: Copy linked assets into the docs tree
+        run: |
+          mkdir -p docs/assets
+          cp assets/samplesheet.csv docs/assets/
+          find assets -maxdepth 1 \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' \) -exec cp {} docs/assets/ \;
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - run: pip install -r requirements-docs.txt
+
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+      - name: Upload site for review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/
+          retention-days: 7
+
+      - name: Deploy with mike
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$TAG" ]; then
+            latest=$(gh release view --json tagName -q .tagName)
+            prerelease=$(gh release view "$TAG" --json isPrerelease -q .isPrerelease)
+          fi
+          # `deploy && exit 0` turns off -e inside the function, so every step returns on failure
+          deploy() {
+            git fetch origin +gh-pages:gh-pages || return 1
+            if [ -z "$TAG" ]; then
+              mike deploy dev || return 1
+            elif [ "$TAG" = "$latest" ] && [ "$prerelease" = "false" ]; then
+              mike deploy --update-aliases "$TAG" latest || return 1
+              mike set-default latest || return 1
+            else
+              mike deploy "$TAG" || return 1
+            fi
+            git push origin gh-pages
+          }
+          # another group may push gh-pages in between: rebuild on the new tip and retry
+          for attempt in 1 2 3 4 5; do
+            deploy && exit 0
+            echo "gh-pages push rejected (attempt $attempt), retrying"
+            sleep $((attempt * 10))
+          done
+          exit 1
