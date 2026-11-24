@@ -37,9 +37,11 @@ on:
         description: "Release tag to (re)build, e.g. 1.1.0"
         required: true
 
+# a group keeps only one pending run, so release builds get their own group per tag and are never dropped;
+# a newer dev or PR run supersedes an older one. Pushes from different groups are reconciled by the retry below.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.number) || 'gh-pages' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.event.number) || (github.event.release.tag_name || inputs.tag) && format('docs-release-{0}', github.event.release.tag_name || inputs.tag) || 'docs-dev' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 permissions:
   contents: write
@@ -95,16 +97,27 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin gh-pages --depth=1 || true
-          if [ -z "$TAG" ]; then
-            DOCS_REF=dev mike deploy --push dev
-            exit 0
+          if [ -n "$TAG" ]; then
+            latest=$(gh release view --json tagName -q .tagName)
+            prerelease=$(gh release view "$TAG" --json isPrerelease -q .isPrerelease)
           fi
-          latest=$(gh release view --json tagName -q .tagName)
-          prerelease=$(gh release view "$TAG" --json isPrerelease -q .isPrerelease)
-          if [ "$TAG" = "$latest" ] && [ "$prerelease" = "false" ]; then
-            mike deploy --push --update-aliases "$TAG" latest
-            mike set-default --push latest
-          else
-            mike deploy --push "$TAG"
-          fi
+          # `deploy && exit 0` turns off -e inside the function, so every step returns on failure
+          deploy() {
+            git fetch origin +gh-pages:gh-pages || return 1
+            if [ -z "$TAG" ]; then
+              mike deploy dev || return 1
+            elif [ "$TAG" = "$latest" ] && [ "$prerelease" = "false" ]; then
+              mike deploy --update-aliases "$TAG" latest || return 1
+              mike set-default latest || return 1
+            else
+              mike deploy "$TAG" || return 1
+            fi
+            git push origin gh-pages
+          }
+          # another group may push gh-pages in between: rebuild on the new tip and retry
+          for attempt in 1 2 3 4 5; do
+            deploy && exit 0
+            echo "gh-pages push rejected (attempt $attempt), retrying"
+            sleep $((attempt * 10))
+          done
+          exit 1
