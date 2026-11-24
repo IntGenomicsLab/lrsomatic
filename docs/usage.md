@@ -813,11 +813,19 @@ and phase set agree with the germline VCF and with the `HP`/`PS` read tags:
 - With at least 3 tagged ALT reads, of which at least 80 % share one `HP` and
   `PS`, the record gets `GT` `1|0` (`HP` 1) or `0|1` (`HP` 2) and that `PS`,
   the germline block's ID.
+- Tumour-only samples also need at least 3 tagged reads (any allele) on the
+  other haplotype of that phase block at the site. Without a normal, the
+  germline phase is built from tumour reads, and in some regions haplotagging
+  puts reads of both haplotypes on one `HP`. A site where every read carries
+  the same `HP` is then no evidence, and phasing it would be close to a coin
+  flip. Paired samples are haplotagged from the normal's phase, so a site with
+  all tumour reads on one haplotype (loss of heterozygosity) is phased as usual.
 - Otherwise the record is left unphased, as are homozygous, multi-allelic,
-  complex and `0/0`/`./.` records.
+  complex and `0/0`/`./.` records. No record is removed.
 - `FORMAT/AHP` gives the ALT reads on haplotype 1, on haplotype 2 and without a
-  haplotag, so an unphased record shows why (no tagged reads, or reads split
-  across the haplotypes).
+  haplotag, and `FORMAT/OHP` the tagged reads on the other haplotype, so an
+  unphased record shows why (no tagged reads, reads split across the
+  haplotypes, or no reads on the other haplotype).
 
 #### PON Options
 

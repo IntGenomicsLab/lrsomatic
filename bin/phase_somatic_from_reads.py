@@ -9,6 +9,9 @@ Per biallelic SNV, deletion or insertion whose genotype carries the ALT allele:
   FORMAT/AHP = alt reads on HP1, on HP2, and without a usable HP/PS tag.
   A heterozygous record (0/1) is phased when its alt reads with a (PS, HP) tag number at least --min-reads and one
   (PS, HP) holds at least --min-fraction of them: GT 1|0 for HP1, 0|1 for HP2, PS = that read PS.
+  FORMAT/OHP = tagged reads (any allele) at the site on the other haplotype of that PS. With --min-other-hp-reads N,
+  a record with fewer than N such reads stays unphased: all reads on one haplotype at a site where the haplotags
+  are unreliable (tumour-only runs: haplotags from a germline phase built on tumour reads) are no evidence.
 Every other record keeps its genotype, unphased and without PS. All records are written, in input order.
 """
 import argparse
@@ -27,6 +30,8 @@ def parse_args(argv=None):
     p.add_argument("--sample", help="Sample column to phase (default: the only sample in the VCF)")
     p.add_argument("--min-reads", type=int, default=3, help="Minimum HP/PS-tagged alt reads to phase a record")
     p.add_argument("--min-fraction", type=float, default=0.8, help="Minimum fraction of tagged alt reads on one (PS, HP)")
+    p.add_argument("--min-other-hp-reads", type=int, default=0,
+                   help="Minimum tagged reads (any allele) on the other haplotype of the chosen PS to phase a record")
     p.add_argument("--min-mapq", type=int, default=10, help="Minimum mapping quality of a counted read")
     p.add_argument("--min-baseq", type=int, default=10, help="Minimum base quality of an SNV alt base")
     p.add_argument("--threads", type=int, default=1, help="Worker processes (one contig at a time each)")
@@ -65,9 +70,10 @@ def read_hap(aln):
 
 
 def alt_votes(bam, chrom, pos, ref, alt, kind, args):
-    """{(PS, HP): alt reads} and the number of alt reads without a usable tag, at one record."""
+    """{(PS, HP): alt reads}, the number of alt reads without a usable tag, and {(PS, HP): tagged reads of any allele}."""
     votes = {}
     untagged = 0
+    tagged = {}
     start = pos - 1  # the VCF POS base (the anchor base of an indel), 0-based
     for col in bam.pileup(chrom, start, start + 1, truncate=True, stepper="nofilter", flag_filter=0,
                           min_base_quality=0, ignore_overlaps=False, ignore_orphans=False, max_depth=100000,
@@ -80,6 +86,9 @@ def alt_votes(bam, chrom, pos, ref, alt, kind, args):
             qpos = pr.query_position
             if qpos is None or pr.is_refskip:
                 continue
+            hap = read_hap(aln)
+            if hap is not None:
+                tagged[hap] = tagged.get(hap, 0) + 1
             if kind == "snv":
                 if aln.query_sequence[qpos] != alt:
                     continue
@@ -93,16 +102,15 @@ def alt_votes(bam, chrom, pos, ref, alt, kind, args):
                 n = len(alt) - 1
                 if pr.indel != n or aln.query_sequence[qpos + 1:qpos + 1 + n] != alt[1:]:
                     continue
-            hap = read_hap(aln)
             if hap is None:
                 untagged += 1
             else:
                 votes[hap] = votes.get(hap, 0) + 1
-    return votes, untagged
+    return votes, untagged, tagged
 
 
 def contig_votes(job):
-    """Alt votes for one contig's records: [(record index, votes, untagged)]."""
+    """Read counts for one contig's records: [(record index, votes, untagged, tagged)]."""
     chrom, sites, args = job
     with pysam.AlignmentFile(args.alignments, reference_filename=args.reference) as bam:
         return [(idx, *alt_votes(bam, chrom, pos, ref, alt, kind, args)) for idx, pos, ref, alt, kind in sites]
@@ -140,10 +148,10 @@ def main(argv=None):
     if args.threads > 1 and len(jobs) > 1:
         with multiprocessing.Pool(min(args.threads, len(jobs))) as pool:
             for part in pool.imap_unordered(contig_votes, jobs):
-                results.update((idx, (votes, untagged)) for idx, votes, untagged in part)
+                results.update((idx, counts) for idx, *counts in part)
     else:
         for job in jobs:
-            results.update((idx, (votes, untagged)) for idx, votes, untagged in contig_votes(job))
+            results.update((idx, counts) for idx, *counts in contig_votes(job))
 
     # Second pass: write every record, phased where the reads decide it
     vin = pysam.VariantFile(args.vcf)
@@ -151,10 +159,12 @@ def main(argv=None):
     if "PS" not in header.formats:
         header.add_line('##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set: the germline phase block of the alt-supporting reads">')
     header.add_line('##FORMAT=<ID=AHP,Number=3,Type=Integer,Description="Alt-supporting reads on haplotype 1, on haplotype 2, and without a haplotag, in the haplotagged tumour alignments">')
+    header.add_line('##FORMAT=<ID=OHP,Number=1,Type=Integer,Description="Haplotagged reads (any allele) at the site on the other haplotype of the phase set the alt reads point to">')
     header.add_line(f"##phase_somatic_from_readsCommand={' '.join(sys.argv[1:] if argv is None else argv)}")
     vout = pysam.VariantFile(args.output, "wz", header=header)
 
-    stats = dict(records=0, no_alt=0, unsupported=0, evaluated=0, not_het=0, too_few=0, ambiguous=0, phased=0)
+    stats = dict(records=0, no_alt=0, unsupported=0, evaluated=0, not_het=0, too_few=0, ambiguous=0, one_haplotype=0,
+                 phased=0)
     for idx, rec in enumerate(vin):
         stats["records"] += 1
         rec.translate(vout.header)
@@ -173,7 +183,7 @@ def main(argv=None):
             continue
 
         stats["evaluated"] += 1
-        votes, untagged = results[idx]
+        votes, untagged, tagged = results[idx]
         hp1 = sum(n for (_ps, hp), n in votes.items() if hp == 1)
         hp2 = sum(n for (_ps, hp), n in votes.items() if hp == 2)
         call["AHP"] = (hp1, hp2, untagged)
@@ -183,8 +193,12 @@ def main(argv=None):
             stats["too_few"] += 1
         else:
             (ps, hp), n = max(votes.items(), key=lambda kv: kv[1])
+            other = tagged.get((ps, 3 - hp), 0)
+            call["OHP"] = other
             if n / (hp1 + hp2) < args.min_fraction:
                 stats["ambiguous"] += 1
+            elif other < args.min_other_hp_reads:
+                stats["one_haplotype"] += 1
             else:
                 call["GT"] = (1, 0) if hp == 1 else (0, 1)
                 call.phased = True

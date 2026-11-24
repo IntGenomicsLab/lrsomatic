@@ -22,21 +22,26 @@ nextflow_process {
     //   230  GG insertion  0,4,0                         0|1
     //   250  SNV, 1/1      4,4,4                         1/1   not heterozygous
     //   270  0/0           -                             0/0   no ALT in GT: no AHP
+    // OHP (tagged reads on the other haplotype of the chosen PS) is 4 wherever 3+ tagged alt reads pick a haplotype.
     def expected = [
-        '50:A'  : ['1|0', '1001', '4,0,0'],
-        '70:A'  : ['0|1', '1001', '0,4,0'],
-        '90:A'  : ['0/1', null,   '2,0,0'],
-        '110:A' : ['0/1', null,   '3,2,0'],
-        '130:A' : ['0/1', null,   '0,0,4'],
-        '150:D' : ['1|0', '1001', '4,0,0'],
-        '200:I' : ['0|1', '1001', '0,4,0'],
-        '230:A' : ['1|0', '1001', '4,0,0'],
-        '230:I' : ['0|1', '1001', '0,4,0'],
-        '250:A' : ['1/1', null,   '4,4,4'],
-        '270:A' : ['0/0', null,   null   ],
+        '50:A'  : ['1|0', '1001', '4,0,0', '4' ],
+        '70:A'  : ['0|1', '1001', '0,4,0', '4' ],
+        '90:A'  : ['0/1', null,   '2,0,0', null],
+        '110:A' : ['0/1', null,   '3,2,0', '4' ],
+        '130:A' : ['0/1', null,   '0,0,4', null],
+        '150:D' : ['1|0', '1001', '4,0,0', '4' ],
+        '200:I' : ['0|1', '1001', '0,4,0', '4' ],
+        '230:A' : ['1|0', '1001', '4,0,0', '4' ],
+        '230:I' : ['0|1', '1001', '0,4,0', '4' ],
+        '250:A' : ['1/1', null,   '4,4,4', null],
+        '270:A' : ['0/0', null,   null,    null],
     ]
+    // --min-other-hp-reads 5 (guard.config): every site has only 4 tagged reads on the other haplotype, so none is phased
+    def expectedGuard = expected.collectEntries { site, call ->
+        [ (site): call[0].contains('|') ? [ '0/1', null, call[2], call[3] ] : call ]
+    }
 
-    // [GT, PS, AHP] per record, keyed POS:kind (A = SNV, D = deletion, I = insertion); '.' and absent fields as null
+    // [GT, PS, AHP, OHP] per record, keyed POS:kind (A = SNV, D = deletion, I = insertion); '.' and absent fields as null
     def calls = { String vcf ->
         new java.util.zip.GZIPInputStream(new FileInputStream(vcf)).withReader { reader ->
             reader.readLines().findAll { line -> !line.startsWith('#') }.collectEntries { line ->
@@ -48,7 +53,7 @@ nextflow_process {
                     def i = keys.indexOf(key)
                     (i >= 0 && i < values.size() && values[i] != '.') ? values[i] : null
                 }
-                [ ("${f[1]}:${kind}".toString()) : [ value('GT'), value('PS'), value('AHP') ] ]
+                [ ("${f[1]}:${kind}".toString()) : [ value('GT'), value('PS'), value('AHP'), value('OHP') ] ]
             }
         }
     }
@@ -98,6 +103,28 @@ nextflow_process {
             assertAll(
                 { assert process.success },
                 { assert calls(process.out.vcf[0][1].toString()) == expected }
+            )
+        }
+    }
+
+    test("--min-other-hp-reads above the other haplotype's reads - nothing phased, OHP explains why") {
+
+        config "./guard.config"
+
+        when {
+            process {
+                """
+                input[0] = PSFR_FIXTURE.out.vcf.join(PSFR_FIXTURE.out.bam)
+                input[1] = PSFR_FIXTURE.out.fasta.map { _meta, fasta -> [ [:], fasta ] }
+                input[2] = PSFR_FIXTURE.out.fai.map { _meta, fai -> [ [:], fai ] }
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert calls(process.out.vcf[0][1].toString()) == expectedGuard }
             )
         }
     }

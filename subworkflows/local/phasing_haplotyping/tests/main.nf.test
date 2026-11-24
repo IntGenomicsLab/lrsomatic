@@ -48,6 +48,8 @@ nextflow_workflow {
 
     test("tumour-only, germline VCF header without a contig that has reads - the haplotagged output keeps them") {
 
+        config "./no_guard.config"
+
         when {
             params {
                 outdir       = "$outputDir"
