@@ -1,0 +1,5 @@
+sample,bam_tumor,bam_normal,platform,sex,fiber
+sample1,tumour1.bam,normal1.bam,ont,female,n
+sample2,tumour2.bam,,ont,female,y
+sample3,tumour3.bam,,pb,male,n
+sample4,tumour4.bam,normal4.bam,pb,male,y
