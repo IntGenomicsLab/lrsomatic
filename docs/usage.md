@@ -167,7 +167,7 @@ Every input file must meet all of these conditions, or the run stops:
   otherwise edited copy of the same assembly passes;
 - it is coordinate-sorted (`SO:coordinate` in the `@HD` line);
 - it is not read by fibertools-rs, which runs before alignment. This excludes `fiber` = `y` rows and PacBio rows with
-  kinetics. Use `--skip_fiber` or `--skip_m6a` to run those rows without the Fiber-seq or m6A steps, or run without
+  kinetics while m6A is predicted. Use `--skip_fiber` or `--skip_m6a` to run those rows without the Fiber-seq or m6A steps, or run without
   `--skip_alignment`.
 
 The files are not used as they are. `PREPARE_ALIGNED` makes one samtools pass over each file that:
@@ -179,7 +179,8 @@ The files are not used as they are. `PREPARE_ALIGNED` makes one samtools pass ov
 - writes `--aligned_format` (CRAM 3.0 with the reference embedded, by default) and indexes it.
 
 An aligned CRAM input is decoded as described in [CRAM input](#cram-input). All other records and tags are kept as they
-are, including secondary alignments, hard-clipped supplementary alignments and the aligner's own tags. Replicates of
+are, including hard-clipped supplementary alignments and the aligner's own tags. Secondary alignments are kept unless
+`--save_secondary_alignment false` is set, as after alignment. Replicates of
 a sample are merged as usual. `CRAMINO_PRE` and `NANOPLOT_PRE` do not run, since the input is the alignment that
 `CRAMINO_POST` reports on.
 

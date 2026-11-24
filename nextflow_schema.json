@@ -235,7 +235,7 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Use the input BAM/CRAM files as the alignment instead of realigning them with minimap2. Advanced; realigning is recommended.",
-                    "help_text": "Every input file must be coordinate-sorted and aligned to `--fasta`: each `@SQ` contig must be in the FASTA with the same length, or the run stops. The pipeline still replaces the read groups, drops old phasing tags (`HP`, `PS`, `PQ`, `PC`) and the PacBio kinetics, and writes `--aligned_format`. Fiber-seq rows and PacBio rows with kinetics are not supported (use `--skip_fiber` / `--skip_m6a`). See the usage documentation, section 'Skipping alignment'.",
+                    "help_text": "Every input file must be coordinate-sorted and aligned to `--fasta`: each `@SQ` contig must be in the FASTA with the same length, or the run stops. The pipeline still replaces the read groups, drops old phasing tags (`HP`, `PS`, `PQ`, `PC`) and, unless `--keep_kinetic_data` is set, the PacBio kinetics, drops secondary alignments when `--save_secondary_alignment` is false, and writes `--aligned_format`. Rows that fibertools-rs reads (Fiber-seq rows, and PacBio rows with kinetics while m6A is predicted) are not supported; add `--skip_fiber` / `--skip_m6a` to run them. See the usage documentation, section 'Skipping alignment'.",
                     "fa_icon": "fas fa-forward"
                 }
             }
