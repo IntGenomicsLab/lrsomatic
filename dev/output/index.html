@@ -1,0 +1,3417 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Somatic variant calling for Oxford Nanopore and PacBio long-read data.">
+      
+      
+      
+        <link rel="canonical" href="https://intgenomicslab.github.io/lrsomatic/dev/output/">
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+        <link rel="next" href="../parameters/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets-static/lrsomatic-logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Output - lrsomatic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#intgenomicslablrsomatic-output" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You are not viewing the docs for the latest release.
+  <a href="../..">
+    <strong>Go to the latest release.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lrsomatic" class="md-header__button md-logo" aria-label="lrsomatic" data-md-component="logo">
+      
+  <img src="../assets-static/lrsomatic-logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lrsomatic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Output
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/IntGenomicsLab/lrsomatic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IntGenomicsLab/lrsomatic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../usage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Usage
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Output
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../parameters/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Parameters
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../citations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Citations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../CONTRIBUTING/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lrsomatic" class="md-nav__button md-logo" aria-label="lrsomatic" data-md-component="logo">
+      
+  <img src="../assets-static/lrsomatic-logo.svg" alt="logo">
+
+    </a>
+    lrsomatic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/IntGenomicsLab/lrsomatic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IntGenomicsLab/lrsomatic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ascat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ascat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bamfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bamfiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        qc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#methylation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        methylation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variants
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="variants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clair3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clair3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clairS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clairs-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clairS-TO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#severus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        severus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ecdna" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ecdna
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#savana" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        savana
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deepvariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deepvariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deepsomatic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deepsomatic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        phased
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vep
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="vep">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vep_plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vep_plugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-fields-in-the-csq-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin fields in the CSQ annotation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        signatures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#padfoot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        padfoot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reconplot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconplot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shatterseek" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shatterseek
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wakhan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        wakhan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiqc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        multiqc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pipeline_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../citations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Citations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ascat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ascat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bamfiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bamfiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        qc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#methylation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        methylation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variants
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="variants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clair3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clair3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clairS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clairs-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clairS-TO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#severus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        severus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ecdna" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ecdna
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#savana" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        savana
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deepvariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deepvariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deepsomatic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deepsomatic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        phased
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vep
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="vep">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vep_plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vep_plugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-fields-in-the-csq-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin fields in the CSQ annotation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        signatures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#padfoot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        padfoot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reconplot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconplot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shatterseek" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shatterseek
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wakhan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        wakhan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiqc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        multiqc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pipeline_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/IntGenomicsLab/lrsomatic/edit/dev/docs/output.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="intgenomicslablrsomatic-output">IntGenomicsLab/lrsomatic: Output<a class="headerlink" href="#intgenomicslablrsomatic-output" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>This document describes the output produced by the pipeline.</p>
+<p>The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.</p>
+<h3 id="output-example">Output Example<a class="headerlink" href="#output-example" title="Permanent link">&para;</a></h3>
+<p>The pipeline produces per-sample output directories. Two modes exist depending on whether a matched normal sample is provided.</p>
+<p><strong>Tumor-only sample</strong> (no matched normal, <code>-TO</code> variant callers):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>├── Sample ID
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│    ├── ascat
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│    ├── bamfiles
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│    ├── methylation
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│    │    └── tumor
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│    │        └── modkit_pileup
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│    ├── padfoot
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│    │   └── savana
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│    ├── qc
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│    │    ├── tumor
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│    │    │   ├── cramino_aln
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│    │    │   ├── cramino_ubam_rep1
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│    │    │   ├── fibertoolsrs
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│    │    │   ├── mosdepth
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│    │    │   ├── nanoplot_aln
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│    │    │   ├── nanoplot_ubam_rep1
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│    │    │   └── samtools
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│    │    └── whatshap_stats
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│    ├── reconplot
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│    │   ├── severus_ascat
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│    │   └── savana
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│    ├── shatterseek
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│    │   ├── severus_ascat
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│    │   └── savana
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│    ├── signatures
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│    │   ├── assignment
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│    │   └── matrices
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│    ├── variants
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│    │   ├── clairsto
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│    │   ├── deepsomatic
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│    │   ├── deepvariant
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>│    │   ├── phased
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>│    │   ├── savana
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>│    │   └── severus
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>│    ├── vep
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>│    │   ├── somatic
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>│    │   └── SVs
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>│    ├── wakhan
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>│    └── report
+</code></pre></div>
+<p><strong>Paired tumor + normal sample</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>├── Sample ID
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>│    ├── ascat
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│    ├── bamfiles
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│    ├── methylation
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│    │    ├── tumor
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│    │    │   └── modkit_pileup
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│    │    └── normal
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│    │        └── modkit_pileup
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│    ├── padfoot
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│    │   └── savana
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>│    ├── qc
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>│    │    ├── tumor
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>│    │    │   ├── cramino_aln
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>│    │    │   ├── cramino_ubam_rep1
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>│    │    │   ├── fibertoolsrs
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>│    │    │   ├── mosdepth
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>│    │    │   ├── nanoplot_aln
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>│    │    │   ├── nanoplot_ubam_rep1
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>│    │    │   └── samtools
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>│    │    ├── normal
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>│    │    │   ├── cramino_aln
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>│    │    │   ├── cramino_ubam_rep1
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>│    │    │   ├── fibertoolsrs
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>│    │    │   ├── mosdepth
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>│    │    │   ├── nanoplot_aln
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>│    │    │   ├── nanoplot_ubam_rep1
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>│    │    │   └── samtools
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>│    │    └── whatshap_stats
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>│    ├── reconplot
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>│    │   ├── severus_ascat
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>│    │   └── savana
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>│    ├── shatterseek
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>│    │   ├── severus_ascat
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>│    │   ├── severus_wakhan
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>│    │   └── savana
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>│    ├── signatures
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>│    │   ├── assignment
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>│    │   └── matrices
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>│    ├── variants
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>│    │   ├── clair3
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>│    │   ├── clairs
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>│    │   ├── deepsomatic
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>│    │   ├── deepvariant
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a>│    │   ├── phased
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a>│    │   ├── savana
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>│    │   └── severus
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>│    ├── vep
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>│    │   ├── germline
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>│    │   ├── somatic
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a>│    │   └── SVs
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>│    ├── wakhan
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>│    └── report
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a>├── pipeline_info
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>└── multiqc
+</code></pre></div>
+<p>The <code>padfoot</code>, <code>reconplot</code> and <code>shatterseek</code> directories are only present when the corresponding step is enabled (<code>--skip_padfoot</code>, <code>--skip_reconplot</code>, <code>--skip_shatterseek</code>); SAVANA's own output lives under <code>variants/savana</code>. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: <code>severus_wakhan</code> needs <code>--skip_wakhan false</code>, <code>severus_ascat</code> needs <code>--skip_ascat false</code> (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the <code>savana</code> subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.</p>
+<h3 id="ascat"><code>ascat</code><a class="headerlink" href="#ascat" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>├── ascat
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>│   ├── sample.before_correction.sample.tumour.germline.png
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>│   ├── sample.before_correction.sample.tumour.tumour.png
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>│   ├── sample.after_correction.sample.tumour.germline.png
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>│   ├── sample.after_correction.sample.tumour.tumour.png
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>│   ├── sample.cnvs.txt
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>│   ├── sample.metrics.txt
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│   ├── sample.normal_alleleFrequencies_chr(1-22,X).txt
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│   ├── sample.purityploidy.txt
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>│   ├── sample.segments.txt
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>│   ├── sample.segments_raw.txt
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>│   ├── sample.tumour_alleleFrequencies_chr(1-22,X).txt
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>│   ├── sample.tumour_normalBAF_rawBAF.txt
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>│   ├── sample.tumour_normalBAF.txt
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>│   ├── sample.tumor_tumourLogR.txt
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>│   ├── sample.tumour.ASCATprofile.png
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>│   ├── sample.tumour.ASPCF.png
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>│   ├── sample.tumour.rawprofile.png
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>│   ├── sample.tumour.sunrise.png
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample.before_correction.sample.tumour.germline.png</code></td>
+<td>LogR and BAF plots from the normal sample before correction</td>
+</tr>
+<tr>
+<td><code>sample.before_correction.sample.tumour.tumour.png</code></td>
+<td>LogR and BAF plots from the tumor sample before correction</td>
+</tr>
+<tr>
+<td><code>sample.cnvs.txt</code></td>
+<td>a tsv file describing each chromosome segment with a copy number alteration and it's major and minor copy number</td>
+</tr>
+<tr>
+<td><code>sample.metrics.txt</code></td>
+<td>a tsv file describing summary statistics for the sample</td>
+</tr>
+<tr>
+<td><code>sample.normal_alleleFrequencies_chr(1-22,X).txt</code></td>
+<td>a tsv file describing the snp counts for the normal sample at each position and their respective depths</td>
+</tr>
+<tr>
+<td><code>sample.purityploidy.txt</code></td>
+<td>a tsv file describing the purity and ploidy values of the sample</td>
+</tr>
+<tr>
+<td><code>sample.segments.txt</code></td>
+<td>a tsv file describing each chromosome segment and it's major and minor copy number</td>
+</tr>
+<tr>
+<td><code>sample.segments_raw.txt</code></td>
+<td>a tsv file describing each chromosome segment and it's major and minor rounded and raw copy number</td>
+</tr>
+<tr>
+<td><code>sample.tumour_alleleFrequencies_chr(1-22,X).txt</code></td>
+<td>a tsv file describing the snp counts for the tumor sample at each position and their respective depths</td>
+</tr>
+<tr>
+<td><code>sample.tumour_normalBAF_rawBAF.txt</code></td>
+<td>a tsv file with the raw BAF values in the normal sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour_normalBAF.txt</code></td>
+<td>a tsv file with the BAF values in the normal sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour_normalLogR.txt</code></td>
+<td>a tsv file with the LogR values in the normal sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour_tumourBAF_rawBAF.txt</code></td>
+<td>a tsv file with the raw BAF values in the tumor sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour_tumourBAF.txt</code></td>
+<td>a tsv file with the corrected BAF values in the tumor sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour_tumourLogR.txt</code></td>
+<td>a tsv file with the corrected LogR values in the tumor sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour.ASCATprofile.png</code></td>
+<td>a png file with the corrected overall copy number profile with ploidy, purity, and goodness of fit metrics</td>
+</tr>
+<tr>
+<td><code>sample.tumour.ASPCF.png</code></td>
+<td>a png file with the corrected LogR and BAF plots of the tumor sample</td>
+</tr>
+<tr>
+<td><code>sample.tumour.rawprofile.png</code></td>
+<td>a png file with the raw overall copy number profile with ploidy, purity, and goodness of fit metrics</td>
+</tr>
+<tr>
+<td><code>sample.tumour.sunrise.png</code></td>
+<td>a png file with a purity and ploidy fit</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="bamfiles"><code>bamfiles</code><a class="headerlink" href="#bamfiles" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>├── bamfiles
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>│   ├── sample_normal.cram
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>│   ├── sample_normal.cram.crai
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>│   ├── sample_tumor.cram
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│   ├── sample_tumor.cram.crai
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample_normal.cram</code></td>
+<td>Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the normal sample</td>
+</tr>
+<tr>
+<td><code>sample_normal.cram.crai</code></td>
+<td>index file for the normal CRAM file</td>
+</tr>
+<tr>
+<td><code>sample_tumor.cram</code></td>
+<td>Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the tumor sample</td>
+</tr>
+<tr>
+<td><code>sample_tumor.cram.crai</code></td>
+<td>index file for the tumor CRAM file</td>
+</tr>
+</tbody>
+</table>
+<p>The CRAM files are version 3.0 with the reference embedded, so they can be read without the reference FASTA
+(<code>samtools view sample_tumor.cram</code>); <code>samtools view -b</code> turns one back into a BAM. With <code>--aligned_format bam</code>
+this directory holds <code>sample_{normal,tumor}.bam</code> and <code>.bam.bai</code> instead.</p>
+</details>
+<h3 id="qc"><code>qc</code><a class="headerlink" href="#qc" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<p>QC outputs are placed under <code>tumor/</code> for all samples, and additionally under <code>normal/</code> for paired tumor + normal samples. <code>whatshap_stats/</code> appears at the top level of <code>qc/</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>├── qc
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>│   ├── tumor
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>│   │   ├── cramino_aln
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>│   │   │   ├── sample_tumor_cramino.txt
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>│   │   ├── cramino_ubam_rep1
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>│   │   │   ├── sample_tumor_cramino.txt
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>│   │   ├── fibertoolsrs
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>│   │   │   ├── sample_qc.txt
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>│   │   ├── mosdepth
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>│   │   │   ├── sample_tumor.mosdepth.global.dist.txt
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>│   │   │   ├── sample_tumor.mosdepth.summary.txt
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>│   │   ├── nanoplot_aln
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>│   │   │   ├── sample_tumor_aln_NanoStats.txt
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>│   │   │   ├── sample_tumor_aln_NanoPlot-report.html
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>│   │   ├── nanoplot_ubam_rep1
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>│   │   │   ├── sample_tumor_rep1_ubam_NanoStats.txt
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>│   │   │   ├── sample_tumor_rep1_ubam_NanoPlot-report.html
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>│   │   ├── samtools
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>│   │   │   ├── sample_tumor.flagstat
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>│   │   │   ├── sample_tumor.idxstats
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>│   │   │   ├── sample_tumor.stats
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>│   ├── normal                          # paired samples only
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>│   │   └── [same subdirectories as tumor]
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>│   ├── whatshap_stats
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>│   │   ├── sample_whatshap_stats.tsv
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>│   │   ├── sample_whatshap_stats.gtf
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>│   │   ├── sample_whatshap_stats.log
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cramino_aln/sample_{type}_cramino.txt</code></td>
+<td>cramino QC summary statistics for the aligned bam file</td>
+</tr>
+<tr>
+<td><code>cramino_ubam_rep1/sample_{type}_cramino.txt</code></td>
+<td>cramino QC summary statistics for the unaligned bam files</td>
+</tr>
+<tr>
+<td><code>fibertoolsrs/sample_qc.txt</code></td>
+<td>fibertools QC summary per input file; <code>sample_rep{N}_qc.txt</code> per replicate when a sample has several input files; absent for a fiber-seq file whose reads carry no m6A calls and get none predicted, which skips the fibertools-rs steps (see <a href="../usage/#fiber-seq-rows-without-m6a-calls">Fiber-seq rows without m6A calls</a>)</td>
+</tr>
+<tr>
+<td><code>mosdepth/sample_{type}.mosdepth.global.dist.txt</code></td>
+<td>a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value</td>
+</tr>
+<tr>
+<td><code>mosdepth/sample_{type}.mosdepth.summary.txt</code></td>
+<td>overall summary file from mosdepth tool</td>
+</tr>
+<tr>
+<td><code>nanoplot_aln/sample_{type}_aln_NanoStats.txt</code></td>
+<td>NanoPlot summary statistics for the aligned BAM file</td>
+</tr>
+<tr>
+<td><code>nanoplot_aln/sample_{type}_aln_NanoPlot-report.html</code></td>
+<td>NanoPlot interactive HTML report for the aligned BAM file</td>
+</tr>
+<tr>
+<td><code>nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoStats.txt</code></td>
+<td>NanoPlot summary statistics for the unaligned BAM file</td>
+</tr>
+<tr>
+<td><code>nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoPlot-report.html</code></td>
+<td>NanoPlot interactive HTML report for the unaligned BAM file</td>
+</tr>
+<tr>
+<td><code>samtools/sample_{type}.flagstat</code></td>
+<td>a summary of the counts of different samtools flags</td>
+</tr>
+<tr>
+<td><code>samtools/sample_{type}.idxstats</code></td>
+<td>a summary of the number of mapped and unmapped reads</td>
+</tr>
+<tr>
+<td><code>samtools/sample_{type}.stats</code></td>
+<td>summary statistics from the bamfile</td>
+</tr>
+<tr>
+<td><code>whatshap_stats/sample_whatshap_stats.tsv</code></td>
+<td>WhatsHap phasing statistics of the phased germline VCF, per chromosome and overall (<code>ALL</code>), including phase block N50</td>
+</tr>
+<tr>
+<td><code>whatshap_stats/sample_whatshap_stats.gtf</code></td>
+<td>Phase blocks as GTF features with their genomic coordinates</td>
+</tr>
+<tr>
+<td><code>whatshap_stats/sample_whatshap_stats.log</code></td>
+<td>WhatsHap log</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="methylation"><code>methylation</code><a class="headerlink" href="#methylation" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>├── methylation
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│   ├── tumor
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│   │   └── modkit_pileup
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│   │       ├── sample.bed.gz           # default
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>│   │       ├── sample_hp1.bed.gz       # --modkit_phased only
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>│   │       ├── sample_hp2.bed.gz       # --modkit_phased only
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>│   │       └── sample_combined.bed.gz  # --modkit_phased only
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>│   ├── normal                          # paired samples only
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>│   │   └── modkit_pileup
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>│   │       └── ...                     # same layout as tumor
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{tumor,normal}/modkit_pileup/sample.bed.gz</code></td>
+<td>Modkit pileup bedMethyl table (bgzip) with per-strand methylation frequency and coverage. By default (<code>--modkit_args '--cpg --modified-bases 5mC'</code>) rows are 5mC calls at CpG sites only.</td>
+</tr>
+<tr>
+<td><code>{tumor,normal}/modkit_pileup/sample_{hp1,hp2}.bed.gz</code></td>
+<td>With <code>--modkit_phased</code>: bedMethyl tables restricted to reads carrying haplotype tag <code>HP:1</code> or <code>HP:2</code> from the Longphase-haplotagged BAM.</td>
+</tr>
+<tr>
+<td><code>{tumor,normal}/modkit_pileup/sample_combined.bed.gz</code></td>
+<td>With <code>--modkit_phased</code>: bedMethyl table over all reads, including untagged ones (equivalent to the unphased default output). There is no separate file for untagged reads; they only contribute to <code>_combined</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>--modkit_phased</code> set (and <code>--skip_dmr</code> not set), haplotype differential methylation region (DMR) calling also runs, comparing the <code>_hp1</code>/<code>_hp2</code> bedMethyl pileups over CpG islands covered in both haplotypes and annotating each result with its nearest gene:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>├── methylation
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>│   ├── tumor
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>│   │   ├── modkit_pileup
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>│   │   │   └── ...
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>│   │   └── dmr
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>│   │       ├── sample.log                   # modkit dmr pair's debug log
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>│   │       └── sample.nearestGene.bed       # final DMR deliverable
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>│   ├── normal                               # paired samples only
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>│   │   └── ...                              # same layout as tumor
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{tumor,normal}/dmr/sample.log</code></td>
+<td><code>modkit dmr pair</code>'s own debug log, published for troubleshooting (e.g. the <code>invalid-bedmethyl-data</code> class of failure) without needing <code>-resume</code>. The intermediate raw <code>modkit dmr pair</code> BED is not published, since this file supersedes it.</td>
+</tr>
+<tr>
+<td><code>{tumor,normal}/dmr/sample.nearestGene.bed</code></td>
+<td>Each <code>modkit dmr pair</code> DMR call (17 columns — chrom/start/end, haplotype-vs-haplotype methylation counts/fractions and the difference score; see <code>modkit dmr pair --help</code> for the full column list), joined via <code>bedtools closest -D b -t first</code> to its nearest gene from <code>--dmr_gencode_gene_bed</code> (that gene's own BED6: chrom/start/end/name/score/strand), followed by the signed distance to that gene (relative to the gene's own strand; negative means upstream).</td>
+</tr>
+</tbody>
+</table>
+<p>DMR runs <code>modkit dmr pair --base C</code>, which counts every modification on C as modified. The pileup feeding it requests both 5mC and 5hmC (see <code>--modkit_args</code> in the usage docs), so the methylation fractions and the difference score describe 5mC and 5hmC combined, not 5mC alone.</p>
+</details>
+<h3 id="variants"><code>variants</code><a class="headerlink" href="#variants" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<h4 id="clair3"><code>clair3</code><a class="headerlink" href="#clair3" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>├── clair3
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>│   ├── merge_output.vcf.gz
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>│   ├── merge_output.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>merge_output.vcf.gz</code></td>
+<td>Merged germline indel and snv calls in vcf format</td>
+</tr>
+<tr>
+<td><code>merge_output.vcf.gz</code></td>
+<td>index for germline small variant calls</td>
+</tr>
+</tbody>
+</table>
+<h4 id="clairs"><code>clairS</code><a class="headerlink" href="#clairs" title="Permanent link">&para;</a></h4>
+<p>Present in <strong>paired</strong> (tumor + normal) samples.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>├── clairs
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>│   ├── indel.vcf.gz
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>│   ├── indel.vcf.gz.tbi
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>│   ├── snvs.vcf.gz
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>│   ├── snvs.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>indel.vcf.gz</code></td>
+<td>Somatic indel calls in vcf format</td>
+</tr>
+<tr>
+<td><code>indel.vcf.gz.tbi</code></td>
+<td>Index for somatic indel calls</td>
+</tr>
+<tr>
+<td><code>snvs.vcf.gz</code></td>
+<td>Somatic SNV calls in vcf format</td>
+</tr>
+<tr>
+<td><code>snvs.vcf.gz.tbi</code></td>
+<td>Index for somatic SNV calls</td>
+</tr>
+</tbody>
+</table>
+<h4 id="clairs-to"><code>clairS-TO</code><a class="headerlink" href="#clairs-to" title="Permanent link">&para;</a></h4>
+<p>Present in <strong>tumor-only</strong> samples (no matched normal).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>├── clairsto
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>│   ├── germline.vcf.gz
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>│   ├── germline.vcf.gz.tbi
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>│   ├── indel.vcf.gz
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>│   ├── indel.vcf.gz.tbi
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>│   ├── snv.vcf.gz
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>│   ├── snv.vcf.gz.tbi
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>│   ├── {sample}_Tumor_Purity_Ploidy.txt
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>│   ├── {sample}_Tumor_CNA.txt
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>│   ├── {sample}.verdict_status.tsv
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>│   ├── somatic.vcf.gz
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>│   ├── somatic.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>germline.vcf.gz</code></td>
+<td>SNV and indel calls marked as germline (will not include variants QC)</td>
+</tr>
+<tr>
+<td><code>germline.vcf.gz.tbi</code></td>
+<td>Index file for germline small variant calls</td>
+</tr>
+<tr>
+<td><code>indel.vcf.gz</code></td>
+<td>Raw indel calls in vcf format</td>
+</tr>
+<tr>
+<td><code>indel.vcf.gz.tbi</code></td>
+<td>Index for somatic indel calls</td>
+</tr>
+<tr>
+<td><code>snv.vcf.gz</code></td>
+<td>Raw SNV calls in vcf format</td>
+</tr>
+<tr>
+<td><code>snv.vcf.gz.tbi</code></td>
+<td>Index for SNV calls</td>
+</tr>
+<tr>
+<td><code>{sample}_Tumor_Purity_Ploidy.txt</code></td>
+<td>Purity and ploidy the Verdict tags were computed from: ASCAT's, or Verdict's own with <code>--skip_ascat</code>. Absent when no solution was found</td>
+</tr>
+<tr>
+<td><code>{sample}_Tumor_CNA.txt</code></td>
+<td>Allele-specific copy number segments the Verdict tags were computed from: ASCAT's, or Verdict's own with <code>--skip_ascat</code></td>
+</tr>
+<tr>
+<td><code>{sample}.verdict_status.tsv</code></td>
+<td>Whether Verdict tagged the calls: <code>status</code> (<code>applied</code>, <code>skipped</code> or <code>not_run</code>), <code>purity</code>, <code>ploidy</code>, <code>purity_source</code> (<code>ascat</code>, <code>clairsto_internal</code> or <code>none</code>) and Verdict's <code>message</code> explaining a skip</td>
+</tr>
+<tr>
+<td><code>somatic.vcf.gz</code></td>
+<td>SNV and indel calls marked as PASS and without a germline tag</td>
+</tr>
+<tr>
+<td><code>somatic.vcf.gz.tbi</code></td>
+<td>Index for somatic small variant calls</td>
+</tr>
+</tbody>
+</table>
+<p>The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless <code>--skip_ascat</code> is set these come from the pipeline's ASCAT run (the profile under <code>ascat/</code>); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold <code>somatic.vcf.gz</code> is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see <a href="../usage/#chm13-support">CHM13 support</a> for the numbers); the purity used is in <code>{sample}_Tumor_Purity_Ploidy.txt</code>. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. <code>{sample}.verdict_status.tsv</code> records which of these happened, and the pipeline log warns, naming the sample, purity and source, whenever Verdict tagged nothing (<code>skipped</code>) or did not run (<code>not_run</code>). See <a href="../usage/#chm13-support">CHM13 support</a>.</p>
+<h4 id="severus"><code>severus</code><a class="headerlink" href="#severus" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>├── severus
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>│   ├── all_SVs
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>│   │   ├── plots
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>│   │   │   ├── severus_{*}.html
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>│   │   ├── breakpoint_cluster_list.tsv
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>│   │   ├── breakpoint_clusters.tsv
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>│   │   ├── severus_all.vcf.gz
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>│   │   ├── severus_all.vcf.gz.tbi
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>│   ├── somatic_SVs
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>│   │   ├── plots
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>│   │   │   ├── severus_{*}.html
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>│   │   ├── breakpoint_cluster_list.tsv
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>│   │   ├── breakpoint_clusters.tsv
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>│   │   ├── severus_somatic.vcf.gz
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>│   │   ├── severus_somatic.vcf.gz.tbi
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>│   ├── breakpoints_double.csv
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>│   ├── read_ids.csv
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>│   ├── read_qual.txt
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>│   ├── severus.log
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all_SVs/plots/severus_{*}.html</code></td>
+<td>html file containing a plot of connected breakpoints in a cluster</td>
+</tr>
+<tr>
+<td><code>all_SVs/breakpoint_cluster_list.tsv</code></td>
+<td>tsv containing the breakpoints in all clustered events</td>
+</tr>
+<tr>
+<td><code>all_SVs/breakpoint_cluster.tsv</code></td>
+<td>a tsv containing all clustered events</td>
+</tr>
+<tr>
+<td><code>all_SVs/severus_all.vcf.gz</code></td>
+<td>A vcf file containing all identified structural variants</td>
+</tr>
+<tr>
+<td><code>somatic_SVs/plots/severus_{*}.html</code></td>
+<td>html file containing a plot of connected breakpoints in a cluster</td>
+</tr>
+<tr>
+<td><code>somatic_SVs/breakpoint_cluster_list.tsv</code></td>
+<td>tsv containing the breakpoints in somatic clustered events</td>
+</tr>
+<tr>
+<td><code>somatic_SVs/breakpoint_cluster.tsv</code></td>
+<td>a tsv containing somatic clustered events</td>
+</tr>
+<tr>
+<td><code>somatic_SVs/severus_somatic.vcf.gz</code></td>
+<td>A vcf file containing identified somatic structural variants</td>
+</tr>
+<tr>
+<td><code>somatic_SVs/severus_somatic.vcf.gz.tbi</code></td>
+<td>Index for identified somatic structural variants</td>
+</tr>
+<tr>
+<td><code>breakpoints_double.csv</code></td>
+<td>csv file containing detailed information about identified breakpoints in bam file</td>
+</tr>
+<tr>
+<td><code>read_ids.csv</code></td>
+<td>a csv file containing read ids associated with each identified SV</td>
+</tr>
+<tr>
+<td><code>read_qual.txt</code></td>
+<td>file containing quality statistics about identified segements</td>
+</tr>
+<tr>
+<td><code>severus.log</code></td>
+<td>log file</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>--severus_whitelist</code> the same files are published here. Passing <code>--write-alignments</code> through <code>--severus_whitelist_args</code> adds a <code>read_alignments</code> file.</p>
+<h4 id="ecdna"><code>ecdna</code><a class="headerlink" href="#ecdna" title="Permanent link">&para;</a></h4>
+<p>Extrachromosomal DNA and focal amplification. CoRAL reconstructs amplicon structures from the tumour
+BAM, seeded by ASCAT's copy-number segments, and AmpliconClassifier labels each reconstructed
+amplicon (ecDNA, BFB, linear, and so on). Runs on every tumour sample with ASCAT calls; disable with
+<code>--skip_coral</code>, or keep reconstruction and drop classification with <code>--skip_ampliconclassifier</code>.</p>
+<p>A sample with no segment above <code>--coral_gain</code> produces an empty seed BED and is skipped with a log
+message rather than failing. CoRAL defaults to the open-source SCIP solver; <code>--coral_solver
+gurobi_direct</code> is faster but needs <code>--gurobi_license</code>. AmpliconClassifier needs an AmpliconArchitect
+data repository, downloaded automatically for GRCh38 and supplied with <code>--aa_data_repo</code> for CHM13;
+a CHM13 run without one skips classification with a warning. An unseeded sample gets only its seed
+BED: no <code>reconstruct/</code> directory, and so no amplicon summary.</p>
+<p>With <code>--coral_run_cycle</code>, reconstruction builds the breakpoint graphs only, and the cycles and the
+amplicon summary are written to <code>cycles/</code> instead, beside copies of the graphs; the classifier and
+the plots then read <code>cycles/</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>├── ecdna
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>│   ├── sample_coral_cn.bed
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>│   ├── coral
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>│   │   ├── sample_CNV_SEEDS.bed
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>│   │   ├── reconstruct
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>│   │   │   ├── sample_amplicon1_graph.txt
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>│   │   │   ├── sample_amplicon1_cycles.txt
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>│   │   │   ├── sample_amplicon_summary.txt
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>│   │   │   └── sample_reconstruct.log
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>│   │   ├── cycles                      # --coral_run_cycle only
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>│   │   │   ├── sample_amplicon1_graph.txt
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>│   │   │   ├── sample_amplicon1_cycles.txt
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>│   │   │   └── sample_amplicon_summary.txt
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>│   │   └── plots
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>│   │       ├── sample_amplicon1_graph.png
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>│   │       └── sample_amplicon1_cycles.png
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>│   └── amplicon_classifier
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>│       ├── sample_amplicon_classification_profiles.tsv
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>│       ├── sample_gene_list.tsv
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>│       ├── sample_ecDNA_counts.tsv
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>│       ├── sample_result_table.tsv
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>│       └── sample_classification_bed_files/
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample_coral_cn.bed</code></td>
+<td>ASCAT's copy number as the BED CoRAL seeds from</td>
+</tr>
+<tr>
+<td><code>sample_CNV_SEEDS.bed</code></td>
+<td>Amplified intervals above <code>--coral_gain</code>; empty means no amplicons</td>
+</tr>
+<tr>
+<td><code>sample_amplicon&lt;N&gt;_graph.txt</code></td>
+<td>Breakpoint graph per amplicon, in AmpliconArchitect format</td>
+</tr>
+<tr>
+<td><code>sample_amplicon&lt;N&gt;_cycles.txt</code></td>
+<td>Decomposed cycles and paths per amplicon</td>
+</tr>
+<tr>
+<td><code>sample_amplicon_summary.txt</code></td>
+<td>Per-run amplicon summary, written by cycle decomposition</td>
+</tr>
+<tr>
+<td><code>sample_reconstruct.log</code></td>
+<td>CoRAL reconstruction log, including solver output</td>
+</tr>
+<tr>
+<td><code>cycles/</code></td>
+<td><code>--coral_run_cycle</code> only: <code>cycle_all</code>'s cycles and summary, graphs</td>
+</tr>
+<tr>
+<td><code>sample_amplicon&lt;N&gt;_{graph,cycles}.png</code></td>
+<td>Per-amplicon copy-number and cycle plots</td>
+</tr>
+<tr>
+<td><code>sample_amplicon_classification_profiles.tsv</code></td>
+<td>The headline call per amplicon: ecDNA+, BFB+, decomposition class</td>
+</tr>
+<tr>
+<td><code>sample_gene_list.tsv</code></td>
+<td>Genes intersecting each classified amplicon</td>
+</tr>
+<tr>
+<td><code>sample_ecDNA_counts.tsv</code></td>
+<td>Number of distinct ecDNA species detected</td>
+</tr>
+<tr>
+<td><code>sample_result_table.tsv</code></td>
+<td>Combined per-sample table, the format AmpliconRepository ingests</td>
+</tr>
+<tr>
+<td><code>sample_classification_bed_files/</code></td>
+<td>Per-feature BED intervals for each classified amplicon</td>
+</tr>
+<tr>
+<td><code>sample_result_data.json</code></td>
+<td>The result table as JSON</td>
+</tr>
+<tr>
+<td><code>sample_feature_*.tsv</code>, <code>sample_*_calls.tsv</code></td>
+<td>Feature properties, complexity and similarity; FAN, ecDNA context</td>
+</tr>
+<tr>
+<td><code>bfbarchitect_outputs/</code></td>
+<td>BFBArchitect reconstructions, only when a BFB is found</td>
+</tr>
+</tbody>
+</table>
+<h4 id="savana"><code>savana</code><a class="headerlink" href="#savana" title="Permanent link">&para;</a></h4>
+<p>SAVANA structural variant and copy-number calling. Runs alongside Severus/ASCAT rather than replacing
+either. Matched tumor/normal samples run <code>savana run</code> + <code>savana classify</code> + <code>savana cna</code> as separate
+steps; tumor-only samples run the combined <code>savana to</code> command instead, producing the same file set
+in one step. We strongly recommend matched tumor/normal mode for best performance -- SAVANA's own
+docs note tumor-only calling is a fallback, best combined with population/panel-of-normals filtering.</p>
+<p>SAVANA's PacBio classifier (<code>--pb</code>) has no tumour-only mode: it rejects a call only on matched-normal
+evidence, so a PacBio tumour-only <code>sample.classified.somatic.vcf</code> holds nearly every germline SV in the
+genome (~28k on a 30x sample). For these samples the pipeline removes the SVs found in the genome's
+Severus germline SV panel of normals (Severus's matching rule) and passes
+<code>sample.pon_filtered.classified.somatic.vcf</code> to VEP, Padfoot and ReConPlot instead; about 97% of the
+calls are removed. What remains is still mostly germline (on a PacBio pair, all 761 survivors had
+matched-normal support), so treat PacBio tumour-only SAVANA SVs as a fallback and prefer Severus
+or a matched normal. Turn this off with <code>--savana_pb_pon_filter false</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>├── savana
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>│   ├── sample.sv_breakpoints.vcf
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>│   ├── sample.sv_breakpoints.bedpe
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>│   ├── sample.sv_breakpoints_read_support.tsv
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>│   ├── sample.inserted_sequences.fa
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>│   ├── sample.classified.vcf
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>│   ├── sample.classified.somatic.vcf
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>│   ├── sample.classified.somatic.bedpe
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>│   ├── sample.classified.germline.vcf
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>│   ├── sample.pon_filtered.classified.somatic.vcf
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>│   ├── sample.pon_filtered.pon_filter_summary.tsv
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>│   ├── sample_segmented_absolute_copy_number.tsv
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>│   ├── sample_ranked_solutions.tsv
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>│   ├── sample_fitted_purity_ploidy.tsv
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>│   ├── sample_raw_read_counts.tsv
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>│   ├── sample_read_counts_&lt;mode&gt;_log2r_segmented.tsv
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>│   ├── sample_allele_counts_hetSNPs.bed
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>│   ├── 10kbp_bin_ref_all_sample.bed
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample.sv_breakpoints.vcf</code></td>
+<td>Raw (unclassified) SV breakpoints from <code>savana run</code>/<code>savana to</code></td>
+</tr>
+<tr>
+<td><code>sample.sv_breakpoints.bedpe</code></td>
+<td>Raw SV breakpoints in BEDPE format</td>
+</tr>
+<tr>
+<td><code>sample.sv_breakpoints_read_support.tsv</code></td>
+<td>Supporting-read evidence per breakpoint</td>
+</tr>
+<tr>
+<td><code>sample.inserted_sequences.fa</code></td>
+<td>Inserted sequences at breakpoints (insertion SVs)</td>
+</tr>
+<tr>
+<td><code>sample.classified.vcf</code></td>
+<td>All breakpoints after <code>savana classify</code> (somatic + germline)</td>
+</tr>
+<tr>
+<td><code>sample.classified.somatic.vcf</code></td>
+<td>Classified somatic SV VCF -- fed into VEP for annotation</td>
+</tr>
+<tr>
+<td><code>sample.classified.somatic.bedpe</code></td>
+<td>Classified somatic SVs in BEDPE format (ONT only: not written with <code>--pb</code>)</td>
+</tr>
+<tr>
+<td><code>sample.classified.germline.vcf</code></td>
+<td>Classified germline SVs</td>
+</tr>
+<tr>
+<td><code>sample.pon_filtered.classified.somatic.vcf</code></td>
+<td>PacBio tumour-only: somatic SVs not in the SV panel of normals -- used downstream</td>
+</tr>
+<tr>
+<td><code>sample.pon_filtered.pon_filter_summary.tsv</code></td>
+<td>PacBio tumour-only: events and records before and after the PoN filter</td>
+</tr>
+<tr>
+<td><code>sample_segmented_absolute_copy_number.tsv</code></td>
+<td>Segmented absolute copy-number calls from <code>savana cna</code>/<code>savana to</code></td>
+</tr>
+<tr>
+<td><code>sample_ranked_solutions.tsv</code></td>
+<td>Candidate purity/ploidy solutions, ranked</td>
+</tr>
+<tr>
+<td><code>sample_fitted_purity_ploidy.tsv</code></td>
+<td>Selected purity/ploidy fit</td>
+</tr>
+<tr>
+<td><code>sample_raw_read_counts.tsv</code></td>
+<td>Raw binned read counts used for CN segmentation</td>
+</tr>
+<tr>
+<td><code>sample_read_counts_&lt;mode&gt;_log2r_segmented.tsv</code></td>
+<td>Segmented log2 read-count ratios per bin (<code>&lt;mode&gt;</code> is <code>mnorm</code> or <code>self</code>)</td>
+</tr>
+<tr>
+<td><code>sample_allele_counts_hetSNPs.bed</code></td>
+<td>Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given)</td>
+</tr>
+<tr>
+<td><code>10kbp_bin_ref_all_sample.bed</code></td>
+<td>Genome bins used for read-count binning</td>
+</tr>
+</tbody>
+</table>
+<h4 id="deepvariant"><code>deepvariant</code><a class="headerlink" href="#deepvariant" title="Permanent link">&para;</a></h4>
+<p>DeepVariant germline small variant calls. Present in all samples.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>├── deepvariant
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>│   ├── sample.vcf.gz
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>│   ├── sample.vcf.gz.tbi
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>│   ├── sample.g.vcf.gz        # only when --generate_gvcf is true
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>│   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample.vcf.gz</code></td>
+<td>DeepVariant germline SNV and indel calls in VCF format</td>
+</tr>
+<tr>
+<td><code>sample.vcf.gz.tbi</code></td>
+<td>Index for DeepVariant germline calls</td>
+</tr>
+<tr>
+<td><code>sample.g.vcf.gz</code></td>
+<td>DeepVariant gVCF file with calls at all positions (only with <code>--generate_gvcf</code>)</td>
+</tr>
+<tr>
+<td><code>sample.g.vcf.gz.tbi</code></td>
+<td>Index for DeepVariant gVCF (only with <code>--generate_gvcf</code>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="deepsomatic"><code>deepsomatic</code><a class="headerlink" href="#deepsomatic" title="Permanent link">&para;</a></h4>
+<p>DeepSomatic somatic small variant calls. Present in all samples.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>├── deepsomatic
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>│   ├── sample.vcf.gz
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>│   ├── sample.vcf.gz.tbi
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>│   ├── sample.g.vcf.gz        # only when --generate_gvcf is true
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>│   ├── sample.g.vcf.gz.tbi    # only when --generate_gvcf is true
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample.vcf.gz</code></td>
+<td>DeepSomatic somatic SNV and indel calls in VCF format</td>
+</tr>
+<tr>
+<td><code>sample.vcf.gz.tbi</code></td>
+<td>Index for DeepSomatic somatic calls</td>
+</tr>
+<tr>
+<td><code>sample.g.vcf.gz</code></td>
+<td>DeepSomatic gVCF file with calls at all positions (only with <code>--generate_gvcf</code>)</td>
+</tr>
+<tr>
+<td><code>sample.g.vcf.gz.tbi</code></td>
+<td>Index for DeepSomatic gVCF (only with <code>--generate_gvcf</code>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="phased"><code>phased</code><a class="headerlink" href="#phased" title="Permanent link">&para;</a></h4>
+<p>Phased variant calls produced by Longphase. Present in all samples.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>├── phased
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>│   ├── germline_smallvariants.vcf.gz
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>│   ├── germline_smallvariants.vcf.gz.tbi
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>│   ├── somatic_smallvariants.vcf.gz
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>│   ├── somatic_smallvariants.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>germline_smallvariants.vcf.gz</code></td>
+<td>Longphase-phased germline SNV/indel VCF with haplotype (PS) tags</td>
+</tr>
+<tr>
+<td><code>germline_smallvariants.vcf.gz.tbi</code></td>
+<td>Index for the phased germline VCF</td>
+</tr>
+<tr>
+<td><code>somatic_smallvariants.vcf.gz</code></td>
+<td>Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags; <code>0/0</code> and <code>./.</code> records are left unphased</td>
+</tr>
+<tr>
+<td><code>somatic_smallvariants.vcf.gz.tbi</code></td>
+<td>Index for the phased somatic VCF</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="vep"><code>vep</code><a class="headerlink" href="#vep" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>├── vep
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>│   ├── germline
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>│   │   ├── sample_GERMLINE_VEP.vcf.gz
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>│   │   ├── sample_GERMLINE_VEP_summary.html
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>│   │   ├── sample_GERMLINE_VEP.vcf.gz.tbi
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>│   ├── somatic
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>│   │   ├── sample_SOMATIC_VEP.vcf.gz
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>│   │   ├── sample_SOMATIC_VEP_summary.html
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>│   │   ├── sample_SOMATIC_VEP.vcf.gz.tbi
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>│   ├── SVs
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>│   │   ├── sample_SV_VEP.vcf.gz
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>│   │   ├── sample_SV_VEP_summary.html
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>│   │   ├── sample_SV_VEP.vcf.gz.tbi
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>│   │   ├── sample_VEP_SAVANA.vcf.gz
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>│   │   ├── sample_VEP_SAVANA_summary.html
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>│   │   ├── sample_VEP_SAVANA.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>germline/sample_GERMLINE_VEP.vcf.gz</code></td>
+<td>Annotated germline indel and SNV vcf file</td>
+</tr>
+<tr>
+<td><code>germline/sample_GERMLINE_VEP_summary.html</code></td>
+<td>Visual summary of germline indel and SNV annotations in html format</td>
+</tr>
+<tr>
+<td><code>germline/sample_GERMLINE_VEP.vcf.gz.tbi</code></td>
+<td>Annotated germline indel and SNV vcf index file</td>
+</tr>
+<tr>
+<td><code>somatic/sample_SOMATIC_VEP.vcf.gz</code></td>
+<td>Annotated somatic indel and SNV vcf file</td>
+</tr>
+<tr>
+<td><code>somatic/sample_SOMATIC_VEP_summary.html</code></td>
+<td>Visual summary of somatic indel and SNV annotations in html format</td>
+</tr>
+<tr>
+<td><code>somatic/sample_SOMATIC_VEP.vcf.gz.tbi</code></td>
+<td>Annotated somatic indel and SNV vcf index file</td>
+</tr>
+<tr>
+<td><code>SVs/sample_SV_VEP.vcf.gz</code></td>
+<td>Annotated somatic structural variant vcf file</td>
+</tr>
+<tr>
+<td><code>SVs/sample_SV_VEP_summary.html</code></td>
+<td>Visual summary of somatic structural variant annotations in html format</td>
+</tr>
+<tr>
+<td><code>SVs/sample_SV_VEP.vcf.gz.tbi</code></td>
+<td>Annotated somatic structural variant vcf index file</td>
+</tr>
+<tr>
+<td><code>SVs/sample_VEP_SAVANA.vcf.gz</code></td>
+<td>Annotated SAVANA somatic structural variant vcf file</td>
+</tr>
+<tr>
+<td><code>SVs/sample_VEP_SAVANA_summary.html</code></td>
+<td>Visual summary of SAVANA SV annotations in html format</td>
+</tr>
+<tr>
+<td><code>SVs/sample_VEP_SAVANA.vcf.gz.tbi</code></td>
+<td>Annotated SAVANA somatic structural variant vcf index file</td>
+</tr>
+</tbody>
+</table>
+<p>The two SV annotation steps pass <code>--max_sv_size 250000000</code> ahead of <code>--vep_args</code>, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a <code>--max_sv_size</code> in <code>--vep_args</code> takes precedence. VEP still skips SVs on contigs its cache does not cover (<code>_random</code>, <code>chrUn_</code> and chrEBV on the default GRCh38 FASTA, and ALT, HLA or decoy contigs of a custom one), so those records are missing from these files; VEP lists each one in the task's <code>*_warnings.txt</code>, which is not published.</p>
+</details>
+<h4 id="vep_plugins"><code>vep_plugins</code><a class="headerlink" href="#vep_plugins" title="Permanent link">&para;</a></h4>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>├── vep_plugins
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>│   ├── clinvar_20260829.vcf.gz
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>│   ├── clinvar_20260829.vcf.gz.tbi
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>│   ├── revel_grch38.tsv.gz
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>│   ├── revel_grch38.tsv.gz.tbi
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>│   ├── eve_merged.vcf.gz
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>│   ├── eve_merged.vcf.gz.tbi
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clinvar_&lt;date&gt;.vcf.gz{,.tbi}</code></td>
+<td>ClinVar release and index as downloaded and MD5-checked by <code>VEPPLUGIN_CLINVAR</code>; only for a remote <code>--vep_clinvar</code></td>
+</tr>
+<tr>
+<td><code>revel_grch38.tsv.gz{,.tbi}</code></td>
+<td>REVEL scores re-sorted on GRCh38 and indexed by <code>VEPPLUGIN_REVEL</code></td>
+</tr>
+<tr>
+<td><code>eve_merged.vcf.gz{,.tbi}</code></td>
+<td>Per-protein EVE VCFs merged and indexed by <code>VEPPLUGIN_EVE</code>; only with the opt-in <code>--vep_eve</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pass these to a later run as <code>--vep_clinvar</code>/<code>--vep_revel</code>/<code>--vep_eve</code> with their <code>_tbi</code> to skip the download and preparation. On CHM13 the ClinVar file is the CHM13-lifted Ensembl release instead.</p>
+</details>
+<h4 id="plugin-fields-in-the-csq-annotation">Plugin fields in the <code>CSQ</code> annotation<a class="headerlink" href="#plugin-fields-in-the-csq-annotation" title="Permanent link">&para;</a></h4>
+<p>The germline and somatic VCFs carry these extra subfields inside VEP's <code>CSQ</code> INFO annotation, on
+top of what <code>--everything</code> already produces; the SV VCF is annotated without plugins. Read them
+out with <code>bcftools +split-vep</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Source</th>
+<th>Appears on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>am_pathogenicity</code>, <code>am_class</code></td>
+<td><code>AlphaMissense</code> plugin</td>
+<td>GRCh38</td>
+</tr>
+<tr>
+<td><code>AlphaMissenseProtein_match</code></td>
+<td><code>AlphaMissenseProtein</code></td>
+<td>CHM13</td>
+</tr>
+<tr>
+<td><code>am_pathogenicity</code>, <code>am_class</code></td>
+<td><code>AlphaMissenseProtein</code></td>
+<td>CHM13, when the lookup resolves</td>
+</tr>
+<tr>
+<td><code>SIFT_score</code>, <code>SIFT_pred</code></td>
+<td><code>PolyPhen_SIFT</code> plugin</td>
+<td>CHM13 (GRCh38 gets <code>SIFT</code> from cache)</td>
+</tr>
+<tr>
+<td><code>PolyPhen_humvar_score</code>, <code>PolyPhen_humvar_pred</code></td>
+<td><code>PolyPhen_SIFT</code> plugin</td>
+<td>CHM13, as above</td>
+</tr>
+<tr>
+<td><code>ClinVar_CLNSIG</code>, <code>ClinVar_CLNREVSTAT</code>, <code>ClinVar_CLNDN</code></td>
+<td>ClinVar <code>--custom</code></td>
+<td>both, fields set by <code>--vep_clinvar_fields</code></td>
+</tr>
+<tr>
+<td><code>REVEL</code></td>
+<td><code>REVEL</code> plugin</td>
+<td>GRCh38</td>
+</tr>
+<tr>
+<td><code>CADD_PHRED</code>, <code>CADD_RAW</code></td>
+<td><code>CADD</code> plugin</td>
+<td>GRCh38, only with <code>--vep_cadd_snv</code> / <code>--vep_cadd_indel</code></td>
+</tr>
+<tr>
+<td><code>EVE_SCORE</code>, <code>EVE_CLASS</code></td>
+<td><code>EVE</code> plugin</td>
+<td>GRCh38, only with <code>--vep_eve</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>AlphaMissenseProtein_match</code> records how the CHM13 protein-space lookup resolved, and is the field
+to check before trusting — or explaining — a missing score:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gene_aa</code></td>
+<td>Matched on gene symbol and both amino acids; <code>am_pathogenicity</code> is populated</td>
+</tr>
+<tr>
+<td><code>aa_mismatch</code></td>
+<td>The gene and position exist, but the reference amino acid differs — the CHM13 protein and the one AlphaMissense was numbered against disagree here, so no score is given</td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>No row for this gene, position and substitution</td>
+</tr>
+<tr>
+<td><code>no_gene</code></td>
+<td>VEP produced no gene symbol for the transcript, so no lookup was possible</td>
+</tr>
+</tbody>
+</table>
+<p>Only missense substitutions are looked up at all; anything else carries no <code>AlphaMissenseProtein_*</code>
+field rather than a match value.</p>
+<h3 id="signatures"><code>signatures</code><a class="headerlink" href="#signatures" title="Permanent link">&para;</a></h3>
+<p>Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: <a href="https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator">SigProfilerMatrixGenerator</a> builds the mutational matrices and <a href="https://github.com/SigProfilerSuite/SigProfilerAssignment">SigProfilerAssignment</a> fits COSMIC reference signatures to them. The <code>DBS78</code> and <code>ID83</code> directories are absent when a sample has no doublet substitutions or indels. File names use the sample ID with every character other than letters, digits, <code>_</code> and <code>-</code> replaced by <code>_</code>. See <a href="../usage/#mutational-signature-options">Mutational Signature Options</a> for the CHM13 handling.</p>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>├── signatures
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>│   ├── matrices
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>│   │   ├── output
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>│   │   │   ├── SBS
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>│   │   │   │   ├── sample.SBS96.all
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>│   │   │   │   ├── sample.SBS288.all
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>│   │   │   │   ├── sample.SBS1536.all
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>│   │   │   │   └── ...
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>│   │   │   ├── DBS
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>│   │   │   │   ├── sample.DBS78.all
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>│   │   │   │   └── ...
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>│   │   │   ├── ID
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>│   │   │   │   ├── sample.ID83.all
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>│   │   │   │   └── ...
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>│   │   │   ├── plots
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a>│   │   │   │   └── *.pdf
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>│   │   │   ├── vcf_files
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>│   │   │   └── logs
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a>│   │   │       ├── SigProfilerMatrixGenerator_sample_&lt;genome&gt;.out
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a>│   │   │       └── SigProfilerMatrixGenerator_sample_&lt;genome&gt;.err
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a>│   └── assignment
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a>│       └── COSMIC_v3.6
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a>│           ├── SBS96
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a>│           │   ├── Assignment_Solution
+<a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a>│           │   │   ├── Activities
+<a id="__codelineno-18-26" name="__codelineno-18-26" href="#__codelineno-18-26"></a>│           │   │   │   ├── Assignment_Solution_Activities.txt
+<a id="__codelineno-18-27" name="__codelineno-18-27" href="#__codelineno-18-27"></a>│           │   │   │   ├── Assignment_Solution_Activity_Plots.pdf
+<a id="__codelineno-18-28" name="__codelineno-18-28" href="#__codelineno-18-28"></a>│           │   │   │   ├── Assignment_Solution_TMB_plot.pdf
+<a id="__codelineno-18-29" name="__codelineno-18-29" href="#__codelineno-18-29"></a>│           │   │   │   ├── Decomposed_MutationType_Probabilities.txt
+<a id="__codelineno-18-30" name="__codelineno-18-30" href="#__codelineno-18-30"></a>│           │   │   │   └── Decomposed_Mutation_Probabilities
+<a id="__codelineno-18-31" name="__codelineno-18-31" href="#__codelineno-18-31"></a>│           │   │   │       └── Decomposed_Mutation_Probabilities_&lt;sample&gt;.txt
+<a id="__codelineno-18-32" name="__codelineno-18-32" href="#__codelineno-18-32"></a>│           │   │   ├── Signatures
+<a id="__codelineno-18-33" name="__codelineno-18-33" href="#__codelineno-18-33"></a>│           │   │   │   ├── Assignment_Solution_Signatures.txt
+<a id="__codelineno-18-34" name="__codelineno-18-34" href="#__codelineno-18-34"></a>│           │   │   │   └── SBS_96_plots_Assignment_Solution.pdf
+<a id="__codelineno-18-35" name="__codelineno-18-35" href="#__codelineno-18-35"></a>│           │   │   └── Solution_Stats
+<a id="__codelineno-18-36" name="__codelineno-18-36" href="#__codelineno-18-36"></a>│           │   │       ├── Assignment_Solution_Samples_Stats.txt
+<a id="__codelineno-18-37" name="__codelineno-18-37" href="#__codelineno-18-37"></a>│           │   │       └── Assignment_Solution_Signature_Assignment_log.txt
+<a id="__codelineno-18-38" name="__codelineno-18-38" href="#__codelineno-18-38"></a>│           │   └── JOB_METADATA_SPA.txt
+<a id="__codelineno-18-39" name="__codelineno-18-39" href="#__codelineno-18-39"></a>│           ├── DBS78
+<a id="__codelineno-18-40" name="__codelineno-18-40" href="#__codelineno-18-40"></a>│           │   └── ...
+<a id="__codelineno-18-41" name="__codelineno-18-41" href="#__codelineno-18-41"></a>│           └── ID83
+<a id="__codelineno-18-42" name="__codelineno-18-42" href="#__codelineno-18-42"></a>│               └── ...
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>matrices/output/SBS/sample.SBS96.all</code></td>
+<td>SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside</td>
+</tr>
+<tr>
+<td><code>matrices/output/DBS/sample.DBS78.all</code></td>
+<td>DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)</td>
+</tr>
+<tr>
+<td><code>matrices/output/ID/sample.ID83.all</code></td>
+<td>ID83 indel matrix (and ID28/ID96/ID415 variants)</td>
+</tr>
+<tr>
+<td><code>matrices/output/plots/*.pdf</code></td>
+<td>SigProfilerPlotting spectra of the matrices (with the default <code>--sigprofiler_matrix_args "--plot"</code>)</td>
+</tr>
+<tr>
+<td><code>matrices/output/vcf_files/</code></td>
+<td>Sorted input mutations with their SigProfilerMatrixGenerator classification (<code>seqInfo</code>)</td>
+</tr>
+<tr>
+<td><code>matrices/output/logs/*</code></td>
+<td>SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Activities/*_Activities.txt</code></td>
+<td>Number of mutations attributed to every COSMIC signature</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt</code></td>
+<td>Probability of each signature per mutation class</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/</code></td>
+<td>Probability of each COSMIC signature for every mutation: <code>Sample Names</code>, <code>Chr</code> (no <code>chr</code> prefix; <code>chrM</code> is <code>MT</code>), <code>Pos</code>, <code>MutationType</code>, then one column per signature. E.g. to attribute a driver mutation to a signature</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Activities/*.pdf</code></td>
+<td>Activity bar plots and tumour mutational burden plot</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Signatures/</code></td>
+<td>The reference signatures used for the fit and their spectra</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/Assignment_Solution/Solution_Stats/</code></td>
+<td>Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log</td>
+</tr>
+<tr>
+<td><code>assignment/COSMIC_v&lt;version&gt;/&lt;context&gt;/JOB_METADATA_SPA.txt</code></td>
+<td>SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="padfoot"><code>padfoot</code><a class="headerlink" href="#padfoot" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>├── padfoot
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>│   ├── severus_wakhan
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>│   │   ├── annotated_svs.tsv
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>│   │   ├── by_gene.tsv
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>│   │   └── padfoot.log
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>│   └── savana
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>│       ├── annotated_svs.tsv
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>│       ├── by_gene.tsv
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>│       └── padfoot.log
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>annotated_svs.tsv</code></td>
+<td>One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type</td>
+</tr>
+<tr>
+<td><code>by_gene.tsv</code></td>
+<td>One row per gene: SV and copy-number impact per haplotype, labelled against the caller's fitted ploidy (<code>NA</code> where the caller gave no minor-allele estimate)</td>
+</tr>
+<tr>
+<td><code>padfoot.log</code></td>
+<td>Padfoot log</td>
+</tr>
+</tbody>
+</table>
+<p><code>severus_wakhan/</code> combines Severus somatic SVs with the top-ranked Wakhan copy-number solution; <code>savana/</code> combines SAVANA classified somatic SVs with SAVANA absolute copy number (only present when SAVANA CNA was produced).</p>
+</details>
+<h3 id="reconplot"><code>reconplot</code><a class="headerlink" href="#reconplot" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>├── reconplot
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>│   ├── severus_ascat
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>│   │   ├── per_chromosome/sample_chr{1..22,X,Y}.{pdf,png}
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>│   │   ├── genome_wide/sample_genome_wide.{pdf,png}
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>│   │   ├── focus/sample_&lt;regions&gt;.{pdf,png}
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>│   │   ├── sample.reconplot_cn.tsv
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>│   │   ├── sample.reconplot_sv.tsv
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>│   │   └── reconplot.log
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>│   ├── severus_wakhan
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>│   │   └── (same layout)
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>│   └── savana
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>│       └── (same layout)
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>per_chromosome/*</code></td>
+<td>One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type</td>
+</tr>
+<tr>
+<td><code>genome_wide/*</code></td>
+<td>All chromosomes side by side in one strip</td>
+</tr>
+<tr>
+<td><code>focus/*</code></td>
+<td>Multi-panel figure for <code>--reconplot_regions</code>, with gene labels / BAF track if requested (optional)</td>
+</tr>
+<tr>
+<td><code>sample.reconplot_cn.tsv</code></td>
+<td>Harmonised CN table (<code>chr,start,end,copyNumber,minorAlleleCopyNumber</code>) as passed to ReConPlot</td>
+</tr>
+<tr>
+<td><code>sample.reconplot_sv.tsv</code></td>
+<td>Harmonised SV table (<code>sv_id,chr1,pos1,chr2,pos2,strands,svlen,support</code>, plus <code>svtype,detailed_type,cluster_id,inside_vntr</code> for Severus; ReConPlot reads the five coordinate/orientation columns)</td>
+</tr>
+<tr>
+<td><code>reconplot.log</code></td>
+<td>Wrapper log (parser choices, purity/ploidy read, filters applied, and an <code>ERROR</code> line for any figure ReConPlot could not draw)</td>
+</tr>
+</tbody>
+</table>
+<p>A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.</p>
+<p><code>severus_ascat/</code> and <code>severus_wakhan/</code> pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; <code>savana/</code> uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.</p>
+</details>
+<h3 id="shatterseek"><code>shatterseek</code><a class="headerlink" href="#shatterseek" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>├── shatterseek
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>│   ├── severus_ascat
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>│   │   ├── sample.shatterseek.tsv
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>│   │   ├── sample.shatterseek_sv_input.tsv
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>│   │   ├── sample.shatterseek_cn_input.tsv
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>│   │   ├── plots/sample_chr&lt;N&gt;.pdf
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>│   │   └── shatterseek.log
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>│   ├── severus_wakhan
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>│   │   └── (same layout)
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>│   └── savana
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>│       └── (same layout)
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sample.shatterseek.tsv</code></td>
+<td>One row per chromosome (chr1-22, chrX): the largest cluster of interleaved SVs, the statistical criteria and the confidence tiers</td>
+</tr>
+<tr>
+<td><code>sample.shatterseek_{sv,cn}_input.tsv</code></td>
+<td>The SV and copy-number tables exactly as given to ShatterSeek (Ensembl chromosome names, integer copy number)</td>
+</tr>
+<tr>
+<td><code>plots/*.pdf</code></td>
+<td>ShatterSeek figure (ideogram, SVs, copy number, summary) for every chromosome with a confidence tier (optional)</td>
+</tr>
+<tr>
+<td><code>shatterseek.log</code></td>
+<td>Wrapper log: files read, SVs dropped and why, copy numbers rounded, the tiers called</td>
+</tr>
+</tbody>
+</table>
+<p><a href="https://github.com/parklab/ShatterSeek">ShatterSeek</a> (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs upstream ShatterSeek (v1.1, pinned commit) unchanged, apart from a build-time patch adding T2T-CHM13 chromosome sizes and cytobands. The columns are upstream's:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start</code>, <code>end</code></td>
+<td>Span of the chromosome's largest cluster of interleaved intra-chromosomal SVs (NA without one)</td>
+</tr>
+<tr>
+<td><code>number_DEL</code>/<code>_DUP</code>/<code>_h2hINV</code>/<code>_t2tINV</code></td>
+<td>The cluster's SVs by type</td>
+</tr>
+<tr>
+<td><code>number_TRA</code>, <code>clusterSize_including_TRA</code></td>
+<td>Translocations with a breakend inside the cluster, and the cluster size including them</td>
+</tr>
+<tr>
+<td><code>pval_fragment_joins</code></td>
+<td>Chi-square test of the cluster's SV types (translocations typed by strand) against equal proportions; chromothripsis should <strong>not</strong> be significant</td>
+</tr>
+<tr>
+<td><code>chr_breakpoint_enrichment</code></td>
+<td>Binomial test of the translocations touching this chromosome against its share of the genome</td>
+</tr>
+<tr>
+<td><code>pval_exp_chr</code>, <code>pval_exp_cluster</code></td>
+<td>Kolmogorov-Smirnov tests of the breakpoints (chromosome / cluster) against an exponential distribution; significant = clustered breakpoints</td>
+</tr>
+<tr>
+<td><code>max_number_oscillating_CN_segments_2_states</code></td>
+<td>Longest run of adjacent copy-number segments in the cluster region alternating between two states</td>
+</tr>
+<tr>
+<td><code>q_*</code></td>
+<td>Benjamini-Hochberg q-values of the four tests across the sample's chromosomes (added by the wrapper)</td>
+</tr>
+<tr>
+<td><code>inter_*</code></td>
+<td>Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters</td>
+</tr>
+<tr>
+<td><code>HC1</code>, <code>HC2</code>, <code>HC3</code></td>
+<td>PCAWG high-confidence tiers met (see below)</td>
+</tr>
+<tr>
+<td><code>chromothripsis_criteria</code>, <code>chromothripsis_confidence</code></td>
+<td>The tiers met, e.g. <code>HC1,HC2</code>, and <code>high</code> (any tier) or <code>none</code></td>
+</tr>
+</tbody>
+</table>
+<p>The tiers use the PCAWG high-confidence cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail. Interleaved intra SVs is the sum of the four SV-type columns. PCAWG's low-confidence tier (4-6 oscillating segments) is not reported.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Interleaved intra SVs</th>
+<th>Other</th>
+<th>Oscillating CN segments (2 states)</th>
+<th>Fragment joins</th>
+<th>Enrichment or <code>exp_chr</code> test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HC1</td>
+<td>≥ 6</td>
+<td></td>
+<td>≥ 7</td>
+<td>q &gt; 0.2</td>
+<td>q ≤ 0.2</td>
+</tr>
+<tr>
+<td>HC2</td>
+<td>≥ 3</td>
+<td>≥ 4 translocations</td>
+<td>≥ 7</td>
+<td>q &gt; 0.2</td>
+<td></td>
+</tr>
+<tr>
+<td>HC3</td>
+<td></td>
+<td>≥ 40 SVs incl. translocations</td>
+<td></td>
+<td>q &gt; 0.2</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Points to keep in mind when reading the calls:</p>
+<ul>
+<li>PCAWG applied HC3 only to osteosarcomas, leiomyosarcomas and liposarcomas, where amplification erodes the oscillating pattern; here it applies to every tumour. Drop it with <code>ext.args = '--no-hc3'</code>.</li>
+<li>PCAWG corrected the P values once across every chromosome of all 2,658 tumours; within one sample the correction covers 23 chromosomes. The raw P values are kept, so a cohort-wide correction can be recomputed from the summaries (each row carries <code>sample</code>, <code>cn_source</code> and <code>sv_source</code>).</li>
+<li>Upstream's exponential tests compare against random draws; the wrapper seeds R's generator (<code>--seed</code>, default 1), so a rerun gives the same P values. Clusters of equal size are pooled before the statistics are computed, so a chromosome whose SVs are all singletons is summarised over all of them.</li>
+<li>The cut-offs were set by visual inspection of PCAWG's short-read consensus calls. Long-read callers report many small SVs, whose two breakpoints a few hundred bp apart make the exponential test significant on most chromosomes; intra-chromosomal SVs shorter than <code>--shatterseek_min_svlen</code> (default 150 bp) are therefore left out, and raising it tests larger rearrangements only.</li>
+<li>ShatterSeek does not mask centromeres or satellite arrays. A cluster spanning a centromere or heterochromatin block (e.g. chr16 q11.2, chr1 q12, chr9 q12) is more likely mapping artefact than chromothripsis; check the figure.</li>
+<li>Tumour-only Severus calls include germline SVs that the panel of normals did not remove.</li>
+<li>Insertions and single breakends are not used, nor are SVs touching chrY, the mitochondrion or unplaced contigs. SAVANA's absolute copy number and fractional Wakhan states are rounded to integers, and neighbouring segments with equal copy number are merged, because ShatterSeek counts copy-number states row by row.</li>
+</ul>
+<p>Tier cut-offs, the q/P choice and SV filters can be changed with <code>ext.args</code> on <code>.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)</code> (see <code>Rscript assets/shatterseek/run_shatterseek.R --help</code>). A sample ShatterSeek cannot process is skipped without stopping the run.</p>
+</details>
+<h3 id="wakhan"><code>wakhan</code><a class="headerlink" href="#wakhan" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>├── wakhan
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>│   ├── solution_{ploidy}_{purity}_{confidence}
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>│   │   ├── genes
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>│   │   │   ├── genes_copynumber_states.bed
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>│   │   │   ├── genes_copynumber_states.html
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>│   │   │   ├── genes_copynumber_states.pdf
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>│   │   ├── integer_profile.bed
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>│   │   ├── integer_profile.html
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>│   │   ├── integer_profile.pdf
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>│   │   ├── integer_profile.vcf
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>│   │   ├── subclonal_profile.bed
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>│   │   ├── subclonal_profile.html
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>│   │   ├── subclonal_profile.pdf
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>│   │   ├── subclonal_profile.vcf
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>│   │   ├── HiScanner_plots_data.zip
+<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>│   ├── solution_rank_{rank}
+<a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>│   ├── coverage_data
+<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a>│   │   ├── {0-23}_SNPs.csv
+<a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a>│   │   ├── baf.csv
+<a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a>│   │   ├── cancer_genes_coverage.csv
+<a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a>│   │   ├── cn_coverage.png
+<a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a>│   │   ├── cn_peaks.png
+<a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a>│   │   ├── coverage.csv
+<a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a>│   │   ├── coverage_ps.csv
+<a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a>│   │   ├── phase_corrected_coverage.csv
+<a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a>│   │   ├── pileup_SNPs.csv
+<a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a>│   ├── coverage_plots
+<a id="__codelineno-22-28" name="__codelineno-22-28" href="#__codelineno-22-28"></a>│   │   ├── chr{1-22,X,Y}_cov.html
+<a id="__codelineno-22-29" name="__codelineno-22-29" href="#__codelineno-22-29"></a>│   │   ├── chr{1-22,X,Y}.pdf
+<a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a>│   │   ├── COVERAGE_INDEX.html
+<a id="__codelineno-22-31" name="__codelineno-22-31" href="#__codelineno-22-31"></a>│   ├── phasing_output
+<a id="__codelineno-22-32" name="__codelineno-22-32" href="#__codelineno-22-32"></a>│   │   ├── chr{1-22,X,Y}_phase_correction_{0.1,0.2,0.3,1,2}.html
+<a id="__codelineno-22-33" name="__codelineno-22-33" href="#__codelineno-22-33"></a>│   │   ├── chr{1-22,X,Y}_without_phase_correction.html
+<a id="__codelineno-22-34" name="__codelineno-22-34" href="#__codelineno-22-34"></a>│   │   ├── chr{1-22,X,Y}.pdf
+<a id="__codelineno-22-35" name="__codelineno-22-35" href="#__codelineno-22-35"></a>│   │   ├── PHASE_CORRECTION_INDEX.html
+<a id="__codelineno-22-36" name="__codelineno-22-36" href="#__codelineno-22-36"></a>│   │   ├── rephased.vcf.gz
+<a id="__codelineno-22-37" name="__codelineno-22-37" href="#__codelineno-22-37"></a>│   │   ├── rephased.vcf.gz.csi
+<a id="__codelineno-22-38" name="__codelineno-22-38" href="#__codelineno-22-38"></a>│   ├── snps_loh_plots
+<a id="__codelineno-22-39" name="__codelineno-22-39" href="#__codelineno-22-39"></a>│   │   ├── {sample}_genome_snps_ratio_loh.html
+<a id="__codelineno-22-40" name="__codelineno-22-40" href="#__codelineno-22-40"></a>│   ├── {sample}_heatmap_ploidy_purity.html
+<a id="__codelineno-22-41" name="__codelineno-22-41" href="#__codelineno-22-41"></a>│   ├── {sample}_heatmap_ploidy_purity.html.pdf
+<a id="__codelineno-22-42" name="__codelineno-22-42" href="#__codelineno-22-42"></a>│   ├── solutions_ranks.tsv
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/integer_profile.bed</code></td>
+<td>Integer copy-number segments for one purity/ploidy solution, both haplotypes on shared boundaries: coverage, copy-number state and confidence per haplotype, and the IDs of SV breakpoints in the segment</td>
+</tr>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/integer_profile.vcf</code></td>
+<td>The integer copy-number segments as VCF</td>
+</tr>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/integer_profile.html</code></td>
+<td>Interactive genome-wide plot of the integer copy-number profile with SV breakpoints (<code>.pdf</code>: static version)</td>
+</tr>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/subclonal_profile.*</code></td>
+<td>The same for subclonal copy-number states (<code>.bed</code>, <code>.vcf</code>, <code>.html</code>, <code>.pdf</code>)</td>
+</tr>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/genes/genes_copynumber_states.*</code></td>
+<td>Copy-number states of the genes of interest (<code>.bed</code>) and their plots (<code>.html</code>, <code>.pdf</code>)</td>
+</tr>
+<tr>
+<td><code>solution_{ploidy}_{purity}_{confidence}/HiScanner_plots_data.zip</code></td>
+<td>The solution's profiles, coverage, BAF and breakpoints bundled for the <a href="https://wakhan-visualization.github.io/">Wakhan visualisation web viewer</a></td>
+</tr>
+<tr>
+<td><code>solution_rank_{rank}</code></td>
+<td>The solution of that rank in <code>solutions_ranks.tsv</code> (a copy of its <code>solution_{ploidy}_{purity}_{confidence}</code> directory)</td>
+</tr>
+<tr>
+<td><code>coverage_data/*.csv</code></td>
+<td>Per-chromosome SNP tables, BAF, haplotype-specific and phase-corrected coverage, and SNP pileups; tumour-only runs also write <code>{sample}_loh_segments.csv</code></td>
+</tr>
+<tr>
+<td><code>coverage_data/*.png</code></td>
+<td>Copy-number coverage and peak plots</td>
+</tr>
+<tr>
+<td><code>coverage_plots/chr{1-22,X,Y}_cov.html</code></td>
+<td>Coverage plot per chromosome (<code>.pdf</code>: static version); <code>COVERAGE_INDEX.html</code> links them</td>
+</tr>
+<tr>
+<td><code>phasing_output/*.html</code></td>
+<td>Phase-switch error plots per chromosome, with and without correction; <code>PHASE_CORRECTION_INDEX.html</code> links them</td>
+</tr>
+<tr>
+<td><code>phasing_output/rephased.vcf.gz</code></td>
+<td>Phase-corrected SNP VCF, with its <code>.csi</code> index</td>
+</tr>
+<tr>
+<td><code>snps_loh_plots/{sample}_genome_snps_ratio_loh.html</code></td>
+<td>SNP allele ratios and loss-of-heterozygosity regions (tumour-only runs)</td>
+</tr>
+<tr>
+<td><code>{sample}_heatmap_ploidy_purity.html</code></td>
+<td>Heatmap of the purity/ploidy fit (<code>.html.pdf</code>: static version)</td>
+</tr>
+<tr>
+<td><code>solutions_ranks.tsv</code></td>
+<td>Ranked purity/ploidy solutions; <code>repository_name</code> is the solution's directory</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="report"><code>report</code><a class="headerlink" href="#report" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>├── report
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>│   ├── {sample}_report.html
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>│   ├── {sample}_small_variants.tsv.gz
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{sample}_report.html</code></td>
+<td>Self-contained per-sample HTML report (<a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a>, run from <code>ghcr.io/ljwharbers/lrsomatic-report</code>): clinical overview, circos plot, small/structural variant tables, copy number, genomic instability, signatures and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead.</td>
+</tr>
+<tr>
+<td><code>{sample}_small_variants.tsv.gz</code></td>
+<td>The full small-variant table behind the report's variant section, every row and column, as gzipped TSV. Written when the somatic VEP file holds at least one variant: not with <code>--skip_vep</code>, and not for a sample with no somatic calls. The HTML may embed only part of it (see <code>--embed</code> in <a href="../usage/#report-options">usage</a>); this file is always complete.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p>This is the final step of the pipeline, run after every tool it reads. It renders each sample only once the run's last SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot, ReConPlot and Wakhan output has been written, because several of those are optional per sample. Disable it with <code>--skip_report</code>.</p>
+<p>The report reads these published outputs of the sample (a skipped tool's section shows a notice):</p>
+<table>
+<thead>
+<tr>
+<th>Report section</th>
+<th>Files read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Small variants</td>
+<td><code>vep/somatic/{sample}_SOMATIC_VEP.vcf.gz</code>, <code>variants/phased/</code> somatic VCF, <code>variants/clairsto/{sample}.verdict_status.tsv</code> (tumour-only)</td>
+</tr>
+<tr>
+<td>Structural variants</td>
+<td><code>variants/severus/somatic_SVs/severus_somatic.vcf.gz</code>, <code>vep/SVs/{sample}_SV_VEP.vcf.gz</code>; SAVANA's <code>variants/savana/{sample}[.pon_filtered].classified.somatic.vcf</code> (PoN-filtered for PacBio tumour-only) and <code>vep/SVs/{sample}_VEP_SAVANA.vcf.gz</code></td>
+</tr>
+<tr>
+<td>SV annotation and figures</td>
+<td><code>padfoot/{pair}/{annotated_svs,by_gene}.tsv</code>, <code>reconplot/{pair}/{genome_wide,per_chromosome,focus}/*.png</code></td>
+</tr>
+<tr>
+<td>Copy number</td>
+<td><code>ascat/{sample}.{purityploidy,segments_raw,metrics}.txt</code> and plots, <code>variants/savana/{sample}_fitted_purity_ploidy.tsv</code>, <code>wakhan/solutions_ranks.tsv</code>, <code>wakhan/solution_rank_1/{integer_profile.bed,genes/genes_copynumber_states.bed}</code></td>
+</tr>
+<tr>
+<td>Chromothripsis</td>
+<td><code>shatterseek/{pair}/{sample}.shatterseek.tsv</code></td>
+</tr>
+<tr>
+<td>ecDNA</td>
+<td><code>ecdna/amplicon_classifier/{sample}_{amplicon_classification_profiles,gene_list,result_table}.tsv</code>, <code>ecdna/coral/{sample}_CNV_SEEDS.bed</code>, <code>ecdna/coral/{reconstruct,cycles}/{sample}_amplicon_summary.txt</code>, <code>ecdna/coral/plots/*_{graph,cycles}.png</code></td>
+</tr>
+<tr>
+<td>Mutational signatures</td>
+<td><code>signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/</code>, <code>signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all</code></td>
+</tr>
+<tr>
+<td>QC and phasing</td>
+<td>mosdepth, cramino and samtools files under <code>qc/{tumor,normal}/</code>, <code>qc/whatshap_stats/{sample}_whatshap_stats.tsv</code></td>
+</tr>
+</tbody>
+</table>
+<p>The pipeline passes each sample's run mode, <code>--run-mode paired</code> for a tumour/normal pair and <code>--run-mode tumour_only</code> otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.</p>
+<p>Wakhan's interactive HTML plots (<code>wakhan/solution_*/integer_profile.html</code>, the subclonal profiles and <code>{sample}_heatmap_ploidy_purity.html</code>) are no longer embedded in the report, which draws the top-ranked solution's copy-number profile from <code>integer_profile.bed</code> instead; open them from the <a href="#wakhan"><code>wakhan</code></a> directory.</p>
+<p>Sections:</p>
+<ul>
+<li><strong>Small variants</strong> — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set from the phased somatic VCF; a footnote names the file those columns came from and, after a consensus run, notes that a multi-caller variant's VAF comes from whichever caller won the merge. Unfiltered by default; see <code>--report_gene_panel</code> in <a href="../usage/#report-options">usage</a>.</li>
+<li>Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the <a href="#plugin-fields-in-the-csq-annotation">plugin fields in <code>CSQ</code></a>, each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an <strong>Annotation sources</strong> footnote lists which sources were present.</li>
+<li><strong>Structural variants</strong> — SEVERUS breakpoints, annotated from the VEP SV VCF (<code>{sample}_SV_VEP.vcf.gz</code>), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.</li>
+<li><strong>Circos</strong> — genome-wide SNV density, SVs and copy number, with the tier 1–2 key-finding genes of the ticked gene list(s) labelled around the outside; the labels follow the panel checkboxes, so with no list ticked there are none.</li>
+<li><strong>ReConPlot figures</strong> — by default (the report's <code>--embed slim</code>) no genome-wide strip, and per-chromosome figures only for chromosomes with a ShatterSeek chromothripsis call, an SV with a Padfoot <code>HIGH_ONCO</code>/<code>HIGH_TSG</code> rating, or a tier 1–2 SV or copy-number key finding of a ticked gene list. The report option <code>--embed full</code> (<a href="../usage/#report-options">usage</a>) embeds every figure; all of them remain under <a href="#reconplot"><code>reconplot</code></a>.</li>
+<li><strong>Copy number</strong> — ASCAT purity/ploidy, whole-genome doubling and LOH (from <code>metrics.txt</code>) plus its diagnostic plots, SAVANA's fitted purity/ploidy, and, when WAKHAN ran, its ranked purity/ploidy solutions with the top-ranked solution's copy-number profile and gene copy-number states.</li>
+<li><strong>QC</strong> — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible <strong>Phasing</strong> block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with <code>--skip_whatshapstats</code> or <code>--skip_qc</code>.</li>
+</ul>
+<p>Filtering in the browser:</p>
+<ul>
+<li><strong>Gene panels</strong> are checkboxes in the panel bar; ticked panels are unioned, and <code>--report_gene_panel</code> only sets which are ticked on load — see <a href="../usage/#applying-several-panels-at-once">usage</a>. With two or more ticked, each <code>panel_hit</code> entry names the panel it matched in square brackets.</li>
+<li><strong>Categorical columns</strong> filter by tickbox dropdown rather than a text box: <code>consequence</code>, <code>impact</code> and <code>callers</code> on the small-variant table, and <code>svclass</code>, <code>svtype</code>, <code>impact</code>, <code>consequence</code> and <code>caller</code> on the SV table. Each dropdown lists the values actually present in that sample with a row count. Ticking several values in one column is OR; ticking values in two columns is AND. A column with fewer than two distinct values keeps a plain text box. Every other column keeps its text box, and the table's own search box still does substring across all columns.</li>
+</ul>
+<p>The report is one self-contained file — plots and tables are embedded, so it can be copied or emailed on its own.</p>
+<h3 id="multiqc"><code>multiqc</code><a class="headerlink" href="#multiqc" title="Permanent link">&para;</a></h3>
+<p>Sample rows are named per BAM: <code>{sample}_tumor</code> and <code>{sample}_normal</code> carry the samtools, mosdepth and post-alignment NanoPlot statistics of that BAM, <code>{sample}_{type}_rep{N}_ubam</code> rows carry the pre-alignment NanoPlot statistics of each unaligned replicate, and WhatsHap phasing statistics sit on a plain <code>{sample}</code> row because phasing is done once per sample.</p>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>├── multiqc
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>│   ├── multiqc_data
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>│   │   ├── BETA-multiqc.parquet
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>│   │   ├── llms-full.txt
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>│   │   ├── mosdepth_cov_dist.txt
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>│   │   ├── mosdepth_cumcov_dist.txt
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>│   │   ├── mosdepth_perchrom.txt
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>│   │   ├── mosdepth-coverage-per-contig-multi.txt
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>│   │   ├── mosdepth-cumcoverage-dist-id.txt
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>│   │   ├── mosdepth-xy-coverage-plot.txt
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>│   │   ├── multiqc_citations
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>│   │   ├── multiqc_data.json
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>│   │   ├── multiqc_general_stats.txt
+<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>│   │   ├── multiqc_software_versions.txt
+<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>│   │   ├── multiqc_nanostat.txt
+<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>│   │   ├── multiqc_sources.txt
+<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a>│   │   ├── multiqc.log
+<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a>│   │   ├── nanostat_fasta_stats_table.txt
+<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a>│   ├── multiqc_plots
+<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a>│   │   ├── pdf
+<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-cnt.pdf
+<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-log.pdf
+<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a>│   │   │   ├── mosdepth-cumcoverage-dist-id.pdf
+<a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a>│   │   │   ├── mosdepth-xy-coverage-plot-cnt.pdf
+<a id="__codelineno-24-25" name="__codelineno-24-25" href="#__codelineno-24-25"></a>│   │   │   ├── mosdepth-xy-coverage-plot-pct.pdf
+<a id="__codelineno-24-26" name="__codelineno-24-26" href="#__codelineno-24-26"></a>│   │   ├── png
+<a id="__codelineno-24-27" name="__codelineno-24-27" href="#__codelineno-24-27"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-cnt.png
+<a id="__codelineno-24-28" name="__codelineno-24-28" href="#__codelineno-24-28"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-log.png
+<a id="__codelineno-24-29" name="__codelineno-24-29" href="#__codelineno-24-29"></a>│   │   │   ├── mosdepth-cumcoverage-dist-id.png
+<a id="__codelineno-24-30" name="__codelineno-24-30" href="#__codelineno-24-30"></a>│   │   │   ├── mosdepth-xy-coverage-plot-cnt.png
+<a id="__codelineno-24-31" name="__codelineno-24-31" href="#__codelineno-24-31"></a>│   │   │   ├── mosdepth-xy-coverage-plot-pct.png
+<a id="__codelineno-24-32" name="__codelineno-24-32" href="#__codelineno-24-32"></a>│   │   ├── svg
+<a id="__codelineno-24-33" name="__codelineno-24-33" href="#__codelineno-24-33"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-cnt.svg
+<a id="__codelineno-24-34" name="__codelineno-24-34" href="#__codelineno-24-34"></a>│   │   │   ├── mosdepth-coverage-per-contig-multi-log.svg
+<a id="__codelineno-24-35" name="__codelineno-24-35" href="#__codelineno-24-35"></a>│   │   │   ├── mosdepth-cumcoverage-dist-id.svg
+<a id="__codelineno-24-36" name="__codelineno-24-36" href="#__codelineno-24-36"></a>│   │   │   ├── mosdepth-xy-coverage-plot-cnt.svg
+<a id="__codelineno-24-37" name="__codelineno-24-37" href="#__codelineno-24-37"></a>│   │   │   ├── mosdepth-xy-coverage-plot-pct.svg
+<a id="__codelineno-24-38" name="__codelineno-24-38" href="#__codelineno-24-38"></a>│   ├── multiqc_report.html
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>multiqc_data/BETA-multiqc.parquet</code></td>
+<td>Multiqc data in Apache Parquet format (BETA)</td>
+</tr>
+<tr>
+<td><code>multiqc_data/llms-full.txt</code></td>
+<td>Prompt for large-language-model summary</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth_cov_dist.txt</code></td>
+<td>text file of coverage distribution</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth_cumcov_dist.txt</code></td>
+<td>text file of cummulative coverage distribution</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth_perchrom.txt</code></td>
+<td>text file of coverage per chromosome</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth-coverage-per-contig-multi.txt</code></td>
+<td>text file of coverage per contig</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth-cumcoverage-dist-id.txt</code></td>
+<td>unclear text file</td>
+</tr>
+<tr>
+<td><code>multiqc_data/mosdepth-xy-coverage-plot.txt</code></td>
+<td>summary of chr X, chr Y coverage</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc_citations</code></td>
+<td>citations for multiqc</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc_data.json</code></td>
+<td>json file containing multiqc data output</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc_general_stats.txt</code></td>
+<td>summary statistics for the samples</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc_software_versions.txt</code></td>
+<td>software versions for tools used in multiqc</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc_sources.txt</code></td>
+<td>software sources for tools used in multiqc</td>
+</tr>
+<tr>
+<td><code>multiqc_data/multiqc.log</code></td>
+<td>log file for multiqc</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/pdf/mosdepth-coverage-per-contig-multi-cnt.pdf</code></td>
+<td>pdf format plot of coverage per contig</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/pdf/mosdepth-coverage-per-contig-multi-log.pdf</code></td>
+<td>pdf format plot of coverage per contig on a logarithmic plot</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/pdf/mosdepth-cumcoverage-dist-id.pdf</code></td>
+<td>pdf format plot of distribution of cumulative coverage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/pdf/mosdepth-xy-coverage-plot-cnt.pdf</code></td>
+<td>pdf format plot of chr X and chr Y coverage by count</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/pdf/mosdepth-xy-coverage-plot-pct.pdf</code></td>
+<td>pdf format plot of chr X and chr Y coverage by percentage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/png/mosdepth-coverage-per-contig-multi-cnt.png</code></td>
+<td>png format plot of coverage per contig</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/png/mosdepth-coverage-per-contig-multi-log.png</code></td>
+<td>png format plot of coverage per contig on a logarithmic plot</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/png/mosdepth-cumcoverage-dist-id.png</code></td>
+<td>png format plot of distribution of cumulative coverage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/png/mosdepth-xy-coverage-plot-cnt.png</code></td>
+<td>png format plot of chr X and chr Y coverage by count</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/png/mosdepth-xy-coverage-plot-pct.png</code></td>
+<td>png format plot of chr X and chr Y coverage by percentage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/svg/mosdepth-coverage-per-contig-multi-cnt.svg</code></td>
+<td>svg format plot of coverage per contig</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/svg/mosdepth-coverage-per-contig-multi-log.svg</code></td>
+<td>svg format plot of coverage per contig on a logarithmic plot</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/svg/mosdepth-cumcoverage-dist-id.svg</code></td>
+<td>svg format plot of distribution of cumulative coverage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/svg/mosdepth-xy-coverage-plot-cnt.svg</code></td>
+<td>svg format plot of chr X and chr Y coverage by count</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/svg/mosdepth-xy-coverage-plot-pct.svg</code></td>
+<td>svg format plot of chr X and chr Y coverage by percentage</td>
+</tr>
+<tr>
+<td><code>multiqc_plots/multiqc_report.html</code></td>
+<td>svg format plot of chr X and chr Y coverage by percentage</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pipeline_info"><code>pipeline_info</code><a class="headerlink" href="#pipeline_info" title="Permanent link">&para;</a></h3>
+<details>
+<summary>Output files</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>├── pipeline_info
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>│   ├── execution_timeline_{DATE}.html
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>│   ├── execution_trace_{DATE}.txt
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>│   ├── final_sample_disk_usage.tsv
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>│   ├── lrsomatic_software_mqc_versions.yml
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>│   ├── params_{DATE}.json
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>│   ├── pipeline_dag_{DATE}.html
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>│   ├── raw_task_disk_usage.tsv
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>execution_timeline_{DATE}.html</code></td>
+<td>a graphical summary of the timing of each module's task over the course of the pipeline run</td>
+</tr>
+<tr>
+<td><code>execution_trace_{DATE}.txt</code></td>
+<td>detailed per-task resource usage log (CPU, memory, wall time)</td>
+</tr>
+<tr>
+<td><code>final_sample_disk_usage.tsv</code></td>
+<td>summary of disk usage per sample at pipeline completion</td>
+</tr>
+<tr>
+<td><code>lrsomatic_software_mqc_versions.yml</code></td>
+<td>summary of the versions of each tool used by the pipeline</td>
+</tr>
+<tr>
+<td><code>params_{DATE}.json</code></td>
+<td>summary of the parameters used in the pipeline run</td>
+</tr>
+<tr>
+<td><code>pipeline_dag_{DATE}.html</code></td>
+<td>flow chart summarizing the pipeline structure</td>
+</tr>
+<tr>
+<td><code>raw_task_disk_usage.tsv</code></td>
+<td>per-task disk usage across all pipeline tasks</td>
+</tr>
+</tbody>
+</table>
+</details>
+</details>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../usage/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Usage">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Usage
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../parameters/" class="md-footer__link md-footer__link--next" aria-label="Next: Parameters">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Parameters
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/IntGenomicsLab/lrsomatic" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://doi.org/10.5281/zenodo.17751828" target="_blank" rel="noopener" title="doi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M384 512H96c-53 0-96-43-96-96V96C0 43 43 0 96 0h304c26.5 0 48 21.5 48 48v288c0 20.9-13.4 38.7-32 45.3V448c17.7 0 32 14.3 32 32s-14.3 32-32 32zM96 384c-17.7 0-32 14.3-32 32s14.3 32 32 32h256v-64zm32-232c0 13.3 10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24m24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "search.highlight", "search.suggest", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

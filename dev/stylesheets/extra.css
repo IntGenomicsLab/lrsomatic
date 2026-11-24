@@ -1,0 +1,294 @@
+/* ============================================================
+   Pastel purple color palette for IntGenomicsLab/lrsomatic
+   ============================================================ */
+:root {
+  --purple: #805ad5;
+  --purple-dark: #6b46c1;
+  --purple-light: #ede9fe;
+
+  --md-primary-fg-color: #805ad5;
+  --md-primary-fg-color--light: #9f7aea;
+  --md-primary-fg-color--dark: #6b46c1;
+  --md-accent-fg-color: #805ad5;
+
+  /* Subtle purple-tinted page background */
+  --md-default-bg-color: #faf8ff;
+}
+
+/* ============================================================
+   Layout: hide the left nav on wide screens only (the top tabs cover it);
+   below 76.25em Material uses this sidebar as the navigation drawer
+   ============================================================ */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Parameter page sections
+   ============================================================ */
+.param-section {
+  margin: 2.5rem 0 3rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  padding-top: 1rem;
+}
+
+.param-section-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--purple);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
+  color: var(--md-default-fg-color);
+}
+
+.param-section-header i {
+  color: var(--purple);
+  margin-right: 0.5rem;
+  width: 1.2em;
+  text-align: center;
+}
+
+.param-section-desc {
+  font-style: italic;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.8rem;
+}
+
+.param-page-section {
+  font-size: 1.4rem;
+  border-left: 4px solid var(--purple);
+  padding-left: 0.75rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   Parameter table
+   ============================================================ */
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  table-layout: fixed;
+}
+
+.param-table thead tr {
+  background-color: var(--purple);
+  color: white;
+}
+
+.param-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.param-table th:nth-child(1) {
+  width: 28%;
+}
+.param-table th:nth-child(2) {
+  width: 15%;
+}
+.param-table th:nth-child(3) {
+  width: 57%;
+}
+
+.param-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.param-row:hover {
+  background-color: var(--purple-light);
+}
+
+.param-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* let wide parameter tables scroll instead of overflowing on phones */
+.param-section {
+  overflow-x: auto;
+}
+
+@media screen and (max-width: 44.9375em) {
+  .param-table {
+    table-layout: auto;
+    min-width: 36rem;
+  }
+}
+
+.param-no-default {
+  color: var(--md-default-fg-color--light);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.param-badge {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.15em 0.15em 0 0;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.param-required {
+  background-color: #c0392b;
+  color: #fff;
+}
+.param-type {
+  background-color: #2980b9;
+  color: #fff;
+}
+
+.badge-type-string {
+  background-color: #2980b9;
+  color: #fff;
+}
+.badge-type-boolean {
+  background-color: #8e44ad;
+  color: #fff;
+}
+.badge-type-integer {
+  background-color: #e67e22;
+  color: #fff;
+}
+.badge-type-number {
+  background-color: #d35400;
+  color: #fff;
+}
+.badge-type-any {
+  background-color: #7f8c8d;
+  color: #fff;
+}
+
+.param-format-badge {
+  background-color: var(--purple-light);
+  color: var(--purple-dark);
+  border: 1px solid var(--purple);
+  font-size: 0.68em;
+}
+
+/* ============================================================
+   Default value
+   ============================================================ */
+.param-default {
+  background-color: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-family: var(--md-code-font-family);
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   Enum option chips
+   ============================================================ */
+.param-enum {
+  margin-top: 0.4rem;
+  font-size: 0.82em;
+}
+
+.param-enum-val {
+  display: inline-block;
+  background-color: var(--purple-light);
+  color: var(--purple-dark);
+  padding: 0.05em 0.4em;
+  border-radius: 3px;
+  margin: 0.1em 0.15em;
+  font-family: var(--md-code-font-family);
+  font-size: 0.9em;
+}
+
+/* ============================================================
+   Format badge wrapper
+   ============================================================ */
+.param-format {
+  margin-top: 0.3rem;
+}
+
+/* ============================================================
+   Help text collapsible (Material renders <details> as an admonition; recolour it)
+   ============================================================ */
+.md-typeset details.param-help {
+  border-color: var(--purple);
+  font-size: 0.8rem;
+}
+
+.md-typeset details.param-help > summary {
+  background-color: var(--purple-light);
+}
+
+.md-typeset details.param-help > summary::before,
+.md-typeset details.param-help > summary::after {
+  background-color: var(--purple);
+}
+
+.md-typeset details.param-help p {
+  color: var(--md-default-fg-color--light);
+}
+
+/* ============================================================
+   Dark mode overrides
+   ============================================================ */
+[data-md-color-scheme="slate"] {
+  --purple-light: #2d1b69;
+  --purple-dark: #c4b5fd;
+  --md-default-bg-color: #1a1525;
+}
+
+[data-md-color-scheme="slate"] .param-table thead tr {
+  background-color: #4c2889;
+}
+
+[data-md-color-scheme="slate"] .param-row:hover {
+  background-color: #2d1b4e;
+}
+
+/* ============================================================
+   Home page cards and outdated-version banner
+   ============================================================ */
+.md-typeset .grid.cards > ul > li {
+  border-color: var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--purple);
+}
+
+.md-typeset .grid.cards .twemoji {
+  color: var(--purple);
+}
+
+.md-banner--warning {
+  background-color: var(--purple-light);
+  color: var(--md-default-fg-color);
+}
+
+[data-md-color-scheme="slate"] .md-banner--warning {
+  background-color: #3b2a6b;
+  color: #ede9fe;
+}
+
+[data-md-color-scheme="slate"] .md-banner--warning a {
+  color: #c4b5fd;
+}
+
+.md-header__button.md-logo img {
+  height: 1.6rem;
+  width: 1.6rem;
+}
