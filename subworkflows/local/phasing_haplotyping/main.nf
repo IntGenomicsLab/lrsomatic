@@ -197,12 +197,13 @@ workflow PHASING_HAPLOTYPING {
     // Input:  [meta, somatic_vcf, tbi, hap_bam, index] / fasta / fai
     // Output: .vcf / .tbi -- [meta, vcf.gz] / [meta, tbi]
     //
+    // No failOnMismatch: a sample whose haplotagging failed (errorStrategy 'ignore') has no phased somatic VCF
     somatic_vcf
         .join(
             tumor_normal_hapbams_ch
                 .filter { meta, _bam, _bai -> meta.type == 'tumor' }
                 .map { meta, bam, bai -> [ meta.subMap(meta_keys), bam, bai ] },
-            failOnMismatch: true, failOnDuplicate: true
+            failOnDuplicate: true
         )
         .set{ somatic_phase_input_ch }
     // somatic_phase_input_ch: [meta, somatic_vcf, tbi, hap_bam, index]
