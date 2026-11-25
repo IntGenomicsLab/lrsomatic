@@ -17,6 +17,7 @@ include { isCram                 } from '../subworkflows/local/utils_nfcore_lrso
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { shatterseekGenome      } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { hmfReportFiles; hmfAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources; validateSampleModels } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -1547,10 +1548,16 @@ workflow LRSOMATIC {
             .findAll { tok -> reportGenePanelIsFile(tok) }
             .collect { tok -> file(tok, checkIfExists: true) }
 
+        // HMF resources in the module's slot order, [] each when the annotation is off (see hmfAnnotationOk())
+        def report_hmf_files = hmfAnnotationOk()
+            ? hmfReportFiles().values().collect { p -> p ? file(p, checkIfExists: true) : [] }
+            : [[], [], [], [], []]
+
         LRSOMATICREPORT (
             report_input_ch,
             file("${projectDir}/assets/gene_lists", checkIfExists: true),
-            report_gene_panel_files
+            report_gene_panel_files,
+            report_hmf_files
         )
     }
 

@@ -186,6 +186,16 @@
 
 ## Resources
 
+- [Hartwig Medical Foundation (WiGiTS / oncoanalyser) resources](https://github.com/hartwigmedical/hmftools)
+
+  Optional, user-supplied (`--report_hmf_*`): the driver gene panel, known fusions, hotspots,
+  actionable coding panel and Ensembl data cache of the oncoanalyser resource bundle, whose
+  reporting rules the report's HMF section re-implements from PURPLE and LINX.
+
+  > Priestley P, Baber J, Lolkema MP, et al. Pan-cancer whole-genome analyses of metastatic solid tumours. Nature. 2019;575(7781):210-216. doi: 10.1038/s41586-019-1689-y
+
+  > Shale C, Cameron DL, Baber J, et al. Unscrambling cancer genomes via integrated analysis of structural variation and copy number. Cell Genomics. 2022;2(4):100112. doi: 10.1016/j.xgen.2022.100112
+
 - [AlphaMissense Database](https://console.cloud.google.com/storage/browser/dm_alphamissense)
 
   VEP plugin data, fetched by default via `--vep_alphamissense` (GRCh38) or

@@ -516,9 +516,15 @@ calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on ch
 
 #### Report Options
 
-| Parameter             | Description                                                                                                                                                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--report_gene_panel` | Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered |
+| Parameter                       | Description                                                                                                                                                                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--report_gene_panel`           | Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered |
+| `--report_hmf_resource_dir`     | Root of a Hartwig (oncoanalyser) GRCh38 resource bundle; turns on the report's [HMF driver annotation](#hmf-driver-annotation), taking every file from the bundle's standard layout. Default = off                                             |
+| `--report_hmf_driver_panel`     | `DriverGenePanel.38.tsv`; with `--report_hmf_ensembl_data_dir`, turns on the HMF driver annotation (overrides the bundle's). Default = off                                                                                                   |
+| `--report_hmf_ensembl_data_dir` | The bundle's `common/ensembl_data` directory (`ensembl_gene_data.csv`, `ensembl_trans_exon_data.csv`); required for the HMF annotation (overrides the bundle's). Default = off                                                               |
+| `--report_hmf_known_fusions`    | `known_fusion_data.38.csv`: known-fusion matching of the SV calls (optional; overrides the bundle's). Default = off                                                                                                                          |
+| `--report_hmf_hotspots`         | `KnownHotspots.somatic.38.vcf.gz`: hotspot matching of small variants (optional; overrides the bundle's). Default = off                                                                                                                     |
+| `--report_hmf_actionable_bed`   | `ActionableCodingPanel.38.bed(.gz)`: a region flag on small variants (optional; absent from bundle v3; overrides the bundle's). Default = off                                                                                                |
 
 The report is rendered by [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) from
 `ghcr.io/ljwharbers/lrsomatic-report` (`ghcr.io/ljwharbers/lrsomatic-report-sif` under
@@ -599,7 +605,49 @@ process {
 This replaces the `--gene-panel` arguments the pipeline builds from `--report_gene_panel`, so name
 the panels in the same string instead: a builtin as `--gene-panel 'lymphoid'`, a panel file given
 to `--report_gene_panel` as `--gene-panel 'gene_panels/<file name>'` (keep `--report_gene_panel`
-set, since it is what stages the file).
+set, since it is what stages the file). The `--hmf-*` arguments are built by the module itself, so
+`ext.args` does not affect them.
+
+##### HMF driver annotation
+
+The report can apply the [Hartwig Medical Foundation](https://github.com/hartwigmedical/hmftools)
+driver catalogue used by [oncoanalyser](https://nf-co.re/oncoanalyser): its driver gene panel,
+known hotspots and known fusions. The section is off unless you give the resources, which you
+download yourself (they are not distributed with the pipeline; the oncoanalyser documentation
+lists the bundle URLs and the resource files carry no explicit licence, so check Hartwig's terms
+before redistributing them). Bundles v2.x and v3.x are both read. **GRCh38 only:** with any other
+`--genome` (including a custom `--fasta`) the pipeline warns at launch and renders the report
+without it.
+
+```bash
+    --genome GRCh38 \
+    --report_hmf_resource_dir /path/to/hmf_pipeline_resources.38_v2.2.0--3
+```
+
+`--report_hmf_resource_dir` picks up `common/DriverGenePanel.38.tsv`, `common/ensembl_data/`,
+`dna/sv/known_fusion_data.38.csv`, `dna/variants/KnownHotspots.somatic.38.vcf.gz` and, where
+present, `dna/variants/ActionableCodingPanel.38.bed(.gz)`. Any `--report_hmf_*` file parameter
+overrides that one file, and they can be given without a bundle directory. The driver panel and
+the Ensembl data cache are required (an error at launch otherwise); the other three each switch
+their part of the section on.
+
+What the report does with them (the
+[report's README](https://github.com/ljwharbers/lrsomatic_report#hmf-driver-annotation) has every
+rule and threshold):
+
+- **Small variants** on a panel gene's canonical transcript are reported per the panel's
+  `reportMissense` / `reportNonsense` / `reportSplice` / `reportSomaticHotspot` flags.
+- **Copy number**: amplification (minimum CN > 3 × ploidy) and deletion (minimum CN < 0.5) are
+  called from ASCAT and from Wakhan separately, and every deletion called by Severus or SAVANA
+  over a deletion-flagged gene is listed too. Each source can be switched off in the browser.
+- **Fusions**: Severus and SAVANA breakends are matched to HMF's known pairs, promiscuous partners
+  (with exon ranges), exon deletions/duplications and IG/enhancer regions, with a phase check.
+- The driver panel is also added to the report's gene lists as `hmf_driver`.
+
+It re-implements HMF's reporting rules on the long-read calls; it is not PURPLE or LINX. There is
+no dNdS driver likelihood, no biallelic or germline reporting and no SV chaining, and
+`ActionableCodingPanel` is only a region flag (HMF uses it as a calling-sensitivity tier, not as
+actionability evidence).
 
 #### WAKHAN Options
 

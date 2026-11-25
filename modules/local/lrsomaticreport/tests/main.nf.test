@@ -30,6 +30,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -63,6 +64,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -107,6 +109,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -151,6 +154,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -190,6 +194,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [] // gene_panels
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -225,6 +230,7 @@ nextflow_process {
                 ]
                 input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
                 input[2] = [ file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true) ]
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -265,6 +271,7 @@ nextflow_process {
                     file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel.tsv", checkIfExists: true),
                     file("${projectDir}/modules/local/lrsomaticreport/tests/test_panel_b.tsv", checkIfExists: true)
                 ]
+                input[3] = [ [], [], [], [], [] ] // HMF resources: off
                 """
             }
         }
@@ -283,6 +290,83 @@ nextflow_process {
                 // SMAD4 and VHL are in no builtin panel, so they prove test_panel_b was read
                 { assert report_text.contains("SMAD4") },
                 { assert report_text.contains("VHL") },
+                { assert report_text.contains("TP53") }
+            )
+        }
+
+    }
+
+    // The HMF resources reach render_report.R as --hmf-* flags, each from its own staging dir
+    test("HMF resources staged - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: true, sex: 'male' ],
+                    [], [], [], [], [], [], [], [], []
+                ]
+                input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
+                input[2] = [] // gene_panels
+                input[3] = [
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/common/DriverGenePanel.38.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/common/ensembl_data", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/dna/sv/known_fusion_data.38.csv", checkIfExists: true),
+                    [], // hotspots: absent
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/dna/variants/ActionableCodingPanel.38.bed", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def flags = path(process.out.report.get(0).get(1)).text.trim()
+            assertAll(
+                { assert flags.startsWith("--run-mode paired") },
+                { assert flags.contains('--hmf-driver-panel "hmf/driver_panel/DriverGenePanel.38.tsv"') },
+                { assert flags.contains('--hmf-ensembl-data-dir "hmf/ensembl/ensembl_data"') },
+                { assert flags.contains('--hmf-known-fusions "hmf/known_fusions/known_fusion_data.38.csv"') },
+                { assert flags.contains('--hmf-actionable-bed "hmf/actionable_bed/ActionableCodingPanel.38.bed"') },
+                { assert !flags.contains("--hmf-hotspots") }
+            )
+        }
+
+    }
+
+    // Synthetic HMF resources (tests/hmf/README.md): the section and the hmf_driver gene list render; without them
+    // (every other render test) the report has neither
+    test("HMF resources - real render") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test', paired_data: null, sex: 'male' ],
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/test_SOMATIC_VEP.vcf.gz", checkIfExists: true),
+                    [], [], [], [], [], [], [], []
+                ]
+                input[1] = file("${projectDir}/assets/gene_lists", checkIfExists: true)
+                input[2] = [] // gene_panels
+                input[3] = [
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/common/DriverGenePanel.38.tsv", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/common/ensembl_data", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/dna/sv/known_fusion_data.38.csv", checkIfExists: true),
+                    file("${projectDir}/modules/local/lrsomaticreport/tests/hmf/dna/variants/KnownHotspots.somatic.38.vcf.gz", checkIfExists: true),
+                    []
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def report_text = path(process.out.report.get(0).get(1)).text
+            assertAll(
+                { assert report_text.contains('id="hmf-drivers"') },
+                { assert report_text.contains("hmf_driver") },
                 { assert report_text.contains("TP53") }
             )
         }

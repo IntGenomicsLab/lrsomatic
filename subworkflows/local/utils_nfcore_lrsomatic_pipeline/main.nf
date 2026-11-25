@@ -244,6 +244,7 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateHmfReportParams()
     validateCondaSupport(workflow.profile)
     validateSmallvarCallers()
     validateSvAnnotationParams()
@@ -416,6 +417,75 @@ def validateReportGenePanels() {
         .keySet()
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// HMF resource files for the report's optional driver annotation, as [slot: path-or-null] in the module's input order.
+// An explicit --report_hmf_* file wins; otherwise the slot is taken from --report_hmf_resource_dir's standard
+// oncoanalyser layout when that file exists there (ActionableCodingPanel is absent from bundle v3).
+//
+def hmfReportFiles() {
+    def layout = [
+        driver_panel    : [params.report_hmf_driver_panel,     ['common/DriverGenePanel.38.tsv']],
+        ensembl_data_dir: [params.report_hmf_ensembl_data_dir, ['common/ensembl_data']],
+        known_fusions   : [params.report_hmf_known_fusions,    ['dna/sv/known_fusion_data.38.csv']],
+        hotspots        : [params.report_hmf_hotspots,         ['dna/variants/KnownHotspots.somatic.38.vcf.gz']],
+        actionable_bed  : [params.report_hmf_actionable_bed,   ['dna/variants/ActionableCodingPanel.38.bed.gz', 'dna/variants/ActionableCodingPanel.38.bed']],
+    ]
+    def root = params.report_hmf_resource_dir ? params.report_hmf_resource_dir.toString().replaceAll('/+$', '') : null
+    return layout.collectEntries { slot, spec ->
+        def (explicit, relpaths) = spec
+        def path = explicit ?: (root ? relpaths.collect { rel -> "${root}/${rel}".toString() }.find { cand -> file(cand).exists() } : null)
+        return [slot, path ? path.toString() : null]
+    }
+}
+
+//
+// Whether any HMF report parameter was given
+//
+def hmfAnnotationRequested() {
+    return [params.report_hmf_resource_dir, params.report_hmf_driver_panel, params.report_hmf_ensembl_data_dir,
+            params.report_hmf_known_fusions, params.report_hmf_hotspots, params.report_hmf_actionable_bed].any { p -> p }
+}
+
+//
+// Whether the report gets the HMF annotation: requested, the report runs, GRCh38 (the resources' build), and the two
+// required files resolve. The workflow gate and validateHmfReportParams() both call this, so they cannot drift apart.
+//
+def hmfAnnotationOk() {
+    if (params.skip_report || !hmfAnnotationRequested() || params.genome != 'GRCh38') {
+        return false
+    }
+    def f = hmfReportFiles()
+    return (f.driver_panel && f.ensembl_data_dir) as boolean
+}
+
+//
+// Validate the HMF report parameters at launch: skipped with a warning off GRCh38, an error when the driver panel or
+// the Ensembl cache cannot be found (each other file is optional)
+//
+def validateHmfReportParams() {
+    if (params.skip_report || !hmfAnnotationRequested()) {
+        return
+    }
+    if (params.genome != 'GRCh38') {
+        log.warn "The HMF driver annotation will be skipped: its resources are GRCh38 and the genome is '${params.genome ?: 'custom (--fasta)'}'. " +
+            "Run with --genome GRCh38 to use it."
+        return
+    }
+    def f = hmfReportFiles()
+    if (params.report_hmf_resource_dir && !file(params.report_hmf_resource_dir).exists()) {
+        error("--report_hmf_resource_dir not found: '${params.report_hmf_resource_dir}'.")
+    }
+    def missing = ['driver_panel': '--report_hmf_driver_panel', 'ensembl_data_dir': '--report_hmf_ensembl_data_dir']
+        .findAll { slot, _flag -> !f[slot] }
+    if (missing) {
+        error("The HMF driver annotation needs the driver panel and the Ensembl data cache: ${missing.values().join(' and ')} " +
+            "(or a --report_hmf_resource_dir holding common/DriverGenePanel.38.tsv and common/ensembl_data).")
+    }
+    if (!file("${f.ensembl_data_dir}/ensembl_trans_exon_data.csv").exists() || !file("${f.ensembl_data_dir}/ensembl_gene_data.csv").exists()) {
+        error("The HMF Ensembl data cache '${f.ensembl_data_dir}' lacks ensembl_gene_data.csv or ensembl_trans_exon_data.csv.")
     }
 }
 

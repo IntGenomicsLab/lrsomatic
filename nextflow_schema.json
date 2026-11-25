@@ -722,6 +722,53 @@
                     "type": "string",
                     "description": "Gene panel(s) applied when the report opens, as a comma-separated list: 'none' for no filtering, builtin panel names (e.g. 'lymphoid'), and/or paths to TSVs with a 'gene' column. Several panels are unioned; default (unset) is unfiltered.",
                     "help_text": "Every builtin panel is embedded in the report as a checkbox, so this only sets the initial selection. An entry is read as a panel file if it contains a '/' or ends in '.tsv', and as a builtin panel name otherwise. 'none' cannot be combined with a real panel, and two panel files sharing a base name cannot be combined."
+                },
+                "report_hmf_resource_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Root of a Hartwig (oncoanalyser) resource bundle, GRCh38. Turns on the report's optional HMF driver annotation, taking its files from the bundle's standard layout.",
+                    "help_text": "Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. GRCh38 only: with any other --genome the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_driver_panel": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "HMF DriverGenePanel.38.tsv. Turns on the report's HMF driver annotation (with --report_hmf_ensembl_data_dir) and adds the panel as the selectable gene list 'hmf_driver'.",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_ensembl_data_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "HMF Ensembl data cache directory (the bundle's common/ensembl_data, with ensembl_gene_data.csv and ensembl_trans_exon_data.csv). Required for the HMF driver annotation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_known_fusions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "HMF known_fusion_data.38.csv: known-fusion matching of the SV calls in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_hotspots": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf(\\.gz)?$",
+                    "description": "HMF KnownHotspots.somatic.38.vcf.gz: hotspot matching of small variants in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_actionable_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "HMF ActionableCodingPanel.38.bed(.gz): flags small variants in its regions in the report's HMF section (optional; a calling-sensitivity region set, not an actionability call).",
+                    "fa_icon": "fas fa-file"
                 }
             }
         },
