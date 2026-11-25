@@ -1,0 +1,186 @@
+nextflow_workflow {
+
+    name "Test PREPARE_ALIGNED with the pipeline's conf/modules.config (--skip_alignment)"
+    script "./prepare_aligned.nf"
+    workflow "PREPARE_ALIGNED_PIPELINE_CONFIG"
+
+    tag "modules"
+    tag "prepare_aligned"
+    tag "small"
+
+    // CHM13-aligned test reads, and the reference they were aligned to
+    def reads_url = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/headered_H2009_ONT_UL_CHM13_chr19_downsampled.bam'
+    def chm13_url = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz'
+
+    test("PacBio and ONT, BAM - read group replaced, phasing tags dropped, PacBio kinetics dropped, alignment kept") {
+
+        setup {
+            run("ALIGNED_FIXTURE") {
+                script "./prepare_aligned.nf"
+                process {
+                    """
+                    input[0] = [ [ id:'chm13' ], file('${reads_url}', checkIfExists: true), file('${chm13_url}', checkIfExists: true) ]
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                aligned_format = 'bam'
+            }
+            workflow {
+                """
+                input[0] = ALIGNED_FIXTURE.out.bam.flatMap { _meta, bam -> [
+                    [ [ id:'pb', type:'tumor', replicate:1, platform:'pb' ], bam ],
+                    [ [ id:'ont', type:'normal', replicate:2, platform:'ont',
+                        basecall_model:'dna_r10.4.1_e8.2_400bps_sup@v5.0.0' ], bam ]
+                ] }
+                input[1] = ALIGNED_FIXTURE.out.fasta_fai
+                """
+            }
+        }
+
+        then {
+            def out = workflow.out.alignment.collectEntries { meta, bam -> [ (meta.id): BamTags.read(bam.toString()) ] }
+            def with = { id, tag -> out[id].records.count { rec -> tag in rec.tags } }
+            def header = { id, type -> out[id].header.readLines().findAll { line -> line.startsWith(type) } }
+            assertAll(
+                { assert workflow.success },
+                { assert out.keySet() == [ 'pb', 'ont' ] as Set },
+                { assert out.pb.records.size() == 200 && out.ont.records.size() == 200 },
+                { assert out.pb.records.count { rec -> (rec.flag & 0x100) != 0 } == 10 },
+                { assert workflow.out.index.collect { _meta, index -> file(index.toString()).name }.sort() ==
+                    [ 'ont_normal_rep2_prepared.bam.bai', 'pb_tumor_rep1_prepared.bam.bai' ] },
+                { assert header('pb', '@RG') == [ '@RG\tID:pb_tumor_rep1\tSM:pb\tLB:pb_tumor\tPL:PACBIO' ] },
+                { assert header('ont', '@RG') == [ '@RG\tID:ont_normal_rep2\tSM:ont\tLB:ont_normal\tPL:ONT\tDS:basecall_model=dna_r10.4.1_e8.2_400bps_sup@v5.0.0' ] },
+                { assert header('pb', '@HD').every { line -> line.contains('SO:coordinate') } },
+                { assert with('pb', 'RG') == 200 && with('ont', 'RG') == 200 },
+                { assert out.pb.records.every { rec -> rec.tags.size() == (rec.tags as Set).size() } },
+                { assert [ 'HP', 'PS', 'PQ', 'PC' ].collect { tag -> with('pb', tag) + with('ont', tag) } == [ 0, 0, 0, 0 ] },
+                { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with('pb', tag) } == [ 0, 0, 0, 0 ] },
+                { assert [ 'fi', 'fp', 'ri', 'rp' ].collect { tag -> with('ont', tag) } == [ 200, 200, 200, 200 ] },
+                // The alignment is the user's: minimap2's own tags and the read-level tags stay
+                { assert [ 'tp', 'fn', 'rq' ].collect { tag -> with('pb', tag) } == [ 200, 200, 200 ] }
+            )
+        }
+    }
+
+    test("--save_secondary_alignment false - secondary records dropped") {
+
+        setup {
+            run("ALIGNED_FIXTURE") {
+                script "./prepare_aligned.nf"
+                process {
+                    """
+                    input[0] = [ [ id:'chm13' ], file('${reads_url}', checkIfExists: true), file('${chm13_url}', checkIfExists: true) ]
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                aligned_format           = 'bam'
+                save_secondary_alignment = false
+            }
+            workflow {
+                """
+                input[0] = ALIGNED_FIXTURE.out.bam.map { _meta, bam -> [ [ id:'nosec', type:'tumor', replicate:1, platform:'ont' ], bam ] }
+                input[1] = ALIGNED_FIXTURE.out.fasta_fai
+                """
+            }
+        }
+
+        then {
+            def records = BamTags.read(workflow.out.alignment[0][1].toString()).records
+            assertAll(
+                { assert workflow.success },
+                { assert records.size() == 190 },
+                { assert records.every { rec -> (rec.flag & 0x100) == 0 } }
+            )
+        }
+    }
+
+    test("CRAM output - CRAM 3.0 with its index") {
+
+        setup {
+            run("ALIGNED_FIXTURE") {
+                script "./prepare_aligned.nf"
+                process {
+                    """
+                    input[0] = [ [ id:'chm13' ], file('${reads_url}', checkIfExists: true), file('${chm13_url}', checkIfExists: true) ]
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                aligned_format = 'cram'
+            }
+            workflow {
+                """
+                input[0] = ALIGNED_FIXTURE.out.bam.map { _meta, bam -> [ [ id:'ontc', type:'tumor', replicate:1, platform:'ont' ], bam ] }
+                input[1] = ALIGNED_FIXTURE.out.fasta_fai
+                """
+            }
+        }
+
+        then {
+            def cram = file(workflow.out.alignment[0][1].toString())
+            def magic = (cram.bytes[0..5] as List).collect { b -> b as int }
+            // No reference given: only an embedded one lets ClairS, Severus and SAVANA read the file
+            def reader = htsjdk.samtools.SamReaderFactory.makeDefault()
+                .validationStringency(htsjdk.samtools.ValidationStringency.SILENT)
+                .open(new File(cram.toString()))
+            def records = reader.iterator().toList().size()
+            reader.close()
+            assertAll(
+                { assert workflow.success },
+                { assert cram.name == 'ontc_tumor_rep1_prepared.cram' },
+                { assert records == 200 },
+                // 'CRAM', major 3, minor 0: Clair3 and Verdict cannot decode CRAM 3.1
+                { assert magic == [ 67, 82, 65, 77, 3, 0 ] },
+                { assert file(workflow.out.index[0][1].toString()).name == 'ontc_tumor_rep1_prepared.cram.crai' }
+            )
+        }
+    }
+
+    test("reads aligned to another assembly - fails with the differing contigs") {
+
+        setup {
+            run("ALIGNED_FIXTURE") {
+                script "./prepare_aligned.nf"
+                process {
+                    """
+                    input[0] = [ [ id:'grch38' ], file('${reads_url}', checkIfExists: true),
+                        file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true) ]
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                aligned_format = 'bam'
+            }
+            workflow {
+                """
+                input[0] = ALIGNED_FIXTURE.out.bam.map { _meta, bam -> [ [ id:'wrongref', type:'tumor', replicate:1, platform:'ont' ], bam ] }
+                input[1] = ALIGNED_FIXTURE.out.fasta_fai
+                """
+            }
+        }
+
+        then {
+            // Nextflow 26.10 prints the console log to stderr, earlier versions to stdout
+            def log = workflow.stdout + workflow.stderr
+            assertAll(
+                { assert workflow.failed },
+                { assert log.any { line -> line.contains('was not aligned to --fasta') } },
+                { assert log.any { line -> line.contains('chr19: length 61707364 in the input') } }
+            )
+        }
+    }
+}
