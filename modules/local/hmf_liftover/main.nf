@@ -41,7 +41,11 @@ process HMF_LIFTOVER {
     """
 
     stub:
-    def touch = { dir, f -> f ? "touch hmf_chm13/${dir}/${f.name}${dir == 'dna/variants' && f.name.endsWith('.vcf') ? '.gz' : ''}" : '' }
+    // Base names: a stageAs path's name is its staged relative path (in/<slot>/<file>)
+    def touch = { dir, f ->
+        def base = f ? f.toString().tokenize('/').last() : null
+        base ? "touch hmf_chm13/${dir}/${base}${dir == 'dna/variants' && base.endsWith('.vcf') ? '.gz' : ''}" : ''
+    }
     """
     mkdir -p hmf_chm13/common/ensembl_data hmf_chm13/dna/sv hmf_chm13/dna/variants
     echo t2t > hmf_chm13/common/ensembl_data/REFERENCE
