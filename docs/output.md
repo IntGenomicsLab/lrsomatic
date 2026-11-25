@@ -991,7 +991,7 @@ The report reads these published outputs of the sample (a skipped tool's section
 | ecDNA                     | `ecdna/amplicon_classifier/{sample}_{amplicon_classification_profiles,gene_list,result_table}.tsv`, `ecdna/coral/{sample}_CNV_SEEDS.bed`, `ecdna/coral/{reconstruct,cycles}/{sample}_amplicon_summary.txt`, `ecdna/coral/plots/*_{graph,cycles}.png` |
 | Mutational signatures     | `signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/`, `signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all`                                                                            |
 | QC and phasing            | mosdepth, cramino and samtools files under `qc/{tumor,normal}/`, `qc/whatshap_stats/{sample}_whatshap_stats.tsv`                                                                                                                                     |
-| HMF driver annotation     | Only with `--report_hmf_*` ([usage](usage.md#hmf-driver-annotation)): the HMF resource files, plus the small-variant, SV and copy-number files above                                                                                                  |
+| HMF driver annotation     | Only with `--report_hmf_*` ([usage](usage.md#hmf-driver-annotation)): the HMF resource files, plus the small-variant, SV and copy-number files above                                                                                                 |
 
 The pipeline passes each sample's run mode, `--run-mode paired` for a tumour/normal pair and `--run-mode tumour_only` otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.
 
@@ -1114,15 +1114,15 @@ Sample rows are named per BAM: `{sample}_tumor` and `{sample}_normal` carry the 
 │   ├── raw_task_disk_usage.tsv
 ```
 
-| File                                  | Description                                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run |
-| `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                               |
-| `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                     |
+| File                                  | Description                                                                                                                                                                                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run                                                                                                                                                                                                  |
+| `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                                                                                                                                                                                                                                |
+| `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                                                                                                                                                                                                                      |
 | `hmf_liftover/hmf_chm13/`             | on a CHM13 run with HMF resources: the GRCh38 HMF resources lifted to CHM13 (`HMF_LIFTOVER`), laid out like an oncoanalyser bundle with `common/ensembl_data/REFERENCE` = `t2t`, and `hmf_liftover_report.tsv` counting what was lifted and dropped; reusable as `--report_hmf_resource_dir` |
-| `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                   |
-| `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                          |
-| `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                               |
-| `raw_task_disk_usage.tsv`             | per-task disk usage across all pipeline tasks                                               |
+| `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                                                                                                                                                                                                                    |
+| `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                                                                                                                                                                                                                           |
+| `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                                                                                                                                                                                                                                |
+| `raw_task_disk_usage.tsv`             | per-task disk usage across all pipeline tasks                                                                                                                                                                                                                                                |
 
 </details>
