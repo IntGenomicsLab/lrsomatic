@@ -139,7 +139,9 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.success },
-                { assert (function.stdout + function.stderr).any { line -> line.contains('HMF driver annotation will be skipped') && line.contains('CHM13') } }
+                // log.warn goes to the Nextflow log, not to stdout
+                { assert path("${metaDir}/nextflow.log").text.contains('HMF driver annotation will be skipped') },
+                { assert path("${metaDir}/nextflow.log").text.contains("genome is 'CHM13'") }
             )
         }
     }
@@ -189,7 +191,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.success },
-                { assert !(function.stdout + function.stderr).any { line -> line.contains('HMF') } }
+                { assert !path("${metaDir}/nextflow.log").text.contains('HMF driver annotation') }
             )
         }
     }
