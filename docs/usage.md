@@ -84,8 +84,8 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 
 ### CRAM input
 
-The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned, so it
-can be unaligned or aligned to any assembly. An **unaligned** CRAM (e.g. `samtools reset -O cram`) needs no reference.
+The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned (unless
+[`--skip_alignment`](#skipping-alignment) is set), so it can be unaligned or aligned to any assembly. An **unaligned** CRAM (e.g. `samtools reset -O cram`) needs no reference.
 An **aligned** CRAM can only be read with the reference it was written against:
 
 - a CRAM with the reference embedded (`--output-fmt-option embed_ref=1`, as lrsomatic writes) always works;
@@ -152,6 +152,37 @@ names its basecalling model (Dorado's `DS:basecall_model=...`), the model is wri
 columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
 groups of the earlier run (`..._rep1`, `..._rep2`, ...) are collapsed into one, so give the replicates as separate
 rows (from the original input files) if you need them kept apart.
+
+### Skipping alignment
+
+`--skip_alignment` uses the input files as the alignment instead of realigning them with minimap2, which saves the
+most expensive step of the run. It is meant for files that were already aligned to the pipeline reference. We still
+recommend realigning: the variant-calling models assume minimap2 alignments made with the pipeline's settings, and
+other aligners or presets can change the calls.
+
+Every input file must meet all of these conditions, or the run stops:
+
+- it is aligned (has `@SQ` lines);
+- every `@SQ` contig is in `--fasta` with the same length. The check uses names and lengths only, so a masked or
+  otherwise edited copy of the same assembly passes;
+- it is coordinate-sorted (`SO:coordinate` in the `@HD` line);
+- it is not read by fibertools-rs, which runs before alignment. This excludes `fiber` = `y` rows and PacBio rows with
+  kinetics while m6A is predicted. Use `--skip_fiber` or `--skip_m6a` to run those rows without the Fiber-seq or m6A steps, or run without
+  `--skip_alignment`.
+
+The files are not used as they are. `PREPARE_ALIGNED` makes one samtools pass over each file that:
+
+- replaces its read groups with the pipeline's own (`@RG ID:<sample>_<type>_rep<replicate>`, with
+  `DS:basecall_model=` for ONT input whose header names the model, as after alignment);
+- drops the phasing tags `HP`, `PS`, `PQ` and `PC`, and for PacBio the kinetics unless `--keep_kinetic_data` is set,
+  as the realignment does (see [Aligned input](#aligned-input));
+- writes `--aligned_format` (CRAM 3.0 with the reference embedded, by default) and indexes it.
+
+An aligned CRAM input is decoded as described in [CRAM input](#cram-input). All other records and tags are kept as they
+are, including hard-clipped supplementary alignments and the aligner's own tags. Secondary alignments are kept unless
+`--save_secondary_alignment false` is set, as after alignment. Replicates of
+a sample are merged as usual. `CRAMINO_PRE` and `NANOPLOT_PRE` do not run, since the input is the alignment that
+`CRAMINO_POST` reports on.
 
 ### PacBio kinetics
 
@@ -435,12 +466,13 @@ symbol and the protein variant (e.g. `V2L`) split into those three columns; see 
 
 #### Minimap2 Options
 
-| Parameter                    | Description                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                |
-| `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`             |
-| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true` |
-| `--aligned_format`           | `cram` or `bam`: format of the aligned and haplotagged reads. Default = `cram` (see below)  |
+| Parameter                    | Description                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--minimap2_ont_model`       | specifies which model to use minimap2 with for ONT samples. Default = `null`                                          |
+| `--minimap2_pb_model`        | specifies which model to use minimap2 with for PacBio samples. Default = `null`                                       |
+| `--save_secondary_alignment` | A boolean to specify if secondary alignments are kept in aligned bam file. Default = `true`                           |
+| `--aligned_format`           | `cram` or `bam`: format of the aligned and haplotagged reads. Default = `cram` (see below)                            |
+| `--skip_alignment`           | Use the input alignments instead of realigning them; see [Skipping alignment](#skipping-alignment). Default = `false` |
 
 `--aligned_format cram` writes CRAM 3.0 with the reference embedded, from alignment onwards and in `bamfiles/`. On
 long reads this is a third (ONT) to two thirds (PacBio Revio) smaller than BAM, with identical records and the same
@@ -795,37 +827,37 @@ Clair3 calls an SNV and a deletion starting at the same base), all of them are
 kept; only exact duplicates (same `POS`, `REF` and `ALT`) are dropped. Records are
 not split in this mode.
 
-Whatever the callers and combine mode, each arm is joined to one record per
-position (`bcftools norm -m +any`) before phasing, since LongPhase cannot take two
-records at one `POS`.
+Whatever the callers and combine mode, the germline set is joined to one record
+per position (`bcftools norm -m +any`) before phasing, since LongPhase cannot
+take two records at one `POS`. The somatic set keeps the callers' records.
 
-#### Germline and somatic provenance
+#### Somatic phasing
 
-Germline and somatic small variants are merged into one VCF for somatic phasing,
-because Longphase needs all variant sites in a single file to produce consistent
-phase blocks. The somatic arm is then recovered from the phased result by an
-`INFO/SOMATIC` flag stamped on each arm before the merge, not by position, since a
-germline record at the same coordinate as a somatic call would otherwise be kept.
-Tagging leaves `FILTER` unchanged.
+LongPhase phases the germline variants (on the normal, or on the tumour without
+one), and every BAM is haplotagged from that phased germline VCF. Somatic
+variants are then phased from the haplotagged tumour reads, so their haplotype
+and phase set agree with the germline VCF and with the `HP`/`PS` read tags:
 
-Longphase phases by position, so a germline record at the position of a somatic
-call would lend the somatic record its genotype and phase set. Germline records
-at the position of any somatic call with an alternate genotype are therefore
-left out of somatic phasing. Somatic records without an alternate genotype
-(`0/0` or `./.`, present only with `--smallvar_filter_pass false`) are not
-phased: they are added back to `somatic_smallvariants.vcf.gz` unchanged.
-
-Three INFO fields carry this provenance:
-
-| Field         | Meaning                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `SOMATIC`     | Record came from the somatic call set                                                                                 |
-| `GERMLINE`    | Record came from the germline call set                                                                                |
-| `ORIG_FILTER` | Original `FILTER` of ClairS-TO germline records, before normalisation to `PASS`. Multiple filters are joined with `,` |
-
-Germline calls dropped from `variants/phased/somatic_smallvariants.vcf.gz` are not
-lost: they remain in `variants/phased/germline_smallvariants.vcf.gz`, in
-`vep/germline/`, and in the unfiltered per-caller VCFs under `variants/<caller>/`.
+- For each heterozygous somatic SNV, deletion or insertion, the reads carrying
+  the ALT allele are counted per haplotype (`HP`) and phase block (`PS`). Only
+  ALT reads count: reference reads come from both haplotypes and from normal
+  cells, so they say nothing about where the mutation sits.
+- With at least 3 tagged ALT reads, of which at least 80 % share one `HP` and
+  `PS`, the record gets `GT` `1|0` (`HP` 1) or `0|1` (`HP` 2) and that `PS`,
+  the germline block's ID.
+- Tumour-only samples also need at least 3 tagged reads (any allele) on the
+  other haplotype of that phase block at the site. Without a normal, the
+  germline phase is built from tumour reads, and in some regions haplotagging
+  puts reads of both haplotypes on one `HP`. A site where every read carries
+  the same `HP` is then no evidence, and phasing it would be close to a coin
+  flip. Paired samples are haplotagged from the normal's phase, so a site with
+  all tumour reads on one haplotype (loss of heterozygosity) is phased as usual.
+- Otherwise the record is left unphased, as are homozygous, multi-allelic,
+  complex and `0/0`/`./.` records. No record is removed.
+- `FORMAT/AHP` gives the ALT reads on haplotype 1, on haplotype 2 and without a
+  haplotag, and `FORMAT/OHP` the tagged reads on the other haplotype, so an
+  unphased record shows why (no tagged reads, reads split across the
+  haplotypes, or no reads on the other haplotype).
 
 #### PON Options
 

@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "prepare_aligned"
+description: |
+  Prepare user-aligned reads for --skip_alignment. Checks that every contig of the input is in the pipeline
+  reference with the same length and that the input is coordinate-sorted. Then it replaces the read groups with the
+  pipeline's own, drops the tags given in ext.args (old phasing, PacBio kinetics), writes BAM or CRAM and indexes it.
+keywords:
+  - bam
+  - cram
+  - read group
+  - aligned
+  - long-read
+tools:
+  - "samtools":
+      description: "Tools for manipulating next-generation sequencing data"
+      homepage: "http://www.htslib.org/"
+      documentation: "http://www.htslib.org/doc/samtools.html"
+      tool_dev_url: "https://github.com/samtools/samtools"
+      doi: "10.1093/bioinformatics/btp352"
+      licence: ["MIT"]
+      identifier: biotools:samtools
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', type:'tumor', replicate:1 ]`
+    - reads:
+        type: file
+        description: Coordinate-sorted BAM or CRAM aligned to `fasta`
+        pattern: "*.{bam,cram}"
+        ontologies:
+          - edam: "http://edamontology.org/format_2572"
+          - edam: "http://edamontology.org/format_3462"
+  - - meta2:
+        type: map
+        description: |
+          Groovy Map containing reference information
+          e.g. `[ id:'fasta' ]`
+    - fasta:
+        type: file
+        description: Pipeline reference FASTA, used for the contig check, for writing CRAM and for decoding a CRAM whose M5s match it
+        pattern: "*.{fa,fasta,fna}"
+        ontologies:
+          - edam: "http://edamontology.org/format_1929"
+    - fai:
+        type: file
+        description: FASTA index of `fasta`
+        pattern: "*.fai"
+        ontologies: []
+  - out_format:
+      type: string
+      description: Output format, 'bam' or 'cram'
+
+output:
+  alignment:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. `[ id:'sample1', type:'tumor', replicate:1 ]`
+      - ${prefix}.${out_ext}:
+          type: file
+          description: Coordinate-sorted BAM or CRAM with the pipeline's read group
+          pattern: "*.{bam,cram}"
+          ontologies:
+            - edam: "http://edamontology.org/format_2572"
+            - edam: "http://edamontology.org/format_3462"
+  index:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. `[ id:'sample1', type:'tumor', replicate:1 ]`
+      - ${prefix}.${out_ext}.${out_idx}:
+          type: file
+          description: BAI or CRAI index
+          pattern: "*.{bai,crai}"
+          ontologies: []
+  versions_samtools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - samtools:
+          type: string
+          description: The tool name
+      - "samtools version | sed '1!d;s/.* //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - samtools:
+          type: string
+          description: The tool name
+      - "samtools version | sed '1!d;s/.* //'":
+          type: string
+          description: The command used to generate the version of the tool
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "phase_somatic_from_reads"
+description: |
+  Phase somatic small variants from the HP/PS tags of their alt-supporting reads in a haplotagged BAM/CRAM.
+  The haplotags come from the germline phase, so the somatic GT orientation and PS agree with the phased
+  germline VCF and the reads. Heterozygous records with enough tagged alt reads on one haplotype get GT 1|0 or 0|1
+  and that block's PS; FORMAT/AHP records the alt reads on HP1, HP2 and untagged.
+keywords:
+  - phasing
+  - somatic
+  - haplotag
+  - vcf
+tools:
+  - "pysam":
+      description: "Python interface to htslib, running bin/phase_somatic_from_reads.py from this pipeline."
+      homepage: "https://github.com/pysam-developers/pysam"
+      documentation: "https://pysam.readthedocs.io"
+      licence: ["MIT"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - vcf:
+        type: file
+        description: Somatic small-variant VCF, one sample column
+        pattern: "*.{vcf,vcf.gz}"
+    - tbi:
+        type: file
+        description: Index of the VCF
+        pattern: "*.tbi"
+    - bam:
+        type: file
+        description: Tumour alignments haplotagged from the germline phase (HP and PS read tags)
+        pattern: "*.{bam,cram}"
+    - bai:
+        type: file
+        description: Index of the alignments
+        pattern: "*.{bai,crai,csi}"
+  - - meta2:
+        type: map
+        description: Groovy Map for the reference
+    - fasta:
+        type: file
+        description: Reference FASTA (decodes CRAM)
+        pattern: "*.{fa,fasta,fna}"
+  - - meta3:
+        type: map
+        description: Groovy Map for the reference index
+    - fai:
+        type: file
+        description: Reference FASTA index
+        pattern: "*.fai"
+
+output:
+  vcf:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "${prefix}.vcf.gz":
+        type: file
+        description: The input records, phased from the reads where they decide it, with FORMAT/AHP
+        pattern: "*.vcf.gz"
+  tbi:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "${prefix}.vcf.gz.tbi":
+        type: file
+        description: Index of the output VCF
+        pattern: "*.vcf.gz.tbi"
+  versions_pysam:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - pysam:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - pysam:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@ljwharbers"

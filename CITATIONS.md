@@ -114,6 +114,10 @@
 
   > Adzhubei IA, Schmidt S, Peshkin L, Ramensky VE, Gerasimova A, Bork P, Kondrashov AS, Sunyaev SR. A method and server for predicting damaging missense mutations. Nat Methods. 2010 Apr;7(4):248-9. doi: 10.1038/nmeth0410-248.
 
+- [pysam](https://github.com/pysam-developers/pysam)
+
+  > Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, Keane T, Davies RM. HTSlib: C library for reading/writing high-throughput sequencing data. GigaScience. 2021 Feb 16;10(2):giab007. doi: 10.1093/gigascience/giab007.
+
 - [R](https://www.R-project.org/)
 
   > R Core Team. R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna, Austria. https://www.R-project.org/

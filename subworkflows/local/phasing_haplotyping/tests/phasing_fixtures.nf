@@ -63,7 +63,7 @@ process PHASING_FIXTURE_BAM {
 }
 
 // Germline calls on chr19 (bcftools, so the test needs no Clair model) with a header that lists chr19 only, as
-// ClairS-TO writes it, and one heterozygous SNV of them as the somatic VCF.
+// ClairS-TO writes it, and its heterozygous SNVs with at least 3 alt reads as the somatic VCF.
 process PHASING_FIXTURE_VCF {
     tag "$meta.id"
     label 'process_single'
@@ -90,9 +90,8 @@ process PHASING_FIXTURE_VCF {
         exit 1
     fi
     bcftools view -Oz -o germline.vcf.gz --write-index=tbi called.vcf
-    bcftools view -i 'TYPE="snp" && GT="het"' called.vcf \\
-        | awk '/^#/ { print; next } !done { print; done = 1 }' \\
-        | bcftools view -Oz -o somatic.vcf.gz --write-index=tbi
+    # The BAM is ~4x, so take every het SNV with the 3 alt reads PHASE_SOMATIC_FROM_READS needs
+    bcftools view -i 'TYPE="snp" && GT="het" && FORMAT/AD[0:1]>=3' -Oz -o somatic.vcf.gz --write-index=tbi called.vcf
     rm ref.fa ref.fa.fai called.vcf
     """
 }
