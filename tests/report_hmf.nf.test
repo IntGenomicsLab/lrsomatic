@@ -1,0 +1,37 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --report_hmf_resource_dir reaches every sample's report as --hmf-* flags (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The CHM13 skip is covered by tests in utils_nfcore_lrsomatic_pipeline/tests/hmf_report.function.nf.test.
+    // The test profile is GRCh38, so the synthetic bundle (laid out like an oncoanalyser one) is staged; the
+    // stub report records the flags the real run would pass. Bundle files without a slot are not staged.
+
+    test("-profile test, synthetic HMF bundle - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir                  = "$outputDir"
+                report_hmf_resource_dir = "${projectDir}/modules/local/lrsomaticreport/tests/hmf"
+            }
+        }
+
+        then {
+            def reports = file("$outputDir").listFiles().findAll { d -> d.isDirectory() }
+                .collect { d -> file("${d}/report/${d.name}_report.html") }.findAll { f -> f.exists() }
+            assertAll(
+                { assert workflow.success },
+                { assert reports.size() > 0 },
+                { assert reports.every { f -> f.text.contains('--hmf-driver-panel "hmf/driver_panel/DriverGenePanel.38.tsv"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-ensembl-data-dir "hmf/ensembl/ensembl_data"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-known-fusions "hmf/known_fusions/known_fusion_data.38.csv"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-hotspots "hmf/hotspots/KnownHotspots.somatic.38.vcf.gz"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-actionable-bed "hmf/actionable_bed/ActionableCodingPanel.38.bed"') } }
+            )
+        }
+    }
+}
