@@ -865,6 +865,11 @@ See the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for mor
   <td class="param-default-cell"><code class="param-default">cram</code></td>
   <td class="param-desc-cell">File format of the aligned and haplotagged reads, in the work directory and in `bamfiles/`.<div class="param-enum"><strong>Options:</strong> <code class="param-enum-val">cram</code> <code class="param-enum-val">bam</code> </div><details class="param-help"><summary>More info</summary><p>`cram` writes CRAM 3.0 with the reference embedded: 33-69 % smaller than BAM on long reads, readable without the FASTA, and decoded by every tool in the pipeline. `bam` writes BAM with `.bai` indexes, for downstream tools that cannot read CRAM.</p></details></td>
 </tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--skip_alignment</code><br/><span class="param-badge param-type badge-type-boolean">boolean</span></td>
+  <td class="param-default-cell"><code class="param-default">false</code></td>
+  <td class="param-desc-cell">Use the input BAM/CRAM files as the alignment instead of realigning them with minimap2. Advanced; realigning is recommended.<details class="param-help"><summary>More info</summary><p>Every input file must be coordinate-sorted and aligned to `--fasta`: each `@SQ` contig must be in the FASTA with the same length, or the run stops. The pipeline still replaces the read groups, drops old phasing tags (`HP`, `PS`, `PQ`, `PC`) and, unless `--keep_kinetic_data` is set, the PacBio kinetics, drops secondary alignments when `--save_secondary_alignment` is false, and writes `--aligned_format`. Rows that fibertools-rs reads (Fiber-seq rows, and PacBio rows with kinetics while m6A is predicted) are not supported; add `--skip_fiber` / `--skip_m6a` to run them. See the usage documentation, section &#x27;Skipping alignment&#x27;.</p></details></td>
+</tr>
 </tbody>
 </table>
 </div>

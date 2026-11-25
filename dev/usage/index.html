@@ -569,6 +569,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#skipping-alignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skipping alignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pacbio-kinetics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1508,6 +1519,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#skipping-alignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skipping alignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pacbio-kinetics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2348,8 +2370,8 @@
 </table>
 <p>An <a href="../assets/samplesheet.csv">example samplesheet</a> has been provided with the pipeline.</p>
 <h3 id="cram-input">CRAM input<a class="headerlink" href="#cram-input" title="Permanent link">&para;</a></h3>
-<p>The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned, so it
-can be unaligned or aligned to any assembly. An <strong>unaligned</strong> CRAM (e.g. <code>samtools reset -O cram</code>) needs no reference.
+<p>The input reads may be BAM or CRAM, and BAM and CRAM can be mixed in one samplesheet. Every input is realigned (unless
+<a href="#skipping-alignment"><code>--skip_alignment</code></a> is set), so it can be unaligned or aligned to any assembly. An <strong>unaligned</strong> CRAM (e.g. <code>samtools reset -O cram</code>) needs no reference.
 An <strong>aligned</strong> CRAM can only be read with the reference it was written against:</p>
 <ul>
 <li>a CRAM with the reference embedded (<code>--output-fmt-option embed_ref=1</code>, as lrsomatic writes) always works;</li>
@@ -2411,6 +2433,34 @@ names its basecalling model (Dorado's <code>DS:basecall_model=...</code>), the m
 columns of the samplesheet. A merged file fed back in as one row also gets one read group: the per-replicate read
 groups of the earlier run (<code>..._rep1</code>, <code>..._rep2</code>, ...) are collapsed into one, so give the replicates as separate
 rows (from the original input files) if you need them kept apart.</p>
+<h3 id="skipping-alignment">Skipping alignment<a class="headerlink" href="#skipping-alignment" title="Permanent link">&para;</a></h3>
+<p><code>--skip_alignment</code> uses the input files as the alignment instead of realigning them with minimap2, which saves the
+most expensive step of the run. It is meant for files that were already aligned to the pipeline reference. We still
+recommend realigning: the variant-calling models assume minimap2 alignments made with the pipeline's settings, and
+other aligners or presets can change the calls.</p>
+<p>Every input file must meet all of these conditions, or the run stops:</p>
+<ul>
+<li>it is aligned (has <code>@SQ</code> lines);</li>
+<li>every <code>@SQ</code> contig is in <code>--fasta</code> with the same length. The check uses names and lengths only, so a masked or
+  otherwise edited copy of the same assembly passes;</li>
+<li>it is coordinate-sorted (<code>SO:coordinate</code> in the <code>@HD</code> line);</li>
+<li>it is not read by fibertools-rs, which runs before alignment. This excludes <code>fiber</code> = <code>y</code> rows and PacBio rows with
+  kinetics while m6A is predicted. Use <code>--skip_fiber</code> or <code>--skip_m6a</code> to run those rows without the Fiber-seq or m6A steps, or run without
+  <code>--skip_alignment</code>.</li>
+</ul>
+<p>The files are not used as they are. <code>PREPARE_ALIGNED</code> makes one samtools pass over each file that:</p>
+<ul>
+<li>replaces its read groups with the pipeline's own (<code>@RG ID:&lt;sample&gt;_&lt;type&gt;_rep&lt;replicate&gt;</code>, with
+  <code>DS:basecall_model=</code> for ONT input whose header names the model, as after alignment);</li>
+<li>drops the phasing tags <code>HP</code>, <code>PS</code>, <code>PQ</code> and <code>PC</code>, and for PacBio the kinetics unless <code>--keep_kinetic_data</code> is set,
+  as the realignment does (see <a href="#aligned-input">Aligned input</a>);</li>
+<li>writes <code>--aligned_format</code> (CRAM 3.0 with the reference embedded, by default) and indexes it.</li>
+</ul>
+<p>An aligned CRAM input is decoded as described in <a href="#cram-input">CRAM input</a>. All other records and tags are kept as they
+are, including hard-clipped supplementary alignments and the aligner's own tags. Secondary alignments are kept unless
+<code>--save_secondary_alignment false</code> is set, as after alignment. Replicates of
+a sample are merged as usual. <code>CRAMINO_PRE</code> and <code>NANOPLOT_PRE</code> do not run, since the input is the alignment that
+<code>CRAMINO_POST</code> reports on.</p>
 <h3 id="pacbio-kinetics">PacBio kinetics<a class="headerlink" href="#pacbio-kinetics" title="Permanent link">&para;</a></h3>
 <p>PacBio HiFi reads written with <code>--keep-kinetics</code> carry per-base kinetics (<code>fi</code>, <code>fp</code>, <code>ri</code>, <code>rp</code>), which fibertools-rs
 uses to call m6A and which make up a large share of a BAM. By default the pipeline drops them (and the per-subread
@@ -2870,6 +2920,10 @@ symbol and the protein variant (e.g. <code>V2L</code>) split into those three co
 <tr>
 <td><code>--aligned_format</code></td>
 <td><code>cram</code> or <code>bam</code>: format of the aligned and haplotagged reads. Default = <code>cram</code> (see below)</td>
+</tr>
+<tr>
+<td><code>--skip_alignment</code></td>
+<td>Use the input alignments instead of realigning them; see <a href="#skipping-alignment">Skipping alignment</a>. Default = <code>false</code></td>
 </tr>
 </tbody>
 </table>
