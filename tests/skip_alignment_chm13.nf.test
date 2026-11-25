@@ -1,0 +1,54 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --skip_alignment on CHM13-aligned input"
+    script "../main.nf"
+    tag "pipeline"
+    tag "extended"
+
+    // The CHM13 test BAMs were aligned to this FASTA's chr19, so they can be used as they are
+    test("-profile test_chm13 --skip_alignment") {
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                input          = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/samplesheets/samplesheet_lr-somatic_chm13.csv"
+                fasta          = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz"
+                genome         = "CHM13"
+                skip_alignment = true
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} (") }*.name }
+            def readGroups = { name ->
+                def s = name.tokenize('_')[0]
+                def reader = htsjdk.samtools.SamReaderFactory.makeDefault()
+                    .validationStringency(htsjdk.samtools.ValidationStringency.SILENT)
+                    .open(new File("$outputDir/${s}/bamfiles/${name}.cram"))
+                def ids = reader.getFileHeader().getReadGroups()*.getId()
+                reader.close()
+                return ids
+            }
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('MINIMAP2_ALIGN').isEmpty() },
+                { assert succeeded('PREPARE_ALIGNED').size() == 5 },
+                // The input's own read groups are replaced by the pipeline's
+                { assert [ 'sample1_normal', 'sample1_tumor', 'sample2_normal', 'sample2_tumor', 'sample3_tumor' ]
+                    .collectEntries { name -> [ name, readGroups(name) ] } == [
+                        sample1_normal: [ 'sample1_normal_rep1' ], sample1_tumor: [ 'sample1_tumor_rep1' ],
+                        sample2_normal: [ 'sample2_normal_rep1' ], sample2_tumor: [ 'sample2_tumor_rep1' ],
+                        sample3_tumor: [ 'sample3_tumor_rep1' ] ] },
+                { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                {
+                    assert file("$outputDir/sample1/variants/clair3/merge_output.vcf.gz").exists()
+                    assert file("$outputDir/sample1/variants/clairs/indel.vcf.gz").exists()
+                    assert file("$outputDir/sample1/variants/severus/somatic_SVs/severus_somatic.vcf.gz").exists()
+                    assert file("$outputDir/sample2/variants/clair3/merge_output.vcf.gz").exists()
+                    assert file("$outputDir/sample2/variants/clairs/indel.vcf.gz").exists()
+                    assert file("$outputDir/sample3/variants/clairsto/somatic.vcf.gz").exists()
+                }
+            )
+        }
+    }
+}

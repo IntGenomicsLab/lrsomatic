@@ -48,6 +48,8 @@ nextflow_workflow {
 
     test("tumour-only, germline VCF header without a contig that has reads - the haplotagged output keeps them") {
 
+        config "./no_guard.config"
+
         when {
             params {
                 outdir       = "$outputDir"
@@ -97,6 +99,22 @@ nextflow_workflow {
             def hapPath    = workflow.success ? workflow.out.tumor_normal_hapbams_ch[0][1].toString() : ''
             def tagged     = workflow.success ? readStats(hapPath) : null
             def phasedVcf  = workflow.success ? workflow.out.phased_germline_vcf[0][1] : null
+            // CHROM:POS -> [GT, PS] of the first sample column
+            def gtPs = { String path ->
+                new java.util.zip.GZIPInputStream(new FileInputStream(path)).withReader { reader ->
+                    reader.readLines().findAll { line -> !line.startsWith('#') }.collectEntries { line ->
+                        def f    = line.split('\t')
+                        def keys = f[8].split(':').toList()
+                        def vals = f[9].split(':').toList()
+                        def ps   = keys.indexOf('PS')
+                        [ ("${f[0]}:${f[1]}".toString()) : [ vals[0], (ps >= 0 && ps < vals.size()) ? vals[ps] : null ] ]
+                    }
+                }
+            }
+            // The somatic fixture holds germline het SNVs, so where both are phased the read-based phase is the germline one
+            def somatic    = workflow.success ? gtPs(workflow.out.phased_somatic_vcf[0][1].toString()) : [:]
+            def germline   = workflow.success ? gtPs(phasedVcf.toString()) : [:]
+            def compared   = somatic.keySet().findAll { site -> somatic[site][0].contains('|') && germline[site]?.getAt(0)?.contains('|') }
 
             assertAll(
                 { assert workflow.success },
@@ -111,7 +129,11 @@ nextflow_workflow {
                 // and haplotagging did happen
                 { assert tagged.hp > 0 },
                 // The phased germline VCF carries the full reference contig list
-                { assert vcfContigs(phasedVcf) == faiContigs }
+                { assert vcfContigs(phasedVcf) == faiContigs },
+                // Somatic GT orientation and PS agree with the germline phase the reads were tagged from
+                { assert compared.size() >= 5 : "only ${compared.size()} somatic records phased where the germline record is" },
+                { assert compared.every { site -> germline[site] == somatic[site] } :
+                    "somatic != germline at ${compared.findAll { site -> germline[site] != somatic[site] }.collect { site -> "${site} ${somatic[site]} vs ${germline[site]}" }.take(5)}" }
             )
         }
     }

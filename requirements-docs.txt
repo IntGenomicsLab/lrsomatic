@@ -1,0 +1,5 @@
+mkdocs>=1.6,<2
+mkdocs-material>=9.5,<10
+mkdocs-include-markdown-plugin>=7,<8
+mkdocs-macros-plugin>=1.0,<2
+mike>=2.1,<3

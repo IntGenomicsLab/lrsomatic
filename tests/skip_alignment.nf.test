@@ -1,0 +1,94 @@
+nextflow_pipeline {
+
+    name "Test pipeline - --skip_alignment uses the input alignments instead of realigning them"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    def data = 'https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned'
+
+    def failedWith = { wf, text ->
+        // Nextflow 26.10 prints the console log to stderr, earlier versions to stdout
+        (wf.stdout + wf.stderr).any { line -> line.contains(text) }
+    }
+
+    def sheet = { dir, rows ->
+        def input_dir = new File(dir)
+        input_dir.mkdirs()
+        new File(input_dir, 'unaligned.bam').text = ''   // an empty file reads as unaligned in the METAEXTRACT stub
+        def f = new File(input_dir, 'samplesheet.csv')
+        f.text = (['sample,bam_tumor,bam_normal,platform,sex,fiber'] +
+            rows.collect { row -> row.replace('unaligned.bam', new File(input_dir, 'unaligned.bam').canonicalPath) }
+        ).join('\n') + '\n'
+        return f.canonicalPath
+    }
+
+    test("-profile test --skip_alignment - stub, PREPARE_ALIGNED replaces MINIMAP2_ALIGN for every row") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_alignment = true
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} (") }*.name }
+            def samples   = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') } }
+            assertAll(
+                { assert workflow.success },
+                { assert succeeded('MINIMAP2_ALIGN').isEmpty() },
+                { assert succeeded('CRAMINO_PRE').isEmpty() && succeeded('NANOPLOT_PRE').isEmpty() },
+                // Tumour and normal of sample1 and sample2, tumour of sample3
+                { assert samples('PREPARE_ALIGNED').sort() == [ 'sample1', 'sample1', 'sample2', 'sample2', 'sample3' ] },
+                { assert samples('LONGPHASE_HAPLOTAG').sort() == [ 'sample1', 'sample1', 'sample2', 'sample2', 'sample3' ] },
+                { assert succeeded('CRAMINO_POST').size() == 5 }
+            )
+        }
+    }
+
+    test("--skip_alignment with a Fiber-seq row - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_alignment = true
+                input          = sheet("${outputDir}/../input_fiber", [
+                    "sf,${data}/headered_H2009_ONT_UL_chr19_downsampled.bam,,ont,female,y"
+                ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'sf' (tumor): --skip_alignment does not support rows that fibertools-rs reads") },
+                { assert failedWith(workflow, 'Add --skip_fiber') }
+            )
+        }
+    }
+
+    test("--skip_alignment with an unaligned row - stub, fails") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                skip_alignment = true
+                input          = sheet("${outputDir}/../input_unaligned", [ 'su,unaligned.bam,,ont,female,n' ])
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert failedWith(workflow, "Sample 'su' (tumor): --skip_alignment needs aligned reads") }
+            )
+        }
+    }
+}

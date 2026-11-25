@@ -27,13 +27,23 @@ class PhasedVcf {
         gt != null && gt.split(/[\/|]/).any { it != '0' && it != '.' }
     }
 
-    // LongPhase cannot take two records at one POS, so each phased arm holds one record per CHROM:POS
+    // LongPhase cannot take two records at one POS, so the phased germline VCF holds one record per CHROM:POS.
+    // The somatic VCF keeps the callers' records: it is phased per record from the reads, not by LongPhase.
     static void assertOnePerPosition(String outdir, List<String> samples) {
         samples.each { s ->
-            ['germline', 'somatic'].each { arm ->
-                def pos = records("${outdir}/${s}/variants/phased/${arm}_smallvariants.vcf.gz").collect { "${it[0]}:${it[1]}" }
-                assert pos.size() == pos.toUnique().size() : "${s}: two ${arm} records at one position"
-            }
+            def pos = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz").collect { "${it[0]}:${it[1]}" }
+            assert pos.size() == pos.toUnique().size() : "${s}: two germline records at one position"
+        }
+    }
+
+    // Somatic phase comes from the germline-haplotagged reads, so every somatic PS is a germline phase block
+    static void assertSomaticPhaseInGermlineBlocks(String outdir, List<String> samples) {
+        samples.each { s ->
+            def germPs = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                .collect { format(it, 'PS') }.findAll { it && it != '.' }.toSet()
+            def stray = records("${outdir}/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                .findAll { rec -> def ps = format(rec, 'PS'); ps && ps != '.' && !(ps in germPs) }
+            assert stray.isEmpty() : "${s}: ${stray.size()} somatic record(s) with a PS that is no germline phase block, e.g. ${stray[0]?.take(5)}"
         }
     }
 
@@ -61,7 +71,7 @@ class PhasedVcf {
         }
     }
 
-    // Default-mode checks: both arms all PASS, somatic records all carry SOMATIC, germline not empty
+    // Default-mode checks: both arms all PASS, germline not empty, somatic phase sets are germline blocks
     static void assertPassOnly(String outdir, List<String> samples, List<String> tumourOnly) {
         samples.each { s ->
             def germ = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz")
@@ -69,8 +79,8 @@ class PhasedVcf {
             assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
             assert germ.every { it[6] == 'PASS' } : "${s}: non-PASS germline record with the PASS filter on"
             assert som.every { it[6] == 'PASS' } : "${s}: non-PASS somatic record with the PASS filter on"
-            assert som.every { hasFlag(it, 'SOMATIC') } : "${s}: somatic record without INFO/SOMATIC"
         }
+        assertSomaticPhaseInGermlineBlocks(outdir, samples)
         // Paired test samples have no PASS somatic calls, so the checks above only bite on tumour-only ones
         tumourOnly.each { s ->
             assert !records("${outdir}/${s}/variants/phased/somatic_smallvariants.vcf.gz").isEmpty() :

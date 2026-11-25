@@ -20,6 +20,11 @@ lint:
     - docs/README.md
     - .github/workflows/branch.yml
     - .github/workflows/linting.yml
+  # MkDocs Jinja templates and macros for the documentation site
+  template_strings:
+    - docs/overrides/main.html
+    - docs/parameters.md
+    - schema_render.py
   multiqc_config:
     - report_comment
   nextflow_config:
@@ -46,6 +51,8 @@ lint:
     - tests/smallvar_wiring.nf.test
     - tests/skip_m6a.nf.test
     - tests/error_policy.nf.test # fixture workflow, asserts on which attempts produced output
+    - tests/skip_alignment.nf.test # -stub, asserts on the task trace
+    - tests/skip_alignment_chm13.nf.test # asserts on the task trace and outputs
 nf_core_version: 4.2.2
 repository_type: pipeline
 template:

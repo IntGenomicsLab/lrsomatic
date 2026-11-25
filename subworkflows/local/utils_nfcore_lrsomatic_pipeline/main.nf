@@ -521,6 +521,23 @@ def fibertoolsReadsInput(meta, kinetics) {
 }
 
 //
+// --skip_alignment: stop on an unaligned row, or one fibertools-rs reads (it runs before alignment)
+//
+def validateSkipAlignment(meta, aligned) {
+    def row = "Sample '${meta.id}' (${meta.type}${meta.n_replicates > 1 ? " replicate ${meta.replicate}" : ''})"
+    if (aligned != 'true') {
+        error("${row}: --skip_alignment needs aligned reads, but this file has no @SQ lines. Run without --skip_alignment to align it.")
+    }
+    if (fibertoolsReadsInput(meta, meta.kinetics)) {
+        def cause = meta.fiber == 'y'
+            ? "it is a Fiber-seq row (fiber = 'y'). Add --skip_fiber to skip the Fiber-seq steps"
+            : "its PacBio reads carry kinetics, from which m6A is predicted. Add --skip_m6a to skip m6A prediction"
+        error("${row}: --skip_alignment does not support rows that fibertools-rs reads, and ${cause}, or run without --skip_alignment.")
+    }
+    return true
+}
+
+//
 // Whether FIBERSEQ skips the nucleosome, FIRE and QC steps of a fiber-seq row: its first reads carry no m6A calls
 // (m6a_calls 'false' from METAEXTRACT) and the run predicts none for it. 'unknown' keeps the steps.
 //

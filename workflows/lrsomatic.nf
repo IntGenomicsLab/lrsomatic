@@ -69,6 +69,9 @@ include { DMR                             } from '../subworkflows/local/dmr'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 include { SHATTERSEEK_CHROMOTHRIPSIS      } from '../subworkflows/local/shatterseek_chromothripsis'
+// Last: keeps the eval numbering above unchanged, so older work dirs still -resume
+include { PREPARE_ALIGNED                } from '../modules/local/prepare_aligned/main'
+include { validateSkipAlignment           } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 
 
 
@@ -316,6 +319,14 @@ workflow LRSOMATIC {
         .collect()
         .map { metas -> validateSampleModels(metas) }
 
+    // --skip_alignment: rows must be aligned and not read by fibertools-rs
+    if (params.skip_alignment) {
+        ch_samplesheet
+            .map { meta, _bams -> [ [ meta.id, meta.type, meta.replicate ], meta ] }
+            .join(METAEXTRACT.out.aligned_input.map { meta, aligned -> [ [ meta.id, meta.type, meta.replicate ], aligned ] }, failOnMismatch: true)
+            .map { _key, meta, aligned -> validateSkipAlignment(meta, aligned) }
+    }
+
     //
     // SUBWORKFLOW: PREPARE_REFERENCE_FILES -- decompress and index the FASTA, fetch Clair3 models, unpack ASCAT references
     // Input:  params.fasta, ASCAT file paths, basecall_meta, clair3_modelMap
@@ -362,7 +373,8 @@ workflow LRSOMATIC {
 
     ch_nanoplot_pre_txt = channel.empty()
 
-    if (!params.skip_qc && !params.skip_cramino) {
+    // Under --skip_alignment the input is the alignment, so CRAMINO_POST covers it
+    if (!params.skip_qc && !params.skip_cramino && !params.skip_alignment) {
 
         //
         // MODULE: CRAMINO_PRE (label: process_medium)
@@ -477,13 +489,27 @@ workflow LRSOMATIC {
         .set { ch_minimap2_in }
     // ch_minimap2_in: [meta_with_replicate (+ aligned_input, basecall_model where they apply), bam_or_cram]
 
+    ch_minimap2_in
+        .branch { _meta, _bams ->
+            prepare: params.skip_alignment
+            align:   true
+        }
+        .set { ch_align_branch }
+
     MINIMAP2_ALIGN (
-        ch_minimap2_in,
+        ch_align_branch.align,
         ch_fasta,
         params.aligned_format,
         aligned_index,
         "",
         ""
+    )
+
+    // MODULE: PREPARE_ALIGNED -- --skip_alignment: the input alignment, checked against --fasta, in MINIMAP2_ALIGN's output form
+    PREPARE_ALIGNED (
+        ch_align_branch.prepare,
+        ch_fasta.join(ch_fai).first(),
+        params.aligned_format
     )
 
     // Join alignments with index, drop the replicate field, group per sample; single-replicate samples skip SAMTOOLS_MERGE.
@@ -492,6 +518,7 @@ workflow LRSOMATIC {
     MINIMAP2_ALIGN.out.bam
         .mix(MINIMAP2_ALIGN.out.cram)
         .join(MINIMAP2_ALIGN.out.index)
+        .mix(PREPARE_ALIGNED.out.alignment.join(PREPARE_ALIGNED.out.index))
         .map { meta, bam, bai ->
             def new_meta = meta.subMap('id',
                             'paired_data',
