@@ -885,10 +885,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#germline-and-somatic-provenance" class="md-nav__link">
+  <a href="#somatic-phasing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Germline and somatic provenance
+        Somatic phasing
       
     </span>
   </a>
@@ -1824,10 +1824,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#germline-and-somatic-provenance" class="md-nav__link">
+  <a href="#somatic-phasing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Germline and somatic provenance
+        Somatic phasing
       
     </span>
   </a>
@@ -3424,48 +3424,36 @@ dropped. Where one caller reports several different alleles at one position (e.g
 Clair3 calls an SNV and a deletion starting at the same base), all of them are
 kept; only exact duplicates (same <code>POS</code>, <code>REF</code> and <code>ALT</code>) are dropped. Records are
 not split in this mode.</p>
-<p>Whatever the callers and combine mode, each arm is joined to one record per
-position (<code>bcftools norm -m +any</code>) before phasing, since LongPhase cannot take two
-records at one <code>POS</code>.</p>
-<h4 id="germline-and-somatic-provenance">Germline and somatic provenance<a class="headerlink" href="#germline-and-somatic-provenance" title="Permanent link">&para;</a></h4>
-<p>Germline and somatic small variants are merged into one VCF for somatic phasing,
-because Longphase needs all variant sites in a single file to produce consistent
-phase blocks. The somatic arm is then recovered from the phased result by an
-<code>INFO/SOMATIC</code> flag stamped on each arm before the merge, not by position, since a
-germline record at the same coordinate as a somatic call would otherwise be kept.
-Tagging leaves <code>FILTER</code> unchanged.</p>
-<p>Longphase phases by position, so a germline record at the position of a somatic
-call would lend the somatic record its genotype and phase set. Germline records
-at the position of any somatic call with an alternate genotype are therefore
-left out of somatic phasing. Somatic records without an alternate genotype
-(<code>0/0</code> or <code>./.</code>, present only with <code>--smallvar_filter_pass false</code>) are not
-phased: they are added back to <code>somatic_smallvariants.vcf.gz</code> unchanged.</p>
-<p>Three INFO fields carry this provenance:</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>SOMATIC</code></td>
-<td>Record came from the somatic call set</td>
-</tr>
-<tr>
-<td><code>GERMLINE</code></td>
-<td>Record came from the germline call set</td>
-</tr>
-<tr>
-<td><code>ORIG_FILTER</code></td>
-<td>Original <code>FILTER</code> of ClairS-TO germline records, before normalisation to <code>PASS</code>. Multiple filters are joined with <code>,</code></td>
-</tr>
-</tbody>
-</table>
-<p>Germline calls dropped from <code>variants/phased/somatic_smallvariants.vcf.gz</code> are not
-lost: they remain in <code>variants/phased/germline_smallvariants.vcf.gz</code>, in
-<code>vep/germline/</code>, and in the unfiltered per-caller VCFs under <code>variants/&lt;caller&gt;/</code>.</p>
+<p>Whatever the callers and combine mode, the germline set is joined to one record
+per position (<code>bcftools norm -m +any</code>) before phasing, since LongPhase cannot
+take two records at one <code>POS</code>. The somatic set keeps the callers' records.</p>
+<h4 id="somatic-phasing">Somatic phasing<a class="headerlink" href="#somatic-phasing" title="Permanent link">&para;</a></h4>
+<p>LongPhase phases the germline variants (on the normal, or on the tumour without
+one), and every BAM is haplotagged from that phased germline VCF. Somatic
+variants are then phased from the haplotagged tumour reads, so their haplotype
+and phase set agree with the germline VCF and with the <code>HP</code>/<code>PS</code> read tags:</p>
+<ul>
+<li>For each heterozygous somatic SNV, deletion or insertion, the reads carrying
+  the ALT allele are counted per haplotype (<code>HP</code>) and phase block (<code>PS</code>). Only
+  ALT reads count: reference reads come from both haplotypes and from normal
+  cells, so they say nothing about where the mutation sits.</li>
+<li>With at least 3 tagged ALT reads, of which at least 80 % share one <code>HP</code> and
+  <code>PS</code>, the record gets <code>GT</code> <code>1|0</code> (<code>HP</code> 1) or <code>0|1</code> (<code>HP</code> 2) and that <code>PS</code>,
+  the germline block's ID.</li>
+<li>Tumour-only samples also need at least 3 tagged reads (any allele) on the
+  other haplotype of that phase block at the site. Without a normal, the
+  germline phase is built from tumour reads, and in some regions haplotagging
+  puts reads of both haplotypes on one <code>HP</code>. A site where every read carries
+  the same <code>HP</code> is then no evidence, and phasing it would be close to a coin
+  flip. Paired samples are haplotagged from the normal's phase, so a site with
+  all tumour reads on one haplotype (loss of heterozygosity) is phased as usual.</li>
+<li>Otherwise the record is left unphased, as are homozygous, multi-allelic,
+  complex and <code>0/0</code>/<code>./.</code> records. No record is removed.</li>
+<li><code>FORMAT/AHP</code> gives the ALT reads on haplotype 1, on haplotype 2 and without a
+  haplotag, and <code>FORMAT/OHP</code> the tagged reads on the other haplotype, so an
+  unphased record shows why (no tagged reads, reads split across the
+  haplotypes, or no reads on the other haplotype).</li>
+</ul>
 <h4 id="pon-options">PON Options<a class="headerlink" href="#pon-options" title="Permanent link">&para;</a></h4>
 <table>
 <thead>

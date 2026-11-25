@@ -2269,7 +2269,7 @@ or a matched normal. Turn this off with <code>--savana_pb_pon_filter false</code
 </tbody>
 </table>
 <h4 id="phased"><code>phased</code><a class="headerlink" href="#phased" title="Permanent link">&para;</a></h4>
-<p>Phased variant calls produced by Longphase. Present in all samples.</p>
+<p>Phased small variants. Present in all samples. The germline VCF is phased by Longphase; the somatic VCF is phased from the haplotagged tumour reads, so both share one phase frame (see <a href="../usage/#somatic-phasing">usage</a>).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>├── phased
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>│   ├── germline_smallvariants.vcf.gz
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>│   ├── germline_smallvariants.vcf.gz.tbi
@@ -2294,7 +2294,7 @@ or a matched normal. Turn this off with <code>--savana_pb_pon_filter false</code
 </tr>
 <tr>
 <td><code>somatic_smallvariants.vcf.gz</code></td>
-<td>Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags; <code>0/0</code> and <code>./.</code> records are left unphased</td>
+<td>Somatic SNV/indel VCF; heterozygous records with enough haplotagged ALT reads are phased (<code>GT</code> <code>1\|0</code>/<code>0\|1</code>, <code>PS</code> = germline block), the rest left unphased; <code>FORMAT/AHP</code>/<code>OHP</code> hold the read counts</td>
 </tr>
 <tr>
 <td><code>somatic_smallvariants.vcf.gz.tbi</code></td>
