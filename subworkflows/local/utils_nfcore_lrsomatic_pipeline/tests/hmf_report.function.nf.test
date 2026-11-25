@@ -94,7 +94,7 @@ nextflow_function {
         }
     }
 
-    test("hmfAnnotationOk is on for GRCh38 with a complete bundle, off with --skip_report") {
+    test("hmfAnnotationOk is on for GRCh38 with a complete bundle") {
 
         function "hmfAnnotationOk"
 
