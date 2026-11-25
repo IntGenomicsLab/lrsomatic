@@ -769,6 +769,15 @@
                     "description": "HMF KnownHotspots.somatic.38.vcf.gz: hotspot matching of small variants in the report's HMF section (optional).",
                     "fa_icon": "fas fa-file"
                 },
+                "report_hmf_liftover_chain": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.chain(\\.gz)?$",
+                    "description": "GRCh38 -> CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome's (UCSC hg38ToHs1).",
+                    "help_text": "On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions' IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir.",
+                    "fa_icon": "fas fa-link"
+                },
                 "report_hmf_actionable_bed": {
                     "type": "string",
                     "format": "file-path",

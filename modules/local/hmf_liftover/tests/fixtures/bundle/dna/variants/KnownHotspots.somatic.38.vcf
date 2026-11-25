@@ -1,0 +1,8 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr1,length=5000>
+##INFO=<ID=input,Number=1,Type=String,Description="x">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	151	.	G	A	.	.	input=GENEA|ENST01|p.A1T
+chr1	161	.	T	C	.	.	input=GENEA|ENST01|p.A2T
+chr1	1500	.	A	C	.	.	input=GENEB|ENST02|p.A3T
+chr1	2101	.	A	C	.	.	input=GENEC|ENST03|p.A4T

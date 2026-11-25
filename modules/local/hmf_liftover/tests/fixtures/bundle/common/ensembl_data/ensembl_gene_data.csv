@@ -1,0 +1,4 @@
+GeneId,GeneName,Chromosome,Strand,GeneStart,GeneEnd,KaryotypeBand,Synonyms
+ENSG01,GENEA,1,1,101,700,p1,HGNC:1
+ENSG02,GENEB,1,1,801,1200,p1,HGNC:2
+ENSG03,GENEC,1,-1,2101,2500,p1,HGNC:3

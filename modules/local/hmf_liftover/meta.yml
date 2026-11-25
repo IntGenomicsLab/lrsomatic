@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "hmf_liftover"
+description: Lift the report's GRCh38 HMF (oncoanalyser) resources over to CHM13 with a chain file, for the report's optional HMF driver annotation on a CHM13 run. Whole canonical transcripts only, hotspot REF re-checked on the target, IG/enhancer ranges lifted, the target build declared in a REFERENCE file.
+keywords:
+  - liftover
+  - chm13
+  - hmf
+  - report
+tools:
+  - "pysam":
+      description: "Python interface to htslib: the target FASTA and bgzip; bin/hmf_liftover.py reads the chain itself"
+      homepage: "https://github.com/pysam-developers/pysam"
+      documentation: "https://pysam.readthedocs.io"
+      tool_dev_url: "https://github.com/pysam-developers/pysam"
+      doi: ""
+      licence: ["MIT"]
+      identifier: ""
+
+input:
+  - - driver_panel:
+        type: file
+        description: HMF DriverGenePanel (copied unchanged)
+        pattern: "*.tsv"
+    - ensembl_data:
+        type: directory
+        description: HMF Ensembl data cache (ensembl_gene_data.csv, ensembl_trans_exon_data.csv)
+    - known_fusions:
+        type: file
+        description: HMF known_fusion_data.csv (its IG/enhancer and 3' ranges are lifted); `[]` when absent
+        pattern: "*.csv"
+    - hotspots:
+        type: file
+        description: HMF KnownHotspots.somatic VCF; `[]` when absent
+        pattern: "*.vcf{,.gz}"
+    - actionable_bed:
+        type: file
+        description: HMF ActionableCodingPanel BED; `[]` when absent
+        pattern: "*.bed{,.gz}"
+  - - chain:
+        type: file
+        description: GRCh38 -> target chain file (UCSC chain format)
+        pattern: "*.chain{,.gz}"
+  - - fasta:
+        type: file
+        description: Target FASTA, for the hotspot REF check and the VCF ##contig lines
+        pattern: "*.{fa,fasta}"
+    - fai:
+        type: file
+        description: Its index
+        pattern: "*.fai"
+
+output:
+  bundle:
+    - "hmf_chm13":
+        type: directory
+        description: The lifted resources laid out like an oncoanalyser bundle (common/, dna/sv/, dna/variants/); common/ensembl_data/REFERENCE declares t2t
+  report:
+    - "hmf_chm13/hmf_liftover_report.tsv":
+        type: file
+        description: Counts of what was lifted and dropped per resource, and the panel genes left without a transcript
+        pattern: "hmf_liftover_report.tsv"
+  versions_python:
+    - - "${task.process}":
+          type: string
+          description: The name of the process
+      - "python":
+          type: string
+          description: The name of the tool
+      - "python --version | sed 's/Python //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+  versions_pysam:
+    - - "${task.process}":
+          type: string
+          description: The name of the process
+      - "pysam":
+          type: string
+          description: The name of the tool
+      - "python -c 'import pysam; print(pysam.__version__)'":
+          type: eval
+          description: The expression to obtain the version of the tool
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

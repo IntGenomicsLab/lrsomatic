@@ -69,7 +69,7 @@ nextflow_function {
         }
     }
 
-    test("hmfAnnotationOk is off on CHM13 even with a complete bundle") {
+    test("hmfAnnotationOk is on for CHM13 with the GRCh38 bundle and the genome's default chain") {
 
         function "hmfAnnotationOk"
 
@@ -89,7 +89,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.success },
-                { assert function.result == false }
+                { assert function.result == true }
             )
         }
     }
@@ -119,13 +119,13 @@ nextflow_function {
         }
     }
 
-    test("validateHmfReportParams warns and skips on CHM13") {
+    test("validateHmfReportParams warns and skips on a genome the resources cannot be put on") {
 
         function "validateHmfReportParams"
 
         when {
             params {
-                genome                      = 'CHM13'
+                genome                      = 'GRCm39'
                 skip_report                 = false
                 report_hmf_resource_dir     = null
                 report_hmf_driver_panel     = "${projectDir}/modules/local/lrsomaticreport/tests/hmf/common/DriverGenePanel.38.tsv"
@@ -141,7 +141,7 @@ nextflow_function {
                 { assert function.success },
                 // log.warn goes to the Nextflow log, not to stdout
                 { assert path("${metaDir}/nextflow.log").text.contains('HMF driver annotation will be skipped') },
-                { assert path("${metaDir}/nextflow.log").text.contains("genome is 'CHM13'") }
+                { assert path("${metaDir}/nextflow.log").text.contains("genome is 'GRCm39'") }
             )
         }
     }
@@ -192,6 +192,147 @@ nextflow_function {
             assertAll(
                 { assert function.success },
                 { assert !path("${metaDir}/nextflow.log").text.contains('HMF driver annotation') }
+            )
+        }
+    }
+
+    // --- CHM13: the GRCh38 bundle is lifted over (HMF_LIFTOVER); a lifted copy declares REFERENCE t2t and is used as is
+
+    test("hmfResourcesBuild reads the Ensembl cache's REFERENCE file, GRCh38 without one") {
+
+        function "hmfResourcesBuild"
+
+        when {
+            function {
+                """
+                input[0] = "${projectDir}/subworkflows/local/utils_nfcore_lrsomatic_pipeline/tests/fixtures/hmf_t2t/common/ensembl_data"
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == 'CHM13' }
+            )
+        }
+    }
+
+    test("hmfNeedsLiftover: a CHM13 run given the GRCh38 bundle") {
+
+        function "hmfNeedsLiftover"
+
+        when {
+            params {
+                genome                      = 'CHM13'
+                report_hmf_resource_dir     = "${projectDir}/modules/local/lrsomaticreport/tests/hmf"
+                report_hmf_driver_panel     = null
+                report_hmf_ensembl_data_dir = null
+                report_hmf_known_fusions    = null
+                report_hmf_hotspots         = null
+                report_hmf_actionable_bed   = null
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("hmfNeedsLiftover: not for a bundle already lifted to CHM13") {
+
+        function "hmfNeedsLiftover"
+
+        when {
+            params {
+                genome                      = 'CHM13'
+                report_hmf_resource_dir     = "${projectDir}/subworkflows/local/utils_nfcore_lrsomatic_pipeline/tests/fixtures/hmf_t2t"
+                report_hmf_driver_panel     = null
+                report_hmf_ensembl_data_dir = null
+                report_hmf_known_fusions    = null
+                report_hmf_hotspots         = null
+                report_hmf_actionable_bed   = null
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("hmfLiftoverChain: the CHM13 default, overridden by --report_hmf_liftover_chain") {
+
+        function "hmfLiftoverChain"
+
+        when {
+            params {
+                genome                    = 'CHM13'
+                report_hmf_liftover_chain = null
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.toString().endsWith('/hg38ToHs1.over.chain.gz') }
+            )
+        }
+    }
+
+    test("validateHmfReportParams rejects CHM13-lifted resources on a GRCh38 run") {
+
+        function "validateHmfReportParams"
+
+        when {
+            params {
+                genome                      = 'GRCh38'
+                skip_report                 = false
+                report_hmf_resource_dir     = "${projectDir}/subworkflows/local/utils_nfcore_lrsomatic_pipeline/tests/fixtures/hmf_t2t"
+                report_hmf_driver_panel     = null
+                report_hmf_ensembl_data_dir = null
+                report_hmf_known_fusions    = null
+                report_hmf_hotspots         = null
+                report_hmf_actionable_bed   = null
+                report_hmf_liftover_chain   = null
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('declare CHM13') } }
+            )
+        }
+    }
+
+    test("validateHmfReportParams rejects a missing --report_hmf_liftover_chain on CHM13") {
+
+        function "validateHmfReportParams"
+
+        when {
+            params {
+                genome                      = 'CHM13'
+                skip_report                 = false
+                report_hmf_resource_dir     = "${projectDir}/modules/local/lrsomaticreport/tests/hmf"
+                report_hmf_driver_panel     = null
+                report_hmf_ensembl_data_dir = null
+                report_hmf_known_fusions    = null
+                report_hmf_hotspots         = null
+                report_hmf_actionable_bed   = null
+                report_hmf_liftover_chain   = "/nonexistent/hg38ToHs1.over.chain.gz"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--report_hmf_liftover_chain not found') } }
             )
         }
     }

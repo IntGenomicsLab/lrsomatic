@@ -1,0 +1,4 @@
+Type,FiveGene,ThreeGene,CancerTypes,PubMedId,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange,HighImpactPromiscuous,Overrides
+KNOWN_PAIR,GENEA,GENEC,,,,,,,
+IG_KNOWN_PAIR,IGH,GENEA,,,,,,,IG_RANGE=1;chr1;1;900 DOWN_GENE_DOWNSTREAM_DISTANCE=500
+PROMISCUOUS_ENHANCER_TARGET,,GENEC,,,,,,,THREE_PRIME_RANGE=-1;chr1;2001;2600

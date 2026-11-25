@@ -1107,6 +1107,7 @@ Sample rows are named per BAM: `{sample}_tumor` and `{sample}_normal` carry the 
 │   ├── execution_timeline_{DATE}.html
 │   ├── execution_trace_{DATE}.txt
 │   ├── final_sample_disk_usage.tsv
+│   ├── hmf_liftover/hmf_chm13/    (CHM13 runs with --report_hmf_* only)
 │   ├── lrsomatic_software_mqc_versions.yml
 │   ├── params_{DATE}.json
 │   ├── pipeline_dag_{DATE}.html
@@ -1118,6 +1119,7 @@ Sample rows are named per BAM: `{sample}_tumor` and `{sample}_normal` carry the 
 | `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run |
 | `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                               |
 | `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                     |
+| `hmf_liftover/hmf_chm13/`             | on a CHM13 run with HMF resources: the GRCh38 HMF resources lifted to CHM13 (`HMF_LIFTOVER`), laid out like an oncoanalyser bundle with `common/ensembl_data/REFERENCE` = `t2t`, and `hmf_liftover_report.tsv` counting what was lifted and dropped; reusable as `--report_hmf_resource_dir` |
 | `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                   |
 | `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                          |
 | `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                               |

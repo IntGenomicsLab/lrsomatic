@@ -1,0 +1,111 @@
+nextflow_process {
+
+    name "Test Process HMF_LIFTOVER"
+    script "../main.nf"
+    process "HMF_LIFTOVER"
+
+    tag "modules"
+    tag "modules_local"
+    tag "hmf_liftover"
+    tag "small"
+
+    // Hand-made chain and bundle (fixtures/README.md): +100 on chr1, an inverted block onto chr2, a gap between.
+    // Every expected coordinate below follows from that chain.
+
+    test("mini bundle - lifted, dropped and inverted") {
+
+        when {
+            process {
+                """
+                def fx = "${projectDir}/modules/local/hmf_liftover/tests/fixtures"
+                input[0] = [
+                    file("\${fx}/bundle/common/DriverGenePanel.38.tsv", checkIfExists: true),
+                    file("\${fx}/bundle/common/ensembl_data", checkIfExists: true),
+                    file("\${fx}/bundle/dna/sv/known_fusion_data.38.csv", checkIfExists: true),
+                    file("\${fx}/bundle/dna/variants/KnownHotspots.somatic.38.vcf", checkIfExists: true),
+                    file("\${fx}/bundle/dna/variants/ActionableCodingPanel.38.bed", checkIfExists: true)
+                ]
+                input[1] = file("\${fx}/source_to_target.chain", checkIfExists: true)
+                input[2] = [
+                    file("\${fx}/target.fa", checkIfExists: true),
+                    file("\${fx}/target.fa.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def bundle = file(process.out.bundle.get(0))
+            def ens = bundle.resolve('common/ensembl_data')
+            def exons = ens.resolve('ensembl_trans_exon_data.csv').readLines()
+            def genes = ens.resolve('ensembl_gene_data.csv').readLines()
+            def report = bundle.resolve('hmf_liftover_report.tsv').readLines().collectEntries { l -> def f = l.split('\t'); [(f[0] + '|' + f[1]): f[2]] }
+            def hotspots = path(bundle.resolve('dna/variants/KnownHotspots.somatic.38.vcf.gz').toString()).linesGzip
+            def fusions = bundle.resolve('dna/sv/known_fusion_data.38.csv').readLines()
+            assertAll(
+                { assert ens.resolve('REFERENCE').text.trim() == 't2t' },
+                // GENEA: +100, contig name style kept ("1"); its non-canonical transcript is not carried
+                { assert genes.contains('ENSG01,GENEA,1,1,201,800,p1,HGNC:1') },
+                { assert exons.contains('ENSG01,1,1,1,ENST01,protein_coding,201,800,1,201,300,-1,1,251,750,NM_1') },
+                { assert !exons.any { l -> l.contains('ENST09') } },
+                // GENEB: an exon in the gap drops the transcript, and with it the gene
+                { assert !genes.any { l -> l.contains('GENEB') } },
+                { assert !exons.any { l -> l.contains('ENST02') } },
+                // GENEC: the inverted chain moves it to contig 2 and flips its strand; ranks stay with their exons
+                { assert genes.contains('ENSG03,GENEC,2,1,2001,2400,p1,HGNC:3') },
+                { assert exons.contains('ENSG03,3,1,3,ENST03,protein_coding,2001,2400,1,2001,2100,-1,1,2051,2351,NULL') },
+                { assert exons.contains('ENSG03,3,1,3,ENST03,protein_coding,2001,2400,2,2301,2400,1,-1,2051,2351,NULL') },
+                // Hotspots: one lifted, one inverted (reverse-complemented), one REF mismatch and one in the gap dropped
+                { assert hotspots.contains('##assembly=T2T-CHM13v2.0') },
+                { assert hotspots.contains('##contig=<ID=chr2,length=3000>') },
+                { assert hotspots.findAll { l -> !l.startsWith('#') }.collect { l -> l.split('\t')[0..4].join(':') } == ['chr1:251:.:G:A', 'chr2:2400:.:T:G'] },
+                { assert report['hotspots|records dropped: REF differs on the target'] == '1' },
+                { assert report['hotspots|records dropped: did not lift'] == '1' },
+                // BED: name kept, the region in the gap dropped
+                { assert bundle.resolve('dna/variants/ActionableCodingPanel.38.bed').readLines() == ['chr1\t200\t300\tGENEA_1'] },
+                // Fusion ranges: shifted, and on the inverted chain moved to chr2 with the orientation flipped
+                { assert fusions.any { l -> l.contains('IG_RANGE=1;chr1;101;1000 DOWN_GENE_DOWNSTREAM_DISTANCE=500') } },
+                { assert fusions.any { l -> l.contains('THREE_PRIME_RANGE=1;chr2;1901;2500') } },
+                // The panel is copied unchanged; the gene without a lifted transcript is reported
+                { assert bundle.resolve('common/DriverGenePanel.38.tsv').readLines().size() == 4 },
+                { assert report['driver_panel|not lifted: GENEB'] == '1' },
+                { assert report['ensembl|transcripts dropped: exon did not lift'] == '1' },
+                { assert snapshot(process.out.findAll { key, _val -> key.startsWith('versions') }).match() }
+            )
+        }
+    }
+
+    test("mini bundle, optional files absent - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                def fx = "${projectDir}/modules/local/hmf_liftover/tests/fixtures"
+                input[0] = [
+                    file("\${fx}/bundle/common/DriverGenePanel.38.tsv", checkIfExists: true),
+                    file("\${fx}/bundle/common/ensembl_data", checkIfExists: true),
+                    [], [], []
+                ]
+                input[1] = file("\${fx}/source_to_target.chain", checkIfExists: true)
+                input[2] = [
+                    file("\${fx}/target.fa", checkIfExists: true),
+                    file("\${fx}/target.fa.fai", checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def bundle = file(process.out.bundle.get(0))
+            assertAll(
+                { assert process.success },
+                { assert bundle.resolve('common/ensembl_data/REFERENCE').text.trim() == 't2t' },
+                { assert bundle.resolve('common/DriverGenePanel.38.tsv').exists() },
+                { assert !bundle.resolve('dna/sv').list() }
+            )
+        }
+    }
+}

@@ -557,6 +557,7 @@ calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on ch
 | `--report_hmf_known_fusions`    | `known_fusion_data.38.csv`: known-fusion matching of the SV calls (optional; overrides the bundle's). Default = off                                                                                                                          |
 | `--report_hmf_hotspots`         | `KnownHotspots.somatic.38.vcf.gz`: hotspot matching of small variants (optional; overrides the bundle's). Default = off                                                                                                                     |
 | `--report_hmf_actionable_bed`   | `ActionableCodingPanel.38.bed(.gz)`: a region flag on small variants (optional; absent from bundle v3; overrides the bundle's). Default = off                                                                                                |
+| `--report_hmf_liftover_chain`   | GRCh38 → CHM13 chain used to lift the HMF resources over on a CHM13 run. Default = the genome's (UCSC `hg38ToHs1.over.chain.gz`)                                                                                                              |
 
 The report is rendered by [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) from
 `ghcr.io/ljwharbers/lrsomatic-report` (`ghcr.io/ljwharbers/lrsomatic-report-sif` under
@@ -647,9 +648,9 @@ driver catalogue used by [oncoanalyser](https://nf-co.re/oncoanalyser): its driv
 known hotspots and known fusions. The section is off unless you give the resources, which you
 download yourself (they are not distributed with the pipeline; the oncoanalyser documentation
 lists the bundle URLs and the resource files carry no explicit licence, so check Hartwig's terms
-before redistributing them). Bundles v2.x and v3.x are both read. **GRCh38 only:** with any other
-`--genome` (including a custom `--fasta`) the pipeline warns at launch and renders the report
-without it.
+before redistributing them). Bundles v2.x and v3.x are both read. The bundle is GRCh38; on
+`--genome CHM13` the pipeline lifts it over first (below). With any other `--genome` (including a
+custom `--fasta`) the pipeline warns at launch and renders the report without it.
 
 ```bash
     --genome GRCh38 \
@@ -675,6 +676,27 @@ rule and threshold):
 - **Fusions**: Severus and SAVANA breakends are matched to HMF's known pairs, promiscuous partners
   (with exon ranges), exon deletions/duplications and IG/enhancer regions, with a phase check.
 - The driver panel is also added to the report's gene lists as `hmf_driver`.
+
+**CHM13.** On `--genome CHM13` give the same GRCh38 bundle: `HMF_LIFTOVER` lifts it over once per
+run with `--report_hmf_liftover_chain` (default: UCSC's `hg38ToHs1.over.chain.gz`) and the
+CHM13 FASTA, and the report uses the lifted copy.
+
+- **Ensembl data cache:** a canonical transcript is kept only if every exon lifts whole, onto one
+  contig, in rank order; a gene without one is dropped. With the v2.2.0 bundle that keeps 39,178 of
+  39,500 transcripts and 528 of the 530 driver genes (PDCD1 and TPTE are dropped).
+- **Hotspots:** the REF is re-checked on CHM13 (9,302 of 9,305 kept).
+- **Actionable panel and IG/enhancer ranges:** lifted as regions; the orientation flips where the
+  chain inverts.
+- **Driver panel:** copied unchanged.
+
+The lifted copy declares its build (`common/ensembl_data/REFERENCE` = `t2t`), counts what was
+dropped in `hmf_liftover_report.tsv`, and is published under `pipeline_info/hmf_liftover/hmf_chm13/`.
+Giving that directory back as `--report_hmf_resource_dir` on later CHM13 runs skips the lift.
+Lifted resources on a GRCh38 run are an error.
+
+On CHM13 the VEP cache's transcript ids are not HMF's Ensembl GRCh38 ones, so the report reads each
+variant's effect on VEP's canonical transcript (matched to the panel by gene symbol) instead of
+HMF's canonical transcript. The report's footnote says which rule applied.
 
 It re-implements HMF's reporting rules on the long-read calls; it is not PURPLE or LINX. There is
 no dNdS driver likelihood, no biallelic or germline reporting and no SV chaining, and

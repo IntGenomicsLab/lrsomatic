@@ -17,7 +17,7 @@ include { isCram                 } from '../subworkflows/local/utils_nfcore_lrso
 include { resolveVepPlugins; validateVepPluginParams } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { padfootGenome; padfootAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { shatterseekGenome      } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
-include { hmfReportFiles; hmfAnnotationOk } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { hmfReportFiles; hmfAnnotationOk; hmfNeedsLiftover; hmfLiftoverChain; hmfLiftedFiles } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { validateClairstoCnaResources; validateSampleModels } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
 include { PREPARE_VEP_PLUGINS    } from '../subworkflows/local/prepare_vep_plugins'
 
@@ -56,6 +56,7 @@ include { SIGPROFILER_ASSIGNMENT            } from '../modules/local/sigprofiler
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
+include { HMF_LIFTOVER                    } from '../modules/local/hmf_liftover/main'
 include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
 include { PREPARE_SIGNATURES              } from '../subworkflows/local/prepare_signatures'
 include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
@@ -1575,10 +1576,21 @@ workflow LRSOMATIC {
             .findAll { tok -> reportGenePanelIsFile(tok) }
             .collect { tok -> file(tok, checkIfExists: true) }
 
-        // HMF resources in the module's slot order, [] each when the annotation is off (see hmfAnnotationOk())
-        def report_hmf_files = hmfAnnotationOk()
-            ? hmfReportFiles().values().collect { p -> p ? file(p, checkIfExists: true) : [] }
-            : [[], [], [], [], []]
+        // HMF resources in the module's slot order, [] each when the annotation is off (see hmfAnnotationOk()). A CHM13
+        // run given the GRCh38 bundle lifts it over once (HMF_LIFTOVER) and reports from the lifted copy
+        def hmf_files = hmfReportFiles()
+        def hmf_staged = hmf_files.values().collect { p -> p ? file(p, checkIfExists: true) : [] }
+        def report_hmf_files = channel.value([[], [], [], [], []])
+        if (hmfAnnotationOk() && hmfNeedsLiftover()) {
+            HMF_LIFTOVER (
+                hmf_staged,
+                file(hmfLiftoverChain(), checkIfExists: true),
+                ch_fasta.map { _meta, fasta -> fasta }.combine(ch_fai.map { _meta, fai -> fai })
+            )
+            report_hmf_files = HMF_LIFTOVER.out.bundle.map { bundle -> hmfLiftedFiles(bundle, hmf_files) }.first()
+        } else if (hmfAnnotationOk()) {
+            report_hmf_files = channel.value(hmf_staged)
+        }
 
         LRSOMATICREPORT (
             report_input_ch,
