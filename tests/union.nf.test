@@ -170,22 +170,14 @@ nextflow_pipeline {
                         }
                         assert som.every { rec -> !rec[6].split(';').any { it in ['RefCall', 'NoCall', 'GERMLINE', 'PON'] } } :
                             "${s}: DeepSomatic RefCall/NoCall/GERMLINE/PON record in the somatic arm"
-                        assert som.every { PhasedVcf.hasFlag(it, 'SOMATIC') } : "${s}: somatic record without INFO/SOMATIC"
-                        // LongPhase would copy a colliding germline record's phase onto a non-alt somatic record
+                        // Only records with an ALT allele in GT are phased
                         assert som.findAll { !PhasedVcf.isAlt(it) }.every { PhasedVcf.format(it, 'PS') in [null, '.'] } :
                             "${s}: non-alt somatic record carries a phase set"
                     }
                 },
-                // ── 'all' mode keeps one record per position, non-PASS records included ──
-                {
-                    ['sample1', 'sample2', 'sample3'].each { s ->
-                        ['germline', 'somatic'].each { arm ->
-                            def pos = PhasedVcf.records("$outputDir/${s}/variants/phased/${arm}_smallvariants.vcf.gz")
-                                .collect { "${it[0]}:${it[1]}" }
-                            assert pos.size() == pos.toUnique().size() : "${s}: two ${arm} records at one position"
-                        }
-                    }
-                }
+                // ── one germline record per position, non-PASS records included; somatic PS are germline blocks ──
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                { PhasedVcf.assertSomaticPhaseInGermlineBlocks("$outputDir", ['sample1', 'sample2', 'sample3']) }
             )
         }
     }
