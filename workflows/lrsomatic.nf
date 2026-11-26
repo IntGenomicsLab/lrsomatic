@@ -56,8 +56,6 @@ include { SIGPROFILER_ASSIGNMENT            } from '../modules/local/sigprofiler
 // IMPORT SUBWORKFLOWS
 //
 include { PREPARE_REFERENCE_FILES         } from '../subworkflows/local/prepare_reference_files'
-include { HMF_LIFTOVER                    } from '../modules/local/hmf_liftover/main'
-include { HMF_BUNDLE                      } from '../modules/local/hmf_bundle/main'
 include { PREPARE_ANNOTATION              } from '../subworkflows/local/prepare_annotation'
 include { PREPARE_SIGNATURES              } from '../subworkflows/local/prepare_signatures'
 include { BAM_STATS_SAMTOOLS              } from '../subworkflows/nf-core/bam_stats_samtools/main'
@@ -71,9 +69,11 @@ include { DMR                             } from '../subworkflows/local/dmr'
 include { PADFOOT_ANNOTATION              } from '../subworkflows/local/padfoot_annotation'
 include { RECONPLOT_FIGURES               } from '../subworkflows/local/reconplot_figures'
 include { SHATTERSEEK_CHROMOTHRIPSIS      } from '../subworkflows/local/shatterseek_chromothripsis'
-// Last: keeps the eval numbering above unchanged, so older work dirs still -resume
+// Last (new includes go here): keeps the eval numbering above unchanged, so older work dirs still -resume
 include { PREPARE_ALIGNED                } from '../modules/local/prepare_aligned/main'
 include { validateSkipAlignment           } from '../subworkflows/local/utils_nfcore_lrsomatic_pipeline'
+include { HMF_LIFTOVER                    } from '../modules/local/hmf_liftover/main'
+include { HMF_BUNDLE                      } from '../modules/local/hmf_bundle/main'
 
 
 
