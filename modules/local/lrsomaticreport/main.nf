@@ -41,6 +41,9 @@ process LRSOMATICREPORT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
     def run_mode = meta.paired_data ? 'paired' : 'tumour_only'
+    // The build, when the pipeline knows it (conf/modules.config); `auto` reads it from the VEP/SV VCF headers, which
+    // a test subset cannot always tell apart (and then falls back to t2t)
+    def reference = task.ext.reference ?: 'auto'
     def link_sample_dir = reportSampleDirCommands(vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, extra_relpaths, extra_files)
     def hmf_args = reportHmfArgs(hmf_driver_panel, hmf_ensembl_data, hmf_known_fusions, hmf_hotspots, hmf_actionable_bed)
 
@@ -56,7 +59,7 @@ process LRSOMATICREPORT {
         --sample-dir sample_dir \\
         --sample-id "${prefix}" \\
         --sex "${sex}" \\
-        --reference auto \\
+        --reference ${reference} \\
         --run-mode ${run_mode} \\
         --gene-lists-dir gene_lists \\
         --output "${prefix}_report.html" \\
