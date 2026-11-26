@@ -892,6 +892,11 @@
                     "type": "boolean",
                     "description": "Skip the final per-sample HTML report"
                 },
+                "skip_report_hmf": {
+                    "type": "boolean",
+                    "description": "Skip the report's HMF driver annotation (on by default for GRCh38 and CHM13).",
+                    "help_text": "By default the report's HMF driver annotation uses the genome's hosted bundle (GRCh38, or CHM13 lifted over; about 5 MB, downloaded once per run and MD5-checked). Your own resources via --report_hmf_resource_dir or the --report_hmf_* files take over from it. Other genomes have no bundle and run without the annotation."
+                },
                 "skip_coral": {
                     "type": "boolean",
                     "description": "Skip CoRAL amplicon reconstruction and AmpliconClassifier."

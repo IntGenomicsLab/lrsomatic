@@ -192,7 +192,7 @@
 
 - [Hartwig Medical Foundation (WiGiTS / oncoanalyser) resources](https://github.com/hartwigmedical/hmftools)
 
-  Optional, user-supplied (`--report_hmf_*`): the driver gene panel, known fusions, hotspots,
+  Hosted for GRCh38 and CHM13 in IntGenomicsLab/test-datasets (`references/hmf/`), or user-supplied (`--report_hmf_*`): the driver gene panel, known fusions, hotspots,
   actionable coding panel and Ensembl data cache of the oncoanalyser resource bundle, whose
   reporting rules the report's HMF section re-implements from PURPLE and LINX.
   On CHM13 they are lifted over with the T2T consortium's GRCh38 -> T2T-CHM13v2.0 chain ([`grch38-chm13v2.chain`](https://github.com/marbl/CHM13), public domain).

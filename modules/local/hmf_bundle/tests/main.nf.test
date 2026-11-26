@@ -1,0 +1,77 @@
+nextflow_process {
+
+    name "Test Process HMF_BUNDLE"
+    script "../main.nf"
+    process "HMF_BUNDLE"
+
+    tag "modules"
+    tag "modules_local"
+    tag "hmf_bundle"
+    tag "small"
+
+    // fetch_hmf_bundle.py reads file:// URLs too, so a local fixture stands in for the hosted tarball
+
+    test("fixture bundle - downloaded, MD5-checked, unpacked without its top-level directory") {
+
+        when {
+            process {
+                """
+                input[0] = [ "file://${projectDir}/modules/local/hmf_bundle/tests/fixtures/hmf_report.test.tar.gz", "1fa42202965793362751e0272e1ad7ca" ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def at = { rel -> new File(file(process.out.bundle.get(0)), rel) }
+            assertAll(
+                { assert at.call('common/DriverGenePanel.38.tsv').exists() },
+                { assert at.call('common/ensembl_data/ensembl_trans_exon_data.csv').exists() },
+                { assert at.call('dna/sv/known_fusion_data.38.csv').exists() },
+                { assert at.call('dna/variants/KnownHotspots.somatic.38.vcf.gz').exists() },
+                { assert !at.call('hmf_report_test').exists() },
+                { assert snapshot(process.out.findAll { key, _val -> key.startsWith('versions') }).match() }
+            )
+        }
+    }
+
+    test("fixture bundle - a wrong MD5 fails the task") {
+
+        when {
+            process {
+                """
+                input[0] = [ "file://${projectDir}/modules/local/hmf_bundle/tests/fixtures/hmf_report.test.tar.gz", "00000000000000000000000000000000" ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.failed },
+                { assert process.stderr.any { line -> line.contains('expected 00000000000000000000000000000000') } }
+            )
+        }
+    }
+
+    test("stub - the hosted layout without a download") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ "https://example.org/hmf_report.GRCh38.tar.gz", null ]
+                """
+            }
+        }
+
+        then {
+            def at = { rel -> new File(file(process.out.bundle.get(0)), rel) }
+            assertAll(
+                { assert process.success },
+                { assert at.call('common/ensembl_data/ensembl_gene_data.csv').exists() },
+                { assert at.call('dna/variants/ActionableCodingPanel.38.bed.gz').exists() }
+            )
+        }
+    }
+}

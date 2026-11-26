@@ -5,7 +5,8 @@ nextflow_pipeline {
     tag "pipeline"
     tag "small"
 
-    // Launch checks are covered by utils_nfcore_lrsomatic_pipeline/tests/hmf_report.function.nf.test.
+    // Launch checks are covered by utils_nfcore_lrsomatic_pipeline/tests/hmf_report.function.nf.test. The test
+    // profiles set skip_report_hmf (no CI shard downloads the hosted bundle), so every test here opts back in.
     // The test profile is GRCh38, so the synthetic bundle (laid out like an oncoanalyser one) is staged; the
     // stub report records the flags the real run would pass. Bundle files without a slot are not staged.
 
@@ -16,6 +17,7 @@ nextflow_pipeline {
         when {
             params {
                 outdir                  = "$outputDir"
+                skip_report_hmf         = false
                 report_hmf_resource_dir = "${projectDir}/modules/local/lrsomaticreport/tests/hmf"
             }
         }
@@ -46,6 +48,7 @@ nextflow_pipeline {
                 input                     = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/samplesheets/samplesheet_lr-somatic_chm13.csv"
                 fasta                     = "https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz"
                 genome                    = "CHM13"
+                skip_report_hmf           = false
                 report_hmf_resource_dir   = "${projectDir}/modules/local/lrsomaticreport/tests/hmf"
                 report_hmf_liftover_chain = "${projectDir}/modules/local/hmf_liftover/tests/fixtures/source_to_target.chain"
             }
@@ -64,6 +67,34 @@ nextflow_pipeline {
                 { assert reports.every { f -> f.text.contains('--hmf-ensembl-data-dir "hmf/ensembl/ensembl_data"') } },
                 { assert reports.every { f -> f.text.contains('--hmf-hotspots "hmf/hotspots/KnownHotspots.somatic.38.vcf.gz"') } },
                 { assert file("$outputDir/pipeline_info/hmf_liftover/hmf_chm13/common/ensembl_data/REFERENCE").text.trim() == 't2t' }
+            )
+        }
+    }
+
+    // No --report_hmf_*: the genome's hosted bundle (HMF_BUNDLE, a stub here, so nothing is downloaded); no liftover
+    test("-profile test, hosted bundle by default - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir          = "$outputDir"
+                skip_report_hmf = false
+            }
+        }
+
+        then {
+            def reports = file("$outputDir").listFiles().findAll { d -> d.isDirectory() }
+                .collect { d -> file("${d}/report/${d.name}_report.html") }.findAll { f -> f.exists() }
+            def tasks = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc}") } }
+            assertAll(
+                { assert workflow.success },
+                { assert tasks.call('HMF_BUNDLE').size() == 1 },
+                { assert tasks.call('HMF_LIFTOVER').size() == 0 },
+                { assert reports.size() > 0 },
+                { assert reports.every { f -> f.text.contains('--hmf-driver-panel "hmf/driver_panel/DriverGenePanel.38.tsv"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-ensembl-data-dir "hmf/ensembl/ensembl_data"') } },
+                { assert reports.every { f -> f.text.contains('--hmf-actionable-bed "hmf/actionable_bed/ActionableCodingPanel.38.bed.gz"') } }
             )
         }
     }

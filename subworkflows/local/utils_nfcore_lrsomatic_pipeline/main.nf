@@ -442,7 +442,7 @@ def hmfReportFiles() {
 }
 
 //
-// Whether any HMF report parameter was given
+// Whether any HMF report parameter was given (the user's own resources, which take over from the hosted bundle)
 //
 def hmfAnnotationRequested() {
     return [params.report_hmf_resource_dir, params.report_hmf_driver_panel, params.report_hmf_ensembl_data_dir,
@@ -468,20 +468,51 @@ def hmfLiftoverChain() {
 }
 
 //
-// Whether the HMF resources must be lifted over first: a CHM13 run given the GRCh38 bundle
+// Whether the HMF resources must be lifted over first: a CHM13 run given the user's own GRCh38 bundle (the hosted
+// CHM13 bundle is lifted already)
 //
 def hmfNeedsLiftover() {
-    return params.genome == 'CHM13' && hmfResourcesBuild(hmfReportFiles().ensembl_data_dir) == 'GRCh38'
+    return hmfAnnotationRequested() && params.genome == 'CHM13' && hmfResourcesBuild(hmfReportFiles().ensembl_data_dir) == 'GRCh38'
 }
 
 //
-// Whether the report gets the HMF annotation: requested, the report runs, the two required files resolve, and the
-// resources are on the run's genome: GRCh38 as published, CHM13 either lifted already or liftable (a chain resolves).
+// The genome's hosted HMF report bundle as [url, md5] (conf/igenomes.config hmf_bundle_url / hmf_bundle_md5): the
+// default when the report runs, --skip_report_hmf is off and no --report_hmf_* resources are given; null otherwise,
+// and for a genome without one (a custom --fasta)
+//
+def hmfDefaultBundle() {
+    if (params.skip_report || params.skip_report_hmf || hmfAnnotationRequested()) {
+        return null
+    }
+    def url = getGenomeAttribute('hmf_bundle_url')
+    return url ? [url.toString(), getGenomeAttribute('hmf_bundle_md5')?.toString()] : null
+}
+
+//
+// The unpacked hosted bundle (HMF_BUNDLE's hmf_bundle/) as the report's five slots, at the bundle's fixed layout
+//
+def hmfHostedFiles(bundle) {
+    return [
+        bundle.resolve('common/DriverGenePanel.38.tsv'),
+        bundle.resolve('common/ensembl_data'),
+        bundle.resolve('dna/sv/known_fusion_data.38.csv'),
+        bundle.resolve('dna/variants/KnownHotspots.somatic.38.vcf.gz'),
+        bundle.resolve('dna/variants/ActionableCodingPanel.38.bed.gz'),
+    ]
+}
+
+//
+// Whether the report gets the HMF annotation. On by default where the genome has a hosted bundle (GRCh38, CHM13);
+// off with --skip_report_hmf or --skip_report. The user's own --report_hmf_* resources take over: then the two required
+// files must resolve and be on the run's genome (GRCh38 as published, CHM13 lifted already or liftable).
 // The workflow gate and validateHmfReportParams() both call this, so they cannot drift apart.
 //
 def hmfAnnotationOk() {
-    if (params.skip_report || !hmfAnnotationRequested() || !(params.genome in ['GRCh38', 'CHM13'])) {
+    if (params.skip_report || params.skip_report_hmf || !(params.genome in ['GRCh38', 'CHM13'])) {
         return false
+    }
+    if (!hmfAnnotationRequested()) {
+        return hmfDefaultBundle() as boolean
     }
     def f = hmfReportFiles()
     if (!(f.driver_panel && f.ensembl_data_dir)) {
@@ -508,13 +539,18 @@ def hmfLiftedFiles(bundle, files) {
 }
 
 //
-// Validate the HMF report parameters at launch: skipped with a warning on a genome the resources cannot be put on
+// Validate the user's own HMF report resources at launch: skipped with a warning on a genome they cannot be put on
 // (anything but GRCh38 and CHM13, or CHM13 without a chain), an error when the driver panel or the Ensembl cache
 // cannot be found (each other file is optional), when the resources declare another build than the run's, or when
 // the chain (local or remote: the default is a URL) cannot be reached
 //
 def validateHmfReportParams() {
+    // The hosted bundle needs no checks (its MD5 is checked on download); only the user's own resources do
     if (params.skip_report || !hmfAnnotationRequested()) {
+        return
+    }
+    if (params.skip_report_hmf) {
+        log.warn "--skip_report_hmf is set, so the --report_hmf_* resources are ignored."
         return
     }
     if (!(params.genome in ['GRCh38', 'CHM13'])) {
