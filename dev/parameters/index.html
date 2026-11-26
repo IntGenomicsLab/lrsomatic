@@ -1335,6 +1335,41 @@ See the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for mor
   <td class="param-default-cell"><span class="param-no-default">-</span></td>
   <td class="param-desc-cell">Gene panel(s) applied when the report opens, as a comma-separated list: &#x27;none&#x27; for no filtering, builtin panel names (e.g. &#x27;lymphoid&#x27;), and/or paths to TSVs with a &#x27;gene&#x27; column. Several panels are unioned; default (unset) is unfiltered.<details class="param-help"><summary>More info</summary><p>Every builtin panel is embedded in the report as a checkbox, so this only sets the initial selection. An entry is read as a panel file if it contains a &#x27;/&#x27; or ends in &#x27;.tsv&#x27;, and as a builtin panel name otherwise. &#x27;none&#x27; cannot be combined with a real panel, and two panel files sharing a base name cannot be combined.</p></details></td>
 </tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_resource_dir</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">Root of a Hartwig (oncoanalyser) GRCh38 resource bundle, lifted over on --genome CHM13 (or a copy the pipeline already lifted). Turns on the report&#x27;s optional HMF driver annotation, taking its files from the bundle&#x27;s standard layout.<div class="param-format"><span class="param-badge param-format-badge">directory-path</span></div><details class="param-help"><summary>More info</summary><p>Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. The bundle is GRCh38: on --genome CHM13 it is lifted over first (HMF_LIFTOVER, see --report_hmf_liftover_chain), or a copy the pipeline already lifted (its common/ensembl_data/REFERENCE says t2t) is used as is; such a copy is rejected on GRCh38. With any other --genome, or on CHM13 when no chain resolves, the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.</p></details></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_driver_panel</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">HMF DriverGenePanel.38.tsv. Turns on the report&#x27;s HMF driver annotation (with --report_hmf_ensembl_data_dir) and adds the panel as the selectable gene list &#x27;hmf_driver&#x27;.<div class="param-format"><span class="param-badge param-format-badge">file-path</span></div></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_ensembl_data_dir</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">HMF Ensembl data cache directory (the bundle&#x27;s common/ensembl_data, with ensembl_gene_data.csv and ensembl_trans_exon_data.csv). Required for the HMF driver annotation.<div class="param-format"><span class="param-badge param-format-badge">directory-path</span></div></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_known_fusions</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">HMF known_fusion_data.38.csv: known-fusion matching of the SV calls in the report&#x27;s HMF section (optional).<div class="param-format"><span class="param-badge param-format-badge">file-path</span></div></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_hotspots</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">HMF KnownHotspots.somatic.38.vcf.gz: hotspot matching of small variants in the report&#x27;s HMF section (optional).<div class="param-format"><span class="param-badge param-format-badge">file-path</span></div></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_liftover_chain</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">GRCh38 -&gt; CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome&#x27;s (the T2T consortium&#x27;s grch38-chm13v2.chain).<div class="param-format"><span class="param-badge param-format-badge">file-path</span></div><details class="param-help"><summary>More info</summary><p>On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions&#x27; IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir. The default chain is the T2T consortium&#x27;s (public domain), downloaded at launch (~6 MB); offline, download it once and pass its local path here, or reuse a lifted bundle. A chain that cannot be reached is an error at launch.</p></details></td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--report_hmf_actionable_bed</code><br/><span class="param-badge param-type badge-type-string">string</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">HMF ActionableCodingPanel.38.bed(.gz): flags small variants in its regions in the report&#x27;s HMF section (optional; a calling-sensitivity region set, not an actionability call).<div class="param-format"><span class="param-badge param-format-badge">file-path</span></div></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1534,6 +1569,11 @@ See the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for mor
   <td class="param-name-cell"><code class="param-name">--skip_report</code><br/><span class="param-badge param-type badge-type-boolean">boolean</span></td>
   <td class="param-default-cell"><span class="param-no-default">-</span></td>
   <td class="param-desc-cell">Skip the final per-sample HTML report</td>
+</tr>
+<tr class="param-row">
+  <td class="param-name-cell"><code class="param-name">--skip_report_hmf</code><br/><span class="param-badge param-type badge-type-boolean">boolean</span></td>
+  <td class="param-default-cell"><span class="param-no-default">-</span></td>
+  <td class="param-desc-cell">Skip the report&#x27;s HMF driver annotation (on by default for GRCh38 and CHM13).<details class="param-help"><summary>More info</summary><p>By default the report&#x27;s HMF driver annotation uses the genome&#x27;s hosted bundle (GRCh38, or CHM13 lifted over; about 5 MB, downloaded once per run and MD5-checked). Your own resources via --report_hmf_resource_dir or the --report_hmf_* files take over from it. Other genomes have no bundle and run without the annotation.</p></details></td>
 </tr>
 <tr class="param-row">
   <td class="param-name-cell"><code class="param-name">--skip_coral</code><br/><span class="param-badge param-type badge-type-boolean">boolean</span></td>

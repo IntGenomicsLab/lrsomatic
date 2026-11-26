@@ -3040,6 +3040,10 @@ field rather than a match value.</p>
 <td>QC and phasing</td>
 <td>mosdepth, cramino and samtools files under <code>qc/{tumor,normal}/</code>, <code>qc/whatshap_stats/{sample}_whatshap_stats.tsv</code></td>
 </tr>
+<tr>
+<td>HMF driver annotation</td>
+<td>The genome's hosted HMF bundle (GRCh38, CHM13; unpacked copy published under <code>cache/hmf/hmf_report_&lt;genome&gt;/</code>) or your own <code>--report_hmf_*</code> resources (<a href="../usage/#hmf-driver-annotation">usage</a>), plus the small-variant, SV and copy-number files above</td>
+</tr>
 </tbody>
 </table>
 <p>The pipeline passes each sample's run mode, <code>--run-mode paired</code> for a tumour/normal pair and <code>--run-mode tumour_only</code> otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.</p>
@@ -3052,6 +3056,7 @@ field rather than a match value.</p>
 <li><strong>Circos</strong> — genome-wide SNV density, SVs and copy number, with the tier 1–2 key-finding genes of the ticked gene list(s) labelled around the outside; the labels follow the panel checkboxes, so with no list ticked there are none.</li>
 <li><strong>ReConPlot figures</strong> — by default (the report's <code>--embed slim</code>) no genome-wide strip, and per-chromosome figures only for chromosomes with a ShatterSeek chromothripsis call, an SV with a Padfoot <code>HIGH_ONCO</code>/<code>HIGH_TSG</code> rating, or a tier 1–2 SV or copy-number key finding of a ticked gene list. The report option <code>--embed full</code> (<a href="../usage/#report-options">usage</a>) embeds every figure; all of them remain under <a href="#reconplot"><code>reconplot</code></a>.</li>
 <li><strong>Copy number</strong> — ASCAT purity/ploidy, whole-genome doubling and LOH (from <code>metrics.txt</code>) plus its diagnostic plots, SAVANA's fitted purity/ploidy, and, when WAKHAN ran, its ranked purity/ploidy solutions with the top-ranked solution's copy-number profile and gene copy-number states.</li>
+<li><strong>HMF driver annotation</strong> — on by default for GRCh38 and CHM13 (<code>--skip_report_hmf</code> turns it off), from the genome's hosted bundle or your own resources (<a href="../usage/#hmf-driver-annotation">usage</a>): Hartwig's driver panel, hotspots and known fusions applied to the small variants (reported per the panel's flags, on the canonical transcript), to ASCAT and Wakhan copy number separately plus Severus/SAVANA deletions (amplifications and deletions, with a per-source on/off switch), and to the SV breakends (known fusions with exon ranges and frame). The driver panel is also added to the gene-list checkboxes as <code>hmf_driver</code>. Absent otherwise.</li>
 <li><strong>QC</strong> — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible <strong>Phasing</strong> block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with <code>--skip_whatshapstats</code> or <code>--skip_qc</code>.</li>
 </ul>
 <p>Filtering in the browser:</p>
@@ -3240,10 +3245,11 @@ field rather than a match value.</p>
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>│   ├── execution_timeline_{DATE}.html
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>│   ├── execution_trace_{DATE}.txt
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>│   ├── final_sample_disk_usage.tsv
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>│   ├── lrsomatic_software_mqc_versions.yml
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>│   ├── params_{DATE}.json
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>│   ├── pipeline_dag_{DATE}.html
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>│   ├── raw_task_disk_usage.tsv
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>│   ├── hmf_liftover/hmf_chm13/    (CHM13 runs with --report_hmf_* only)
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>│   ├── lrsomatic_software_mqc_versions.yml
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>│   ├── params_{DATE}.json
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>│   ├── pipeline_dag_{DATE}.html
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>│   ├── raw_task_disk_usage.tsv
 </code></pre></div>
 <table>
 <thead>
@@ -3264,6 +3270,10 @@ field rather than a match value.</p>
 <tr>
 <td><code>final_sample_disk_usage.tsv</code></td>
 <td>summary of disk usage per sample at pipeline completion</td>
+</tr>
+<tr>
+<td><code>hmf_liftover/hmf_chm13/</code></td>
+<td>on a CHM13 run given your own GRCh38 HMF resources: the GRCh38 HMF resources lifted to CHM13 (<code>HMF_LIFTOVER</code>), laid out like an oncoanalyser bundle with <code>common/ensembl_data/REFERENCE</code> = <code>t2t</code>, and <code>hmf_liftover_report.tsv</code> counting what was lifted and dropped; reusable as <code>--report_hmf_resource_dir</code></td>
 </tr>
 <tr>
 <td><code>lrsomatic_software_mqc_versions.yml</code></td>

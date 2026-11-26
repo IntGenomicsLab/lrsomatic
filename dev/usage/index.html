@@ -807,6 +807,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#hmf-driver-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HMF driver annotation
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1757,6 +1768,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#hmf-driver-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HMF driver annotation
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2697,6 +2719,10 @@ tissue.</p>
 <td><code>--skip_report</code></td>
 <td>A boolean to skip the final per-sample HTML report. Default = <code>false</code></td>
 </tr>
+<tr>
+<td><code>--skip_report_hmf</code></td>
+<td>A boolean to skip the report's HMF driver annotation, which is on by default for GRCh38 and CHM13 (see <a href="#hmf-driver-annotation">HMF driver annotation</a>). Default = <code>false</code></td>
+</tr>
 </tbody>
 </table>
 <h4 id="modkit-options">Modkit options:<a class="headerlink" href="#modkit-options" title="Permanent link">&para;</a></h4>
@@ -3118,6 +3144,34 @@ calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on ch
 <td><code>--report_gene_panel</code></td>
 <td>Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is <code>none</code> (no filtering), a builtin panel name (<code>lymphoid</code> or <code>sarcoma</code>), or a path to a TSV file with a <code>gene</code> column. Default = <code>null</code>, i.e. unfiltered</td>
 </tr>
+<tr>
+<td><code>--report_hmf_resource_dir</code></td>
+<td>Your own Hartwig (oncoanalyser) resource bundle for the report's <a href="#hmf-driver-annotation">HMF driver annotation</a>, in place of the hosted one (GRCh38, lifted over on CHM13), taking every file from its standard layout. Default = the genome's hosted bundle</td>
+</tr>
+<tr>
+<td><code>--report_hmf_driver_panel</code></td>
+<td><code>DriverGenePanel.38.tsv</code>; with <code>--report_hmf_ensembl_data_dir</code>, turns on the HMF driver annotation (overrides the bundle's). Default = off</td>
+</tr>
+<tr>
+<td><code>--report_hmf_ensembl_data_dir</code></td>
+<td>The bundle's <code>common/ensembl_data</code> directory (<code>ensembl_gene_data.csv</code>, <code>ensembl_trans_exon_data.csv</code>); required for the HMF annotation (overrides the bundle's). Default = off</td>
+</tr>
+<tr>
+<td><code>--report_hmf_known_fusions</code></td>
+<td><code>known_fusion_data.38.csv</code>: known-fusion matching of the SV calls (optional; overrides the bundle's). Default = off</td>
+</tr>
+<tr>
+<td><code>--report_hmf_hotspots</code></td>
+<td><code>KnownHotspots.somatic.38.vcf.gz</code>: hotspot matching of small variants (optional; overrides the bundle's). Default = off</td>
+</tr>
+<tr>
+<td><code>--report_hmf_actionable_bed</code></td>
+<td><code>ActionableCodingPanel.38.bed(.gz)</code>: a region flag on small variants (optional; absent from bundle v3; overrides the bundle's). Default = off</td>
+</tr>
+<tr>
+<td><code>--report_hmf_liftover_chain</code></td>
+<td>GRCh38 → CHM13 chain used to lift the HMF resources over on a CHM13 run. Default = the genome's (the T2T consortium's <code>grch38-chm13v2.chain</code>)</td>
+</tr>
 </tbody>
 </table>
 <p>The report is rendered by <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> from
@@ -3183,7 +3237,73 @@ no pipeline parameter for it; pass it through <code>ext.args</code> in a custom 
 <p>This replaces the <code>--gene-panel</code> arguments the pipeline builds from <code>--report_gene_panel</code>, so name
 the panels in the same string instead: a builtin as <code>--gene-panel 'lymphoid'</code>, a panel file given
 to <code>--report_gene_panel</code> as <code>--gene-panel 'gene_panels/&lt;file name&gt;'</code> (keep <code>--report_gene_panel</code>
-set, since it is what stages the file).</p>
+set, since it is what stages the file). The <code>--hmf-*</code> arguments are built by the module itself, so
+<code>ext.args</code> does not affect them.</p>
+<h5 id="hmf-driver-annotation">HMF driver annotation<a class="headerlink" href="#hmf-driver-annotation" title="Permanent link">&para;</a></h5>
+<p>The report can apply the <a href="https://github.com/hartwigmedical/hmftools">Hartwig Medical Foundation</a>
+driver catalogue used by <a href="https://nf-co.re/oncoanalyser">oncoanalyser</a>: its driver gene panel,
+known hotspots and known fusions. <strong>It is on by default for <code>--genome GRCh38</code> and <code>--genome CHM13</code></strong>:
+the pipeline downloads the genome's hosted bundle once per run (<code>HMF_BUNDLE</code>, about 5 MB, MD5-checked),
+the subset of the oncoanalyser resource bundle v2.2.0 the report reads, already lifted over for CHM13
+(see <a href="https://github.com/IntGenomicsLab/test-datasets/tree/main/references/hmf">IntGenomicsLab/test-datasets <code>references/hmf/</code></a>).
+Turn it off with <code>--skip_report_hmf</code>. Other genomes (including a custom <code>--fasta</code>) have no bundle and
+render the report without it.</p>
+<p>The unpacked bundle is published under <code>&lt;outdir&gt;/cache/hmf/hmf_report_&lt;genome&gt;/</code> (or
+<code>--outdir_cache</code>); on an offline host, or to skip the download, give that directory back as
+<code>--report_hmf_resource_dir</code>.</p>
+<p><strong>Your own resources.</strong> <code>--report_hmf_resource_dir</code> (a bundle directory) or the individual
+<code>--report_hmf_*</code> files take over from the hosted bundle, for example a newer oncoanalyser release.
+Bundles v2.x and v3.x are both read.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="w">    </span>--genome<span class="w"> </span>GRCh38<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span>--report_hmf_resource_dir<span class="w"> </span>/path/to/hmf_pipeline_resources.38_v2.2.0--3
+</code></pre></div>
+<p><code>--report_hmf_resource_dir</code> picks up <code>common/DriverGenePanel.38.tsv</code>, <code>common/ensembl_data/</code>,
+<code>dna/sv/known_fusion_data.38.csv</code>, <code>dna/variants/KnownHotspots.somatic.38.vcf.gz</code> and, where
+present, <code>dna/variants/ActionableCodingPanel.38.bed(.gz)</code>. Any <code>--report_hmf_*</code> file parameter
+overrides that one file, and they can be given without a bundle directory. The driver panel and
+the Ensembl data cache are required (an error at launch otherwise); the other three each switch
+their part of the section on.</p>
+<p>What the report does with them (the
+<a href="https://github.com/ljwharbers/lrsomatic_report#hmf-driver-annotation">report's README</a> has every
+rule and threshold):</p>
+<ul>
+<li><strong>Small variants</strong> on a panel gene's canonical transcript are reported per the panel's
+  <code>reportMissense</code> / <code>reportNonsense</code> / <code>reportSplice</code> / <code>reportSomaticHotspot</code> flags.</li>
+<li><strong>Copy number</strong>: amplification (minimum CN &gt; 3 × ploidy) and deletion (minimum CN &lt; 0.5) are
+  called from ASCAT and from Wakhan separately, and every deletion called by Severus or SAVANA
+  over a deletion-flagged gene is listed too. Each source can be switched off in the browser.</li>
+<li><strong>Fusions</strong>: Severus and SAVANA breakends are matched to HMF's known pairs, promiscuous partners
+  (with exon ranges), exon deletions/duplications and IG/enhancer regions, with a phase check.</li>
+<li>The driver panel is also added to the report's gene lists as <code>hmf_driver</code>.</li>
+</ul>
+<p><strong>CHM13.</strong> The hosted CHM13 bundle is the GRCh38 one lifted over as described here. If you give
+your own GRCh38 bundle on <code>--genome CHM13</code>, <code>HMF_LIFTOVER</code> lifts it over once per run with
+<code>--report_hmf_liftover_chain</code> and the CHM13 FASTA, and the report uses the lifted copy.
+The default chain is the T2T consortium's GRCh38 → T2T-CHM13v2.0 <code>grch38-chm13v2.chain</code> (public
+domain), downloaded at launch (about 6 MB). On an offline or air-gapped host, download it once and
+pass its local path with <code>--report_hmf_liftover_chain</code>, or reuse a bundle the pipeline already
+lifted (below); a chain that cannot be reached is an error at launch.</p>
+<ul>
+<li><strong>Ensembl data cache:</strong> a canonical transcript is kept only if every exon lifts whole, onto one
+  contig and strand, in rank order, its span roughly kept; a gene without one is dropped. With the
+  v2.2.0 bundle that keeps 38,946 of 39,500 transcripts and 528 of the 530 driver genes (OR4F21 and
+  TPTE are dropped).</li>
+<li><strong>Hotspots:</strong> the REF is re-checked on CHM13 (9,302 of 9,305 kept).</li>
+<li><strong>Actionable panel and IG/enhancer ranges:</strong> lifted as regions (all of them with the v2.2.0
+  bundle); the orientation flips where the chain inverts.</li>
+<li><strong>Driver panel:</strong> copied unchanged.</li>
+</ul>
+<p>The lifted copy declares its build (<code>common/ensembl_data/REFERENCE</code> = <code>t2t</code>), counts what was
+dropped in <code>hmf_liftover_report.tsv</code>, and is published under <code>pipeline_info/hmf_liftover/hmf_chm13/</code>.
+Giving that directory back as <code>--report_hmf_resource_dir</code> on later CHM13 runs skips the lift.
+Lifted resources on a GRCh38 run are an error.</p>
+<p>On CHM13 the VEP cache's transcript ids are not HMF's Ensembl GRCh38 ones, so the report reads each
+variant's effect on VEP's canonical transcript (matched to the panel by gene symbol) instead of
+HMF's canonical transcript. The report's footnote says which rule applied.</p>
+<p>It re-implements HMF's reporting rules on the long-read calls; it is not PURPLE or LINX. There is
+no dNdS driver likelihood, no biallelic or germline reporting and no SV chaining, and
+<code>ActionableCodingPanel</code> is only a region flag (HMF uses it as a calling-sensitivity tier, not as
+actionability evidence).</p>
 <h4 id="wakhan-options">WAKHAN Options<a class="headerlink" href="#wakhan-options" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3357,17 +3477,17 @@ GRCh38 and CHM13-T2T payloads installed before this release no longer pass that 
 </tbody>
 </table>
 <p>Tier cut-offs (<code>--min-sv-hc1</code>, <code>--min-osc-hc</code>, <code>--min-sv-hc2</code>, <code>--min-tra-hc2</code>, <code>--min-sv-hc3</code>, <code>--no-hc3</code>), the significance level (<code>--alpha</code>, default 0.2), q-values or raw P values (<code>--use q|p</code>) and the other SV filters (<code>--min-support</code>, <code>--exclude-vntr</code>) are wrapper options, set through <code>ext.args</code> (keep <code>--min-svlen</code> in it, or use <code>--shatterseek_min_svlen</code>, since <code>ext.args</code> replaces the pipeline's value):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">ext</span><span class="o">.</span><span class="na">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'--min-svlen 150 --no-hc3'</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="o">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">ext</span><span class="o">.</span><span class="na">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'--min-svlen 150 --no-hc3'</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="o">}</span>
 </code></pre></div>
 <h5 id="offline-and-air-gapped-systems">Offline and air-gapped systems<a class="headerlink" href="#offline-and-air-gapped-systems" title="Permanent link">&para;</a></h5>
 <p>Both modules use the same pinned-tag pair as the pipeline's other large custom images (ClairS-TO): a prebuilt SIF (<code>oras://docker.io/timmy9527/&lt;name&gt;-sif:&lt;tag&gt;</code>) under Singularity/Apptainer and the Docker image (<code>docker.io/timmy9527/&lt;name&gt;:&lt;tag&gt;</code>) otherwise, both on Docker Hub, so <code>nf-core pipelines download --container-system singularity</code> stages them like every other container in the pipeline. To use a different image (e.g. a local mirror) override it in a config file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/padfoot-repeatmasker.sif'</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/reconplot.sif'</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/shatterseek.sif'</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="o">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:PADFOOT_(SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/padfoot-repeatmasker.sif'</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:RECONPLOT_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/reconplot.sif'</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)'</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'/path/to/shatterseek.sif'</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="o">}</span>
 </code></pre></div>
 <p>Neither step downloads anything at run time: Padfoot and the ReConPlot R package are inside the two images, and the ReConPlot wrapper is part of the pipeline. Updating either tool means rebuilding its image, pushing the Docker image and its SIF twin, and bumping the tags in the module (see the READMEs under <code>containers/</code>).</p>
 <h4 id="variant-filtering-and-combining-options">Variant Filtering and Combining Options<a class="headerlink" href="#variant-filtering-and-combining-options" title="Permanent link">&para;</a></h4>
@@ -3608,7 +3728,7 @@ and phase set agree with the germline VCF and with the <code>HP</code>/<code>PS<
 </table>
 <h3 id="updating-the-pipeline">Updating the pipeline<a class="headerlink" href="#updating-the-pipeline" title="Permanent link">&para;</a></h3>
 <p>When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>nextflow<span class="w"> </span>pull<span class="w"> </span>IntGenomicsLab/lrsomatic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>nextflow<span class="w"> </span>pull<span class="w"> </span>IntGenomicsLab/lrsomatic
 </code></pre></div>
 <h3 id="reproducibility">Reproducibility<a class="headerlink" href="#reproducibility" title="Permanent link">&para;</a></h3>
 <p>It is a good idea to specify the pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.</p>
@@ -3721,17 +3841,17 @@ not grant you.</p>
 with <code>-resume</code>; a fresh run in the same work directory downloads everything again.</p>
 <p>For repeat runs, download once and pass local paths, which skips both the download and the
 preparation step:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># once</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>bin/prepare_vep_plugin_data.sh<span class="w"> </span>revel<span class="w"> </span>/data/vep/revel-v1.3_all_chromosomes.zip<span class="w"> </span>/data/vep
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># then, on every run</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>nextflow<span class="w"> </span>run<span class="w"> </span>IntGenomicsLab/lrsomatic<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">  </span>--input<span class="w"> </span>samplesheet.csv<span class="w"> </span>--outdir<span class="w"> </span>./results<span class="w"> </span>--genome<span class="w"> </span>GRCh38<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">  </span>--vep_cadd_snv<span class="w"> </span>/data/vep/whole_genome_SNVs.tsv.gz<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span>--vep_cadd_snv_tbi<span class="w"> </span>/data/vep/whole_genome_SNVs.tsv.gz.tbi<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">  </span>--vep_revel<span class="w"> </span>/data/vep/revel_grch38.tsv.gz<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">  </span>--vep_revel_tbi<span class="w"> </span>/data/vep/revel_grch38.tsv.gz.tbi<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">  </span>-profile<span class="w"> </span>singularity
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># once</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>bin/prepare_vep_plugin_data.sh<span class="w"> </span>revel<span class="w"> </span>/data/vep/revel-v1.3_all_chromosomes.zip<span class="w"> </span>/data/vep
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="c1"># then, on every run</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>nextflow<span class="w"> </span>run<span class="w"> </span>IntGenomicsLab/lrsomatic<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span>--input<span class="w"> </span>samplesheet.csv<span class="w"> </span>--outdir<span class="w"> </span>./results<span class="w"> </span>--genome<span class="w"> </span>GRCh38<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">  </span>--vep_cadd_snv<span class="w"> </span>/data/vep/whole_genome_SNVs.tsv.gz<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">  </span>--vep_cadd_snv_tbi<span class="w"> </span>/data/vep/whole_genome_SNVs.tsv.gz.tbi<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span>--vep_revel<span class="w"> </span>/data/vep/revel_grch38.tsv.gz<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">  </span>--vep_revel_tbi<span class="w"> </span>/data/vep/revel_grch38.tsv.gz.tbi<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="w">  </span>-profile<span class="w"> </span>singularity
 </code></pre></div>
 <p>Everything except REVEL and EVE needs no preparation — download it with <code>curl</code> and pass the path.
 <code>bin/prepare_vep_plugin_data.sh</code> is what the pipeline itself runs for those two, so a file you build
@@ -3833,20 +3953,20 @@ with it is identical to one it would prepare; run it with <code>--help</code> fo
 </table>
 <h3 id="example-grch38">Example: GRCh38<a class="headerlink" href="#example-grch38" title="Permanent link">&para;</a></h3>
 <p>Defaults do the work, so nothing plugin-related is needed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>nextflow<span class="w"> </span>run<span class="w"> </span>IntGenomicsLab/lrsomatic<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span>--input<span class="w"> </span>samplesheet.csv<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span>--outdir<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">  </span>--genome<span class="w"> </span>GRCh38<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span>-profile<span class="w"> </span>docker
-</code></pre></div>
-<h3 id="example-chm13">Example: CHM13<a class="headerlink" href="#example-chm13" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>nextflow<span class="w"> </span>run<span class="w"> </span>IntGenomicsLab/lrsomatic<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span>--input<span class="w"> </span>samplesheet.csv<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span>--outdir<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span>--genome<span class="w"> </span>CHM13<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span>--vep_cache<span class="w"> </span><span class="nv">$HOME</span>/.vep<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span>--vep_cache_version<span class="w"> </span><span class="m">107</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">  </span>-profile<span class="w"> </span>docker
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span>--genome<span class="w"> </span>GRCh38<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span>-profile<span class="w"> </span>docker
+</code></pre></div>
+<h3 id="example-chm13">Example: CHM13<a class="headerlink" href="#example-chm13" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>nextflow<span class="w"> </span>run<span class="w"> </span>IntGenomicsLab/lrsomatic<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span>--input<span class="w"> </span>samplesheet.csv<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>--outdir<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span>--genome<span class="w"> </span>CHM13<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span>--vep_cache<span class="w"> </span><span class="nv">$HOME</span>/.vep<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span>--vep_cache_version<span class="w"> </span><span class="m">107</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span>-profile<span class="w"> </span>docker
 </code></pre></div>
 <p>Passing a GRCh38-only resource together with a CHM13 cache is rejected before the run starts,
 rather than failing hours later inside VEP or after a long download.</p>
@@ -3892,7 +4012,7 @@ together with CoRAL is rejected at launch: use <code>--skip_coral</code> as well
 <p>CoRAL's cycle decomposition is a non-convex mixed-integer quadratically-constrained problem. The
 pipeline defaults to <code>--coral_solver scip</code>, which is open-source, shipped in the image and needs no
 licence. Gurobi is available with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>--coral_solver<span class="w"> </span>gurobi_direct<span class="w"> </span>--gurobi_license<span class="w"> </span>/path/to/gurobi.lic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>--coral_solver<span class="w"> </span>gurobi_direct<span class="w"> </span>--gurobi_license<span class="w"> </span>/path/to/gurobi.lic
 </code></pre></div>
 <p>The licence is mounted into the CoRAL tasks (<code>--bind</code> under Singularity/Apptainer, <code>--volume</code> under
 Docker/Podman), so give an absolute path; it is never baked into the image. Under Gurobi the
@@ -3911,11 +4031,11 @@ downloaded automatically (about 1.1 GB) and checked against the MD5 the host pub
 (<code>--aa_data_repo_md5</code>), so a re-published repository fails the run rather than changing results
 silently. The download and its ~4 GB unpack repeat on every run; to avoid both, extract
 <code>GRCh38.tar.gz</code> once and pass it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>--aa_data_repo<span class="w"> </span>/path/to/GRCh38
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>--aa_data_repo<span class="w"> </span>/path/to/GRCh38
 </code></pre></div>
 <p>For <code>--genome CHM13</code> there is no published repository. Without <code>--aa_data_repo</code> the classifier is
 skipped with a warning and reconstruction still runs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>--genome<span class="w"> </span>CHM13<span class="w"> </span>--aa_data_repo<span class="w"> </span>/path/to/AA_DATA_REPO
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>--genome<span class="w"> </span>CHM13<span class="w"> </span>--aa_data_repo<span class="w"> </span>/path/to/AA_DATA_REPO
 </code></pre></div>
 <p><code>--aa_data_repo</code> may be the reference directory itself (<code>GRCh38/</code>, <code>CHM13/</code>) or the directory that
 contains it. <code>--skip_ampliconclassifier</code> drops classification explicitly and needs no reference data.</p>
@@ -4037,11 +4157,11 @@ They are loaded in sequence, so later profiles can overwrite earlier profiles.</
 </table>
 <p><code>make_examples</code> runs one shard per cpu and its memory grows with the number of shards, so if you give <code>DEEPVARIANT_MAKEEXAMPLES</code> or <code>DEEPSOMATIC_MAKEEXAMPLES</code> more cpus, raise memory with them (an ONT pair peaked at 120 GB with 24 shards and 167 GB with 48). <code>DEEPVARIANT_POSTPROCESSVARIANTS</code> and <code>DEEPSOMATIC_POSTPROCESSVARIANTS</code> are memory-bound as well: when one of their workers is killed for lack of memory they do not fail but wait until the time limit; their requests and the evidence for them are in <a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a>. SAVANA, Wakhan and VEP fork worker processes, so the peak memory Nextflow reports for them adds up pages the workers share and overstates what the job's memory limit (cgroup) charges; their requests are set with headroom because a worker pool that loses a worker to the OOM killer can hang instead of failing.</p>
 <p>Deeper data mostly lengthens runtimes: alignment, m6A prediction, the variant callers and <code>call_variants</code> scale roughly with the number of reads, which is why each request doubles on a retry after a time-limit or memory kill (exit codes 130-145, 104, 175-177). For 60-90x samples it is cheaper to raise the time of these steps up front than to lose a first attempt. On clusters that cap memory per core (e.g. 4 GB per cpu), a job asking for more memory than that is widened to more cpus and billed for them; the steps that need more memory than their cpus imply (<code>LONGPHASE_MODCALL_*</code>, <code>SAVANA_RUN</code>, <code>SAVANA_TO</code>, <code>WAKHAN</code>, <code>SEVERUS</code>, <code>LRSOMATICREPORT</code>) are short, and none of the long, heavy steps asks for more than 6 GB per cpu (<code>DEEPSOMATIC_MAKEEXAMPLES</code>: 192 GB on 48 cpus, sized for an ONT pair; tumour-only samples peaked at 62-100 GB). <code>CLAIRS</code>, <code>DEEPSOMATIC_MAKEEXAMPLES</code>, <code>DEEPSOMATIC_CALLVARIANTS</code> and <code>FIBERTOOLSRS_PREDICTM6A</code> get 48 cpus because they sit on the critical path of a pair: at 24 cpus each takes about 1.5-2 times as long. On a machine with fewer cpus, lower them (and <code>DEEPSOMATIC_MAKEEXAMPLES</code>' memory with them) or set <code>resourceLimits</code>. You can lower any of them in a custom config, for example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SAVANA_TO'</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">        </span><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="mi">64</span><span class="o">.</span><span class="na">GB</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">task</span><span class="o">.</span><span class="na">attempt</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="o">}</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="o">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">process</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="nl">withName:</span><span class="w"> </span><span class="s1">'.*:SAVANA_TO'</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">        </span><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="mi">64</span><span class="o">.</span><span class="na">GB</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">task</span><span class="o">.</span><span class="na">attempt</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">    </span><span class="o">}</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="o">}</span>
 </code></pre></div>
 <h3 id="custom-containers">Custom Containers<a class="headerlink" href="#custom-containers" title="Permanent link">&para;</a></h3>
 <p>In some cases, you may wish to change the container or conda environment used by a pipeline steps for a particular tool. By default, nf-core pipelines use containers and software from the <a href="https://biocontainers.pro/">biocontainers</a> or <a href="https://bioconda.github.io/">bioconda</a> projects. However, in some cases the pipeline specified version maybe out of date.</p>
@@ -4062,7 +4182,7 @@ slow pull completes.</p>
 <li>On a slow link the pull can exceed a site's <code>pullTimeout</code> (Nextflow's default is 20 minutes).
   Raise it with <code>-c</code>:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">singularity</span><span class="o">.</span><span class="na">pullTimeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2h'</span><span class="w"> </span><span class="c1">// apptainer.pullTimeout under -profile apptainer</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">singularity</span><span class="o">.</span><span class="na">pullTimeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2h'</span><span class="w"> </span><span class="c1">// apptainer.pullTimeout under -profile apptainer</span>
 </code></pre></div>
 <ul>
 <li>Docker Hub limits anonymous pulls per source IP address, which a cluster's shared outbound
@@ -4073,8 +4193,8 @@ slow pull completes.</p>
 <li>Pulling once into a shared cache saves every later run the download. The file name is the one
   Nextflow derives from the image name:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">"</span><span class="nv">$NXF_SINGULARITY_CACHEDIR</span><span class="s2">/docker.io-ljwharbers-clairs-to-sif-0.5.1-verdict-chm13-c0687e8-flat.img"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">    </span>oras://docker.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8-flat
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>apptainer<span class="w"> </span>pull<span class="w"> </span><span class="s2">"</span><span class="nv">$NXF_SINGULARITY_CACHEDIR</span><span class="s2">/docker.io-ljwharbers-clairs-to-sif-0.5.1-verdict-chm13-c0687e8-flat.img"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">    </span>oras://docker.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8-flat
 </code></pre></div>
 <p><code>NXF_SINGULARITY_LIBRARYDIR</code> is checked first and never written to, so a read-only shared
   directory of prebuilt images works as well.</p>
@@ -4101,7 +4221,7 @@ Some HPC setups also allow you to run nextflow within a cluster job submitted yo
 <h2 id="nextflow-memory-requirements">Nextflow memory requirements<a class="headerlink" href="#nextflow-memory-requirements" title="Permanent link">&para;</a></h2>
 <p>In some cases, the Nextflow Java virtual machines can start to request a large amount of memory.
 We recommend adding the following line to your environment to limit this (typically in <code>~/.bashrc</code> or <code>~./bash_profile</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nv">NXF_OPTS</span><span class="o">=</span><span class="s1">'-Xms1g -Xmx4g'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nv">NXF_OPTS</span><span class="o">=</span><span class="s1">'-Xms1g -Xmx4g'</span>
 </code></pre></div>
 
 
