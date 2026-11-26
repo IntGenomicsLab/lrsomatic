@@ -4,7 +4,8 @@
 The report's HMF section reads five resources; four carry GRCh38 coordinates:
   - Ensembl data cache (ensembl_gene_data.csv, ensembl_trans_exon_data.csv): gene, transcript,
     exon and coding bounds. Only canonical transcripts are kept (all the report reads), and one
-    is kept only if EVERY exon lifts whole, onto one contig and chain, in rank order; otherwise
+    is kept only if EVERY exon lifts whole, onto one contig and strand, in rank order, its span
+    roughly kept (a gene across a chain break may use several chains); otherwise
     the transcript is dropped (and the gene, with no transcript left). IDs, phases and ranks
     are build-independent and copied verbatim.
   - KnownHotspots VCF: POS lifted, REF re-checked against the target FASTA (mismatches dropped),
@@ -36,6 +37,12 @@ REGION_KEYS = ("IG_RANGE", "ENHANCER_RANGE", "THREE_PRIME_RANGE")
 # Allowed difference between an interval's lifted and original length (indels between builds)
 LENGTH_SLACK_BP = 50
 LENGTH_SLACK_FRAC = 0.1
+# A transcript whose exons lift through several chains (a gene across a chain break) is kept only if
+# its lifted span stays this close to the source span: no exon may jump far away
+TRANSCRIPT_SPAN_SLACK_BP = 10000
+# A lifted range (IG locus) may be at most this much longer than its source; loci differ in length
+# between builds (the CHM13 IG loci are not GRCh38's), so this only catches samples far apart
+RANGE_SLACK_FRAC = 0.5
 # Long ranges (IG loci) are lifted by sampling, every this many bp
 SAMPLE_STEP_BP = 5000
 
@@ -77,21 +84,36 @@ class ChainMap:
         for tname in self.blocks:
             self.blocks[tname].sort()
         self.starts = {t: [b[0] for b in bl] for t, bl in self.blocks.items()}
+        # Running maximum of block ends: scanning back from a position can stop as soon as no earlier
+        # block reaches it, however many short blocks of other chains lie in between
+        self.max_end = {}
+        for t, bl in self.blocks.items():
+            m, out = 0, []
+            for b in bl:
+                m = max(m, b[1])
+                out.append(m)
+            self.max_end[t] = out
 
     def map_pos(self, chrom, pos):
         """0-based source position -> (contig, 0-based position, strand, chain) or None.
-        Overlapping chains: the highest-scoring one wins."""
+        Where source blocks of several chains overlap, the highest-scoring chain wins: looser than
+        UCSC liftOver, which drops such a position. Netted chains (UCSC over.chain, the T2T v1_nflo
+        chains) have no overlapping source blocks, so there the two agree."""
         chrom = chr_name(chrom)
         bl = self.blocks.get(chrom)
         if not bl:
             return None
         i = bisect.bisect_right(self.starts[chrom], pos) - 1
         best = None
-        # Blocks of different chains can overlap; a short look-back finds them
-        for j in range(i, max(-1, i - 64), -1):
+        # Every block starting at or before pos that reaches it: blocks of different chains overlap
+        # (segmental duplications), and the highest-scoring chain's block may start far back
+        max_end = self.max_end[chrom]
+        j = i
+        while j >= 0 and max_end[j] > pos:
             t0, t1, q0, ch = bl[j]
             if t0 <= pos < t1 and (best is None or self.chains[ch][0] > self.chains[best[3]][0]):
                 best = (t0, t1, q0, ch)
+            j -= 1
         if best is None:
             return None
         t0, _t1, q0, ch = best
@@ -102,26 +124,31 @@ class ChainMap:
         return qname, q, qstrand, ch
 
     def lift_interval(self, chrom, start, end):
-        """Half-open [start, end) -> (contig, start, end, strand) when both ends map through one
-        chain and the length is kept (within slack); else None."""
+        """Half-open [start, end) -> (contig, start, end, strand, chain) when both ends map through
+        one chain and the length is kept (within slack); else None."""
         a, b = self.map_pos(chrom, start), self.map_pos(chrom, end - 1)
         if a is None or b is None or a[3] != b[3]:
             return None
         lo, hi = min(a[1], b[1]), max(a[1], b[1]) + 1
         if abs((hi - lo) - (end - start)) > max(LENGTH_SLACK_BP, LENGTH_SLACK_FRAC * (end - start)):
             return None
-        return a[0], lo, hi, a[2]
+        return a[0], lo, hi, a[2], a[3]
 
     def lift_range(self, chrom, start, end):
-        """A long region (an IG locus): sample it, keep the samples on the majority contig and
-        strand, span them. None when nothing maps."""
+        """A long region (an IG locus): sample it, keep the samples on the majority contig and strand,
+        span them. A locus can lift through several chains (it does, on the T2T chain), so the span
+        is not limited to one chain; instead it is refused when implausibly longer than the source
+        (samples far apart on the target). None when nothing maps or the span is refused."""
         hits = [self.map_pos(chrom, p) for p in list(range(start, end, SAMPLE_STEP_BP)) + [end - 1]]
         hits = [h for h in hits if h is not None]
         if not hits:
             return None
         (qname, strand), _n = collections.Counter((h[0], h[2]) for h in hits).most_common(1)[0]
         qs = [h[1] for h in hits if h[0] == qname and h[2] == strand]
-        return qname, min(qs), max(qs) + 1, strand
+        lo, hi = min(qs), max(qs) + 1
+        if (hi - lo) > (end - start) * (1 + RANGE_SLACK_FRAC) + LENGTH_SLACK_BP:
+            return None
+        return qname, lo, hi, strand
 
 
 class Report:
@@ -176,6 +203,15 @@ def lift_ensembl(cm, src, dst, report):
         if len(contigs) != 1 or len(strands) != 1:
             dropped["exons on several contigs or strands"] += 1
             continue
+        # Several chains are fine for a gene across a chain break (contig, strand and exon order hold,
+        # checked here and below) as long as no exon jumps away: the span must stay close to the source's
+        chains = {m[4] for _rk, m in lifted}
+        if len(chains) > 1:
+            src_span = int(rows[0]["TransEnd"]) - int(rows[0]["TransStart"]) + 1
+            new_span = max(m[2] for _rk, m in lifted) - min(m[1] for _rk, m in lifted)
+            if abs(new_span - src_span) > max(TRANSCRIPT_SPAN_SLACK_BP, LENGTH_SLACK_FRAC * src_span):
+                dropped["exons on several chains, span changed"] += 1
+                continue
         flip = strands == {"-"}
         old_strand = int(rows[0]["Strand"])
         new_strand = -old_strand if flip else old_strand
@@ -189,12 +225,16 @@ def lift_ensembl(cm, src, dst, report):
         if rows[0]["CodingStart"] not in ("NULL", ""):
             a = cm.map_pos(gene["Chromosome"], int(rows[0]["CodingStart"]) - 1)
             b = cm.map_pos(gene["Chromosome"], int(rows[0]["CodingEnd"]) - 1)
-            if a is None or b is None or a[0] != qname or b[0] != qname:
+            # Through the exons' own chains, so on their contig and strand
+            if a is None or b is None or a[3] not in chains or b[3] not in chains:
                 dropped["coding bounds did not lift"] += 1
                 continue
             coding = (min(a[1], b[1]) + 1, max(a[1], b[1]) + 1)
         t_start = min(m[1] for _rk, m in lifted) + 1
         t_end = max(m[2] for _rk, m in lifted)
+        if coding and not (t_start <= coding[0] <= coding[1] <= t_end):
+            dropped["coding bounds outside the lifted transcript"] += 1
+            continue
         by_rank = dict(lifted)
         for r in rows:
             m = by_rank[int(r["ExonRank"])]
@@ -254,7 +294,7 @@ def lift_hotspots(cm, src, dst, fasta, assembly, report):
             if m is None:
                 dropped["did not lift"] += 1
                 continue
-            qname, start, _end, strand = m
+            qname, start, _end, strand, _chain = m
             if strand == "-":
                 if len(ref) != 1 or any(len(a) != 1 for a in alts):
                     dropped["indel on an inverted chain"] += 1
