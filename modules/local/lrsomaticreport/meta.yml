@@ -68,7 +68,7 @@ input:
         pattern: "*.tsv"
   - - hmf_driver_panel:
         type: file
-        description: HMF `DriverGenePanel.38.tsv` (oncoanalyser resource bundle: GRCh38, or its CHM13 lift from HMF_LIFTOVER); turns on the HMF driver annotation section. `[]` when off
+        description: HMF `DriverGenePanel.38.tsv` (oncoanalyser resource bundle, GRCh38, or its CHM13 lift from HMF_LIFTOVER); turns on the HMF driver annotation section. `[]` when off
         pattern: "*.tsv"
     - hmf_ensembl_data:
         type: directory
