@@ -551,13 +551,13 @@ calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on ch
 | Parameter                       | Description                                                                                                                                                                                                                                  |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--report_gene_panel`           | Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered |
-| `--report_hmf_resource_dir`     | Root of a Hartwig (oncoanalyser) GRCh38 resource bundle; turns on the report's [HMF driver annotation](#hmf-driver-annotation), taking every file from the bundle's standard layout. Default = off                                           |
+| `--report_hmf_resource_dir`     | Root of a Hartwig (oncoanalyser) GRCh38 resource bundle (lifted over on CHM13, see below); turns on the report's [HMF driver annotation](#hmf-driver-annotation), taking every file from the bundle's standard layout. Default = off                                           |
 | `--report_hmf_driver_panel`     | `DriverGenePanel.38.tsv`; with `--report_hmf_ensembl_data_dir`, turns on the HMF driver annotation (overrides the bundle's). Default = off                                                                                                   |
 | `--report_hmf_ensembl_data_dir` | The bundle's `common/ensembl_data` directory (`ensembl_gene_data.csv`, `ensembl_trans_exon_data.csv`); required for the HMF annotation (overrides the bundle's). Default = off                                                               |
 | `--report_hmf_known_fusions`    | `known_fusion_data.38.csv`: known-fusion matching of the SV calls (optional; overrides the bundle's). Default = off                                                                                                                          |
 | `--report_hmf_hotspots`         | `KnownHotspots.somatic.38.vcf.gz`: hotspot matching of small variants (optional; overrides the bundle's). Default = off                                                                                                                      |
 | `--report_hmf_actionable_bed`   | `ActionableCodingPanel.38.bed(.gz)`: a region flag on small variants (optional; absent from bundle v3; overrides the bundle's). Default = off                                                                                                |
-| `--report_hmf_liftover_chain`   | GRCh38 → CHM13 chain used to lift the HMF resources over on a CHM13 run. Default = the genome's (UCSC `hg38ToHs1.over.chain.gz`)                                                                                                             |
+| `--report_hmf_liftover_chain`   | GRCh38 → CHM13 chain used to lift the HMF resources over on a CHM13 run. Default = the genome's (the T2T consortium's `grch38-chm13v2.chain`)                                                                                                             |
 
 The report is rendered by [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) from
 `ghcr.io/ljwharbers/lrsomatic-report` (`ghcr.io/ljwharbers/lrsomatic-report-sif` under
@@ -678,15 +678,19 @@ rule and threshold):
 - The driver panel is also added to the report's gene lists as `hmf_driver`.
 
 **CHM13.** On `--genome CHM13` give the same GRCh38 bundle: `HMF_LIFTOVER` lifts it over once per
-run with `--report_hmf_liftover_chain` (default: UCSC's `hg38ToHs1.over.chain.gz`) and the
-CHM13 FASTA, and the report uses the lifted copy.
+run with `--report_hmf_liftover_chain` and the CHM13 FASTA, and the report uses the lifted copy.
+The default chain is the T2T consortium's GRCh38 → T2T-CHM13v2.0 `grch38-chm13v2.chain` (public
+domain), downloaded at launch (about 6 MB). On an offline or air-gapped host, download it once and
+pass its local path with `--report_hmf_liftover_chain`, or reuse a bundle the pipeline already
+lifted (below); a chain that cannot be reached is an error at launch.
 
 - **Ensembl data cache:** a canonical transcript is kept only if every exon lifts whole, onto one
-  contig, in rank order; a gene without one is dropped. With the v2.2.0 bundle that keeps 39,178 of
-  39,500 transcripts and 528 of the 530 driver genes (PDCD1 and TPTE are dropped).
+  contig and strand, in rank order, its span roughly kept; a gene without one is dropped. With the
+  v2.2.0 bundle that keeps 38,946 of 39,500 transcripts and 528 of the 530 driver genes (OR4F21 and
+  TPTE are dropped).
 - **Hotspots:** the REF is re-checked on CHM13 (9,302 of 9,305 kept).
-- **Actionable panel and IG/enhancer ranges:** lifted as regions; the orientation flips where the
-  chain inverts.
+- **Actionable panel and IG/enhancer ranges:** lifted as regions (all of them with the v2.2.0
+  bundle); the orientation flips where the chain inverts.
 - **Driver panel:** copied unchanged.
 
 The lifted copy declares its build (`common/ensembl_data/REFERENCE` = `t2t`), counts what was

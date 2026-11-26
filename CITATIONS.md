@@ -195,7 +195,9 @@
   Optional, user-supplied (`--report_hmf_*`): the driver gene panel, known fusions, hotspots,
   actionable coding panel and Ensembl data cache of the oncoanalyser resource bundle, whose
   reporting rules the report's HMF section re-implements from PURPLE and LINX.
-  On CHM13 they are lifted over with the UCSC `hg38ToHs1` chain ([UCSC Genome Browser](https://genome.ucsc.edu/); Nassar LR, et al. The UCSC Genome Browser database: 2023 update. Nucleic Acids Res. 2023;51(D1):D1188-D1195. doi: 10.1093/nar/gkac1072).
+  On CHM13 they are lifted over with the T2T consortium's GRCh38 -> T2T-CHM13v2.0 chain ([`grch38-chm13v2.chain`](https://github.com/marbl/CHM13), public domain).
+
+  > Nurk S, Koren S, Rhie A, et al. The complete sequence of a human genome. Science. 2022;376(6588):44-53. doi: 10.1126/science.abj6987
 
   > Priestley P, Baber J, Lolkema MP, et al. Pan-cancer whole-genome analyses of metastatic solid tumours. Nature. 2019;575(7781):210-216. doi: 10.1038/s41586-019-1689-y
 

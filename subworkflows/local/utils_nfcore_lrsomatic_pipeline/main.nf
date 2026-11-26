@@ -510,7 +510,8 @@ def hmfLiftedFiles(bundle, files) {
 //
 // Validate the HMF report parameters at launch: skipped with a warning on a genome the resources cannot be put on
 // (anything but GRCh38 and CHM13, or CHM13 without a chain), an error when the driver panel or the Ensembl cache
-// cannot be found (each other file is optional) or when the resources declare another build than the run's
+// cannot be found (each other file is optional), when the resources declare another build than the run's, or when
+// the chain (local or remote: the default is a URL) cannot be reached
 //
 def validateHmfReportParams() {
     if (params.skip_report || !hmfAnnotationRequested()) {
@@ -544,9 +545,13 @@ def validateHmfReportParams() {
                 "Give one with --report_hmf_liftover_chain."
             return
         }
+        // A remote chain is probed too: the workflow stages it at launch, so an unreachable one would otherwise stop
+        // the run with a bare "No such file" for an optional report section
         def chain = hmfLiftoverChain().toString()
-        if (!chain.contains('://') && !file(chain).exists()) {
-            error("--report_hmf_liftover_chain not found: '${chain}'.")
+        if (!file(chain).exists()) {
+            error("--report_hmf_liftover_chain ${chain.contains('://') ? 'is not reachable' : 'not found'}: '${chain}'. " +
+                "Offline, download the GRCh38 -> CHM13 chain once and pass its local path with --report_hmf_liftover_chain, " +
+                "or reuse a bundle the pipeline already lifted (pipeline_info/hmf_liftover/hmf_chm13/) as --report_hmf_resource_dir.")
         }
     }
 }

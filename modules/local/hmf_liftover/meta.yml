@@ -38,7 +38,7 @@ input:
         pattern: "*.bed{,.gz}"
   - - chain:
         type: file
-        description: GRCh38 -> target chain file (UCSC chain format)
+        description: GRCh38 -> target chain file (UCSC chain format; the CHM13 default is the T2T consortium's grch38-chm13v2.chain)
         pattern: "*.chain{,.gz}"
   - - fasta:
         type: file

@@ -280,7 +280,7 @@ nextflow_function {
         then {
             assertAll(
                 { assert function.success },
-                { assert function.result.toString().endsWith('/hg38ToHs1.over.chain.gz') }
+                { assert function.result.toString().endsWith('/v1_nflo/grch38-chm13v2.chain') }
             )
         }
     }
@@ -325,14 +325,14 @@ nextflow_function {
                 report_hmf_known_fusions    = null
                 report_hmf_hotspots         = null
                 report_hmf_actionable_bed   = null
-                report_hmf_liftover_chain   = "/nonexistent/hg38ToHs1.over.chain.gz"
+                report_hmf_liftover_chain   = "/nonexistent/grch38-chm13v2.chain"
             }
         }
 
         then {
             assertAll(
                 { assert function.failed },
-                { assert (function.stdout + function.stderr).any { line -> line.contains('--report_hmf_liftover_chain not found') } }
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--report_hmf_liftover_chain not found: '/nonexistent/") } }
             )
         }
     }

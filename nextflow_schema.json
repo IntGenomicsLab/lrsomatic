@@ -734,8 +734,8 @@
                     "type": "string",
                     "format": "directory-path",
                     "exists": true,
-                    "description": "Root of a Hartwig (oncoanalyser) resource bundle, GRCh38. Turns on the report's optional HMF driver annotation, taking its files from the bundle's standard layout.",
-                    "help_text": "Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. GRCh38 only: with any other --genome the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.",
+                    "description": "Root of a Hartwig (oncoanalyser) GRCh38 resource bundle, lifted over on --genome CHM13 (or a copy the pipeline already lifted). Turns on the report's optional HMF driver annotation, taking its files from the bundle's standard layout.",
+                    "help_text": "Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. The bundle is GRCh38: on --genome CHM13 it is lifted over first (HMF_LIFTOVER, see --report_hmf_liftover_chain), or a copy the pipeline already lifted (its common/ensembl_data/REFERENCE says t2t) is used as is; such a copy is rejected on GRCh38. With any other --genome, or on CHM13 when no chain resolves, the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "report_hmf_driver_panel": {
@@ -774,8 +774,8 @@
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.chain(\\.gz)?$",
-                    "description": "GRCh38 -> CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome's (UCSC hg38ToHs1).",
-                    "help_text": "On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions' IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir.",
+                    "description": "GRCh38 -> CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome's (the T2T consortium's grch38-chm13v2.chain).",
+                    "help_text": "On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions' IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir. The default chain is the T2T consortium's (public domain), downloaded at launch (~6 MB); offline, download it once and pass its local path here, or reuse a lifted bundle. A chain that cannot be reached is an error at launch.",
                     "fa_icon": "fas fa-link"
                 },
                 "report_hmf_actionable_bed": {
