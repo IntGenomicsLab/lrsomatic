@@ -387,6 +387,7 @@ To skip fiber-seq processing of the normal files of a pair whose tumour has fibe
 | `--skip_whatshapstats` | A boolean to skip WhatsHap phasing statistics. Default = `false`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `--skip_signatures`    | A boolean to skip mutational signature analysis (SigProfilerMatrixGenerator + SigProfilerAssignment). Default = `false`                                                                                                                                                                                                                                                                                                                                                     |
 | `--skip_report`        | A boolean to skip the final per-sample HTML report. Default = `false`                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `--skip_report_hmf`    | A boolean to skip the report's HMF driver annotation, which is on by default for GRCh38 and CHM13 (see [HMF driver annotation](#hmf-driver-annotation)). Default = `false`                                                                                                                                                                                                                                                                                                  |
 
 #### Modkit options:
 
@@ -548,9 +549,16 @@ calling needs no such file: SAVANA 1.3.8 only ever bins and counts alleles on ch
 
 #### Report Options
 
-| Parameter             | Description                                                                                                                                                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--report_gene_panel` | Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered |
+| Parameter                       | Description                                                                                                                                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--report_gene_panel`           | Gene panel(s) applied when the report opens, as a comma-separated list. Each entry is `none` (no filtering), a builtin panel name (`lymphoid` or `sarcoma`), or a path to a TSV file with a `gene` column. Default = `null`, i.e. unfiltered                  |
+| `--report_hmf_resource_dir`     | Your own Hartwig (oncoanalyser) resource bundle for the report's [HMF driver annotation](#hmf-driver-annotation), in place of the hosted one (GRCh38, lifted over on CHM13), taking every file from its standard layout. Default = the genome's hosted bundle |
+| `--report_hmf_driver_panel`     | `DriverGenePanel.38.tsv`; with `--report_hmf_ensembl_data_dir`, turns on the HMF driver annotation (overrides the bundle's). Default = off                                                                                                                    |
+| `--report_hmf_ensembl_data_dir` | The bundle's `common/ensembl_data` directory (`ensembl_gene_data.csv`, `ensembl_trans_exon_data.csv`); required for the HMF annotation (overrides the bundle's). Default = off                                                                                |
+| `--report_hmf_known_fusions`    | `known_fusion_data.38.csv`: known-fusion matching of the SV calls (optional; overrides the bundle's). Default = off                                                                                                                                           |
+| `--report_hmf_hotspots`         | `KnownHotspots.somatic.38.vcf.gz`: hotspot matching of small variants (optional; overrides the bundle's). Default = off                                                                                                                                       |
+| `--report_hmf_actionable_bed`   | `ActionableCodingPanel.38.bed(.gz)`: a region flag on small variants (optional; absent from bundle v3; overrides the bundle's). Default = off                                                                                                                 |
+| `--report_hmf_liftover_chain`   | GRCh38 → CHM13 chain used to lift the HMF resources over on a CHM13 run. Default = the genome's (the T2T consortium's `grch38-chm13v2.chain`)                                                                                                                 |
 
 The report is rendered by [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report) from
 `ghcr.io/ljwharbers/lrsomatic-report` (`ghcr.io/ljwharbers/lrsomatic-report-sif` under
@@ -631,7 +639,83 @@ process {
 This replaces the `--gene-panel` arguments the pipeline builds from `--report_gene_panel`, so name
 the panels in the same string instead: a builtin as `--gene-panel 'lymphoid'`, a panel file given
 to `--report_gene_panel` as `--gene-panel 'gene_panels/<file name>'` (keep `--report_gene_panel`
-set, since it is what stages the file).
+set, since it is what stages the file). The `--hmf-*` arguments are built by the module itself, so
+`ext.args` does not affect them.
+
+##### HMF driver annotation
+
+The report can apply the [Hartwig Medical Foundation](https://github.com/hartwigmedical/hmftools)
+driver catalogue used by [oncoanalyser](https://nf-co.re/oncoanalyser): its driver gene panel,
+known hotspots and known fusions. **It is on by default for `--genome GRCh38` and `--genome CHM13`**:
+the pipeline downloads the genome's hosted bundle once per run (`HMF_BUNDLE`, about 5 MB, MD5-checked),
+the subset of the oncoanalyser resource bundle v2.2.0 the report reads, already lifted over for CHM13
+(see [IntGenomicsLab/test-datasets `references/hmf/`](https://github.com/IntGenomicsLab/test-datasets/tree/main/references/hmf)).
+Turn it off with `--skip_report_hmf`. Other genomes (including a custom `--fasta`) have no bundle and
+render the report without it.
+
+The unpacked bundle is published under `<outdir>/cache/hmf/hmf_report_<genome>/` (or
+`--outdir_cache`); on an offline host, or to skip the download, give that directory back as
+`--report_hmf_resource_dir`.
+
+**Your own resources.** `--report_hmf_resource_dir` (a bundle directory) or the individual
+`--report_hmf_*` files take over from the hosted bundle, for example a newer oncoanalyser release.
+Bundles v2.x and v3.x are both read.
+
+```bash
+    --genome GRCh38 \
+    --report_hmf_resource_dir /path/to/hmf_pipeline_resources.38_v2.2.0--3
+```
+
+`--report_hmf_resource_dir` picks up `common/DriverGenePanel.38.tsv`, `common/ensembl_data/`,
+`dna/sv/known_fusion_data.38.csv`, `dna/variants/KnownHotspots.somatic.38.vcf.gz` and, where
+present, `dna/variants/ActionableCodingPanel.38.bed(.gz)`. Any `--report_hmf_*` file parameter
+overrides that one file, and they can be given without a bundle directory. The driver panel and
+the Ensembl data cache are required (an error at launch otherwise); the other three each switch
+their part of the section on.
+
+What the report does with them (the
+[report's README](https://github.com/ljwharbers/lrsomatic_report#hmf-driver-annotation) has every
+rule and threshold):
+
+- **Small variants** on a panel gene's canonical transcript are reported per the panel's
+  `reportMissense` / `reportNonsense` / `reportSplice` / `reportSomaticHotspot` flags.
+- **Copy number**: amplification (minimum CN > 3 × ploidy) and deletion (minimum CN < 0.5) are
+  called from ASCAT and from Wakhan separately, and every deletion called by Severus or SAVANA
+  over a deletion-flagged gene is listed too. Each source can be switched off in the browser.
+- **Fusions**: Severus and SAVANA breakends are matched to HMF's known pairs, promiscuous partners
+  (with exon ranges), exon deletions/duplications and IG/enhancer regions, with a phase check.
+- The driver panel is also added to the report's gene lists as `hmf_driver`.
+
+**CHM13.** The hosted CHM13 bundle is the GRCh38 one lifted over as described here. If you give
+your own GRCh38 bundle on `--genome CHM13`, `HMF_LIFTOVER` lifts it over once per run with
+`--report_hmf_liftover_chain` and the CHM13 FASTA, and the report uses the lifted copy.
+The default chain is the T2T consortium's GRCh38 → T2T-CHM13v2.0 `grch38-chm13v2.chain` (public
+domain), downloaded at launch (about 6 MB). On an offline or air-gapped host, download it once and
+pass its local path with `--report_hmf_liftover_chain`, or reuse a bundle the pipeline already
+lifted (below); a chain that cannot be reached is an error at launch.
+
+- **Ensembl data cache:** a canonical transcript is kept only if every exon lifts whole, onto one
+  contig and strand, in rank order, its span roughly kept; a gene without one is dropped. With the
+  v2.2.0 bundle that keeps 38,946 of 39,500 transcripts and 528 of the 530 driver genes (OR4F21 and
+  TPTE are dropped).
+- **Hotspots:** the REF is re-checked on CHM13 (9,302 of 9,305 kept).
+- **Actionable panel and IG/enhancer ranges:** lifted as regions (all of them with the v2.2.0
+  bundle); the orientation flips where the chain inverts.
+- **Driver panel:** copied unchanged.
+
+The lifted copy declares its build (`common/ensembl_data/REFERENCE` = `t2t`), counts what was
+dropped in `hmf_liftover_report.tsv`, and is published under `pipeline_info/hmf_liftover/hmf_chm13/`.
+Giving that directory back as `--report_hmf_resource_dir` on later CHM13 runs skips the lift.
+Lifted resources on a GRCh38 run are an error.
+
+On CHM13 the VEP cache's transcript ids are not HMF's Ensembl GRCh38 ones, so the report reads each
+variant's effect on VEP's canonical transcript (matched to the panel by gene symbol) instead of
+HMF's canonical transcript. The report's footnote says which rule applied.
+
+It re-implements HMF's reporting rules on the long-read calls; it is not PURPLE or LINX. There is
+no dNdS driver likelihood, no biallelic or germline reporting and no SV chaining, and
+`ActionableCodingPanel` is only a region flag (HMF uses it as a calling-sensitivity tier, not as
+actionability evidence).
 
 #### WAKHAN Options
 

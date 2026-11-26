@@ -5,8 +5,8 @@ process LRSOMATICREPORT {
     // No conda: the image ships render_report.R itself, not just its dependencies (guard in `script:`).
     // TODO: switch to bioconda `lrsomatic-report` once the recipe in ljwharbers/lrsomatic_report is merged. Version bump = these two tags.
     container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
-        ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.2.0'
-        : 'ghcr.io/ljwharbers/lrsomatic-report:2.2.0'}"
+        ? 'oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.3.0'
+        : 'ghcr.io/ljwharbers/lrsomatic-report:2.3.0'}"
 
     input:
     // Every path input is optional (`[]` when skipped); tumor/normal QC stage apart because a pair shares meta.id.
@@ -17,6 +17,9 @@ process LRSOMATICREPORT {
     path(gene_lists, stageAs: 'gene_lists')
     // User-supplied gene panel TSVs (`[]` for builtins); the `--gene-panel` args are built in conf/modules.config
     path(gene_panels, stageAs: 'gene_panels/*')
+    // HMF (oncoanalyser bundle) resources for the optional HMF driver annotation, `[]` each when off; one dir per
+    // slot so equal base names cannot collide. The --hmf-* flags are built here, from what is staged
+    tuple path(hmf_driver_panel, stageAs: 'hmf/driver_panel/*'), path(hmf_ensembl_data, stageAs: 'hmf/ensembl/*'), path(hmf_known_fusions, stageAs: 'hmf/known_fusions/*'), path(hmf_hotspots, stageAs: 'hmf/hotspots/*'), path(hmf_actionable_bed, stageAs: 'hmf/actionable_bed/*')
 
     output:
     tuple val(meta), path("*_report.html")          , emit: report
@@ -38,7 +41,11 @@ process LRSOMATICREPORT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def sex = meta.sex ?: 'male'
     def run_mode = meta.paired_data ? 'paired' : 'tumour_only'
+    // The build, when the pipeline knows it (conf/modules.config); `auto` reads it from the VEP/SV VCF headers, which
+    // a test subset cannot always tell apart (and then falls back to t2t)
+    def reference = task.ext.reference ?: 'auto'
     def link_sample_dir = reportSampleDirCommands(vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, extra_relpaths, extra_files)
+    def hmf_args = reportHmfArgs(hmf_driver_panel, hmf_ensembl_data, hmf_known_fusions, hmf_hotspots, hmf_actionable_bed)
 
     """
     # Quarto/Deno caches must live in the task dir: an inherited HOME/TMPDIR/XDG_CACHE_HOME is read-only inside the container
@@ -52,10 +59,11 @@ process LRSOMATICREPORT {
         --sample-dir sample_dir \\
         --sample-id "${prefix}" \\
         --sex "${sex}" \\
-        --reference auto \\
+        --reference ${reference} \\
         --run-mode ${run_mode} \\
         --gene-lists-dir gene_lists \\
         --output "${prefix}_report.html" \\
+        ${hmf_args} \\
         ${args}
     """
 
@@ -65,15 +73,29 @@ process LRSOMATICREPORT {
     // Builds the same sample_dir as the script, so a -stub run shows what the tool would discover
     def link_sample_dir = reportSampleDirCommands(vep_somatic, sv_vep, severus_vcf, somatic_vcf, ascat_files, extra_relpaths, extra_files)
     def touch_small_variants = vep_somatic ? "echo '' | gzip > ${prefix}_small_variants.tsv.gz" : ''
+    // The stub report records the flags the real run would get, for the tests
+    def stub_args = "--run-mode ${run_mode} ${reportHmfArgs(hmf_driver_panel, hmf_ensembl_data, hmf_known_fusions, hmf_hotspots, hmf_actionable_bed)}".trim()
     """
     ${link_sample_dir}
 
     find -L sample_dir -type f | LC_ALL=C sort | while read -r f; do
         printf '%s\\t%s\\n' "\$f" "\$(md5sum < "\$f" | cut -d' ' -f1)"
     done > staged.txt
-    echo "--run-mode ${run_mode}" > ${prefix}_report.html
+    echo '${stub_args}' > ${prefix}_report.html
     ${touch_small_variants}
     """
+}
+
+// The render_report.R --hmf-* flags for the HMF resources that were staged; '' when the annotation is off
+def reportHmfArgs(driver_panel, ensembl_data, known_fusions, hotspots, actionable_bed) {
+    def flags = [
+        '--hmf-driver-panel'    : driver_panel,
+        '--hmf-ensembl-data-dir': ensembl_data,
+        '--hmf-known-fusions'   : known_fusions,
+        '--hmf-hotspots'        : hotspots,
+        '--hmf-actionable-bed'  : actionable_bed,
+    ]
+    return flags.findAll { _flag, f -> f }.collect { flag, f -> "${flag} \"${f}\"" }.join(' ')
 }
 
 // Shell commands that build sample_dir/, mirroring the published <outdir>/<id>/ layout the tool discovers recursively.

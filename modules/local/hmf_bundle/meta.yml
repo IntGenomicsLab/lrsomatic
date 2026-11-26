@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "hmf_bundle"
+description: Download, MD5-check and unpack the genome's hosted HMF report bundle (one tarball per genome, in the oncoanalyser layout), the default resources of the report's HMF driver annotation.
+keywords:
+  - download
+  - hmf
+  - report
+tools:
+  - "python":
+      description: "bin/fetch_hmf_bundle.py: download (with retries), MD5 check and unpack with the standard library only"
+      homepage: "https://www.python.org"
+      documentation: "https://docs.python.org/3/library/tarfile.html"
+      tool_dev_url: "https://github.com/python/cpython"
+      doi: ""
+      licence: ["PSF-2.0"]
+      identifier: ""
+
+input:
+  - - url:
+        type: string
+        description: URL of the bundle tarball (conf/igenomes.config hmf_bundle_url); file:// works too
+    - md5:
+        type: string
+        description: Expected MD5 of the tarball (hmf_bundle_md5); null skips the check
+
+output:
+  bundle:
+    - "hmf_bundle":
+        type: directory
+        description: The unpacked bundle without its top-level directory - common/DriverGenePanel.38.tsv, common/ensembl_data/ (with REFERENCE), dna/sv/known_fusion_data.38.csv, dna/variants/{KnownHotspots.somatic.38.vcf.gz,ActionableCodingPanel.38.bed.gz}
+  versions_python:
+    - - "${task.process}":
+          type: string
+          description: The name of the process
+      - "python":
+          type: string
+          description: The name of the tool
+      - "python --version | sed 's/Python //'":
+          type: eval
+          description: The expression to obtain the version of the tool
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

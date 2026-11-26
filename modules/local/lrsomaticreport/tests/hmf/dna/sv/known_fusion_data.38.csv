@@ -1,0 +1,5 @@
+Type,FiveGene,ThreeGene,CancerTypes,PubMedId,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange,HighImpactPromiscuous,Overrides
+KNOWN_PAIR,EWSR1,ATF1,Sarcoma,,,,,,
+PROMISCUOUS_3,,ALK,Lung,,ENST03,,3;4,TRUE,
+EXON_DEL_DUP,TP53,TP53,NA,,ENST06,1;1,3;3,,
+IG_KNOWN_PAIR,IGH,MYC,Lymphoma,,,,,,IG_RANGE=-1;chr14;1000;5000 DOWN_GENE_DOWNSTREAM_DISTANCE=500
