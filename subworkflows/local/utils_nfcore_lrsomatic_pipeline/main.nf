@@ -476,12 +476,20 @@ def hmfNeedsLiftover() {
 }
 
 //
+// --skip_report_hmf as a boolean: given on the command line ('--skip_report_hmf false', to opt back in where a profile
+// sets it) Nextflow passes the string 'false', which Groovy reads as true
+//
+def hmfSkipped() {
+    return params.skip_report_hmf.toString().toBoolean()
+}
+
+//
 // The genome's hosted HMF report bundle as [url, md5] (conf/igenomes.config hmf_bundle_url / hmf_bundle_md5): the
 // default when the report runs, --skip_report_hmf is off and no --report_hmf_* resources are given; null otherwise,
 // and for a genome without one (a custom --fasta)
 //
 def hmfDefaultBundle() {
-    if (params.skip_report || params.skip_report_hmf || hmfAnnotationRequested()) {
+    if (params.skip_report || hmfSkipped() || hmfAnnotationRequested()) {
         return null
     }
     def url = getGenomeAttribute('hmf_bundle_url')
@@ -508,7 +516,7 @@ def hmfHostedFiles(bundle) {
 // The workflow gate and validateHmfReportParams() both call this, so they cannot drift apart.
 //
 def hmfAnnotationOk() {
-    if (params.skip_report || params.skip_report_hmf || !(params.genome in ['GRCh38', 'CHM13'])) {
+    if (params.skip_report || hmfSkipped() || !(params.genome in ['GRCh38', 'CHM13'])) {
         return false
     }
     if (!hmfAnnotationRequested()) {
@@ -549,7 +557,7 @@ def validateHmfReportParams() {
     if (params.skip_report || !hmfAnnotationRequested()) {
         return
     }
-    if (params.skip_report_hmf) {
+    if (hmfSkipped()) {
         log.warn "--skip_report_hmf is set, so the --report_hmf_* resources are ignored."
         return
     }

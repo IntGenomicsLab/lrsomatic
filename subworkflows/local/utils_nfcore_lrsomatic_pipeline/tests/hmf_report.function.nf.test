@@ -507,4 +507,30 @@ nextflow_function {
             )
         }
     }
+
+    test("hmfAnnotationOk: '--skip_report_hmf false' from the command line (a string) turns it back on") {
+
+        function "hmfAnnotationOk"
+
+        when {
+            params {
+                skip_report_hmf             = 'false'
+                genome                      = 'GRCh38'
+                skip_report                 = false
+                report_hmf_resource_dir     = null
+                report_hmf_driver_panel     = null
+                report_hmf_ensembl_data_dir = null
+                report_hmf_known_fusions    = null
+                report_hmf_hotspots         = null
+                report_hmf_actionable_bed   = null
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
 }
