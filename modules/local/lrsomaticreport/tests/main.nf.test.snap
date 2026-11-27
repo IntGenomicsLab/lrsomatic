@@ -1,0 +1,89 @@
+{
+    "no optional inputs - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null,
+                            "sex": "male"
+                        },
+                        "test_report.html:md5,e02c6f4fde46e1b6856597579766fb0c"
+                    ]
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null,
+                            "sex": "male"
+                        },
+                        "staged.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "3": [
+                    [
+                        "LRSOMATICREPORT",
+                        "lrsomatic_report",
+                        "2.3.0"
+                    ]
+                ],
+                "report": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null,
+                            "sex": "male"
+                        },
+                        "test_report.html:md5,e02c6f4fde46e1b6856597579766fb0c"
+                    ]
+                ],
+                "small_variants": [
+                    
+                ],
+                "staged": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": null,
+                            "sex": "male"
+                        },
+                        "staged.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_lrsomaticreport": [
+                    [
+                        "LRSOMATICREPORT",
+                        "lrsomatic_report",
+                        "2.3.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-16T08:31:25.062835517",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    },
+    "versions": {
+        "content": [
+            [
+                [
+                    "LRSOMATICREPORT",
+                    "lrsomatic_report",
+                    "2.3.0"
+                ]
+            ]
+        ],
+        "timestamp": "2026-11-16T08:31:40.508251559",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

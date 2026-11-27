@@ -3,9 +3,9 @@ process ENSEMBLVEP_VEP {
     label 'process_very_high'
 
     conda "${moduleDir}/environment.yml"
-    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/3d/3da6e21cbf9803529421d7e136d1ebec5ff71ec50e0d996eda2ce11ec2c19bf9/data'
-        : 'community.wave.seqera.io/library/ensembl-vep_perl-math-cdf:1e13f65f931a6954'}"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/90/9021c17a89ce9034b23f85736fd7ce906c44716e612f8e34d2a5e7ceeeb372d8/data'
+        : 'community.wave.seqera.io/library/ensembl-vep_htslib_perl-math-cdf_gzip_tar:35e34ac4f7e9d58a'}"
 
     input:
     tuple val(meta), path(vcf), path(custom_extra_files)
@@ -15,6 +15,8 @@ process ENSEMBLVEP_VEP {
     tuple val(meta2), path(cache)
     tuple val(meta3), path(fasta)
     path extra_files
+    tuple path(gtf), path(gtf_tbi) // optional: [ path(gtf), path(gtf_tbi) ] -- mutually exclusive with cache
+    val plugin_args
     path custom_vep
     path custom_vep_tbi
 
@@ -34,26 +36,37 @@ process ENSEMBLVEP_VEP {
     script:
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
+    // Resolved by the pipeline, not by ext.args: the plugin arguments name files staged through
+    // extra_files, so they are only knowable once the workflow has resolved them
+    def plugins = plugin_args ?: ''
     def file_extension = args.contains("--vcf") ? 'vcf' : args.contains("--json") ? 'json' : args.contains("--tab") ? 'tab' : 'vcf'
     def compress_cmd = args.contains("--compress_output") ? '' : '--compress_output bgzip'
     prefix = task.ext.prefix ?: "${meta.id}"
     def dir_cache = cache ? "\${PWD}/${cache}" : "/.vep"
     def reference = fasta ? "--fasta ${fasta}" : ""
+    // gtf and cache are mutually exclusive annotation sources: use a GTF
+    // (e.g. for a custom/non-standard reference with no Ensembl cache)
+    // when supplied, otherwise fall back to the existing cache behaviour
+    // unchanged.
+    def annotation_source = gtf ? "--gtf ${gtf}" : "--cache --cache_version ${cache_version} --dir_cache ${dir_cache}"
     def create_index = file_extension == "vcf" ? "tabix ${args2} ${prefix}.${file_extension}.gz" : ""
-    args = args.replaceAll(/--custom file=[^,]+/, "--custom file=${custom_vep}")
-    
+    // Only the first --custom entry is rewritten, so further --custom tracks added through
+    // ext.args keep their own staged filenames
+    if (custom_vep) {
+        args = args.replaceFirst(/--custom file=[^,\s]+/, "--custom file=${custom_vep}")
+    }
+
     """
     vep \\
         -i ${vcf} \\
         -o ${prefix}.${file_extension}.gz \\
         ${args} \\
+        ${plugins} \\
         ${compress_cmd} \\
         ${reference} \\
         --assembly ${genome} \\
         --species ${species} \\
-        --cache \\
-        --cache_version ${cache_version} \\
-        --dir_cache ${dir_cache} \\
+        ${annotation_source} \\
         --fork ${task.cpus}
 
     ${create_index}

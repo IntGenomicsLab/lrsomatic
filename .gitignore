@@ -10,3 +10,9 @@ null/
 .lineage/
 .nf-test/
 .nf-test.log
+CLAUDE.local.md
+.claude/
+
+# MkDocs build output and assets copied in at build time
+site/
+docs/assets/

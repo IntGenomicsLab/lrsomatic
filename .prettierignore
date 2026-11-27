@@ -12,3 +12,6 @@ bin/
 ro-crate-metadata.json
 modules/nf-core/
 subworkflows/nf-core/
+docs/overrides/
+# Material grid cards need 4-space list continuation, which prettier rewrites to 2
+docs/index.md

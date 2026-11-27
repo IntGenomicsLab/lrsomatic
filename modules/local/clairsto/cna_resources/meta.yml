@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "clairsto_cna_resources"
+description: |
+  Lay out an ASCAT loci/allele/GC set in the directory structure ClairS-TO's Verdict module expects,
+  so Verdict can run against an assembly other than the GRCh38 one shipped inside the image.
+keywords:
+  - clairs-to
+  - verdict
+  - ascat
+  - copy number
+  - CHM13
+  - reference
+tools:
+  - "coreutils":
+      description: "GNU core utilities"
+      homepage: "https://www.gnu.org/software/coreutils/"
+      documentation: "https://www.gnu.org/software/coreutils/manual/"
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map naming the assembly the resource set belongs to, e.g. `[ id:'CHM13' ]`. The
+          id is used to name the GC file when the source file is not already called GC_*.txt.
+    - loci:
+        type: file
+        description: |
+          Per-contig ASCAT loci files, one per autosome plus chrX, named <prefix>chr<N>.txt
+        pattern: "*chr*.txt"
+    - alleles:
+        type: file
+        description: |
+          Per-contig ASCAT allele files matching the loci files one row per locus, in the same
+          order, named <prefix>chr<N>.txt
+        pattern: "*chr*.txt"
+    - gc:
+        type: file
+        description: |
+          Single GC content file covering every locus in the loci files
+        pattern: "*.txt"
+
+output:
+  cna_resources:
+    - meta:
+        type: map
+        description: |
+          Groovy Map naming the assembly, e.g. `[ id:'CHM13' ]`
+    - "cna_resources":
+        type: directory
+        description: |
+          Directory holding loci_files/, allele_files/ and one GC_*.txt, ready to pass to
+          run_clairs_to --cna_resource_dir. No RT_*.txt is written, so Verdict corrects LogR for
+          GC content only.
+        pattern: "cna_resources"
+  versions:
+    - "versions.yml":
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

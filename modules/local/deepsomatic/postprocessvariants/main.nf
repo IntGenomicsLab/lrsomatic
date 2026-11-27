@@ -3,7 +3,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     label 'process_high'
     label 'process_short'
 
-    container "docker.io/google/deepsomatic:1.7.0"
+    container "docker.io/google/deepsomatic:1.10.0"
 
     input:
     tuple val(meta), path(variant_calls_tfrecord_files), path(gvcf_tfrecords), val(small_model_calls), val(intervals)
@@ -17,13 +17,12 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     tuple val(meta), path("${prefix}.vcf.gz.{tbi,csi}"),                              emit: vcf_index
     tuple val(meta), path("${prefix}.g.vcf.gz"),                                      emit: gvcf,                  optional: true
     tuple val(meta), path("${prefix}.g.vcf.gz.{tbi,csi}"),                            emit: gvcf_index,            optional: true
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions,  emit: versions_deepsomatic
+    tuple val("${task.process}"), val('deepsomatic'), val('1.10.0'), topic: versions,  emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPSOMATIC module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
@@ -48,8 +47,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
         gvcf_arg = "--nonvariant_site_tfrecord_path \"${gvcf_tfrecords_logical_name}\" --gvcf_outfile \"${prefix}.g.vcf.gz\""
     }
 
-    // The following block determines whether the small model was used, and if so, adds the variant calls from it
-    // to the argument --small_model_cvo_records.
+    // If the small model ran, pass its calls as --small_model_cvo_records
     def small_model_arg = ""
     if (small_model_calls && small_model_calls.size() > 0) {
         def small_model_matcher = (small_model_calls[0].baseName =~ /^(.+)-\d{5}-of-(\d{5})$/)
@@ -75,8 +73,7 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
 
     // Shell block to prepare the PON VCF for --pon_filtering (merge if multiple, copy if single)
     def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
-    # Prepare PON VCF for --pon_filtering: merge multiple databases into one sorted+indexed file,
-    # or copy a single VCF. DeepSomatic requires a single VCF for --pon_filtering.
+    # --pon_filtering takes one sorted, indexed VCF: merge several or copy one
     _PON_VCFS=( ${ponArrayLiteral} )
     if [ \${#_PON_VCFS[@]} -gt 1 ]; then
         gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt
@@ -117,7 +114,6 @@ process DEEPSOMATIC_POSTPROCESSVARIANTS {
     """
 
     stub:
-    // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPVARIANT module does not support Conda. Please use Docker / Singularity / Podman instead."
     }

@@ -1,0 +1,59 @@
+include { SIGPROFILER_INSTALL } from '../../../modules/local/sigprofiler/install/main'
+include { SIGPROFILER_VERIFY  } from '../../../modules/local/sigprofiler/verify/main'
+
+workflow PREPARE_SIGNATURES {
+
+    take:
+        genome              // str:  SigProfilerMatrixGenerator genome name (e.g. "GRCh38", "CHM13-T2T")
+        genome_url          // str:  URL of <genome>.tar.gz, or null to let SigProfilerMatrixGenerator download from the AlexandrovLab FTP
+        genome_dir          // path: existing SigProfilerMatrixGenerator volume (contains tsb/<genome>/), or null
+        download_genome     // bool: install the payload with SIGPROFILER_INSTALL when no genome_dir is given
+
+    main:
+
+        ch_versions = channel.empty()
+        sigprofiler_volume = channel.empty()
+
+        if (!genome) {
+            error("No SigProfilerMatrixGenerator genome is defined for --genome ${params.genome}. Set --sigprofiler_genome (e.g. GRCh38 or CHM13-T2T) or use --skip_signatures.")
+        }
+
+        if (genome_dir) {
+            def tsb_dir = file("${genome_dir}/tsb/${genome}", type: 'dir')
+            if (!tsb_dir.exists() || !tsb_dir.isDirectory()) {
+                error("Path provided with --sigprofiler_genome_dir is invalid.\nMake sure there is a directory named tsb/${genome} in ${genome_dir}.")
+            }
+            def n_chrom = tsb_dir.listFiles().count { f -> f.name.endsWith('.txt') }
+            if (n_chrom < 24) {
+                error("${tsb_dir} holds ${n_chrom} of the 24 chromosome files of a complete ${genome} install.")
+            }
+            //
+            // MODULE: SIGPROFILER_VERIFY (label: process_single) -- checksums once, so a stale payload fails before any sample
+            //
+            def volume_dir = file(genome_dir, type: 'dir', checkIfExists: true)
+            SIGPROFILER_VERIFY (
+                volume_dir,
+                genome
+            )
+            // Hand on the user's directory itself, released only once it has been verified
+            sigprofiler_volume = SIGPROFILER_VERIFY.out.verified.map { _verified -> volume_dir }
+        }
+        else if (download_genome) {
+            //
+            // MODULE: SIGPROFILER_INSTALL (label: process_single, process_long) -- ~3 GB payload, published to outdir/cache/ for --sigprofiler_genome_dir
+            //
+            SIGPROFILER_INSTALL (
+                genome,
+                genome_url ?: ''
+            )
+            sigprofiler_volume = SIGPROFILER_INSTALL.out.volume
+        }
+        else {
+            error("No SigProfilerMatrixGenerator payload for ${genome}: pass --sigprofiler_genome_dir <dir containing tsb/${genome}/>, leave --download_sigprofiler_genome on (the default), or use --skip_signatures.")
+        }
+        // sigprofiler_volume: path -- SigProfilerMatrixGenerator volume root (downloaded or verified local)
+
+    emit:
+        volume   = sigprofiler_volume  // path -- volume directory containing tsb/<genome>/
+        versions = ch_versions
+}

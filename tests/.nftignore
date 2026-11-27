@@ -27,3 +27,19 @@ pipeline_info/*.{html,json,txt,yml}
 */qc/{tumor,normal}/mosdepth/*.txt
 */variants/deepsomatic/*.{vcf.gz,vcf.gz.tbi}
 */variants/deepvariant/*.{vcf.gz,vcf.gz.tbi}
+*/variants/savana/*
+*/ecdna/*
+*/signatures/matrices/**
+*/signatures/assignment/**
+*/report/*.html
+# gzip of the report's variant table: not byte-stable, like the HTML
+*/report/*_small_variants.tsv.gz
+# samtools view --threads lays CRAM containers out differently every run, so the CRAM/CRAI md5s never repeat (reads covered by the flagstat/idxstats/stats md5s; sample4's merged reads asserted in tests/clair_only.nf.test)
+*/bamfiles/*.cram
+*/bamfiles/*.cram.crai
+# samtools merge gives sample4's colliding @PG IDs a random suffix, so this BAM's md5 differs every run (reads asserted in tests/clair_only.nf.test)
+sample4/bamfiles/sample4_tumor.bam
+sample4/bamfiles/sample4_tumor.bam.bai
+*/padfoot/*/padfoot.log
+*/reconplot/*/reconplot.log
+*/reconplot/*/{per_chromosome,genome_wide,focus}/*.{pdf,png}

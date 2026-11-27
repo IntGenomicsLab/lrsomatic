@@ -1,0 +1,224 @@
+Changes in component 'nf-core/bcftools/reheader'
+Changes in 'bcftools/reheader/environment.yml':
+--- modules/nf-core/bcftools/reheader/environment.yml
++++ modules/nf-core/bcftools/reheader/environment.yml
+@@ -5,6 +5,6 @@
+   - bioconda
+ dependencies:
+   # renovate: datasource=conda depName=bioconda/bcftools
+-  - bioconda::bcftools=1.23.1
++  - bioconda::bcftools=1.24
+   # renovate: datasource=conda depName=bioconda/htslib
+-  - bioconda::htslib=1.23.1
++  - bioconda::htslib=1.24
+
+'modules/nf-core/bcftools/reheader/meta.yml' is unchanged
+Changes in 'bcftools/reheader/main.nf':
+--- modules/nf-core/bcftools/reheader/main.nf
++++ modules/nf-core/bcftools/reheader/main.nf
+@@ -3,9 +3,9 @@
+     label 'process_low'
+ 
+     conda "${moduleDir}/environment.yml"
+-    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
+-        : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
++    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
++        'https://depot.galaxyproject.org/singularity/bcftools:1.24--h118bc1c_2' :
++        'quay.io/biocontainers/bcftools:1.24--h118bc1c_2' }"
+ 
+     input:
+     tuple val(meta), path(vcf), path(header), path(samples)
+
+'modules/nf-core/bcftools/reheader/tests/vcf.gz.config' is unchanged
+'modules/nf-core/bcftools/reheader/tests/bcf.config' is unchanged
+'modules/nf-core/bcftools/reheader/tests/vcf_gz_index_tbi.config' is unchanged
+'modules/nf-core/bcftools/reheader/tests/vcf_gz_index.config' is unchanged
+'modules/nf-core/bcftools/reheader/tests/main.nf.test' is unchanged
+'modules/nf-core/bcftools/reheader/tests/vcf.config' is unchanged
+'modules/nf-core/bcftools/reheader/tests/vcf_gz_index_csi.config' is unchanged
+Changes in 'bcftools/reheader/tests/main.nf.test.snap':
+--- modules/nf-core/bcftools/reheader/tests/main.nf.test.snap
++++ modules/nf-core/bcftools/reheader/tests/main.nf.test.snap
+@@ -24,7 +24,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -60,7 +60,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -85,7 +85,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -121,7 +121,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -146,7 +146,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -176,7 +176,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -195,7 +195,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -225,7 +225,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -244,7 +244,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -274,7 +274,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -293,7 +293,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -329,7 +329,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -365,7 +365,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -390,7 +390,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -409,7 +409,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -445,7 +445,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -475,7 +475,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -494,7 +494,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+@@ -524,7 +524,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ],
+                 "index": [
+@@ -543,7 +543,7 @@
+                     [
+                         "BCFTOOLS_REHEADER",
+                         "bcftools",
+-                        "1.23.1"
++                        "1.24"
+                     ]
+                 ]
+             }
+
+************************************************************

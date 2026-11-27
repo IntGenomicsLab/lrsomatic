@@ -51,28 +51,33 @@ nextflow_pipeline {
                     assert file("$launchDir/output/sample3/variants/clairsto/somatic.vcf.gz").exists()
                 },
 
-                // ── Phased consensus VCFs exist and have data ────────────────
+                // ── Phased VCFs: records present, all PASS, somatic arm tagged ──
+                { PhasedVcf.assertPassOnly("$outputDir", ['sample1', 'sample2', 'sample3'], ['sample3']) },
+                { PhasedVcf.assertOnePerPosition("$outputDir", ['sample1', 'sample2', 'sample3']) },
+                { PhasedVcf.assertAllAlt("$outputDir", ['sample1', 'sample2', 'sample3']) },
                 {
-                    ['sample1', 'sample2', 'sample3'].each { s ->
-                        def germline = file("$launchDir/output/${s}/variants/phased/germline_smallvariants.vcf.gz")
-                        def somatic  = file("$launchDir/output/${s}/variants/phased/somatic_smallvariants.vcf.gz")
-                        assert germline.exists()
-                        assert somatic.exists()
-                        assert germline.size() > 0
-                        assert somatic.size() > 0
+                    ['sample1', 'sample2'].each { s ->
+                        PhasedVcf.assertRecordsFrom("$outputDir/${s}/variants/phased/germline_smallvariants.vcf.gz",
+                            ["$outputDir/${s}/variants/clair3/merge_output.vcf.gz"])
+                        PhasedVcf.assertRecordsFrom("$outputDir/${s}/variants/phased/somatic_smallvariants.vcf.gz",
+                            ["$outputDir/${s}/variants/clairs/snvs.vcf.gz", "$outputDir/${s}/variants/clairs/indel.vcf.gz"])
+                    }
+                    ['germline', 'somatic'].each { arm ->
+                        PhasedVcf.assertRecordsFrom("$outputDir/sample3/variants/phased/${arm}_smallvariants.vcf.gz",
+                            ["$outputDir/sample3/variants/clairsto/${arm}.vcf.gz"])
                     }
                 },
 
                 // ── BAM files ────────────────────────────────────────────────
                 {
                     ['sample1', 'sample2'].each { s ->
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.bam.bai").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam").exists()
-                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.bam.bai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_tumor.cram.crai").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram").exists()
+                        assert file("$launchDir/output/${s}/bamfiles/${s}_normal.cram.crai").exists()
                     }
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam").exists()
-                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.bam.bai").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram").exists()
+                    assert file("$launchDir/output/sample3/bamfiles/sample3_tumor.cram.crai").exists()
                 },
 
                 // ── Severus ──────────────────────────────────────────────────

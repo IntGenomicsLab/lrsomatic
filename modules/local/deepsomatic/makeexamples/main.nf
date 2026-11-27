@@ -4,7 +4,7 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     label 'process_long'
 
     //Conda is not supported at the moment
-    container params.use_gpu ? "docker.io/google/deepsomatic:1.7.0-gpu" : "docker.io/google/deepsomatic:1.7.0"
+    container params.use_gpu ? "docker.io/google/deepsomatic:1.10.0-gpu" : "docker.io/google/deepsomatic:1.10.0"
 
     input:
     tuple val(meta), path(normal_input), path(normal_index), path(tumor_input), path(tumor_index)
@@ -17,13 +17,12 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     tuple val(meta), path("${prefix}.examples.tfrecord-*-of-*.gz{,.example_info.json}")         , emit: examples
     tuple val(meta), path("${prefix}.gvcf.tfrecord-*-of-*.gz")                                  , emit: gvcf, optional:true
     tuple val(meta), path("${prefix}_call_variant_outputs.tfrecord-*-of-*.gz", arity: "0..*")   , emit: small_model_calls
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
+    tuple val("${task.process}"), val('deepsomatic'), val('1.10.0'), topic: versions, emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPSOMATIC module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
@@ -44,11 +43,9 @@ process DEEPSOMATIC_MAKEEXAMPLES {
     def nPonFiles = ponFiles.size()
     def ponArrayLiteral = ponFiles.collect { f -> "${f}" }.join(' ')
 
-    // Shell block to prepare the PON VCF (merge if multiple, copy if single, skip if none)
-    // Runs before make_examples_somatic so the result is available as merged_pon.vcf.gz
+    // Prepare the PON VCF before make_examples_somatic: merge several, copy one, skip none
     def ponPrepareBlock = (isTumorOnly && nPonFiles > 0) ? """
-    # Prepare PON VCF for --population_vcfs: merge multiple databases into one sorted+indexed file,
-    # or copy a single VCF. DeepSomatic requires no chromosome overlap across population VCFs.
+    # --population_vcfs takes one sorted, indexed VCF with no chromosome overlap: merge several or copy one
     _PON_VCFS=( ${ponArrayLiteral} )
     if [ \${#_PON_VCFS[@]} -gt 1 ]; then
         gzip -dc "\${_PON_VCFS[0]}" | grep '^##fileformat' > _pon_hdr.txt

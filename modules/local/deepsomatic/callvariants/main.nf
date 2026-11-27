@@ -4,20 +4,19 @@ process DEEPSOMATIC_CALLVARIANTS {
     label "${params.use_gpu ? '' : 'process_long'}"
 
     //Conda is not supported at the moment
-    container params.use_gpu ? "docker.io/google/deepsomatic:1.7.0-gpu" : "docker.io/google/deepsomatic:1.7.0"
+    container params.use_gpu ? "docker.io/google/deepsomatic:1.10.0-gpu" : "docker.io/google/deepsomatic:1.10.0"
 
     input:
     tuple val(meta), path(make_examples_tfrecords)
 
     output:
     tuple val(meta), path("${prefix}.call-*-of-*.tfrecord.gz")    , emit: call_variants_tfrecords
-    tuple val("${task.process}"), val('deepsomatic'), val('1.7.0'), topic: versions, emit: versions_deepsomatic
+    tuple val("${task.process}"), val('deepsomatic'), val('1.10.0'), topic: versions, emit: versions_deepsomatic
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         error "DEEPSOMATIC module does not support Conda. Please use Docker / Singularity / Podman instead."
     }

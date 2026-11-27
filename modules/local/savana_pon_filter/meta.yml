@@ -1,0 +1,82 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "savana_pon_filter"
+description: |
+  Remove SAVANA SVs that match a germline SV panel of normals, using Severus's PoN matching rule.
+  SAVANA's PacBio classifier has no tumour-only mode, so without a normal its somatic VCF holds
+  every germline SV with enough tumour reads.
+keywords:
+  - structural variants
+  - savana
+  - panel of normals
+  - tumour-only
+tools:
+  - "python":
+      description: "Python, running bin/savana_pon_filter.py from this pipeline."
+      homepage: "https://www.python.org"
+      documentation: "https://docs.python.org"
+      licence: ["PSF-2.0"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - vcf:
+        type: file
+        description: SAVANA classified somatic SV VCF
+        pattern: "*.classified.somatic.vcf"
+  - - meta2:
+        type: map
+        description: Groovy Map for the reference
+    - pon:
+        type: file
+        description: |
+          Severus SV panel of normals: comma-separated chr1,pos1,chr2,pos2,ci1,ci2,svtype,fraction
+          (pos2 is the length for INS), optionally gzipped and with a header row
+        pattern: "*.{tsv,tsv.gz}"
+
+output:
+  vcf:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "${prefix}.classified.somatic.vcf":
+        type: file
+        description: The input VCF without the events that match the panel of normals
+        pattern: "*.classified.somatic.vcf"
+  summary:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "${prefix}.pon_filter_summary.tsv":
+        type: file
+        description: Events and records before and after filtering
+        pattern: "*.pon_filter_summary.tsv"
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - python:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - python:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

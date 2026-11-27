@@ -1,0 +1,36 @@
+nextflow_pipeline {
+
+    name "Test pipeline - a sample lost before SEVERUS gets no report and does not abort the run (-stub)"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // skip_vep is required: with VEP on, sample3's VEP VCF fills the first join leg and the tuple is never short
+
+    test("-profile test, sample3 never reaches SEVERUS, VEP skipped - stub") {
+
+        options "-stub"
+        config "./fixtures/drop_sample3_haplotag.config"
+
+        when {
+            params {
+                outdir   = "$outputDir"
+                skip_vep = true
+            }
+        }
+
+        then {
+            def samples = { proc ->
+                workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} ") }
+                    .collect { task -> task.name.replaceAll(/.*\((.*)\)$/, '$1') }
+            }
+            assertAll(
+                { assert workflow.success },
+                { assert samples('SEVERUS').sort() == ['sample1', 'sample2'] : "SEVERUS tasks: ${samples('SEVERUS')}" },
+                { assert samples('LRSOMATICREPORT').sort() == ['sample1', 'sample2'] : "LRSOMATICREPORT tasks: ${samples('LRSOMATICREPORT')}" },
+                { assert (workflow.stdout + workflow.stderr).any { line -> line.contains("Sample 'sample3' never reached SEVERUS") } },
+                { assert !file("$outputDir/sample3/report/sample3_report.html").exists() }
+            )
+        }
+    }
+}

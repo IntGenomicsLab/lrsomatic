@@ -1,0 +1,109 @@
+site_name: lrsomatic
+site_url: https://intgenomicslab.github.io/lrsomatic/
+site_description: Somatic variant calling for Oxford Nanopore and PacBio long-read data.
+repo_url: https://github.com/IntGenomicsLab/lrsomatic
+repo_name: IntGenomicsLab/lrsomatic
+edit_uri: edit/dev/docs/
+docs_dir: docs
+
+# docs/README.md is the nf-core index of the docs folder; docs/index.md replaces it on the site
+exclude_docs: |
+  README.md
+  hooks/
+  overrides/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets-static/lrsomatic-logo.svg
+  favicon: assets-static/lrsomatic-logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  font:
+    text: Inter
+    code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  version:
+    provider: mike
+    default: latest
+    alias: true
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/IntGenomicsLab/lrsomatic
+    - icon: fontawesome/solid/book
+      link: https://doi.org/10.5281/zenodo.17751828
+
+extra_css:
+  - stylesheets/extra.css
+  - https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Output: output.md
+  - Parameters: parameters.md
+  - Changelog: changelog.md
+  - Citations: citations.md
+  - Contributing: CONTRIBUTING.md
+
+hooks:
+  - docs/hooks/repo_links.py
+
+plugins:
+  - search
+  - include-markdown
+  - macros:
+      module_name: schema_render
+      render_by_default: false
+
+validation:
+  links:
+    not_found: warn
+    absolute_links: info
+    unrecognized_links: info
+    anchors: info
+
+markdown_extensions:
+  - admonition
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - tables
+  - toc:
+      permalink: true

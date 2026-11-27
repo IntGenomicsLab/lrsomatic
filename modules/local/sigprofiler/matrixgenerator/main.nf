@@ -1,0 +1,62 @@
+process SIGPROFILER_MATRIXGENERATOR {
+    tag "$meta.id"
+    label 'process_single'
+
+    // No conda: the image uses CHM13-T2T forks of SigProfilerMatrixGenerator (#250) and SigProfilerAssignment; see meta.yml
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-7894689'
+        : 'ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-7894689'}"
+
+    input:
+    tuple val(meta), path(vcf)          // somatic small-variant VCF (plain or bgzipped)
+    // Fixed stage name: the script builds a local `volume/`, and SIGPROFILER_INSTALL's output is itself called `volume`
+    tuple val(meta2), path(volume, stageAs: 'genome_volume')      // SigProfilerMatrixGenerator volume containing tsb/<genome>/
+    val(genome)                         // SigProfilerMatrixGenerator genome name, e.g. GRCh38 or CHM13-T2T
+
+    output:
+    tuple val(meta), path("output/SBS/*.SBS96.all")  , emit: sbs96    , optional: true
+    tuple val(meta), path("output/DBS/*.DBS78.all")  , emit: dbs78    , optional: true
+    tuple val(meta), path("output/ID/*.ID83.all")    , emit: id83     , optional: true
+    tuple val(meta), path("output")                  , emit: output_dir
+    tuple val(meta), path("output/logs/*")           , emit: logs     , optional: true
+    tuple val("${task.process}"), val('sigprofilermatrixgenerator'), eval("python -c 'import importlib.metadata as m; print(m.version(\"SigProfilerMatrixGenerator\"))'"), topic: versions, emit: versions_sigprofilermatrixgenerator
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error "SIGPROFILER_MATRIXGENERATOR does not support Conda. Please use Docker / Singularity / Apptainer instead."
+    }
+    def args   = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    // SigProfilerMatrixGenerator names the sample from the file name up to the first '.' and dispatches on the extension
+    def sample = prefix.replaceAll(/[^A-Za-z0-9_-]/, '_')
+    def decompress = vcf.name.endsWith('.gz') ? "gzip -cd ${vcf} > input/${sample}.vcf" : "cp ${vcf} input/${sample}.vcf"
+    """
+    # Symlink the genome payload into a local volume so the tool never writes into the shared reference dir
+    mkdir -p input volume/tsb plot_templates
+    ln -s "\$(readlink -f ${volume})/tsb/${genome}" volume/tsb/${genome}
+    # sigProfilerPlotting caches plot templates in its (read-only) package directory unless told otherwise
+    export SIGPROFILERPLOTTING_VOLUME="\$PWD/plot_templates"
+
+    ${decompress}
+
+    SigProfilerMatrixGenerator matrix_generator \\
+        ${prefix} \\
+        ${genome} \\
+        input/ \\
+        --volume volume \\
+        ${args}
+
+    # SigProfilerMatrixGenerator writes everything (matrices, plots, logs, sorted VCF) under input/output
+    mv input/output output
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    mkdir -p output/SBS output/DBS output/ID output/logs
+    touch output/SBS/${prefix}.SBS96.all output/DBS/${prefix}.DBS78.all output/ID/${prefix}.ID83.all output/logs/${prefix}.out
+    """
+}

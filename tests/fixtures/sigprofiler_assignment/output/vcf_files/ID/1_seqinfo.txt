@@ -1,0 +1,16 @@
+sample1	1	187365	B:5:Del:R:2	A	AT	1
+sample1	1	188307	B:5:Ins:R:3	A	AT	1
+sample1	1	193135	B:4:Ins:R:4	A	AT	1
+sample1	1	196332	B:5:Del:M:2	A	AT	1
+sample1	1	198920	B:3:Del:R:5	A	AT	1
+sample1	1	201315	B:4:Ins:R:0	A	AT	1
+sample1	1	203505	B:1:Ins:T:3	A	AT	1
+sample1	1	207457	B:3:Del:R:5	A	AT	1
+sample1	1	209485	B:4:Del:M:2	A	AT	1
+sample1	1	210211	B:4:Ins:R:3	A	AT	1
+sample1	1	211584	B:3:Ins:R:1	A	AT	1
+sample1	1	213263	B:5:Del:M:2	A	AT	1
+sample1	1	214977	B:1:Ins:C:2	A	AT	1
+sample1	1	217653	B:1:Ins:T:2	A	AT	1
+sample1	1	220953	B:1:Ins:T:4	A	AT	1
+sample1	1	225639	B:2:Ins:R:2	A	AT	1

@@ -1,0 +1,1311 @@
+nextflow_function {
+
+    name "Test VEP plugin resolution functions"
+    script "../main.nf"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "vep_plugins"
+
+    // Launch-time resolution only: nothing is staged and nothing touches the network.
+
+    // --- vepPluginResource: an explicit --vep_* wins over the igenomes default
+
+    test("vepPluginResource falls back to the per-assembly default") {
+
+        function "vepPluginResource"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.toString().contains('clinvar') },
+                // pinned to a dated release, never the rolling vcf_GRCh38/clinvar.vcf.gz
+                { assert function.result.toString().contains('archive_2.0') }
+            )
+        }
+    }
+
+    test("vepPluginResource prefers an explicit param over the default") {
+
+        function "vepPluginResource"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == '/data/mine/clinvar.vcf.gz' }
+            )
+        }
+    }
+
+    test("vepPluginResource is null with no param and no genome") {
+
+        function "vepPluginResource"
+
+        when {
+            params {
+                genome = null
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == null }
+            )
+        }
+    }
+
+    // --- vepPluginIndex: overriding a data file drops the inherited index
+
+    test("vepPluginIndex takes the default index when the data file is the default") {
+
+        function "vepPluginIndex"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.toString().endsWith('.tbi') }
+            )
+        }
+    }
+
+    test("vepPluginIndex drops the default index once the data file is overridden") {
+
+        function "vepPluginIndex"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // an index belongs to the file it was built from, so ours must not be paired with theirs
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("vepPluginIndex returns an explicitly supplied index") {
+
+        function "vepPluginIndex"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar.vcf.gz.tbi'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == '/data/mine/clinvar.vcf.gz.tbi' }
+            )
+        }
+    }
+
+    test("vepPluginIndex is null for a resource that takes no index") {
+
+        function "vepPluginIndex"
+
+        when {
+            params {
+                genome = 'CHM13'
+            }
+            function {
+                """
+                input[0] = 'vep_polyphen_sift_db'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == null }
+            )
+        }
+    }
+
+    // --- vepPluginNeedsPrep / vepPluginPreparedName: the release-zip split
+
+    test("vepPluginNeedsPrep is true for a REVEL release zip") {
+
+        function "vepPluginNeedsPrep"
+
+        when {
+            params {
+                genome = null
+                vep_revel = 'https://rothsj06.dmz.hpc.mssm.edu/revel-v1.3_all_chromosomes.zip'
+            }
+            function {
+                """
+                input[0] = 'vep_revel'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginNeedsPrep is true for the EVE bulk download endpoint") {
+
+        function "vepPluginNeedsPrep"
+
+        when {
+            params {
+                genome = null
+                // the documented way to enable EVE; it carries no file extension at all
+                vep_eve = 'https://evemodel.org/api/proteins/bulk/download/'
+            }
+            function {
+                """
+                input[0] = 'vep_eve'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginNeedsPrep is false for an already-prepared EVE VCF") {
+
+        function "vepPluginNeedsPrep"
+
+        when {
+            params {
+                genome = null
+                vep_eve = '/data/vep/eve_merged.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_eve'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsPrep is false for an already-prepared REVEL file") {
+
+        function "vepPluginNeedsPrep"
+
+        when {
+            params {
+                genome = null
+                vep_revel = '/data/vep/revel_grch38.tsv.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_revel'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsPrep is false for a resource that is never prepared") {
+
+        function "vepPluginNeedsPrep"
+
+        when {
+            params {
+                genome = null
+                vep_clinvar = '/data/vep/whatever.zip'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginPreparedName names the file the prep task writes") {
+
+        function "vepPluginPreparedName"
+
+        when {
+            function {
+                """
+                input[0] = 'vep_eve'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == 'eve_merged.vcf.gz' }
+            )
+        }
+    }
+
+    // --- resolveVepPlugins
+
+    test("resolveVepPlugins returns nothing when plugins are skipped") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                skip_vep_plugins = true
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.args == '' },
+                { assert function.result.ready_files == [] },
+                { assert function.result.prepare == [:] }
+            )
+        }
+    }
+
+    test("resolveVepPlugins returns nothing when skip_vep is set") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                skip_vep = true
+                skip_vep_plugins = false
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.args == '' }
+            )
+        }
+    }
+
+    test("resolveVepPlugins defers a release zip to the prep task") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_revel = 'https://rothsj06.dmz.hpc.mssm.edu/revel-v1.3_all_chromosomes.zip'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the argument names what the prep task will write, not the zip
+                { assert function.result.args == '--plugin REVEL,file=revel_grch38.tsv.gz' },
+                { assert function.result.prepare['vep_revel'].toString().endsWith('.zip') },
+                // a zip is never staged as a file: neither release host can be staged by Nextflow
+                { assert function.result.ready_files == [] }
+            )
+        }
+    }
+
+    test("resolveVepPlugins emits no plugin args when nothing resolves") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.args == '' },
+                { assert function.result.prepare == [:] }
+            )
+        }
+    }
+
+    // --- vepPluginNeedsFetch / vepPluginMd5: a remote ClinVar is downloaded once, against a pinned MD5
+
+    test("vepPluginNeedsFetch is true for the default remote ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a local ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a remote resource other than ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_alphamissense'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginMd5 takes the default MD5 when ClinVar is the default") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result ==~ /[0-9a-f]{32}/ }
+            )
+        }
+    }
+
+    test("vepPluginMd5 drops the default MD5 once ClinVar is overridden") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the default MD5 belongs to the default release, not to this one
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("vepPluginMd5 returns an explicitly supplied MD5") {
+
+        function "vepPluginMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == '0123456789abcdef0123456789abcdef' }
+            )
+        }
+    }
+
+    test("resolveVepPlugins defers a remote ClinVar to the download task") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/archive/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the argument keeps the release's own basename, which the download task writes
+                { assert function.result.args.startsWith('--custom file=clinvar_20250101.vcf.gz,short_name=ClinVar') },
+                { assert function.result.prepare['vep_clinvar'].vcf == 'https://example.org/archive/clinvar_20250101.vcf.gz' },
+                { assert function.result.prepare['vep_clinvar'].tbi == 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi' },
+                { assert function.result.prepare['vep_clinvar'].md5 == '0123456789abcdef0123456789abcdef' },
+                // never staged as a foreign file: every VEP task would re-check it on the host
+                { assert function.result.ready_files == [] }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is false for a cloud-storage ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 's3://my-bucket/clinvar_20250101.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // wget cannot fetch s3://, so Nextflow keeps staging it as before
+                { assert !function.result }
+            )
+        }
+    }
+
+    test("vepPluginNeedsFetch is true for an ftp ClinVar") {
+
+        function "vepPluginNeedsFetch"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                vep_clinvar = 'ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2026/clinvar_20260829.vcf.gz'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 takes the default index MD5 on CHM13") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'CHM13'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result ==~ /[0-9a-f]{32}/ }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 is null on GRCh38, where NCBI publishes none") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'GRCh38'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("vepPluginIndexMd5 drops the default once the index is overridden") {
+
+        function "vepPluginIndexMd5"
+
+        when {
+            params {
+                genome = 'CHM13'
+                vep_clinvar_tbi = 'https://example.org/clinvar_20240624_GCA_009914755.4.vcf.gz.tbi'
+            }
+            function {
+                """
+                input[0] = 'vep_clinvar'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // the default MD5 belongs to the default index, not to this one
+                { assert function.result == null }
+            )
+        }
+    }
+
+    test("resolveVepPlugins carries the index MD5 to the download task") {
+
+        function "resolveVepPlugins"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/archive/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/archive/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_tbi_md5 = 'fedcba9876543210fedcba9876543210'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result.prepare['vep_clinvar'].tbi_md5 == 'fedcba9876543210fedcba9876543210' }
+            )
+        }
+    }
+
+    // --- validateVepPluginParams: the error paths
+
+    test("validateVepPluginParams passes when plugins are skipped") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = 'GRCh38'
+                skip_vep_plugins = true
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateVepPluginParams rejects a data file set without its index") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_alphamissense = '/data/vep/AlphaMissense_hg38.tsv.gz'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_alphamissense_tbi') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects an index supplied alongside a release zip") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_revel = 'https://rothsj06.dmz.hpc.mssm.edu/revel-v1.3_all_chromosomes.zip'
+                vep_revel_tbi = '/data/vep/revel_grch38.tsv.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                // the prep task indexes what it writes, so a supplied index would be discarded
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_revel_tbi') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects a GRCh38-only resource on CHM13") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_genome = 'T2T-CHM13v2.0'
+                vep_revel = '/data/vep/revel_grch38.tsv.gz'
+                vep_revel_tbi = '/data/vep/revel_grch38.tsv.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('GRCh38-only') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects the protein-space table off CHM13") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_genome = 'GRCh38'
+                vep_alphamissense_aa = '/data/vep/alphamissense_protein.tsv.gz'
+                vep_alphamissense_aa_tbi = '/data/vep/alphamissense_protein.tsv.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_alphamissense_aa') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams names no assembly when vep_genome is unset") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_genome = null
+                vep_alphamissense_aa = '/data/vep/alphamissense_protein.tsv.gz'
+                vep_alphamissense_aa_tbi = '/data/vep/alphamissense_protein.tsv.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                // "On null use --vep_alphamissense" would be the regression here
+                { assert (function.stdout + function.stderr).every { line -> !line.contains('On null') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects vep_custom with no --custom entry to substitute into") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_custom = '/data/mine/track.vcf.gz'
+                vep_args = '--everything --offline --format vcf --vcf'
+            }
+        }
+
+        then {
+            assertAll(
+                // without this the module would rewrite the ClinVar --custom entry instead
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_custom') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams accepts vep_custom with a matching --custom entry") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_custom = '/data/mine/track.vcf.gz'
+                vep_args = '--everything --offline --format vcf --vcf --custom file=placeholder,short_name=MyTrack,format=vcf,type=exact,coords=0'
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateVepPluginParams rejects an MD5 for a local ClinVar") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                // only the download task checks it, so a local file would skip it silently
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_md5') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams warns on a remote ClinVar without an MD5") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/clinvar.vcf.gz'
+                vep_clinvar_tbi = 'https://example.org/clinvar.vcf.gz.tbi'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                // log.warn reaches the log file, not the captured stdout
+                { assert path("${metaDir}/nextflow.log").text.contains('not verified') }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects a remote ClinVar with a local index") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = 'https://example.org/clinvar_20250101.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar_20250101.vcf.gz.tbi'
+                vep_clinvar_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                // the download task fetches both, so wget would be handed a local path
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_tbi') } }
+            )
+        }
+    }
+
+    test("validateVepPluginParams rejects an index MD5 for a local ClinVar") {
+
+        function "validateVepPluginParams"
+
+        when {
+            params {
+                genome = null
+                skip_vep_plugins = false
+                vep_clinvar = '/data/mine/clinvar.vcf.gz'
+                vep_clinvar_tbi = '/data/mine/clinvar.vcf.gz.tbi'
+                vep_clinvar_tbi_md5 = '0123456789abcdef0123456789abcdef'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('vep_clinvar_tbi_md5') } }
+            )
+        }
+    }
+
+    // --- validateSampleModels: a sample's BAMs must agree on caller models, or the pairing joins drop it
+
+    test("validateSampleModels accepts a pair that differs only in kinetics") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'false'],
+                    [id: 's1', type: 'normal', replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs', kinetics: 'true']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("validateSampleModels stops on a tumor/normal clair3_model mismatch") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor',  replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v500', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'normal', replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's2', type: 'tumor',  replicate: 1, clair3_model: 'hifi', clairS_model: 'hifi_revio_ssrs', clairSTO_model: 'hifi_revio_ssrs']
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("Sample 's1'") && line.contains('clair3_model') } }
+            )
+        }
+    }
+
+    test("validateSampleModels names each replicate of a tumour model mismatch") {
+
+        function "validateSampleModels"
+
+        when {
+            function {
+                """
+                input[0] = [
+                    [id: 's1', type: 'tumor', replicate: 1, clair3_model: 'r1041_e82_400bps_sup_v520', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz'],
+                    [id: 's1', type: 'tumor', replicate: 2, clair3_model: 'r1041_e82_400bps_sup_v430', clairS_model: 'ont_r10_dorado_sup_5khz', clairSTO_model: 'ont_r10_dorado_sup_5khz']
+                ]
+                """
+            }
+        }
+
+        then {
+            def out = function.stdout + function.stderr
+            assertAll(
+                { assert function.failed },
+                { assert out.any { line -> line.contains('clair3_model: tumor_rep1=r1041_e82_400bps_sup_v520, tumor_rep2=r1041_e82_400bps_sup_v430') } },
+                { assert out.any { line -> line.contains('Give every row of this sample the same clair3_model, set explicitly in the samplesheet if the models detected from the BAM headers differ') } },
+                { assert !out.any { line -> line.contains('clairS_model:') } }
+            )
+        }
+    }
+
+    // --- validateSampleReplicates: platform, sex and fiber must agree across a sample's rows
+    // row: [meta, bam_tumor, bam_normal, platform, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate]
+
+    test("validateSampleReplicates stops when a sample's rows differ in platform or sex") {
+
+        function "validateSampleReplicates"
+
+        when {
+            params {
+                input = 'samplesheet.csv'
+            }
+            function {
+                """
+                input[0] = [
+                    [[id: 's1'], 'T1.bam', 'N1.bam', 'ont', 'female', 'n', null, null, null, 1, 1],
+                    [[id: 's1'], 'T2.bam', 'N2.bam', 'pb',  'male',   'n', null, null, null, 2, 2],
+                    [[id: 's2'], 'T3.bam', null,     'pb',  'female', 'y', null, null, null, 1, 1],
+                    [[id: 's2'], 'T4.bam', null,     'pb',  'female', 'n', null, null, null, 2, 1]
+                ]
+                """
+            }
+        }
+
+        then {
+            def out = function.stdout + function.stderr
+            assertAll(
+                { assert function.failed },
+                { assert out.any { line -> line.contains("Sample 's1': its rows differ in platform, sex (platform: rep1=ont, rep2=pb; sex: rep1=female, rep2=male)") } },
+                { assert out.any { line -> line.contains("Sample 's2': its rows differ in fiber (fiber: rep1=y, rep2=n)") } },
+                { assert out.any { line -> line.contains('give every row of a sample the same platform, sex and fiber') } }
+            )
+        }
+    }
+
+    test("validateSampleReplicates passes when a sample's rows agree on platform, sex and fiber") {
+
+        function "validateSampleReplicates"
+
+        when {
+            params {
+                input = 'samplesheet.csv'
+            }
+            function {
+                """
+                input[0] = [
+                    [[id: 's1'], 'T1.bam', 'N1.bam', 'pb',  'male',   'y', null, null, null, 1, 1],
+                    [[id: 's1'], 'T2.bam', 'N2.bam', 'pb',  'male',   'y', null, null, null, 2, 2],
+                    [[id: 's2'], 'T3.bam', null,     'ont', 'female', 'n', null, null, null, 1, 1]
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    // --- validateCondaSupport: container-only steps fail at launch under conda
+
+    test("validateCondaSupport names every container-only step left on under conda") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = true
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,conda'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('modkit pileup, mutational signatures') } },
+                { assert (function.stdout + function.stderr).any { line -> line.contains('--skip_modkit --skip_signatures') } }
+            )
+        }
+    }
+
+    test("validateCondaSupport passes under conda once those steps are skipped") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = true
+                skip_report = true
+                skip_signatures = true
+            }
+            function {
+                """
+                input[0] = 'mamba'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    test("validateCondaSupport ignores container profiles") {
+
+        function "validateCondaSupport"
+
+        when {
+            params {
+                skip_modkit = false
+                skip_report = false
+                skip_signatures = false
+            }
+            function {
+                """
+                input[0] = 'test,singularity'
+                """
+            }
+        }
+
+        then {
+            assert function.success
+        }
+    }
+
+    // --- validateSmallvarCallers: caller lists are checked before workflows/lrsomatic.nf tokenises them
+
+    test("validateSmallvarCallers accepts both callers on each arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair, deepvariant'
+                somatic_var_keep  = 'deepsomatic,clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects an empty germline list") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = ''
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: no caller given") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a trailing comma") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair,'
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: empty entry") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a somatic caller on the germline arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'deepsomatic'
+                somatic_var_keep  = 'clair'
+            }
+        }
+
+        then {
+            assertAll(
+                // DeepSomatic only adjudicates somatic calls
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--germline_var_keep: 'deepsomatic' is not a valid caller") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a germline caller on the somatic arm") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair'
+                somatic_var_keep  = 'deepvariant'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--somatic_var_keep: 'deepvariant' is not a valid caller") } }
+            )
+        }
+    }
+
+    test("validateSmallvarCallers rejects a duplicated caller") {
+
+        function "validateSmallvarCallers"
+
+        when {
+            params {
+                germline_var_keep = 'clair'
+                somatic_var_keep  = 'clair, clair'
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.failed },
+                { assert (function.stdout + function.stderr).any { line -> line.contains("--somatic_var_keep: 'clair' is listed more than once") } }
+            )
+        }
+    }
+}

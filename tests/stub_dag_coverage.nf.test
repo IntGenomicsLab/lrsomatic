@@ -1,0 +1,106 @@
+nextflow_pipeline {
+
+    name "Test pipeline - ASCAT, Wakhan, SV and two-caller consensus legs reached in a -stub run"
+    script "../main.nf"
+    tag "pipeline"
+    tag "small"
+
+    // The test profile skips these legs and -preview runs no stub blocks, so this run turns them on.
+    // Sample1 and sample2 are tumour/normal pairs, sample3 is tumour-only.
+
+    test("-profile test, ASCAT/CoRAL/Wakhan/Padfoot/ReConPlot/ShatterSeek on, two callers per arm, consensus - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir               = "$outputDir"
+                skip_ascat           = false
+                skip_coral           = false
+                skip_wakhan          = false
+                skip_padfoot         = false
+                skip_reconplot       = false
+                skip_shatterseek     = false
+                reconplot_regions    = 'chr22'
+                germline_var_keep    = 'clair,deepvariant'
+                somatic_var_keep     = 'clair,deepsomatic'
+                germline_var_combine = 'consensus'
+                somatic_var_combine  = 'consensus'
+            }
+        }
+
+        then {
+            def succeeded = { proc -> workflow.trace.succeeded().findAll { task -> task.name.contains(":${proc} (") }*.name }
+            def samples   = { proc -> succeeded(proc).collect { name -> name.replaceAll(/.*\((.*)\)$/, '$1') } as Set }
+            def all       = ['sample1', 'sample2', 'sample3'] as Set
+
+            // The report stub's staged.txt lists each file under sample_dir/ as the tool would see it. Each extra leg
+            // (workflows/lrsomatic.nf, report_leg) must land at the path the tool publishes it to, or the report
+            // silently shows that section as "not available" while the run still succeeds.
+            def staged = all.collectEntries { id ->
+                [id, path("$outputDir/${id}/report/staged.txt").readLines()*.tokenize('\t')*.getAt(0)*.minus('sample_dir/')]
+            }
+            def extra_root = ~/^(signatures|shatterseek|ecdna|variants\/savana|variants\/clairsto|vep\/SVs|padfoot|reconplot|wakhan)\/.*/
+            // One pattern per leg reached by this run (SigProfiler is off in the test profile)
+            def legs = { id -> [
+                ~/ecdna\/amplicon_classifier\/${id}_gene_list\.tsv/,
+                ~/ecdna\/coral\/plots\/${id}_amplicon\d+_(graph|cycles)\.png/,
+                ~/ecdna\/coral\/${id}_CNV_SEEDS\.bed/,
+                ~/ecdna\/coral\/(reconstruct|cycles)\/${id}_amplicon_summary\.txt/,
+                ~/variants\/savana\/${id}(\.pon_filtered)?\.classified\.somatic\.vcf/,
+                ~/variants\/savana\/${id}_fitted_purity_ploidy\.tsv/,
+                ~/padfoot\/(severus_wakhan|savana)\/annotated_svs\.tsv/,
+                ~/reconplot\/(severus_wakhan|savana)\/genome_wide\/[^\/]+\.png/,
+                ~/reconplot\/(severus_wakhan|savana)\/per_chromosome\/[^\/]+\.png/,
+                ~/reconplot\/(severus_wakhan|savana)\/focus\/[^\/]+\.png/,
+                ~/shatterseek\/(severus_wakhan|savana)\/${id}\.shatterseek\.tsv/,
+                ~/wakhan\/solutions_ranks\.tsv/,
+                ~/wakhan\/solution_rank_1\/integer_profile\.bed/,
+                ~/wakhan\/solution_rank_1\/genes\/genes_copynumber_states\.bed/,
+                ~/qc\/tumor\/${id}_whatshap_stats\.tsv/
+            ] + (id == 'sample3' ? [~/variants\/clairsto\/${id}\.verdict_status\.tsv/] : [~/vep\/SVs\/${id}_VEP_SAVANA\.vcf\.gz/]) }  // tumour-only: Verdict status, no SAVANA VEP here
+
+            assertAll(
+                { assert workflow.success },
+
+                // UNZIP -> ASCAT -> CoRAL and tumour-only Verdict tagging
+                { assert ['UNZIP_ALLELES', 'UNZIP_LOCI', 'UNZIP_GC', 'UNZIP_RT'].every { proc -> succeeded(proc).size() == 1 } :
+                    "UNZIP tasks: ${['UNZIP_ALLELES', 'UNZIP_LOCI', 'UNZIP_GC', 'UNZIP_RT'].collectEntries { proc -> [proc, succeeded(proc)] }}" },
+                { assert samples('ASCAT') == all : "ASCAT tasks: ${succeeded('ASCAT')}" },
+                { assert samples('ECDNA:CORAL_SEED') == all : "CORAL_SEED tasks: ${succeeded('ECDNA:CORAL_SEED')}" },
+                { assert samples('CLAIRSTO_VERDICT_TAG') == ['sample3'] as Set : "CLAIRSTO_VERDICT_TAG tasks: ${succeeded('CLAIRSTO_VERDICT_TAG')}" },
+
+                // SEVERUS -> Wakhan, SV annotation and the Severus+Wakhan legs
+                { assert samples('SEVERUS') == all : "SEVERUS tasks: ${succeeded('SEVERUS')}" },
+                { assert samples('WAKHAN') == all : "WAKHAN tasks: ${succeeded('WAKHAN')}" },
+                { assert samples('SV_VEP') == all : "SV_VEP tasks: ${succeeded('SV_VEP')}" },
+                { assert succeeded('PADFOOT_SEVERUS_WAKHAN').size() == 3 : "PADFOOT_SEVERUS_WAKHAN tasks: ${succeeded('PADFOOT_SEVERUS_WAKHAN')}" },
+                { assert succeeded('RECONPLOT_SEVERUS_WAKHAN').size() == 3 : "RECONPLOT_SEVERUS_WAKHAN tasks: ${succeeded('RECONPLOT_SEVERUS_WAKHAN')}" },
+                { assert succeeded('SHATTERSEEK_SEVERUS_WAKHAN').size() == 3 : "SHATTERSEEK_SEVERUS_WAKHAN tasks: ${succeeded('SHATTERSEEK_SEVERUS_WAKHAN')}" },
+
+                // consensus: one query per caller and sample, then one consensus per sample
+                { assert succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
+                    "paired germline BCFTOOLS_QUERY tasks: ${succeeded('PAIRED_SMALLVAR_GERMLINE:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 4 :
+                    "paired somatic BCFTOOLS_QUERY tasks: ${succeeded('PAIRED_SMALLVAR_SOMATIC:SOMATIC_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('TUMORONLY_SMALLVAR:GERMLINE_CONSENSUS:BCFTOOLS_QUERY').size() == 2 :
+                    "tumour-only germline BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:GERMLINE_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY').size() == 2 :
+                    "tumour-only somatic BCFTOOLS_QUERY tasks: ${succeeded('TUMORONLY_SMALLVAR:SOMATIC_CONSENSUS:BCFTOOLS_QUERY')}" },
+                { assert samples('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "germline BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('GERMLINE_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
+                { assert samples('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS') == all : "somatic BCFTOOLS_CALLER_CONSENSUS tasks: ${succeeded('SOMATIC_CONSENSUS:BCFTOOLS_CALLER_CONSENSUS')}" },
+
+                { assert samples('LRSOMATICREPORT') == all : "LRSOMATICREPORT tasks: ${succeeded('LRSOMATICREPORT')}" },
+                // The stub report holds the --run-mode the pipeline passed: from meta.paired_data, not inferred from QC files
+                { assert all.collectEntries { id -> [id, path("$outputDir/${id}/report/${id}_report.html").text.trim()] } ==
+                    [sample1: '--run-mode paired', sample2: '--run-mode paired', sample3: '--run-mode tumour_only'] },
+
+                // Report staging: every reached leg is present, and every extra file sits where the pipeline published it
+                { assert all.every { id -> legs(id).every { leg -> staged[id].any { rel -> rel ==~ leg } } } :
+                    "legs missing from staged.txt: ${all.collectEntries { id -> [id, legs(id).findAll { leg -> !staged[id].any { rel -> rel ==~ leg } }*.toString()] }}" },
+                { assert all.every { id -> staged[id].findAll { rel -> rel ==~ extra_root }.every { rel -> file("$outputDir/${id}/${rel}").exists() } } :
+                    "staged extra files not at their published path: ${all.collectEntries { id -> [id, staged[id].findAll { rel -> rel ==~ extra_root && !file("$outputDir/${id}/${rel}").exists() }] }}" }
+            )
+        }
+    }
+}

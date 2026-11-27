@@ -8,12 +8,7 @@ keywords:
   - SNV
 tools:
   - "clair3":
-      description: "Clair3 is a small variant caller for long-reads. Compare to PEPPER
-        (r0.4), Clair3 (v0.1) shows a better SNP F1-score with ≤30-fold of ONT data
-        (precisionFDA Truth Challenge V2), and a better Indel F1-score, while runs generally
-        four times faster. Clair3 makes the best of both worlds of using pileup or full-alignment
-        as input for deep-learning based long-read small variant calling. Clair3 is
-        simple and modular for easy deployment and integration."
+      description: "Clair3 is a small variant caller for long reads, using pileup and full-alignment deep-learning models."
       homepage: "https://github.com/HKU-BAL/Clair3"
       documentation: "https://github.com/HKU-BAL/Clair3"
       tool_dev_url: "https://github.com/HKU-BAL/Clair3"

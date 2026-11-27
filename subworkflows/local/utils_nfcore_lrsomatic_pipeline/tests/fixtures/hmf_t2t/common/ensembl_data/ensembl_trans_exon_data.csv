@@ -1,0 +1,6 @@
+GeneId,CanonicalTranscriptId,Strand,TransId,TransName,BioType,TransStart,TransEnd,ExonRank,ExonStart,ExonEnd,ExonPhase,ExonEndPhase,CodingStart,CodingEnd,RefSeqId
+ENSG01,1,1,1,ENST01,protein_coding,201,800,1,201,300,-1,1,251,750,NM_1
+ENSG01,1,1,1,ENST01,protein_coding,201,800,2,401,500,1,2,251,750,NM_1
+ENSG01,1,1,1,ENST01,protein_coding,201,800,3,601,800,2,-1,251,750,NM_1
+ENSG03,3,1,3,ENST03,protein_coding,2001,2400,1,2001,2100,-1,1,2051,2351,NULL
+ENSG03,3,1,3,ENST03,protein_coding,2001,2400,2,2301,2400,1,-1,2051,2351,NULL

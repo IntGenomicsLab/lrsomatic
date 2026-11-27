@@ -21,9 +21,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                     [],
                     [],
+                    [],
                     []
-                    ]
-                input[1] = [[],[]]
+                ]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -36,10 +38,10 @@ nextflow_process {
                     process.out.read_qual,
                     process.out.breakpoints_double,
                     path(process.out.all_vcf.get(0).get(1)).vcf.summary,
-                    //path(process.out.all_vcf.get(0).get(1)).vcf.variantsMD5, - lint fails because of emtpy md5sum
+                    file(process.out.all_vcf.get(0).get(1)).name,
                     process.out.all_breakpoints_clusters_list,
                     process.out.all_breakpoints_clusters,
-                    process.out.versions
+                    process.out.findAll { key, val -> key.startsWith("versions")}
                     ).match() }
             )
         }
@@ -60,9 +62,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test2.sorted.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
+                    [],
                     []
                 ]
-                input[1] = [[],[]]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -75,13 +79,13 @@ nextflow_process {
                     process.out.read_qual,
                     process.out.breakpoints_double,
                     path(process.out.all_vcf.get(0).get(1)).vcf.summary,
-                    path(process.out.all_vcf.get(0).get(1)).vcf.variantsMD5,
+                    file(process.out.all_vcf.get(0).get(1)).name,
                     process.out.all_breakpoints_clusters_list,
                     process.out.all_breakpoints_clusters,
                     process.out.somatic_vcf,
                     process.out.somatic_breakpoints_clusters_list,
                     process.out.somatic_breakpoints_clusters,
-                    process.out.versions
+                    process.out.findAll { key, val -> key.startsWith("versions")}
                     ).match() }
             )
         }
@@ -103,8 +107,10 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
+                    []
                 ]
-                input[1] = [[],[]]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -117,13 +123,13 @@ nextflow_process {
                     process.out.read_qual,
                     process.out.breakpoints_double,
                     path(process.out.all_vcf.get(0).get(1)).vcf.summary,
-                    path(process.out.all_vcf.get(0).get(1)).vcf.variantsMD5,
+                    file(process.out.all_vcf.get(0).get(1)).name,
                     process.out.all_breakpoints_clusters_list,
                     process.out.all_breakpoints_clusters,
                     process.out.somatic_vcf,
                     process.out.somatic_breakpoints_clusters_list,
                     process.out.somatic_breakpoints_clusters,
-                    process.out.versions
+                    process.out.findAll { key, val -> key.startsWith("versions")}
                     ).match() }
             )
         }
@@ -145,11 +151,14 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/illumina/gvcf/test.genome.vcf', checkIfExists: true),
+                    []
                 ]
                 input[1] = [
                     [ id:'bed'], // meta map
-                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true)
+                    file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.blacklist_intervals.bed', checkIfExists: true),
+                    []
                 ]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -162,13 +171,13 @@ nextflow_process {
                     process.out.read_qual,
                     process.out.breakpoints_double,
                     path(process.out.all_vcf.get(0).get(1)).vcf.summary,
-                    path(process.out.all_vcf.get(0).get(1)).vcf.variantsMD5,
+                    file(process.out.all_vcf.get(0).get(1)).name,
                     process.out.all_breakpoints_clusters_list,
                     process.out.all_breakpoints_clusters,
                     process.out.somatic_vcf,
                     process.out.somatic_breakpoints_clusters_list,
                     process.out.somatic_breakpoints_clusters,
-                    process.out.versions
+                    process.out.findAll { key, val -> key.startsWith("versions")}
                     ).match() }
             )
         }
@@ -189,9 +198,11 @@ nextflow_process {
                     file(params.modules_testdata_base_path + 'genomics/homo_sapiens/nanopore/bam/test.sorted.phased.bam.bai', checkIfExists: true),
                     [],
                     [],
+                    [],
                     []
-                    ]
-                input[1] = [[],[]]
+                ]
+                input[1] = [[],[],[]]
+                input[2] = [[:],[]]
                 """
             }
         }
@@ -199,7 +210,7 @@ nextflow_process {
         then {
             assertAll(
                 { assert process.success },
-                { assert snapshot(process.out).match() }
+                { assert snapshot(sanitizeOutput(process.out)).match() }
             )
         }
 

@@ -1,0 +1,90 @@
+import java.util.zip.GZIPInputStream
+
+// Record-level checks on the published phased VCFs, shared by the pipeline tests.
+class PhasedVcf {
+
+    // Non-header records of a bgzipped VCF, each split into its tab-separated fields
+    static List<List<String>> records(String path) {
+        new GZIPInputStream(new FileInputStream(path)).withReader { reader ->
+            reader.readLines().findAll { !it.startsWith('#') }.collect { it.split('\t') as List }
+        }
+    }
+
+    static boolean hasFlag(List<String> rec, String flag) {
+        rec[7].split(';').contains(flag)
+    }
+
+    // Value of a FORMAT field in the first sample column, or null if absent
+    static String format(List<String> rec, String key) {
+        def i = rec[8].split(':').toList().indexOf(key)
+        def values = rec[9].split(':')
+        i >= 0 && i < values.size() ? values[i] : null
+    }
+
+    // A record without GT (or without sample columns) is not alt
+    static boolean isAlt(List<String> rec) {
+        def gt = rec.size() > 9 ? format(rec, 'GT') : null
+        gt != null && gt.split(/[\/|]/).any { it != '0' && it != '.' }
+    }
+
+    // LongPhase cannot take two records at one POS, so the phased germline VCF holds one record per CHROM:POS.
+    // The somatic VCF keeps the callers' records: it is phased per record from the reads, not by LongPhase.
+    static void assertOnePerPosition(String outdir, List<String> samples) {
+        samples.each { s ->
+            def pos = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz").collect { "${it[0]}:${it[1]}" }
+            assert pos.size() == pos.toUnique().size() : "${s}: two germline records at one position"
+        }
+    }
+
+    // Somatic phase comes from the germline-haplotagged reads, so every somatic PS is a germline phase block
+    static void assertSomaticPhaseInGermlineBlocks(String outdir, List<String> samples) {
+        samples.each { s ->
+            def germPs = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz")
+                .collect { format(it, 'PS') }.findAll { it && it != '.' }.toSet()
+            def stray = records("${outdir}/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+                .findAll { rec -> def ps = format(rec, 'PS'); ps && ps != '.' && !(ps in germPs) }
+            assert stray.isEmpty() : "${s}: ${stray.size()} somatic record(s) with a PS that is no germline phase block, e.g. ${stray[0]?.take(5)}"
+        }
+    }
+
+    // CHROM:POS:REF:ALT and the unphased genotype of a record
+    static String callKey(List<String> rec) {
+        def gt = rec.size() > 9 ? format(rec, 'GT') : null
+        def alleles = gt ? gt.split(/[\/|]/).toList().sort() : ['.']
+        "${rec[0]}:${rec[1]}:${rec[3]}:${rec[4]}:${alleles.join('/')}"
+    }
+
+    // Every (selected) record of a VCF matches a record, alleles and genotype, of one of the source VCFs
+    static void assertRecordsFrom(String vcf, List<String> sources, Closure select = { _rec -> true }) {
+        def known = sources.collectMany { src -> records(src).collect { callKey(it) } }.toSet()
+        def made = records(vcf).findAll { select(it) && !(callKey(it) in known) }
+        assert made.isEmpty() : "${vcf}: ${made.size()} record(s) not written by the source caller, e.g. ${made[0]?.take(5)}"
+    }
+
+    // Every record of both phased arms has a genotype that carries an ALT allele
+    static void assertAllAlt(String outdir, List<String> samples) {
+        samples.each { s ->
+            ['germline', 'somatic'].each { arm ->
+                def nonAlt = records("${outdir}/${s}/variants/phased/${arm}_smallvariants.vcf.gz").findAll { !isAlt(it) }
+                assert nonAlt.isEmpty() : "${s}: ${nonAlt.size()} ${arm} record(s) without an ALT allele in GT, e.g. ${nonAlt[0]?.take(5)}"
+            }
+        }
+    }
+
+    // Default-mode checks: both arms all PASS, germline not empty, somatic phase sets are germline blocks
+    static void assertPassOnly(String outdir, List<String> samples, List<String> tumourOnly) {
+        samples.each { s ->
+            def germ = records("${outdir}/${s}/variants/phased/germline_smallvariants.vcf.gz")
+            def som  = records("${outdir}/${s}/variants/phased/somatic_smallvariants.vcf.gz")
+            assert !germ.isEmpty() : "${s}: phased germline VCF has no records"
+            assert germ.every { it[6] == 'PASS' } : "${s}: non-PASS germline record with the PASS filter on"
+            assert som.every { it[6] == 'PASS' } : "${s}: non-PASS somatic record with the PASS filter on"
+        }
+        assertSomaticPhaseInGermlineBlocks(outdir, samples)
+        // Paired test samples have no PASS somatic calls, so the checks above only bite on tumour-only ones
+        tumourOnly.each { s ->
+            assert !records("${outdir}/${s}/variants/phased/somatic_smallvariants.vcf.gz").isEmpty() :
+                "${s}: tumour-only phased somatic VCF has no records"
+        }
+    }
+}

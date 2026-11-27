@@ -1,0 +1,20 @@
+{
+    "fixture bundle - downloaded, MD5-checked, unpacked without its top-level directory": {
+        "content": [
+            {
+                "versions_python": [
+                    [
+                        "HMF_BUNDLE",
+                        "python",
+                        "3.12.14"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-26T11:46:50.499124302",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.0"
+        }
+    }
+}

@@ -20,13 +20,20 @@
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "help_text": "Path to a comma-separated samplesheet with a header row; see the [usage documentation](https://github.com/IntGenomicsLab/lrsomatic/blob/main/docs/usage.md#samplesheet-input) for the columns.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "outdir_cache": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory to publish downloaded reference caches to (the VEP cache from --download_vep_cache and the SigProfiler genome payload under sigprofiler/). Defaults to `<outdir>/cache`.",
+                    "help_text": "Point it at shared storage to keep the caches outside a run's results, then pass them to later runs with --vep_cache and --sigprofiler_genome_dir.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {
@@ -70,39 +77,49 @@
                 "germline_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of germline variant callers to use. Valid values: deepvariant, clair. Example: 'deepvariant,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepvariant)\\s*(,\\s*(clair|deepvariant)\\s*)?$"
                 },
                 "somatic_var_keep": {
                     "type": "string",
                     "description": "Comma-separated list of somatic variant callers to use. Valid values: deepsomatic, clair. Example: 'deepsomatic,clair'",
-                    "default": "clair"
+                    "default": "clair",
+                    "pattern": "^\\s*(clair|deepsomatic)\\s*(,\\s*(clair|deepsomatic)\\s*)?$"
                 },
                 "germline_var_combine": {
                     "type": "string",
-                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two germline callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps either caller's records, one caller per position, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "somatic_var_combine": {
                     "type": "string",
-                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps all variants from both callers.",
+                    "description": "When two somatic callers are used, specifies how to combine them. 'consensus' keeps only variants called by both callers; 'all' keeps either caller's records, one caller per position, preferring PASS records and then the prioritised caller.",
                     "default": "all",
                     "enum": ["consensus", "all"]
                 },
                 "prioritize_caller_germline": {
                     "type": "string",
-                    "description": "When both germline callers are used, specifies which caller's format to use for variants called by both. Must be [deepvariant, clair].",
+                    "description": "When both germline callers are used, specifies whose record to keep where both callers call a position. Must be [deepvariant, clair].",
                     "default": "clair",
                     "enum": ["deepvariant", "clair"]
                 },
                 "prioritize_caller_somatic": {
                     "type": "string",
-                    "description": "When both somatic callers are used, specifies which caller's format to use for variants called by both. Must be [deepsomatic, clair].",
+                    "description": "When both somatic callers are used, specifies whose record to keep where both callers call a position. Must be [deepsomatic, clair].",
                     "default": "clair",
                     "enum": ["deepsomatic", "clair"]
                 },
+                "smallvar_filter_pass": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep only PASS records from each small variant caller for downstream use.",
+                    "help_text": "DeepVariant and DeepSomatic emit a record for every site they evaluate, so most records are RefCall (or GERMLINE/PON) rather than calls, and Clair3/ClairS keep their LowQual and NonSomatic calls. Those records otherwise flow into the caller consensus, phasing, VEP and the report. Set to false to also pass on non-PASS calls: Clair3 and ClairS records as they are, and DeepVariant/DeepSomatic records whose genotype carries an ALT allele and whose FILTER is PASS or LowQual. Records without a call (RefCall, NoCall) and DeepSomatic's GERMLINE and PON verdicts, which are not somatic calls, are never passed on; the tumour-only germline arms and the ClairS-TO somatic arm stay PASS-only, so ClairS-TO's LowQual somatic candidates are dropped either way. The per-caller VCFs published under `<outdir>/<sample>/variants/` are unaffected either way.",
+                    "fa_icon": "fas fa-filter"
+                },
                 "generate_gvcf": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Also write gVCFs from DeepVariant and DeepSomatic, and publish them next to the VCFs."
                 }
             }
         },
@@ -114,6 +131,25 @@
                 "longphase_tag_supplementary": {
                     "type": "boolean",
                     "description": "Whether to include supplementary alignments in Longphase haplotype tagging.",
+                    "default": false
+                }
+            }
+        },
+        "modkit_options": {
+            "title": "Modkit options",
+            "type": "object",
+            "description": "Options for modkit pileup of base modifications",
+            "properties": {
+                "modkit_args": {
+                    "type": "string",
+                    "description": "Command line arguments passed to `modkit pileup`. The value replaces the default rather than extending it; the default restricts the bedMethyl output to 5mC calls at CpG sites.",
+                    "help_text": "Repeat `--cpg --modified-bases 5mC` when adding flags (e.g. `--cpg --modified-bases 5mC --combine-strands`). An empty value gives the unfiltered pileup of every modification code at every position: use `--modkit_args=''` (the `=` form) or an empty `modkit_args` entry in a params file, since `--modkit_args ''` reaches the pipeline as `true`. `--modified-bases` only filters the output: on PacBio data, positions where the 5mC and 5hmC probabilities sum above 1 are still dropped and non-conflicting 5hmC calls are counted in `N_other`. When `--modkit_phased` is set and DMR will run, `5hmC` is appended automatically if `--modified-bases` names `5mC` without it, and the published `modkit_pileup` files then include the 5hmC rows: `modkit dmr pair` rejects bedMethyl rows where an uncounted modification code (e.g. real dual 5mC/5hmC SUP calls) pushes `N_other` above zero. `--skip_dmr` keeps the value as given.",
+                    "fa_icon": "fas fa-terminal",
+                    "default": "--cpg --modified-bases 5mC"
+                },
+                "modkit_phased": {
+                    "type": "boolean",
+                    "description": "Run `modkit pileup --phased` on the Longphase-haplotagged BAMs, producing `<sample>_hp1.bed.gz`, `<sample>_hp2.bed.gz` and `<sample>_combined.bed.gz`. The pileup then requires small-variant calling, phasing and haplotagging to have succeeded for the sample.",
                     "default": false
                 }
             }
@@ -140,11 +176,31 @@
                 },
                 "igenomes_base": {
                     "type": "string",
-                    "format": "directory-path",
                     "description": "The base path to the igenomes reference files",
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "default": "s3://ngi-igenomes/igenomes/"
+                },
+                "clairsto_cna_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Verdict CNA resource directory for ClairS-TO, holding loci_files/, allele_files/ and one GC_*.txt. Read only with --skip_ascat.",
+                    "help_text": "Read only on `--skip_ascat` runs; otherwise Verdict's germline tagging comes from the pipeline's ASCAT run and this is ignored. The image ships the GRCh38 set and `--genome CHM13 --skip_ascat` builds a CHM13 one, so this is only needed for another assembly or as an override. The directory must be self-contained, with no links reaching outside it. Add an `RT_<name>.txt` to correct LogR for replication timing as well; without it, correction is GC-only.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "dmr_cpg_islands_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "CpG-islands BED to restrict haplotype DMR calling to. Has a built-in default for --genome GRCh38/CHM13; required as an explicit override for any other genome when --modkit_phased is set and --skip_dmr is not.",
+                    "help_text": "Only used by the DMR subworkflow (see --skip_dmr). Without a value -- built-in or supplied -- DMR is skipped with a warning rather than the run failing.",
+                    "fa_icon": "fas fa-map-marker-alt"
+                },
+                "dmr_gencode_gene_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Gene-model BED (used for nearest-gene annotation of DMR calls) to use for haplotype DMR calling. Has a built-in default for --genome GRCh38/CHM13; required as an explicit override for any other genome when --modkit_phased is set and --skip_dmr is not.",
+                    "help_text": "Only used by the DMR subworkflow (see --skip_dmr). Without a value -- built-in or supplied -- DMR is skipped with a warning rather than the run failing.",
+                    "fa_icon": "fas fa-dna"
                 }
             }
         },
@@ -166,6 +222,21 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to save secondary alignments"
+                },
+                "aligned_format": {
+                    "type": "string",
+                    "default": "cram",
+                    "enum": ["cram", "bam"],
+                    "description": "File format of the aligned and haplotagged reads, in the work directory and in `bamfiles/`.",
+                    "help_text": "`cram` writes CRAM 3.0 with the reference embedded: 33-69 % smaller than BAM on long reads, readable without the FASTA, and decoded by every tool in the pipeline. `bam` writes BAM with `.bai` indexes, for downstream tools that cannot read CRAM.",
+                    "fa_icon": "fas fa-file-archive"
+                },
+                "skip_alignment": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use the input BAM/CRAM files as the alignment instead of realigning them with minimap2. Advanced; realigning is recommended.",
+                    "help_text": "Every input file must be coordinate-sorted and aligned to `--fasta`: each `@SQ` contig must be in the FASTA with the same length, or the run stops. The pipeline still replaces the read groups, drops old phasing tags (`HP`, `PS`, `PQ`, `PC`) and, unless `--keep_kinetic_data` is set, the PacBio kinetics, drops secondary alignments when `--save_secondary_alignment` is false, and writes `--aligned_format`. Rows that fibertools-rs reads (Fiber-seq rows, and PacBio rows with kinetics while m6A is predicted) are not supported; add `--skip_fiber` / `--skip_m6a` to run them. See the usage documentation, section 'Skipping alignment'.",
+                    "fa_icon": "fas fa-forward"
                 }
             }
         },
@@ -176,7 +247,20 @@
             "default": "",
             "properties": {
                 "autocorrelation": {
-                    "type": "string"
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --acf to fibertools qc to add nucleosome autocorrelation to the Fiber-seq QC output."
+                },
+                "keep_kinetic_data": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep the PacBio kinetics tags (fi, fp, ri, rp) on every read: passes --keep to fibertools predict-m6a and turns off any removal of kinetics at alignment.",
+                    "help_text": "By default fibertools predict-m6a strips the kinetics from the reads it calls m6A on, and the alignment step removes them from every other PacBio read. This makes the aligned files considerably smaller. With this set, no step removes them. Keep them only if you need the raw kinetics downstream."
+                },
+                "keep_all_calls": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass --all-calls to fibertools predict-m6a to keep every m6A call regardless of its ML score, instead of only calls above its threshold."
                 }
             }
         },
@@ -197,7 +281,7 @@
                     "type": "string",
                     "description": "Additional command line arguments to pass to VEP.",
                     "fa_icon": "fas fa-terminal",
-                    "default": "--everything --filter_common --per_gene --total_length --offline --format vcf"
+                    "default": "--everything --filter_common --per_gene --total_length --offline --format vcf --vcf"
                 },
                 "vep_cache_version": {
                     "type": "integer",
@@ -211,10 +295,122 @@
                     "description": "Download the VEP cache if not already present"
                 },
                 "vep_custom": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to a bgzipped VCF (.vcf.gz) of custom variants for VEP to annotate against. Needs a matching --custom file=... entry in --vep_args."
                 },
                 "vep_custom_tbi": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to the tabix index of --vep_custom."
+                },
+                "vep_alphamissense": {
+                    "type": "string",
+                    "description": "Path or URL to the AlphaMissense GRCh38 score file for the AlphaMissense plugin.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Defaults to AlphaMissense_hg38.tsv.gz (613 MB) from https://storage.googleapis.com/dm_alphamissense on --genome GRCh38, fetched with an index we host since the release ships without a .tbi. Supply this together with --vep_alphamissense_tbi to use a local copy instead. GRCh38 only; on CHM13 the route is --vep_alphamissense_aa. Licensed CC BY 4.0."
+                },
+                "vep_alphamissense_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_alphamissense.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required whenever --vep_alphamissense is set. Overriding the score file drops the default index, which was built from different content."
+                },
+                "vep_alphamissense_aa": {
+                    "type": "string",
+                    "description": "Path or URL to a protein-space AlphaMissense table for the AlphaMissenseProtein plugin (CHM13).",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Defaults on --genome CHM13 to a table we host (1.1 GB, indexed), built from the AlphaMissense protein-space release -- see CITATIONS.md. Keyed on gene symbol and amino-acid substitution, so it is assembly-independent, which is what makes AlphaMissense reachable on CHM13. Supply this with --vep_alphamissense_aa_tbi to use a table of your own."
+                },
+                "vep_alphamissense_aa_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_alphamissense_aa.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required whenever --vep_alphamissense_aa is set. Overriding the table drops the default index, which was built from different content."
+                },
+                "vep_polyphen_sift_db": {
+                    "type": "string",
+                    "description": "Path or URL to the Ensembl pangenome PolyPhen/SIFT SQLite database for the PolyPhen_SIFT plugin (CHM13).",
+                    "fa_icon": "fas fa-database",
+                    "help_text": "Defaults to homo_sapiens_pangenome_PolyPhen_SIFT_20240502.db (13 GB) from https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/ on --genome CHM13. Keyed on the MD5 of the peptide sequence, which is why it works on CHM13; on GRCh38 SIFT and PolyPhen come from the VEP cache and this is unused. It needs no preparation, so point at a local copy."
+                },
+                "vep_clinvar": {
+                    "type": "string",
+                    "description": "Path or URL to a ClinVar VCF, added as a VEP --custom annotation.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Defaults to the NCBI GRCh38 VCF on --genome GRCh38 and the CHM13-lifted Ensembl VCF on --genome CHM13, both with their published .tbi. Contig naming differs between NCBI (1, 2, 3) and the GATK GRCh38 reference (chr1, chr2, chr3); VEP usually reconciles this for --custom files, but a name it cannot map annotates nothing, so confirm CLNSIG values appear before trusting them."
+                },
+                "vep_clinvar_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_clinvar.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required whenever --vep_clinvar is set: ClinVar publishes a .tbi alongside every VCF, so the pipeline does not build one."
+                },
+                "vep_clinvar_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the --vep_clinvar VCF, checked after the pipeline downloads it.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "A remote --vep_clinvar (http, https or ftp) is downloaded once per run by VEPPLUGIN_CLINVAR, rather than staged by GERMLINE_VEP and SOMATIC_VEP for every sample, and a VCF that does not match this MD5 fails the run, so the release cannot change silently. The GRCh38 and CHM13 defaults carry the MD5 their hosts publish; overriding --vep_clinvar drops it. A local or cloud-storage --vep_clinvar is staged as given, and takes no MD5."
+                },
+                "vep_clinvar_tbi_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the --vep_clinvar_tbi index, checked after the pipeline downloads it.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "Checked alongside --vep_clinvar_md5. The CHM13 default carries the MD5 Ensembl publishes; GRCh38 has none, since NCBI publishes no checksum for its indexes. Overriding --vep_clinvar or --vep_clinvar_tbi drops the default."
+                },
+                "vep_clinvar_fields": {
+                    "type": "string",
+                    "description": "Comma-separated ClinVar INFO fields to carry into the annotation.",
+                    "fa_icon": "fas fa-list",
+                    "default": "CLNSIG,CLNREVSTAT,CLNDN"
+                },
+                "vep_cadd_snv": {
+                    "type": "string",
+                    "description": "Path or URL to the CADD SNV score file for the CADD plugin.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Off by default: whole_genome_SNVs.tsv.gz from https://krishna.gs.washington.edu/download/CADD/v1.7/GRCh38/ is 81 GB and is re-staged on every run that is not a -resume. Set this with --vep_cadd_snv_tbi to enable it, ideally pointing at a local copy. GRCh38 only: CADD scores non-coding positions and has no protein-space form for CHM13. Free for non-commercial use only."
+                },
+                "vep_cadd_snv_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_cadd_snv.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required whenever --vep_cadd_snv is set: CADD publishes a .tbi alongside every score file."
+                },
+                "vep_cadd_indel": {
+                    "type": "string",
+                    "description": "Path or URL to the CADD indel score file for the CADD plugin.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Off by default, like --vep_cadd_snv. gnomad.genomes.r4.0.indel.tsv.gz (1.2 GB, .tbi published) lives in the same CADD release directory; set this with --vep_cadd_indel_tbi to enable it. GRCh38 only. Free for non-commercial use only."
+                },
+                "vep_cadd_indel_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_cadd_indel.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required whenever --vep_cadd_indel is set: CADD publishes a .tbi alongside every score file."
+                },
+                "vep_revel": {
+                    "type": "string",
+                    "description": "Path or URL to the REVEL release zip, or to a prepared score file, for the REVEL plugin.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Defaults to revel-v1.3_all_chromosomes.zip (667 MB) from https://rothsj06.dmz.hpc.mssm.edu on --genome GRCh38. Anything that is not already a bgzipped .tsv.gz (the release zip, a URL serving it, or an unpacked directory) is prepared for you; pass a prepared .tsv.gz with --vep_revel_tbi to use it directly. GRCh38 only. Free for non-commercial use only."
+                },
+                "vep_revel_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_revel.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required when --vep_revel points at an already-prepared .tsv.gz. Rejected when --vep_revel points at anything the pipeline has to reshape first, since the prep task indexes the file it writes and a supplied index could not apply to it."
+                },
+                "vep_eve": {
+                    "type": "string",
+                    "description": "Path or URL to the EVE release zip, or to a merged EVE VCF, for the EVE plugin.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Off by default: the release is a 9.6 GB zip of per-protein VCFs from https://evemodel.org/api/proteins/bulk/download/ that has to be merged. Anything that is not already a bgzipped .vcf.gz, including that URL, is prepared for you; pass a merged .vcf.gz with --vep_eve_tbi to use it directly. GRCh38 only. Free for non-commercial use only."
+                },
+                "vep_eve_tbi": {
+                    "type": "string",
+                    "description": "Path or URL to the index for --vep_eve.",
+                    "fa_icon": "fas fa-file",
+                    "help_text": "Required when --vep_eve points at an already-merged .vcf.gz. Rejected when --vep_eve points at anything the pipeline has to merge first, since the prep task indexes the file it writes and a supplied index could not apply to it."
                 }
             }
         },
@@ -226,7 +422,170 @@
             "properties": {
                 "severus_minsupport": {
                     "type": "integer",
-                    "default": 3
+                    "default": 3,
+                    "description": "Minimum number of supporting reads for Severus to report an SV (Severus --min-support)."
+                },
+                "severus_whitelist": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed$",
+                    "description": "BED file of regions in which Severus reports every SV (Severus' --whitelist). Passed to Severus as --whitelist; its VCFs feed SV VEP, Wakhan and the report as usual. Not available under Conda.",
+                    "help_text": "Inside the whitelisted regions the patched build skips the read-quality, minimum-support and VNTR filters, and keeps single-read junctions only when a reciprocal or independently supported junction corroborates them. Use it for loci such as the IG and TCR genes, where translocations are often carried by few, divergent reads.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "severus_whitelist_args": {
+                    "type": "string",
+                    "description": "Extra arguments for the whitelist Severus run, e.g. `--whitelist-single-read any`, `--whitelist-allow-intra-region` or `--write-alignments`. Only used with `--severus_whitelist`.",
+                    "help_text": "Appended after `--min-support <severus_minsupport> --output-read-ids`, so a later flag wins where Severus allows it. Ignored unless `--severus_whitelist` is set. `--whitelist-single-read` takes `reciprocal` (default), `any` or `off`; `--write-alignments` additionally publishes a `read_alignments` file.",
+                    "fa_icon": "fas fa-terminal"
+                }
+            }
+        },
+        "savana_options": {
+            "title": "Savana options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "savana_pb_minsupport": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Minimum supporting reads for SAVANA to call a variant on PacBio samples (--min_support with --pb). SAVANA's own testing found 10 outperforms its default of 5 on PacBio data."
+                },
+                "savana_chromosomes": {
+                    "type": "string",
+                    "description": "Restrict SAVANA's allele counting and binning to given chromosome numbers (SAVANA's -c/--chromosomes), e.g. '19'. Applies to both `savana cna` and `savana to`.",
+                    "help_text": "Space-separated chromosome numbers, with 23 for chrX and 24 for chrY, e.g. `'1 4 23'`. Without it SAVANA already uses only chr1-22, chrX and chrY for copy number (chrM and alt, decoy and unplaced contigs are never binned), so this is only needed to narrow that further, as the test profiles do with `'19'`. SV calling is not affected; it is limited by the genome's contigs file."
+                },
+                "savana_allele_min_reads": {
+                    "type": "integer",
+                    "description": "Minimum reads per site for SAVANA to count a het-SNP allele (SAVANA's --allele_min_reads, default 10). Intended for test profiles running on downsampled data below that coverage floor."
+                },
+                "savana_allele_mapq": {
+                    "type": "integer",
+                    "description": "Mapping quality threshold for reads counted at a het-SNP site (SAVANA's --allele_mapq, default 5). Intended for test profiles running on downsampled data below that coverage floor."
+                },
+                "savana_pb_pon_filter": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Remove SAVANA SVs found in the germline SV panel of normals from PacBio tumour-only samples.",
+                    "help_text": "SAVANA's PacBio classifier (`--pb`) only rejects a call on matched-normal evidence, so without a normal nearly every germline SV is reported as somatic (~28k on a 30x genome). The somatic VCF is then filtered against the genome's Severus panel of normals (`pon_file`) with Severus's matching rule, which removes ~97% of the calls. What remains is still mostly germline (on a PacBio sample with a matched normal, all 761 survivors were germline), so prefer Severus or a matched normal for PacBio tumour-only SVs. The unfiltered VCF is still published. Has no effect on ONT (SAVANA's tumour-only model) or paired samples, or on a genome without a `pon_file`."
+                }
+            }
+        },
+        "padfoot_options": {
+            "title": "Padfoot options",
+            "type": "object",
+            "description": "Options for Padfoot SV/CNA functional annotation",
+            "default": "",
+            "properties": {
+                "padfoot_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "chm13", "mm10"],
+                    "description": "Padfoot genome preset (`hg38`, `chm13`, `mm10`). Default: inferred from `--genome`.",
+                    "help_text": "GRCh38 -> hg38, CHM13 -> chm13. It must describe the same assembly as `--genome`: a different preset on GRCh38 or CHM13 stops the run at start-up. Padfoot bundles gene and repeat annotations for hg38 and mm10 only; chm13 and other presets need `--padfoot_gff` and `--padfoot_rm` for that assembly, otherwise Padfoot is skipped with a warning."
+                },
+                "padfoot_gff": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "help_text": "Custom GENCODE-style GFF3 gene annotation for Padfoot (plain or gzipped), on the same assembly as `--genome`. Padfoot bundles annotations for the `hg38` and `mm10` presets only; for any other preset (e.g. `chm13`) pass both `--padfoot_gff` and `--padfoot_rm`, otherwise Padfoot is skipped with a warning.",
+                    "description": "Custom GFF3 gene annotation for Padfoot"
+                },
+                "padfoot_rm": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "help_text": "Custom repeat annotation for Padfoot: RepeatMasker `.out` / `.fa.out`, or a BED with chromosome, start, end and repeat class/family (plain or gzipped), on the same assembly as `--genome`. Needed together with `--padfoot_gff` for presets other than `hg38`/`mm10`; otherwise Padfoot is skipped with a warning.",
+                    "description": "Custom RepeatMasker annotation (.fa.out / BED) for Padfoot"
+                },
+                "padfoot_run_repeatmasker": {
+                    "type": "boolean",
+                    "default": true,
+                    "help_text": "When true, Padfoot runs RepeatMasker on the sequence of novel insertions to classify their repeat family. The module image ships RepeatMasker 4.2.4 with the Dfam 4.0 root and curated-consensus partitions. Set false to skip that step.",
+                    "description": "Run RepeatMasker on inserted sequences (repeat class of novel insertions); the module image ships the Dfam 4.0 root and curated-consensus partitions."
+                }
+            }
+        },
+        "reconplot_options": {
+            "title": "ReConPlot options",
+            "type": "object",
+            "description": "Options for ReConPlot rearrangement/copy-number figures",
+            "default": "",
+            "properties": {
+                "reconplot_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "hg19", "T2T", "mm10", "mm39"],
+                    "help_text": "ReConPlot preset for chromosome lengths and gene annotations: `hg38`, `hg19`, `T2T`, `mm10` or `mm39`. Inferred from `--genome` (GRCh38 -> hg38, CHM13 -> T2T); a custom genome without a preset falls back to hg38 with a warning.",
+                    "description": "ReConPlot genome build for gene/chromosome annotations. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> T2T)."
+                },
+                "reconplot_max_cn": {
+                    "type": "integer",
+                    "default": 8,
+                    "help_text": "Upper limit of the copy-number axis in every ReConPlot figure; segments above it are drawn at the ceiling.",
+                    "description": "Copy number axis ceiling"
+                },
+                "reconplot_min_svlen": {
+                    "type": "integer",
+                    "default": 0,
+                    "help_text": "Intra-chromosomal SVs shorter than this many bp are left out of the figures and the harmonised SV table; translocations are always kept. 0 keeps every SV.",
+                    "description": "Drop intra-chromosomal SVs shorter than this many bp (translocations are kept). 0 keeps everything."
+                },
+                "reconplot_max_svs": {
+                    "type": "integer",
+                    "default": 1000,
+                    "minimum": 0,
+                    "description": "Draw at most this many SVs in each ReConPlot figure set (per-chromosome, genome-wide, focus), the best supported first. 0 draws every SV.",
+                    "help_text": "ReConPlot adds one plot layer per SV, so tens of thousands take hours and the genome-wide panel fails (R node stack overflow) from about 2,000 SVs. The limit applies separately to the per-chromosome figures (one budget shared by all chromosomes, since the cost is per SV drawn), the genome-wide strip and the focus panel; above it the SVs with the most tumour read support (then the longest) are drawn, and a figure missing some of its SVs says `top N of M SVs` in its title. The harmonised `*.reconplot_sv.tsv` table keeps every SV."
+                },
+                "reconplot_exclude_vntr": {
+                    "type": "boolean",
+                    "help_text": "When true, Severus SVs flagged as lying inside a VNTR are left out of the figures (Severus pairs only).",
+                    "description": "Drop Severus SVs flagged as inside a VNTR"
+                },
+                "reconplot_regions": {
+                    "type": "string",
+                    "help_text": "Comma-separated regions for an additional `focus/` figure per caller pair, each `chr` or `chr:start-end` (start < end), e.g. `chr8,chr17:30000000-50000000`. The syntax is checked at start-up; regions on contigs without copy-number data are skipped with a warning, and no focus figure is produced if none is left. Unset = no focus figure.",
+                    "description": "Comma-separated regions (e.g. 'chr8,chr17:30000000-50000000') for an additional multi-panel focus figure"
+                },
+                "reconplot_genes": {
+                    "type": "string",
+                    "help_text": "Comma-separated HUGO symbols to label on the focus figure (used only with `--reconplot_regions`).",
+                    "description": "Comma-separated HUGO gene symbols to label on the focus figure"
+                },
+                "reconplot_baf_track": {
+                    "type": "boolean",
+                    "help_text": "Adds a het-SNP B-allele-frequency track to the focus figure. Applies to the ASCAT and SAVANA pairs, which provide per-SNP allele counts; ignored for Wakhan.",
+                    "description": "Add a het-SNP BAF track to the focus figure (ASCAT and SAVANA copy number only)"
+                },
+                "reconplot_format": {
+                    "type": "string",
+                    "default": "pdf,png",
+                    "pattern": "^(pdf|png)(,(pdf|png))?$",
+                    "help_text": "Figure formats written by ReConPlot: `pdf`, `png` or `pdf,png`.",
+                    "description": "Comma-separated output formats: pdf, png"
+                }
+            }
+        },
+        "shatterseek_options": {
+            "title": "ShatterSeek options",
+            "type": "object",
+            "description": "Options for ShatterSeek chromothripsis calling",
+            "default": "",
+            "properties": {
+                "shatterseek_genome": {
+                    "type": "string",
+                    "enum": ["hg38", "chm13", "hg19"],
+                    "help_text": "Genome for ShatterSeek's chromosome lengths (breakpoint enrichment test) and ideograms: `hg38`, `chm13` or `hg19`. Inferred from `--genome` (GRCh38 -> hg38, CHM13 -> chm13); for any other genome ShatterSeek is skipped with a warning unless this is set.",
+                    "description": "ShatterSeek genome. Default: inferred from --genome (GRCh38 -> hg38, CHM13 -> chm13)."
+                },
+                "shatterseek_min_svlen": {
+                    "type": "integer",
+                    "default": 150,
+                    "minimum": 0,
+                    "help_text": "Intra-chromosomal SVs shorter than this many bp are not given to ShatterSeek; translocations are always kept. Small SVs (e.g. VNTR indels) add pairs of breakpoints a few hundred bp apart, which make the exponential-distribution test read clustering where there is none. 0 keeps every SV.",
+                    "description": "Drop intra-chromosomal SVs shorter than this many bp before ShatterSeek (translocations are kept). 0 keeps everything."
                 }
             }
         },
@@ -278,13 +637,25 @@
                     "type": "string",
                     "description": "Chromosomes to process (automatically inferred, only use if you want to run on a subset)"
                 },
-                "ascat_gc_files": {
+                "ascat_allele_files": {
                     "type": "string",
-                    "description": "Path to (zip) of GC files"
+                    "description": "Path to ASCAT allele files (.zip or folder). Defaults to the --genome reference",
+                    "help_text": "Per-chromosome 1000 Genomes SNP allele files for ASCAT, also used by ClairS-TO's Verdict module on CHM13. Either a `.zip` containing one folder, or the path to that folder. The folder name must prefix its files (`<folder>/<folder>_chr<N>.txt`), because ASCAT reads them as `<folder>_chr`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
                 },
-                "ascat_rt_files": {
+                "ascat_loci_files": {
                     "type": "string",
-                    "description": "path to (zip) of RT files"
+                    "description": "Path to ASCAT loci files (.zip or folder). Defaults to the --genome reference",
+                    "help_text": "Per-chromosome 1000 Genomes SNP loci files for ASCAT, also used by ClairS-TO's Verdict module on CHM13. Either a `.zip` containing one folder, or the path to that folder. The folder name must prefix its files (`<folder>/<folder>_chr<N>.txt`), because ASCAT reads them as `<folder>_chr`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
+                },
+                "ascat_gc_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT GC correction file (.txt or .txt.zip). Defaults to the --genome reference",
+                    "help_text": "GC-content correction file for ASCAT's LogR correction, also used by ClairS-TO's Verdict module on CHM13. A `.txt`, or a `.zip` containing that `.txt`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. Required for any genome other than GRCh38 and CHM13."
+                },
+                "ascat_rt_file": {
+                    "type": "string",
+                    "description": "Path to the ASCAT replication timing correction file (.txt or .txt.zip). Defaults to the --genome reference",
+                    "help_text": "Replication-timing correction file for ASCAT's LogR correction. A `.txt`, or a `.zip` containing that `.txt`. If unset, the file for `--genome` in `conf/igenomes.config` is used; a value given here always wins over that default. CHM13 has no default RT file, so on CHM13 ASCAT corrects for GC only unless one is given here."
                 },
                 "ascat_pdf_plots": {
                     "type": "boolean",
@@ -299,7 +670,121 @@
             "default": "",
             "properties": {
                 "wakhan_chroms": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Comma-separated contigs, or ranges such as chr1-22,chrX, for Wakhan to use. Defaults to chr1-22,chrX for female samples and chr1-22,chrX,chrY for male samples."
+                }
+            }
+        },
+        "sigprofiler_options": {
+            "title": "Mutational signature options",
+            "type": "object",
+            "description": "Options for SigProfilerMatrixGenerator / SigProfilerAssignment",
+            "default": "",
+            "fa_icon": "fas fa-fingerprint",
+            "properties": {
+                "sigprofiler_genome_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "SigProfilerMatrixGenerator volume directory containing tsb/<sigprofiler_genome>/ (the installed genome payload).",
+                    "help_text": "Takes precedence over `--download_sigprofiler_genome`. A run without it downloads the payload and publishes it to `<outdir>/cache/sigprofiler/volume`; pass that (or a `SigProfilerMatrixGenerator install <genome> --volume <dir>` volume) here on later runs. The volume is checked against the pipeline's SigProfilerMatrixGenerator checksums before any sample is processed. The run stops if files are missing or a checksum differs, which means a corrupted copy or, for GRCh38 and CHM13-T2T volumes installed for lrsomatic < 1.2.0, a superseded payload revision; reinstall it in either case.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "download_sigprofiler_genome": {
+                    "type": "boolean",
+                    "description": "Download and install the ~3 GB SigProfilerMatrixGenerator genome payload during the run when no --sigprofiler_genome_dir is given.",
+                    "fa_icon": "fas fa-download",
+                    "default": true
+                },
+                "sigprofiler_cosmic_version": {
+                    "type": "number",
+                    "default": 3.6,
+                    "description": "COSMIC reference signature version fitted by SigProfilerAssignment.",
+                    "fa_icon": "fas fa-hashtag"
+                },
+                "sigprofiler_exclude_signature_subgroups": {
+                    "type": "string",
+                    "description": "Comma-separated SigProfilerAssignment signature subgroups to exclude from the fit (e.g. `Artifact_signatures,Lymphoid_signatures`).",
+                    "fa_icon": "fas fa-filter"
+                },
+                "sigprofiler_matrix_args": {
+                    "type": "string",
+                    "default": "--plot",
+                    "description": "Extra arguments for `SigProfilerMatrixGenerator matrix_generator` (e.g. `--plot --tsb_stat`). `--bed_file`, `--exome` and `--seqInfo False` are not supported.",
+                    "fa_icon": "fas fa-terminal"
+                },
+                "sigprofiler_assignment_args": {
+                    "type": "string",
+                    "description": "Extra arguments for `SigProfilerAssignment cosmic_fit` (e.g. `--make_plots False`).",
+                    "fa_icon": "fas fa-terminal"
+                }
+            }
+        },
+        "report_options": {
+            "title": "Report options",
+            "type": "object",
+            "description": "Options for the final per-sample HTML report",
+            "default": "",
+            "properties": {
+                "report_gene_panel": {
+                    "type": "string",
+                    "description": "Gene panel(s) applied when the report opens, as a comma-separated list: 'none' for no filtering, builtin panel names (e.g. 'lymphoid'), and/or paths to TSVs with a 'gene' column. Several panels are unioned; default (unset) is unfiltered.",
+                    "help_text": "Every builtin panel is embedded in the report as a checkbox, so this only sets the initial selection. An entry is read as a panel file if it contains a '/' or ends in '.tsv', and as a builtin panel name otherwise. 'none' cannot be combined with a real panel, and two panel files sharing a base name cannot be combined."
+                },
+                "report_hmf_resource_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Root of a Hartwig (oncoanalyser) GRCh38 resource bundle, lifted over on --genome CHM13 (or a copy the pipeline already lifted). Turns on the report's optional HMF driver annotation, taking its files from the bundle's standard layout.",
+                    "help_text": "Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. The bundle is GRCh38: on --genome CHM13 it is lifted over first (HMF_LIFTOVER, see --report_hmf_liftover_chain), or a copy the pipeline already lifted (its common/ensembl_data/REFERENCE says t2t) is used as is; such a copy is rejected on GRCh38. With any other --genome, or on CHM13 when no chain resolves, the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_driver_panel": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "HMF DriverGenePanel.38.tsv. Turns on the report's HMF driver annotation (with --report_hmf_ensembl_data_dir) and adds the panel as the selectable gene list 'hmf_driver'.",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_ensembl_data_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "HMF Ensembl data cache directory (the bundle's common/ensembl_data, with ensembl_gene_data.csv and ensembl_trans_exon_data.csv). Required for the HMF driver annotation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_known_fusions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "HMF known_fusion_data.38.csv: known-fusion matching of the SV calls in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_hotspots": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf(\\.gz)?$",
+                    "description": "HMF KnownHotspots.somatic.38.vcf.gz: hotspot matching of small variants in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_liftover_chain": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.chain(\\.gz)?$",
+                    "description": "GRCh38 -> CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome's (the T2T consortium's grch38-chm13v2.chain).",
+                    "help_text": "On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions' IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir. The default chain is the T2T consortium's (public domain), downloaded at launch (~6 MB); offline, download it once and pass its local path here, or reuse a lifted bundle. A chain that cannot be reached is an error at launch.",
+                    "fa_icon": "fas fa-link"
+                },
+                "report_hmf_actionable_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "HMF ActionableCodingPanel.38.bed(.gz): flags small variants in its regions in the report's HMF section (optional; a calling-sensitivity region set, not an actionability call).",
+                    "fa_icon": "fas fa-file"
                 }
             }
         },
@@ -317,6 +802,10 @@
                     "type": "boolean",
                     "description": "Skips Cramino"
                 },
+                "skip_signatures": {
+                    "type": "boolean",
+                    "description": "Skips mutational signature analysis (SigProfilerMatrixGenerator + SigProfilerAssignment)"
+                },
                 "skip_mosdepth": {
                     "type": "boolean",
                     "description": "Skips Mosdepth"
@@ -329,21 +818,54 @@
                     "type": "boolean",
                     "description": "Skips wakhan"
                 },
+                "skip_modkit": {
+                    "type": "boolean",
+                    "description": "Skip the modkit pileup of base modifications."
+                },
                 "skip_fiber": {
                     "type": "boolean",
                     "description": "Skip Fibertools steps"
                 },
                 "skip_ascat": {
                     "type": "boolean",
-                    "description": "Skip ASCAT"
+                    "description": "Skip ASCAT. ClairS-TO's Verdict germline tagging of tumour-only calls then uses Verdict's own purity and copy number estimate instead of ASCAT's. Either way Verdict tags nothing when the purity is above 0.6."
+                },
+                "skip_savana": {
+                    "type": "boolean",
+                    "description": "Skip SAVANA (SV + copy-number calling)"
+                },
+                "skip_dmr": {
+                    "type": "boolean",
+                    "description": "Skip differential methylation region (DMR) calling between haplotypes. Only takes effect when --modkit_phased is also set; has no effect otherwise."
+                },
+                "skip_padfoot": {
+                    "type": "boolean",
+                    "help_text": "Skips Padfoot annotation of somatic SVs and CNAs (Severus + Wakhan and SAVANA pairs). Padfoot runs only inside its container; skip it under `-profile conda`.",
+                    "description": "Skips Padfoot SV/CNA annotation"
+                },
+                "skip_reconplot": {
+                    "type": "boolean",
+                    "help_text": "Skips the ReConPlot rearrangement and copy-number figures (ASCAT + Severus, Wakhan + Severus and SAVANA pairs). ReConPlot runs only inside its container; skip it under `-profile conda`.",
+                    "description": "Skips ReConPlot SV/CNA figures"
+                },
+                "skip_shatterseek": {
+                    "type": "boolean",
+                    "help_text": "Skips ShatterSeek chromothripsis calling (ASCAT + Severus, Wakhan + Severus and SAVANA pairs). ShatterSeek runs only inside its container; skip it under `-profile conda`.",
+                    "description": "Skips ShatterSeek chromothripsis calling"
                 },
                 "skip_m6a": {
                     "type": "boolean",
-                    "description": "Skip m6a calling by Fibertools"
+                    "description": "Skip m6a calling by Fibertools",
+                    "help_text": "For PacBio fiber-seq reads that already carry m6A calls (m6A is only predicted from PacBio kinetics; ONT reads carry the calls of their basecaller). A fiber-seq file whose first 1000 reads carry no m6A calls (no A+a entry in their MM tags) and gets none predicted skips the nucleosome, FIRE and fibertools-rs QC steps, with a warning naming the sample, with or without this option."
                 },
                 "skip_vep": {
                     "type": "boolean",
                     "description": "Skip VEP annotation"
+                },
+                "skip_vep_plugins": {
+                    "type": "boolean",
+                    "description": "Skip the VEP plugin annotation, keeping the rest of VEP",
+                    "help_text": "Annotate with VEP alone, downloading no plugin data. Plugins are on by default on --genome GRCh38 (about 1.4 GB on a first run) and --genome CHM13 (about 14 GB, mostly the pangenome PolyPhen/SIFT database); CADD and EVE are opt-in. --igenomes_ignore and a non-human --genome also leave the plugins off."
                 },
                 "skip_normalfiber": {
                     "type": "boolean",
@@ -359,11 +881,29 @@
                 },
                 "skip_modcall": {
                     "type": "boolean",
-                    "description": "Skip modification calling"
+                    "description": "Skip Longphase `modcall`, the 5mC base-modification calling whose VCF is used as extra evidence during phasing. Unrelated to the modkit pileup (see `skip_modkit`)."
                 },
                 "use_gpu": {
                     "type": "boolean",
-                    "description": "Use GPU for supported tools (e.g. DeepVariant, DeepSomatic, Clair3)"
+                    "description": "Run DeepVariant/DeepSomatic call_variants and Clair3 on a GPU (use with the gpu profile).",
+                    "help_text": "Only DEEPVARIANT_CALLVARIANTS, DEEPSOMATIC_CALLVARIANTS and CLAIR3 use a GPU; every other step, fibertools-rs included, runs on the CPU either way. The DeepVariant/DeepSomatic 1.10.0-gpu images (TensorFlow 2.16.1, CUDA 12.3) and Clair3's GPU image support NVIDIA GPUs up to the Hopper generation (compute capability 9.0 or lower, e.g. A100, H100); on Blackwell cards such as the B200 (compute capability 10.0) call_variants fails with CUDA_ERROR_INVALID_PTX and Clair3 fails too, so leave this off there."
+                },
+                "skip_report": {
+                    "type": "boolean",
+                    "description": "Skip the final per-sample HTML report"
+                },
+                "skip_report_hmf": {
+                    "type": "boolean",
+                    "description": "Skip the report's HMF driver annotation (on by default for GRCh38 and CHM13).",
+                    "help_text": "By default the report's HMF driver annotation uses the genome's hosted bundle (GRCh38, or CHM13 lifted over; about 5 MB, downloaded once per run and MD5-checked). Your own resources via --report_hmf_resource_dir or the --report_hmf_* files take over from it. Other genomes have no bundle and run without the annotation."
+                },
+                "skip_coral": {
+                    "type": "boolean",
+                    "description": "Skip CoRAL amplicon reconstruction and AmpliconClassifier."
+                },
+                "skip_ampliconclassifier": {
+                    "type": "boolean",
+                    "description": "Run CoRAL but skip AmpliconClassifier, which avoids needing an AA data repository."
                 }
             }
         },
@@ -499,7 +1039,7 @@
                 },
                 "trace_report_suffix": {
                     "type": "string",
-                    "fa_icon": "far calendar",
+                    "fa_icon": "far fa-calendar",
                     "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
                     "hidden": true
                 },
@@ -514,6 +1054,82 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
+                }
+            }
+        },
+        "coral_options": {
+            "title": "CoRAL / ecDNA options",
+            "type": "object",
+            "description": "Amplicon reconstruction with CoRAL and classification with AmpliconClassifier.",
+            "default": "",
+            "properties": {
+                "coral_gain": {
+                    "type": "number",
+                    "default": 6.0,
+                    "description": "Minimum total copy number for a segment to seed an amplicon (CoRAL's --gain)."
+                },
+                "coral_min_seed_size": {
+                    "type": "integer",
+                    "default": 100000,
+                    "description": "Minimum seed interval size in bp (CoRAL's --min-seed-size)."
+                },
+                "coral_max_seg_gap": {
+                    "type": "integer",
+                    "default": 300000,
+                    "description": "Largest gap in bp that CoRAL will bridge when merging seed segments (--max-seg-gap)."
+                },
+                "coral_solver": {
+                    "type": "string",
+                    "default": "scip",
+                    "enum": ["scip", "gurobi_direct"],
+                    "description": "Optimiser for CoRAL's non-convex MIQCP cycle decomposition. SCIP is open-source and needs no licence; gurobi_direct is faster but requires --gurobi_license."
+                },
+                "coral_solver_time_limit": {
+                    "type": "integer",
+                    "default": 7200,
+                    "description": "Per-amplicon solver time limit in seconds (CoRAL's --solver-time-limit)."
+                },
+                "coral_global_time_limit": {
+                    "type": "integer",
+                    "default": 21600,
+                    "description": "Per-sample time limit in seconds across all amplicons (CoRAL's --global-time-limit)."
+                },
+                "coral_min_bp_support": {
+                    "type": "number",
+                    "default": 1.75,
+                    "description": "Minimum breakpoint read support (CoRAL's --min-bp-support). CoRAL's own README recommends a much larger value such as 10.0 for WGS; 1.75 matches the setting validated on this cohort."
+                },
+                "coral_run_cycle": {
+                    "type": "boolean",
+                    "description": "Decompose cycles in a separate `coral cycle_all` step: reconstruction then builds the breakpoint graphs only (CoRAL's --skip-cycle-decomp)."
+                },
+                "coral_cycle_decomp_alpha": {
+                    "type": "number",
+                    "default": 0.01,
+                    "description": "Cycle decomposition alpha, balancing copy-number weight against path constraints: CoRAL reconstruct's --cycle-decomp-alpha, or cycle_all's --alpha with --coral_run_cycle."
+                },
+                "coral_plot": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Render CoRAL's per-amplicon graph and cycle plots. Plot failures never fail the run."
+                },
+                "gurobi_license": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to a gurobi.lic, mounted into the CoRAL tasks. Required with --coral_solver gurobi_direct."
+                },
+                "aa_data_repo": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "AmpliconArchitect data repository for AmpliconClassifier: the directory holding `GRCh38/` or `CHM13/`, or that reference directory itself. Downloaded automatically for GRCh38; CHM13 has no published repo, so without one the classifier is skipped with a warning.",
+                    "help_text": "Downloading the GRCh38 repo fetches 1.1 GB and unpacks about 4 GB on every run. Extract `GRCh38.tar.gz` once and pass the directory here to skip both."
+                },
+                "aa_data_repo_md5": {
+                    "type": "string",
+                    "description": "Expected MD5 of the downloaded AmpliconArchitect data repository tarball.",
+                    "fa_icon": "fas fa-fingerprint",
+                    "pattern": "^[0-9a-fA-F]{32}$",
+                    "help_text": "The GRCh38 default carries the MD5 the host publishes, and a tarball that does not match fails the run, so the repository cannot change silently. A local --aa_data_repo takes no MD5, and setting --aa_data_repo drops the default."
                 }
             }
         }
@@ -532,6 +1148,9 @@
             "$ref": "#/$defs/longphase_options"
         },
         {
+            "$ref": "#/$defs/modkit_options"
+        },
+        {
             "$ref": "#/$defs/reference_genome_options"
         },
         {
@@ -547,10 +1166,31 @@
             "$ref": "#/$defs/severus_options"
         },
         {
+            "$ref": "#/$defs/savana_options"
+        },
+        {
+            "$ref": "#/$defs/padfoot_options"
+        },
+        {
+            "$ref": "#/$defs/reconplot_options"
+        },
+        {
+            "$ref": "#/$defs/shatterseek_options"
+        },
+        {
             "$ref": "#/$defs/ascat_parameters"
         },
         {
             "$ref": "#/$defs/wakhan_options"
+        },
+        {
+            "$ref": "#/$defs/sigprofiler_options"
+        },
+        {
+            "$ref": "#/$defs/report_options"
+        },
+        {
+            "$ref": "#/$defs/coral_options"
         },
         {
             "$ref": "#/$defs/skip_options"
@@ -561,10 +1201,5 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "skip_modkit": {
-            "type": "boolean"
-        }
-    }
+    ]
 }

@@ -1,0 +1,165 @@
+nextflow_process {
+
+    name "Test Process CLAIRSTO_CNA_RESOURCES"
+    script "../main.nf"
+    process "CLAIRSTO_CNA_RESOURCES"
+
+    tag "modules"
+    tag "modules_local"
+    tag "clairsto_cna_resources"
+    tag "small"
+
+    // One file ending in chr1.txt per sub-directory, and exactly one GC_*.txt at the top
+    test("CHM13 ASCAT set - builds the resource directory") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'CHM13' ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true),
+                      file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/loci/G1000_loci_CHM13_chr2.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true),
+                      file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/alleles/G1000_alleles_CHM13_chr2.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GCcontent_SNPloci_CHM13.txt", checkIfExists: true) ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def dir  = new File(process.out.cna_resources[0][1].toString())
+            def root = dir.list().sort()
+
+            assertAll(
+                { assert dir.isDirectory() },
+
+                // Every input file reaches the layout, under the names ClairS-TO expects
+                { assert new File(dir, 'loci_files').list().sort() ==
+                    ['G1000_loci_CHM13_chr1.txt', 'G1000_loci_CHM13_chr2.txt'] },
+                { assert new File(dir, 'allele_files').list().sort() ==
+                    ['G1000_alleles_CHM13_chr1.txt', 'G1000_alleles_CHM13_chr2.txt'] },
+
+                // Not a GC_*.txt, so it is renamed after the assembly
+                { assert root.findAll { name -> name.startsWith('GC_') } == ['GC_CHM13.txt'] },
+                { assert new File(dir, 'GC_CHM13.txt').text ==
+                    new File("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GCcontent_SNPloci_CHM13.txt").text },
+
+                // Deliberately absent: without an RT_*.txt, Verdict corrects LogR for GC only
+                { assert root.findAll { name -> name.startsWith('RT_') } == [] },
+
+                // Nothing else, or the resolver would see a second candidate and refuse to guess
+                { assert root == ['GC_CHM13.txt', 'allele_files', 'loci_files'] },
+
+                { assert snapshot(process.out.versions).match() }
+            )
+        }
+    }
+
+    // UNZIP emits a directory holding a same-named folder, so the channel carries that nested
+    // directory, not the per-contig files (the shape ASCAT and the pipeline pass for CHM13).
+    test("set arrives as one directory - per-contig files are found inside it") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'CHM13' ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/loci_dir/G1000_loci_CHM13", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/alleles_dir/G1000_alleles_CHM13", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GCcontent_SNPloci_CHM13.txt", checkIfExists: true) ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def dir  = new File(process.out.cna_resources[0][1].toString())
+            def root = dir.list().sort()
+
+            assertAll(
+                // Flattened out of the nested directory, not left one level down
+                { assert new File(dir, 'loci_files').list().sort() ==
+                    ['G1000_loci_CHM13_chr1.txt', 'G1000_loci_CHM13_chr2.txt'] },
+                { assert new File(dir, 'allele_files').list().sort() ==
+                    ['G1000_alleles_CHM13_chr1.txt', 'G1000_alleles_CHM13_chr2.txt'] },
+
+                { assert root == ['GC_CHM13.txt', 'allele_files', 'loci_files'] }
+            )
+        }
+    }
+
+    // A GC file already named GC_*.txt keeps its name, so the GRCh38 set resolves as before
+    test("GC file already named GC_*.txt - name is preserved") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'GRCh38' ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GC_G1000_hg38.txt", checkIfExists: true) ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def dir = new File(process.out.cna_resources[0][1].toString())
+            assertAll(
+                { assert new File(dir, 'GC_G1000_hg38.txt').exists() },
+                { assert !new File(dir, 'GC_GRCh38.txt').exists() }
+            )
+        }
+    }
+
+    // ClairS-TO would report an ambiguous resource set; fail here, where the message names files
+    test("two GC files - fails with a useful message") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'CHM13' ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/loci/G1000_loci_CHM13_chr1.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/alleles/G1000_alleles_CHM13_chr1.txt", checkIfExists: true) ],
+                    [ file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GCcontent_SNPloci_CHM13.txt", checkIfExists: true),
+                      file("${projectDir}/modules/local/clairsto/cna_resources/tests/fixtures/gc/GC_G1000_hg38.txt", checkIfExists: true) ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.failed
+            assert process.errorReport.contains('expected exactly one GC content file')
+        }
+    }
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [ [ id:'CHM13' ], [], [], [] ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}

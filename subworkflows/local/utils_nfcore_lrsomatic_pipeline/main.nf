@@ -61,10 +61,13 @@ workflow PIPELINE_INITIALISATION {
         null,
         help,
         help_full,
-        show_hidden,
+        // Nextflow 26 passes a bare `--show_hidden` as the string 'true', and nf-schema 3.0.0 casts it to Boolean
+        // and fails (fixed upstream after 3.0.0, nextflow-io/nf-schema#237)
+        show_hidden.toString().toBoolean(),
         "",
         "",
-        command
+        command,
+        null
     )
 
     //
@@ -87,8 +90,11 @@ workflow PIPELINE_INITIALISATION {
     // Each samplesheet row describes one tumor (+ optional normal) sample
     // Columns: sample_id, bam_tumor, bam_normal, method, sex, fiber,
     //          clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate
+    def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+    validateSampleReplicates(samplesheet_rows)
+
     channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheet_rows)
         // Step 1: build a combined meta map from the samplesheet columns
         // paired_data = true if a normal BAM is present; false for tumor-only
         .map { meta, bam_tumor, bam_normal, method, sex, fiber, clair3_model, clairSTO_model, clairS_model, tumor_replicate, normal_replicate ->
@@ -153,11 +159,8 @@ workflow PIPELINE_INITIALISATION {
         }
         .set { ch_samplesheet }
 
-    // Count replicates per sample+type and embed the count in meta as n_replicates.
-    // This allows downstream groupTuple() to use groupKey() for eager per-sample release
-    // instead of waiting for ALL samples to finish (global synchronization barrier).
-    // This groupTuple is safe: the source is a fully-materialized list from
-    // samplesheetToList(), so the channel closes immediately without blocking any process.
+    // n_replicates lets downstream groupTuple() use groupKey() for eager per-sample release. This
+    // groupTuple is safe: samplesheetToList() is already materialised, so the channel closes at once.
     ch_samplesheet
         .map { meta, bams -> [[meta.id, meta.type], meta, bams] }
         .groupTuple(by: 0)
@@ -203,7 +206,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  //  string: Path to MultiQC report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     //
@@ -218,7 +221,7 @@ workflow PIPELINE_COMPLETION {
                 plaintext_email,
                 outdir,
                 monochrome_logs,
-                multiqc_reports.getVal(),
+                multiqc_reports.isBound() ? multiqc_reports.getVal() : [],
             )
         }
 
@@ -240,6 +243,509 @@ workflow PIPELINE_COMPLETION {
 //
 def validateInputParameters() {
     genomeExistsError()
+    validateReportGenePanels()
+    validateHmfReportParams()
+    validateCondaSupport(workflow.profile)
+    validateSmallvarCallers()
+    validateSvAnnotationParams()
+    validateSeverusWhitelist()
+    validateSigprofilerMatrixArgs()
+}
+
+//
+// Per-mutation probabilities join the fit with MatrixGenerator's unfiltered seqinfo, so region filters would not match the matrices
+//
+def validateSigprofilerMatrixArgs() {
+    def args = params.sigprofiler_matrix_args ?: ''
+    if (params.skip_signatures || !args) {
+        return
+    }
+    def unsupported = [/--bed_file\b/, /--exome\b/, /(?i)--seqInfo[= ]+(false|f|no|n|0)\b/].findAll { args =~ it }
+    if (unsupported) {
+        error("--sigprofiler_matrix_args '${args}': --bed_file, --exome and --seqInfo False are not supported, because the per-mutation signature probabilities need every mutation's seqinfo.")
+    }
+}
+
+//
+// Fail at launch, not mid-run, when a step whose tool ships only in its container would run under conda/mamba
+//
+def validateCondaSupport(profile) {
+    if (!profile || profile.tokenize(',').intersect(['conda', 'mamba']).isEmpty()) {
+        return
+    }
+    def steps = [
+        [!params.skip_modkit,     'modkit pileup',         '--skip_modkit'],
+        [!params.skip_report,     'the lrsomatic report',  '--skip_report'],
+        [!params.skip_signatures, 'mutational signatures', '--skip_signatures'],
+    ].findAll { enabled, _name, _flag -> enabled }
+    if (steps) {
+        error("Conda/mamba cannot run ${steps.collect { it[1] }.join(', ')}: these tools ship only in their containers. Use Docker / Singularity / Apptainer, or add ${steps.collect { it[2] }.join(' ')}.")
+    }
+}
+
+//
+// Validate --germline_var_keep / --somatic_var_keep before workflows/lrsomatic.nf tokenises them
+//
+def validateSmallvarCallers() {
+    def allowed = [germline_var_keep: ['clair', 'deepvariant'], somatic_var_keep: ['clair', 'deepsomatic']]
+    allowed.each { name, valid ->
+        def value = params[name]
+        def callers = value instanceof List
+            ? value.collect { it.toString().trim() }
+            : (value == null ? [] : value.toString().split(',', -1).collect { it.trim() })
+        if (!callers || callers.every { !it }) {
+            error("--${name}: no caller given. Choose one or more of: ${valid.join(', ')}.")
+        }
+        if (callers.any { !it }) {
+            error("--${name}: empty entry in '${value}'. Give a comma-separated list of: ${valid.join(', ')}.")
+        }
+        def unknown = callers.findAll { !(it in valid) }.unique()
+        if (unknown) {
+            error("--${name}: '${unknown.join("', '")}' is not a valid caller. Choose one or more of: ${valid.join(', ')}.")
+        }
+        def duplicates = callers.countBy { it }.findAll { _caller, count -> count > 1 }.keySet()
+        if (duplicates) {
+            error("--${name}: '${duplicates.join("', '")}' is listed more than once in '${value}'.")
+        }
+    }
+}
+
+//
+// The --whitelist fixes exist only in the patched Severus image; bioconda's severus would run the unfixed whitelist logic
+//
+def validateSeverusWhitelist() {
+    if (params.severus_whitelist && workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
+        error("--severus_whitelist: not supported under Conda/Mamba, which installs stock Severus without the whitelist fixes. Use Docker / Singularity / Apptainer, or run without --severus_whitelist.")
+    }
+}
+
+//
+// Split --report_gene_panel into panel tokens (mirrored in conf/modules.config)
+//
+def reportGenePanelTokens(panel_spec) {
+    if (!panel_spec) {
+        return []
+    }
+    return panel_spec.toString().split(',').collect { it.trim() }.findAll { it }
+}
+
+//
+// Does a --report_gene_panel entry name a file rather than a builtin? Textual because conf/modules.config makes the same call without file()
+//
+def reportGenePanelIsFile(tok) {
+    return tok.contains('/') || tok.toLowerCase().endsWith('.tsv')
+}
+
+//
+// LRSOMATICREPORT extra inputs as [[relpath, file], ...]: relpath = base + the file's last `depth` path components,
+// mirroring publishDir (base) + the output glob (depth), so sample_dir matches the published <outdir>/<id>/ layout
+//
+def reportEntries(base, depth, files) {
+    return [files].flatten().findAll { f -> f }.collect { f ->
+        ["${base}/${f.subpath(f.getNameCount() - depth, f.getNameCount())}".toString(), f]
+    }
+}
+
+//
+// Warning for a <sample>.verdict_status.tsv (text) whose ClairS-TO Verdict tagged nothing; null when it tagged
+//
+def verdictStatusWarning(id, status_text) {
+    def lines = status_text.readLines()
+    def row = [lines[0].tokenize('\t'), lines[1].split('\t', -1).toList()].transpose().collectEntries()
+    def caveat = "Its ClairS-TO somatic calls may include germline variants."
+    if (row.status == 'skipped') {
+        return "ClairS-TO Verdict tagged no germline variants in tumour-only sample '${id}' (purity ${row.purity}, source ${row.purity_source}). Verdict: ${row.message} ${caveat}".toString()
+    }
+    if (row.status == 'not_run') {
+        return "ClairS-TO Verdict did not run for tumour-only sample '${id}'.${row.message ? ' Verdict: ' + row.message : ''} ${caveat}".toString()
+    }
+    return null
+}
+
+//
+// Builtin panel names shipped in assets/gene_lists, reference suffix dropped
+//
+def reportBuiltinGenePanels() {
+    def gene_lists_dir = file("${projectDir}/assets/gene_lists")
+    if (!gene_lists_dir.exists()) {
+        return []
+    }
+    return gene_lists_dir
+        .list()
+        .findAll { it.endsWith('.tsv') }
+        .collect { it.replaceFirst(/(\.(hg38|t2t))?\.tsv$/, '') }
+        .unique()
+        .sort()
+}
+
+//
+// Validate --report_gene_panel at launch so a typo fails before alignment and calling run
+//
+def validateReportGenePanels() {
+    if (params.skip_report) {
+        return
+    }
+    def tokens = reportGenePanelTokens(params.report_gene_panel)
+    if (!tokens) {
+        return
+    }
+
+    // "none" means unfiltered, so combining it with a real panel is contradictory
+    if (tokens.size() > 1 && tokens.any { it.toLowerCase() == 'none' }) {
+        error("--report_gene_panel: 'none' means unfiltered and cannot be combined with other panels, got '${params.report_gene_panel}'. Drop the 'none'.")
+    }
+
+    def named = tokens.findAll { tok -> tok.toLowerCase() != 'none' && !reportGenePanelIsFile(tok) }
+    def panel_files = tokens.findAll { tok -> reportGenePanelIsFile(tok) }
+
+    def missing = panel_files.findAll { tok -> !file(tok).exists() }
+    if (missing) {
+        error("--report_gene_panel: panel file not found: '${missing.join("', '")}'.")
+    }
+
+    def builtins = reportBuiltinGenePanels()
+    def unknown = named.findAll { tok -> !builtins.contains(tok) }
+    if (unknown) {
+        error("--report_gene_panel: '${unknown.join("', '")}' is not a builtin panel. Builtin panels: ${builtins ? builtins.join(', ') : '<none found>'}. To use a panel file give its path, or a name ending in '.tsv'; use 'none' for no filtering.")
+    }
+
+    // Panel files are staged side by side into gene_panels/, so equal base names collide
+    def duplicates = panel_files
+        .collect { tok -> file(tok).name }
+        .countBy { name -> name }
+        .findAll { _name, count -> count > 1 }
+        .keySet()
+    if (duplicates) {
+        error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// HMF resource files for the report's optional driver annotation, as [slot: path-or-null] in the module's input order.
+// An explicit --report_hmf_* file wins; otherwise the slot is taken from --report_hmf_resource_dir's standard
+// oncoanalyser layout when that file exists there (ActionableCodingPanel is absent from bundle v3).
+//
+def hmfReportFiles() {
+    def layout = [
+        driver_panel    : [params.report_hmf_driver_panel,     ['common/DriverGenePanel.38.tsv']],
+        ensembl_data_dir: [params.report_hmf_ensembl_data_dir, ['common/ensembl_data']],
+        known_fusions   : [params.report_hmf_known_fusions,    ['dna/sv/known_fusion_data.38.csv']],
+        hotspots        : [params.report_hmf_hotspots,         ['dna/variants/KnownHotspots.somatic.38.vcf.gz']],
+        actionable_bed  : [params.report_hmf_actionable_bed,   ['dna/variants/ActionableCodingPanel.38.bed.gz', 'dna/variants/ActionableCodingPanel.38.bed']],
+    ]
+    def root = params.report_hmf_resource_dir ? params.report_hmf_resource_dir.toString().replaceAll('/+$', '') : null
+    return layout.collectEntries { slot, spec ->
+        def (explicit, relpaths) = spec
+        def path = explicit ?: (root ? relpaths.collect { rel -> "${root}/${rel}".toString() }.find { cand -> file(cand).exists() } : null)
+        return [slot, path ? path.toString() : null]
+    }
+}
+
+//
+// Whether any HMF report parameter was given (the user's own resources, which take over from the hosted bundle)
+//
+def hmfAnnotationRequested() {
+    return [params.report_hmf_resource_dir, params.report_hmf_driver_panel, params.report_hmf_ensembl_data_dir,
+            params.report_hmf_known_fusions, params.report_hmf_hotspots, params.report_hmf_actionable_bed].any { p -> p }
+}
+
+//
+// The build the HMF resources declare: a one-line REFERENCE file in the Ensembl data cache ('t2t' in a copy lifted by
+// HMF_LIFTOVER); the published oncoanalyser bundle declares nothing and is GRCh38. Mirrors the report's
+// hmf_declared_reference()
+//
+def hmfResourcesBuild(ensembl_data_dir) {
+    def f = ensembl_data_dir ? file("${ensembl_data_dir}/REFERENCE") : null
+    def ref = f && f.exists() ? f.text.readLines().find { line -> line.trim() }?.trim()?.toLowerCase() : null
+    return ref in ['t2t', 'chm13', 'chm13v2', 'chm13v2.0', 't2t-chm13', 't2t-chm13v2.0'] ? 'CHM13' : 'GRCh38'
+}
+
+//
+// GRCh38 -> CHM13 chain for HMF_LIFTOVER: --report_hmf_liftover_chain, else the genome's default (conf/igenomes.config)
+//
+def hmfLiftoverChain() {
+    return params.report_hmf_liftover_chain ?: getGenomeAttribute('hmf_liftover_chain')
+}
+
+//
+// Whether the HMF resources must be lifted over first: a CHM13 run given the user's own GRCh38 bundle (the hosted
+// CHM13 bundle is lifted already)
+//
+def hmfNeedsLiftover() {
+    return hmfAnnotationRequested() && params.genome == 'CHM13' && hmfResourcesBuild(hmfReportFiles().ensembl_data_dir) == 'GRCh38'
+}
+
+//
+// --skip_report_hmf as a boolean: given on the command line ('--skip_report_hmf false', to opt back in where a profile
+// sets it) Nextflow passes the string 'false', which Groovy reads as true
+//
+def hmfSkipped() {
+    return params.skip_report_hmf.toString().toBoolean()
+}
+
+//
+// The genome's hosted HMF report bundle as [url, md5] (conf/igenomes.config hmf_bundle_url / hmf_bundle_md5): the
+// default when the report runs, --skip_report_hmf is off and no --report_hmf_* resources are given; null otherwise,
+// and for a genome without one (a custom --fasta)
+//
+def hmfDefaultBundle() {
+    if (params.skip_report || hmfSkipped() || hmfAnnotationRequested()) {
+        return null
+    }
+    def url = getGenomeAttribute('hmf_bundle_url')
+    return url ? [url.toString(), getGenomeAttribute('hmf_bundle_md5')?.toString()] : null
+}
+
+//
+// The unpacked hosted bundle (HMF_BUNDLE's hmf_bundle/) as the report's five slots, at the bundle's fixed layout
+//
+def hmfHostedFiles(bundle) {
+    return [
+        bundle.resolve('common/DriverGenePanel.38.tsv'),
+        bundle.resolve('common/ensembl_data'),
+        bundle.resolve('dna/sv/known_fusion_data.38.csv'),
+        bundle.resolve('dna/variants/KnownHotspots.somatic.38.vcf.gz'),
+        bundle.resolve('dna/variants/ActionableCodingPanel.38.bed.gz'),
+    ]
+}
+
+//
+// Whether the report gets the HMF annotation. On by default where the genome has a hosted bundle (GRCh38, CHM13);
+// off with --skip_report_hmf or --skip_report. The user's own --report_hmf_* resources take over: then the two required
+// files must resolve and be on the run's genome (GRCh38 as published, CHM13 lifted already or liftable).
+// The workflow gate and validateHmfReportParams() both call this, so they cannot drift apart.
+//
+def hmfAnnotationOk() {
+    if (params.skip_report || hmfSkipped() || !(params.genome in ['GRCh38', 'CHM13'])) {
+        return false
+    }
+    if (!hmfAnnotationRequested()) {
+        return hmfDefaultBundle() as boolean
+    }
+    def f = hmfReportFiles()
+    if (!(f.driver_panel && f.ensembl_data_dir)) {
+        return false
+    }
+    def build = hmfResourcesBuild(f.ensembl_data_dir)
+    return params.genome == build || (params.genome == 'CHM13' && hmfLiftoverChain() as boolean)
+}
+
+//
+// The lifted bundle (HMF_LIFTOVER's hmf_chm13/) as the report's five slots, named after the GRCh38 inputs `files`
+// (hmfReportFiles()); [] for a slot that had no input
+//
+def hmfLiftedFiles(bundle, files) {
+    def name = { p -> p ? file(p).name : null }
+    def hotspots = name.call(files.hotspots)
+    return [
+        files.driver_panel     ? bundle.resolve("common/${name.call(files.driver_panel)}") : [],
+        files.ensembl_data_dir ? bundle.resolve('common/ensembl_data') : [],
+        files.known_fusions    ? bundle.resolve("dna/sv/${name.call(files.known_fusions)}") : [],
+        hotspots               ? bundle.resolve("dna/variants/${hotspots.endsWith('.gz') ? hotspots : hotspots + '.gz'}") : [],
+        files.actionable_bed   ? bundle.resolve("dna/variants/${name.call(files.actionable_bed)}") : [],
+    ]
+}
+
+//
+// Validate the user's own HMF report resources at launch: skipped with a warning on a genome they cannot be put on
+// (anything but GRCh38 and CHM13, or CHM13 without a chain), an error when the driver panel or the Ensembl cache
+// cannot be found (each other file is optional), when the resources declare another build than the run's, or when
+// the chain (local or remote: the default is a URL) cannot be reached
+//
+def validateHmfReportParams() {
+    // The hosted bundle needs no checks (its MD5 is checked on download); only the user's own resources do
+    if (params.skip_report || !hmfAnnotationRequested()) {
+        return
+    }
+    if (hmfSkipped()) {
+        log.warn "--skip_report_hmf is set, so the --report_hmf_* resources are ignored."
+        return
+    }
+    if (!(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "The HMF driver annotation will be skipped: its resources are GRCh38 (or lifted to CHM13) and the genome is '${params.genome ?: 'custom (--fasta)'}'. " +
+            "Run with --genome GRCh38 or --genome CHM13 to use it."
+        return
+    }
+    def f = hmfReportFiles()
+    if (params.report_hmf_resource_dir && !file(params.report_hmf_resource_dir).exists()) {
+        error("--report_hmf_resource_dir not found: '${params.report_hmf_resource_dir}'.")
+    }
+    def missing = ['driver_panel': '--report_hmf_driver_panel', 'ensembl_data_dir': '--report_hmf_ensembl_data_dir']
+        .findAll { slot, _flag -> !f[slot] }
+    if (missing) {
+        error("The HMF driver annotation needs the driver panel and the Ensembl data cache: ${missing.values().join(' and ')} " +
+            "(or a --report_hmf_resource_dir holding common/DriverGenePanel.38.tsv and common/ensembl_data).")
+    }
+    if (!file("${f.ensembl_data_dir}/ensembl_trans_exon_data.csv").exists() || !file("${f.ensembl_data_dir}/ensembl_gene_data.csv").exists()) {
+        error("The HMF Ensembl data cache '${f.ensembl_data_dir}' lacks ensembl_gene_data.csv or ensembl_trans_exon_data.csv.")
+    }
+    def build = hmfResourcesBuild(f.ensembl_data_dir)
+    if (params.genome == 'GRCh38' && build == 'CHM13') {
+        error("The HMF resources declare CHM13 (REFERENCE in '${f.ensembl_data_dir}') but the genome is GRCh38. Give the GRCh38 bundle.")
+    }
+    if (params.genome == 'CHM13' && build == 'GRCh38') {
+        if (!hmfLiftoverChain()) {
+            log.warn "The HMF driver annotation will be skipped: the resources are GRCh38 and no GRCh38 -> CHM13 chain was found to lift them over. " +
+                "Give one with --report_hmf_liftover_chain."
+            return
+        }
+        // A remote chain is probed too: the workflow stages it at launch, so an unreachable one would otherwise stop
+        // the run with a bare "No such file" for an optional report section
+        def chain = hmfLiftoverChain().toString()
+        if (!file(chain).exists()) {
+            error("--report_hmf_liftover_chain ${chain.contains('://') ? 'is not reachable' : 'not found'}: '${chain}'. " +
+                "Offline, download the GRCh38 -> CHM13 chain once and pass its local path with --report_hmf_liftover_chain, " +
+                "or reuse a bundle the pipeline already lifted (pipeline_info/hmf_liftover/hmf_chm13/) as --report_hmf_resource_dir.")
+        }
+    }
+}
+
+//
+// Whether a samplesheet entry (one path or a list of paths) is CRAM input
+//
+def isCram(reads) {
+    return [reads].flatten().any { read_file -> read_file.toString().endsWith('.cram') }
+}
+
+//
+// Whether FIBERSEQ processes this sample at all (not under --skip_fiber, nor a normal under --skip_normalfiber)
+//
+def fibertoolsEnabled(meta) {
+    return !(params.skip_fiber || (params.skip_normalfiber && meta.type == 'normal'))
+}
+
+//
+// Whether FIBERSEQ predicts m6A for this sample (FIBERTOOLSRS_PREDICTM6A): PacBio reads with kinetics, without
+// --skip_m6a. ONT reads only carry the m6A calls of their basecaller.
+//
+def m6aPredicted(meta, kinetics) {
+    return fibertoolsEnabled(meta) && meta.platform == 'pb' && kinetics == 'true' && !params.skip_m6a
+}
+
+//
+// Whether FIBERSEQ hands this sample's input reads to fibertools-rs: fiber-seq rows, and PacBio reads with kinetics
+// while m6A prediction runs. Aligned input of these samples goes through SAMTOOLS_VIEW_FIBERPREP first, since
+// fibertools-rs takes no reference to decode a CRAM and panics on secondary alignments.
+//
+def fibertoolsReadsInput(meta, kinetics) {
+    return fibertoolsEnabled(meta) && (meta.fiber == 'y' || m6aPredicted(meta, kinetics))
+}
+
+//
+// --skip_alignment: stop on an unaligned row, or one fibertools-rs reads (it runs before alignment)
+//
+def validateSkipAlignment(meta, aligned) {
+    def row = "Sample '${meta.id}' (${meta.type}${meta.n_replicates > 1 ? " replicate ${meta.replicate}" : ''})"
+    if (aligned != 'true') {
+        error("${row}: --skip_alignment needs aligned reads, but this file has no @SQ lines. Run without --skip_alignment to align it.")
+    }
+    if (fibertoolsReadsInput(meta, meta.kinetics)) {
+        def cause = meta.fiber == 'y'
+            ? "it is a Fiber-seq row (fiber = 'y'). Add --skip_fiber to skip the Fiber-seq steps"
+            : "its PacBio reads carry kinetics, from which m6A is predicted. Add --skip_m6a to skip m6A prediction"
+        error("${row}: --skip_alignment does not support rows that fibertools-rs reads, and ${cause}, or run without --skip_alignment.")
+    }
+    return true
+}
+
+//
+// Whether FIBERSEQ skips the nucleosome, FIRE and QC steps of a fiber-seq row: its first reads carry no m6A calls
+// (m6a_calls 'false' from METAEXTRACT) and the run predicts none for it. 'unknown' keeps the steps.
+//
+def fiberStepsSkipped(meta, kinetics, m6a_calls) {
+    return fibertoolsEnabled(meta) && meta.fiber == 'y' && m6a_calls == 'false' && !m6aPredicted(meta, kinetics)
+}
+
+//
+// Padfoot genome preset: an explicit --padfoot_genome wins, else inferred from --genome (hg38 / chm13), else null
+//
+def padfootGenome() {
+    return params.padfoot_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
+// ShatterSeek genome: an explicit --shatterseek_genome wins, else inferred from --genome (hg38 / chm13), else null (skipped)
+//
+def shatterseekGenome() {
+    return params.shatterseek_genome ?: (params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null)
+}
+
+//
+// Whether Padfoot can annotate on that preset: it bundles annotations for hg38 and mm10 only; any other
+// preset needs both --padfoot_gff and --padfoot_rm, and a null preset disables Padfoot even with them.
+// The workflow gate and validateSvAnnotationParams() both call this, so they cannot drift apart.
+//
+def padfootAnnotationOk() {
+    def genome = padfootGenome()
+    return (genome && ((genome in ['hg38', 'mm10']) || (params.padfoot_gff && params.padfoot_rm))) as boolean
+}
+
+//
+// Warn on SV/CNA annotation and plotting parameter combinations that cannot produce output
+//
+def validateSvAnnotationParams() {
+    // --padfoot_genome must describe the same assembly as --genome: hg38 genes and repeats on CHM13 (T2T) coordinates
+    // would be silently wrong annotations
+    def genome_preset = params.genome == 'GRCh38' ? 'hg38' : params.genome == 'CHM13' ? 'chm13' : null
+    if (!params.skip_padfoot && genome_preset && params.padfoot_genome && params.padfoot_genome != genome_preset) {
+        error("--padfoot_genome ${params.padfoot_genome} does not match --genome ${params.genome} (expected ${genome_preset}). " +
+            "Padfoot's annotations must be on the same assembly as the alignments.")
+    }
+    if (!params.skip_padfoot && !padfootAnnotationOk()) {
+        log.warn "Padfoot will be skipped: no bundled annotations for genome '${params.genome}' (padfoot_genome=${padfootGenome()}). " +
+            "Padfoot bundles hg38 and mm10; for any other assembly give gene and repeat annotations for that assembly with " +
+            "--padfoot_gff and --padfoot_rm (and --padfoot_genome for a genome lrsomatic cannot infer)."
+    }
+
+    // ShatterSeek's chromosome lengths and ideograms must be those of the alignments' assembly
+    if (!params.skip_shatterseek && genome_preset && params.shatterseek_genome && params.shatterseek_genome != genome_preset) {
+        error("--shatterseek_genome ${params.shatterseek_genome} does not match --genome ${params.genome} (expected ${genome_preset}).")
+    }
+    if (!params.skip_shatterseek && !shatterseekGenome()) {
+        log.warn "ShatterSeek will be skipped: genome could not be inferred from '${params.genome}'. Set --shatterseek_genome (hg38, chm13, hg19)."
+    }
+
+    if (!params.skip_reconplot && !params.reconplot_genome && !(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "ReConPlot: genome could not be inferred from '${params.genome}'; falling back to hg38 gene/chromosome annotations. " +
+            "Set --reconplot_genome (hg38, hg19, T2T, mm10, mm39) to override."
+    }
+
+    if (!params.skip_reconplot && params.reconplot_regions) {
+        // Same grammar as the wrapper's parse_regions(): thousands separators inside numbers are dropped
+        // first (`chr8:30,000,000-50,000,000`), then tokens split on commas/semicolons/whitespace, each
+        // `chr` or `chr:start-end` (start/end integers, `_` allowed as a digit separator, start < end).
+        // Regions on contigs without copy-number data are skipped at run time with a warning.
+        def spec = params.reconplot_regions.toString().replaceAll(/(?<=[0-9]),(?=[0-9]{3}(?:[^0-9]|$))/, '')
+        def tokens = spec.split(/[,;\s]+/).findAll { tok -> tok }
+        if (!tokens) {
+            error("--reconplot_regions names no region (got \"${params.reconplot_regions}\"). Use a comma-separated list of `chr` or `chr:start-end`.")
+        }
+        def bad = tokens.findAll { tok ->
+            if (tok ==~ /[A-Za-z0-9_.]+/) { return false }
+            if (!(tok ==~ /[A-Za-z0-9_.]+:[0-9_]+-[0-9_]+/)) { return true }
+            def ends = tok.split(':')[1].split('-').collect { v -> v.replace('_', '') }
+            return !ends.every { v -> v && v.isLong() } || (ends[0] as long) >= (ends[1] as long)
+        }
+        if (bad) {
+            error("--reconplot_regions: cannot parse ${bad.join(', ')}. Use a comma-separated list of `chr` or `chr:start-end` (start < end), e.g. \"chr8,chr17:30000000-50000000\".")
+        }
+    }
+
+    if (!params.skip_reconplot && params.reconplot_genes && !(params.reconplot_genes.toString() ==~ /[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*/)) {
+        error("--reconplot_genes must be a comma-separated list of gene symbols (letters, digits, '.', '_', '-'), e.g. \"MYC,TP53\" (got \"${params.reconplot_genes}\").")
+    }
+    if (!params.skip_reconplot && !params.reconplot_regions && (params.reconplot_genes || params.reconplot_baf_track)) {
+        log.warn "--reconplot_genes and --reconplot_baf_track only apply to the focus panel, which is drawn only with --reconplot_regions; they are ignored."
+    }
+    if (!params.skip_reconplot && params.reconplot_format && !(params.reconplot_format.toString() ==~ /(pdf|png)(,(pdf|png))?/)) {
+        error("--reconplot_format must be pdf, png or pdf,png (the module collects only *.pdf and *.png figures); got \"${params.reconplot_format}\".")
+    }
+
+    // Both tools ship only inside their containers: without a container engine (conda/mamba, or none) they would fail
+    if (!workflow.containerEngine && !(params.skip_padfoot && params.skip_reconplot)) {
+        log.warn "Padfoot and ReConPlot need a container engine (Docker, Singularity, Apptainer, ...) and are skipped without one " +
+            "(use --skip_padfoot --skip_reconplot to silence this warning)."
+    }
 }
 
 //
@@ -256,6 +762,99 @@ def validateInputSamplesheet(input) {
 
     return [ metas[0], bams ]
 }
+
+//
+// Reject replicate encodings that the per-type merge (key: id, paired_data, replicate count) mis-handles silently
+// row: [meta, bam_tumor, bam_normal, platform, sex, fiber, ..., tumor_replicate (9), normal_replicate (10)]
+//
+def validateSampleReplicates(rows) {
+    def shared_normal_hint = "To use one normal with several tumour files, merge the tumour files into one BAM beforehand " +
+        "and give the sample a single row, or split the normal into one file per row."
+    def errors = []
+    rows.groupBy { row -> row[0].id }.each { id, sample_rows ->
+        def entries = sample_rows.collect { row ->
+            [
+                tumor:      samplesheetFileKey(row[1]),
+                normal:     row[2] ? samplesheetFileKey(row[2]) : null,
+                tumor_rep:  row[9],
+                normal_rep: row[10]
+            ]
+        }
+
+        def tumor_files = entries.collect { e -> e.tumor }
+        def normal_files = entries.findAll { e -> e.normal }.collect { e -> e.normal }
+        tumor_files.intersect(normal_files).unique().each { f ->
+            errors << "Sample '${id}': ${f} is listed as both bam_tumor and bam_normal."
+        }
+        if (entries.size() < 2) {
+            return
+        }
+
+        def differing = [platform: 3, sex: 4, fiber: 5].findAll { _col, idx -> sample_rows.collect { row -> row[idx] }.unique().size() > 1 }
+        if (differing) {
+            def detail = differing.collect { col, idx -> "${col}: ${sample_rows.collect { row -> "rep${row[9]}=${row[idx]}" }.join(', ')}" }.join('; ')
+            errors << ("Sample '${id}': its rows differ in ${differing.keySet().join(', ')} (${detail}). " +
+                "A sample's files are merged per type, so give every row of a sample the same platform, sex and fiber.")
+        }
+
+        def with_normal = entries.findAll { e -> e.normal }
+        def without_normal = entries.findAll { e -> !e.normal }
+        if (with_normal && without_normal) {
+            errors << ("Sample '${id}': some rows have a bam_normal and some do not " +
+                "(with: ${with_normal.collect { e -> e.tumor }.join(', ')}; without: ${without_normal.collect { e -> e.tumor }.join(', ')}). " +
+                "A sample's files are merged per type, so either every row has its own normal file or none does; " +
+                "otherwise its tumour rows are not merged with each other and the sample cannot be paired correctly. " +
+                "Give the tumour-only files their own sample name. " + shared_normal_hint)
+            return
+        }
+
+        normal_files.countBy { f -> f }.findAll { _f, n -> n > 1 }.each { f, n ->
+            errors << ("Sample '${id}': bam_normal ${f} is listed on ${n} rows. Each row's files are aligned separately " +
+                "and merged per type, so the normal would be merged with itself and counted ${n} times. " + shared_normal_hint)
+        }
+        // Warn, not error: the remote test samplesheets repeat a tumour file to exercise the merge
+        tumor_files.countBy { f -> f }.findAll { _f, n -> n > 1 }.each { f, n ->
+            log.warn("Sample '${id}': bam_tumor ${f} is listed on ${n} rows; it is aligned once per row and merged with itself, " +
+                "so its reads are counted ${n} times. Remove the repeated rows unless this is intended.")
+        }
+
+        entries.countBy { e -> e.tumor_rep }.findAll { _rep, n -> n > 1 }.each { rep, n ->
+            errors << ("Sample '${id}': ${n} rows have tumor_replicate ${rep} (a blank tumor_replicate counts as 1). " +
+                "Number the rows of a sample with several files 1, 2, ... in tumor_replicate, and in normal_replicate when they " +
+                "have a normal, e.g. 'T1.bam,N1.bam,...,1,1' and 'T2.bam,N2.bam,...,2,2'.")
+        }
+        with_normal.countBy { e -> e.normal_rep }.findAll { _rep, n -> n > 1 }.each { rep, n ->
+            errors << ("Sample '${id}': ${n} rows have normal_replicate ${rep} (a blank normal_replicate counts as 1). " +
+                "Number the rows of a sample with several files 1, 2, ... in tumor_replicate and normal_replicate, " +
+                "e.g. 'T1.bam,N1.bam,...,1,1' and 'T2.bam,N2.bam,...,2,2'.")
+        }
+    }
+    if (errors) {
+        error("Invalid samplesheet (${params.input}):\n  - " + errors.join("\n  - ") +
+            "\nSee the 'Multiple runs of the same sample' section of docs/usage.md.")
+    }
+    return true
+}
+
+def samplesheetFileKey(f) {
+    return f instanceof Path ? f.toUriString() : f.toString()
+}
+
+//
+// Caller models key the tumor/normal and replicate joins, so all BAMs of a sample must agree on them
+//
+def validateSampleModels(metas) {
+    def model_keys = ['clair3_model', 'clairS_model', 'clairSTO_model']
+    metas.groupBy { meta -> meta.id }.each { id, rows ->
+        def differing = model_keys.findAll { key -> rows.collect { meta -> meta[key] }.unique().size() > 1 }
+        if (differing) {
+            def detail = differing.collect { key -> "${key}: ${rows.collect { meta -> "${meta.type}_rep${meta.replicate}=${meta[key]}" }.join(', ')}" }.join('; ')
+            error("Sample '${id}': its BAMs resolve to different caller models (${detail}). " +
+                "Give every row of this sample the same ${differing.join(', ')}, set explicitly in the samplesheet if the models detected from the BAM headers differ.")
+        }
+    }
+    return true
+}
 //
 // Get attribute from genome config file e.g. fasta
 //
@@ -266,6 +865,292 @@ def getGenomeAttribute(attribute) {
         }
     }
     return null
+}
+
+//
+// AmpliconArchitect data repo MD5: --aa_data_repo_md5 wins; overriding the repo or its URL drops the genome default
+//
+def aaDataRepoMd5(repo_url) {
+    def overridden = params.aa_data_repo || repo_url != getGenomeAttribute('aa_data_repo_url')
+    return params.aa_data_repo_md5 ?: (overridden ? null : getGenomeAttribute('aa_data_repo_md5'))
+}
+
+//
+// Resolve a VEP plugin resource: an explicit --vep_* wins, else the per-assembly default
+//
+def vepPluginResource(name) {
+    return params[name] ?: getGenomeAttribute(name)
+}
+
+//
+// The target assembly: an explicit --vep_genome wins, else the per-assembly default
+//
+// Resolved rather than read off params.vep_genome, which workflows/lrsomatic.nf assigns at
+// runtime: an included module keeps its own params binding, so that write is never visible here
+//
+def vepTargetGenome() {
+    def explicit = params.containsKey('vep_genome') ? params.vep_genome : null
+    return explicit ?: getGenomeAttribute('vep_genome')
+}
+
+//
+// True when no plugin annotation should happen at all
+//
+def vepPluginsSkipped() {
+    return params.skip_vep || params.skip_vep_plugins
+}
+
+//
+// VEP plugin data params, each mapped to its index param, or to null when it needs none
+//
+def vepPluginIndexParams() {
+    return [
+        'vep_alphamissense'   : 'vep_alphamissense_tbi',
+        'vep_alphamissense_aa': 'vep_alphamissense_aa_tbi',
+        'vep_polyphen_sift_db': null,
+        'vep_clinvar'         : 'vep_clinvar_tbi',
+        'vep_cadd_snv'        : 'vep_cadd_snv_tbi',
+        'vep_cadd_indel'      : 'vep_cadd_indel_tbi',
+        'vep_revel'           : 'vep_revel_tbi',
+        'vep_eve'             : 'vep_eve_tbi'
+    ]
+}
+
+//
+// The index for a plugin data file, or null when there is none. Overriding the data file drops the
+// default index, which was built from different content
+//
+def vepPluginIndex(data_param) {
+    def index_param = vepPluginIndexParams()[data_param]
+    if (!index_param) {
+        return null
+    }
+    return params[index_param] ?: (params[data_param] ? null : getGenomeAttribute(index_param))
+}
+
+//
+// Whether a resource still has to be reshaped before VEP can read it
+//
+// Only REVEL and EVE are ever prepared, and the test is for what a prepared file looks like
+// (bgzipped) rather than for a release zip: EVE's download endpoint ends in a bare '/'.
+//
+def vepPluginNeedsPrep(data_param) {
+    def value = vepPluginResource(data_param)
+    return value &&
+        ['vep_revel', 'vep_eve'].contains(data_param) &&
+        !value.toString().toLowerCase().endsWith('.gz')
+}
+
+//
+// Whether a value is a URL wget can fetch. Cloud and file:// URIs are left to Nextflow's own
+// filesystem providers, which stage them without a request per task
+//
+def isFetchableUrl(value) {
+    return value && value.toString() ==~ /(?i)^(https?|ftp):\/\/.*/
+}
+
+//
+// Whether a resource is downloaded once by a prep task instead of staged as a foreign file
+//
+// Only a remote ClinVar is: a foreign file is re-checked on its host by GERMLINE_VEP and
+// SOMATIC_VEP for every sample, and NCBI answers the burst a multi-sample run sends with 503,
+// which fails the staging.
+//
+def vepPluginNeedsFetch(data_param) {
+    return data_param == 'vep_clinvar' && isFetchableUrl(vepPluginResource(data_param))
+}
+
+//
+// The expected MD5 of a fetched resource. Overriding the data file drops the default MD5,
+// which belongs to a different release
+//
+def vepPluginMd5(data_param) {
+    def md5_param = "${data_param}_md5".toString()
+    return params[md5_param] ?: (params[data_param] ? null : getGenomeAttribute(md5_param))
+}
+
+//
+// The expected MD5 of a fetched resource's index. Overriding the data file or the index drops
+// the default, which belongs to a different file
+//
+def vepPluginIndexMd5(data_param) {
+    def index_param = vepPluginIndexParams()[data_param]
+    if (!index_param) {
+        return null
+    }
+    def md5_param = "${index_param}_md5".toString()
+    return params[md5_param] ?: ((params[data_param] || params[index_param]) ? null : getGenomeAttribute(md5_param))
+}
+
+//
+// The filename a prep task writes, referenced by the VEP argument since plugins stage into the task root
+//
+def vepPluginPreparedName(data_param) {
+    return [
+        'vep_revel': 'revel_grch38.tsv.gz',
+        'vep_eve'  : 'eve_merged.vcf.gz'
+    ][data_param]
+}
+
+//
+// Exit if the plugin params contradict each other or the target assembly, before any download
+//
+def validateVepPluginParams() {
+    if (vepPluginsSkipped()) {
+        return
+    }
+
+    def index_advice = [
+        'vep_clinvar'         : 'ClinVar publishes a .tbi alongside every VCF.',
+        'vep_cadd_snv'        : 'CADD publishes a .tbi alongside every score file.',
+        'vep_cadd_indel'      : 'CADD publishes a .tbi alongside every score file.',
+        'vep_alphamissense'   : 'The release ships without an index; index it with `tabix -s 1 -b 2 -e 2 -S <leading non-data lines>`, or drop both to take the pre-indexed default.',
+        'vep_alphamissense_aa': 'Index the table with `tabix -s 1 -b 2 -e 2 -c "#"`, or drop both to take the prepared default.',
+        'vep_revel'           : 'Either supply the index, or pass the published revel-v1.3_all_chromosomes.zip to have both prepared.',
+        'vep_eve'             : 'Either supply the index, or pass the release -- https://evemodel.org/api/proteins/bulk/download/, or the zip it serves -- to have both prepared.'
+    ]
+
+    vepPluginIndexParams().each { data_param, index_param ->
+        if (index_param && vepPluginResource(data_param) && !vepPluginNeedsPrep(data_param) && !vepPluginIndex(data_param)) {
+            error("--${data_param}: set without --${index_param}. ${index_advice[data_param] ?: 'Both are required.'}")
+        }
+        // What the prep task writes is indexed from that output, so a supplied index cannot apply
+        if (index_param && params[index_param] && vepPluginNeedsPrep(data_param)) {
+            error("--${index_param}: cannot be combined with --${data_param} '${vepPluginResource(data_param)}', which the pipeline reshapes itself and indexes from the file it writes. Drop --${index_param}, or pass an already-prepared .gz as --${data_param}.")
+        }
+    }
+
+    def grch38_only = [
+        'vep_alphamissense': 'Use --vep_alphamissense_aa instead, which is keyed in protein space.',
+        'vep_cadd_snv'     : 'CADD scores non-coding positions and has no protein-space form, so it is unavailable on CHM13.',
+        'vep_cadd_indel'   : 'CADD scores non-coding positions and has no protein-space form, so it is unavailable on CHM13.',
+        'vep_revel'        : 'REVEL is published for GRCh37/GRCh38 only.',
+        'vep_eve'          : 'EVE is published for GRCh38 only.'
+    ]
+
+    def vep_genome = vepTargetGenome()
+
+    if (vep_genome == 'T2T-CHM13v2.0') {
+        grch38_only.each { data_param, advice ->
+            if (vepPluginResource(data_param)) {
+                error("--${data_param}: a GRCh38-only resource, which cannot be used with --vep_genome T2T-CHM13v2.0. ${advice}")
+            }
+        }
+    }
+    else if (vepPluginResource('vep_alphamissense_aa')) {
+        // vep_genome is null for a custom reference carrying no --genome
+        def target = vep_genome ? "On ${vep_genome} use" : 'Use'
+        error("--vep_alphamissense_aa: the CHM13 route to AlphaMissense. ${target} --vep_alphamissense instead.")
+    }
+
+    // The VEP module rewrites the first '--custom file=' in ext.args to the staged --vep_custom
+    // file, so without this placeholder a user's own VCF would take ClinVar's entry.
+    if (params.vep_custom && !(params.vep_args =~ /--custom file=/)) {
+        error("--vep_custom: needs a matching '--custom file=...' entry in --vep_args, which is where the staged file is substituted in. Add one, e.g. --vep_args '${params.vep_args} --custom file=placeholder,short_name=MyTrack,format=vcf,type=exact,coords=0'.")
+    }
+
+    // The MD5s are checked by the download task, so a ClinVar that is staged instead would silently skip them
+    ['vep_clinvar_md5', 'vep_clinvar_tbi_md5'].each { md5_param ->
+        if (params[md5_param] && !vepPluginNeedsFetch('vep_clinvar')) {
+            error("--${md5_param}: only checks a ClinVar the pipeline downloads, so it needs --vep_clinvar to be an http(s) or ftp URL. Drop --${md5_param} for a local or cloud-storage file.")
+        }
+    }
+    // The download task fetches both files, so a remote VCF cannot be paired with a local index
+    if (vepPluginNeedsFetch('vep_clinvar') && !isFetchableUrl(vepPluginIndex('vep_clinvar'))) {
+        error("--vep_clinvar_tbi: '${vepPluginIndex('vep_clinvar')}' is not an http(s) or ftp URL, but --vep_clinvar '${vepPluginResource('vep_clinvar')}' is downloaded, and its index is downloaded with it. Pass the index URL, or point both at local copies.")
+    }
+    if (vepPluginNeedsFetch('vep_clinvar') && !vepPluginMd5('vep_clinvar')) {
+        log.warn("--vep_clinvar: '${vepPluginResource('vep_clinvar')}' is downloaded without --vep_clinvar_md5, so its release is not verified: a host that re-publishes under the same name, like the rolling clinvar.vcf.gz, changes the annotation between runs.")
+    }
+}
+
+//
+// Stage an already-usable plugin file and its index, returning the basename VEP should reference
+//
+def stageVepPluginFile(staged, data_param) {
+    def data_file = file(vepPluginResource(data_param), checkIfExists: true)
+    staged << data_file
+    def index = vepPluginIndex(data_param)
+    if (index) {
+        staged << file(index, checkIfExists: true)
+    }
+    return data_file.name
+}
+
+//
+// Register one resource: staged as supplied, or recorded for a prep task whose output name is returned
+//
+// A resource needing prep is kept as its raw value rather than a file(), since neither the REVEL nor
+// the EVE host can be staged by Nextflow -- PREPARE_VEP_PLUGINS fetches those with WGET instead.
+// A remote ClinVar is recorded with its index and their MD5s, and keeps its own basename.
+//
+def registerVepPlugin(staged, prepare, data_param) {
+    if (vepPluginNeedsFetch(data_param)) {
+        def url = vepPluginResource(data_param).toString()
+        prepare[data_param] = [ vcf: url, tbi: vepPluginIndex(data_param), md5: vepPluginMd5(data_param), tbi_md5: vepPluginIndexMd5(data_param) ]
+        return url.tokenize('/').last()
+    }
+    if (vepPluginNeedsPrep(data_param)) {
+        prepare[data_param] = vepPluginResource(data_param)
+        return vepPluginPreparedName(data_param)
+    }
+    return stageVepPluginFile(staged, data_param)
+}
+
+//
+// Resolve the plugins into the VEP argument string, the files to stage, and the releases to reshape
+//
+def resolveVepPlugins() {
+    if (vepPluginsSkipped()) {
+        return [ args: '', ready_files: [], prepare: [:] ]
+    }
+
+    def staged = []
+    def prepare = [:]
+    def args = []
+
+    if (vepPluginResource('vep_alphamissense')) {
+        args << "--plugin AlphaMissense,file=${registerVepPlugin(staged, prepare, 'vep_alphamissense')}"
+    }
+
+    if (vepPluginResource('vep_alphamissense_aa')) {
+        // Our own plugin, so the .pm travels with its data; --dir_plugins only prepends to @INC
+        staged << file("${projectDir}/assets/vep_plugins/AlphaMissenseProtein.pm", checkIfExists: true)
+        args << "--dir_plugins ."
+        args << "--plugin AlphaMissenseProtein,file=${registerVepPlugin(staged, prepare, 'vep_alphamissense_aa')}"
+    }
+
+    if (vepPluginResource('vep_polyphen_sift_db')) {
+        args << "--plugin PolyPhen_SIFT,db=${registerVepPlugin(staged, prepare, 'vep_polyphen_sift_db')}"
+    }
+
+    if (vepPluginResource('vep_clinvar')) {
+        // --custom takes a %-separated field list, unlike the comma-separated form used everywhere else
+        def fields = (params.vep_clinvar_fields ?: '').tokenize(',').collect { it.trim() }.findAll().join('%')
+        def clinvar = "--custom file=${registerVepPlugin(staged, prepare, 'vep_clinvar')},short_name=ClinVar,format=vcf,type=exact,coords=0"
+        args << (fields ? "${clinvar},fields=${fields}" : clinvar)
+    }
+
+    if (vepPluginResource('vep_cadd_snv') || vepPluginResource('vep_cadd_indel')) {
+        def cadd = []
+        if (vepPluginResource('vep_cadd_snv')) {
+            cadd << "snv=${registerVepPlugin(staged, prepare, 'vep_cadd_snv')}"
+        }
+        if (vepPluginResource('vep_cadd_indel')) {
+            cadd << "indels=${registerVepPlugin(staged, prepare, 'vep_cadd_indel')}"
+        }
+        args << "--plugin CADD,${cadd.join(',')}"
+    }
+
+    if (vepPluginResource('vep_revel')) {
+        args << "--plugin REVEL,file=${registerVepPlugin(staged, prepare, 'vep_revel')}"
+    }
+
+    if (vepPluginResource('vep_eve')) {
+        args << "--plugin EVE,file=${registerVepPlugin(staged, prepare, 'vep_eve')}"
+    }
+
+    return [ args: args.join(' '), ready_files: staged, prepare: prepare ]
 }
 
 //
@@ -312,7 +1197,9 @@ def toolBibliographyText() {
 def methodsDescriptionText(mqc_methods_yaml) {
     // Convert  to a named map so can be used as with familiar NXF ${workflow} variable syntax in the MultiQC YML file
     def meta = [:]
-    meta.workflow = workflow.toMap()
+    // Without -resume the text, and so MULTIQC's inputs, stay the same when a run is resumed
+    def command_line = workflow.commandLine.replaceAll(/\s+-resume(\s+[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})?(?=\s|$)/, '')
+    meta.workflow = workflow.toMap() + [commandLine: command_line]
     meta["manifest_map"] = workflow.manifest.toMap()
 
     // Pipeline DOI
@@ -343,4 +1230,56 @@ def methodsDescriptionText(mqc_methods_yaml) {
     def description_html = engine.createTemplate(methods_text).make(meta)
 
     return description_html.toString()
+}
+
+//
+// Validate a user-supplied Verdict CNA resource directory, returning it as a file object
+//
+// ClairS-TO accepts exactly one <prefix>chr1.txt per sub-directory and one GC_*.txt, and only the
+// directory itself is staged into the task, so a link out of it leaves Verdict quietly disabled.
+//
+def validateClairstoCnaResources(resource_dir) {
+    def dir = file(resource_dir, type: 'dir')
+    if (!dir.exists() || !dir.isDirectory()) {
+        error("--clairsto_cna_resources: '${resource_dir}' is not a directory.")
+    }
+
+    ['loci_files', 'allele_files'].each { sub ->
+        def sub_dir = dir.resolve(sub)
+        if (!sub_dir.exists() || !sub_dir.isDirectory()) {
+            error("--clairsto_cna_resources: '${resource_dir}' has no ${sub}/ sub-directory. Expected layout: loci_files/<prefix>chr1.txt ..., allele_files/<prefix>chr1.txt ..., GC_<name>.txt, and optionally RT_<name>.txt.")
+        }
+        def first_contig = sub_dir.listFiles().findAll { entry -> entry.name.endsWith('chr1.txt') && entry.name.size() > 'chr1.txt'.size() }
+        if (first_contig.size() != 1) {
+            error("--clairsto_cna_resources: ${sub}/ holds ${first_contig.size()} files ending in 'chr1.txt'; ClairS-TO derives the per-contig prefix from exactly one. Keep one resource set per directory.")
+        }
+    }
+
+    def gc_files = dir.listFiles().findAll { entry -> entry.name.startsWith('GC_') && entry.name.endsWith('.txt') }
+    if (gc_files.size() != 1) {
+        error("--clairsto_cna_resources: '${resource_dir}' holds ${gc_files.size()} files matching GC_*.txt; ClairS-TO needs exactly one.")
+    }
+
+    def real_root = dir.toRealPath()
+    def unusable = []
+    [dir, dir.resolve('loci_files'), dir.resolve('allele_files')].each { sub_dir ->
+        sub_dir.listFiles().each { entry ->
+            if (java.nio.file.Files.isSymbolicLink(entry)) {
+                try {
+                    if (!entry.toRealPath().startsWith(real_root)) {
+                        unusable << entry.name
+                    }
+                }
+                catch (java.io.IOException _e) {
+                    // dangling link: unusable for the same reason
+                    unusable << entry.name
+                }
+            }
+        }
+    }
+    if (unusable) {
+        error("--clairsto_cna_resources: '${resource_dir}' contains links pointing outside the directory (e.g. ${unusable.take(3).join(', ')}). Only the directory itself is staged into the task, so those files would be missing inside the container and Verdict would be disabled. Materialise a self-contained copy first, e.g. `cp -rL ${resource_dir} <dest>`, and pass that.")
+    }
+
+    return dir
 }

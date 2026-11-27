@@ -3,27 +3,32 @@ process WAKHAN {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/wakhan:0.4.3--pyhdfd78af_0':
-        'biocontainers/wakhan:0.4.3--pyhdfd78af_0' }"
+    // No biocontainer was built for 0.5.0. This image is bioconda::wakhan=0.5.0 plus upstream commit
+    // 1afd44d4 (KolmogorovLab/Wakhan#64), which stops update_coverage_hist raising IndexError on reads
+    // past a chromosome's last coverage bin. Recipe:
+    // https://github.com/ljwharbers/Wakhan/tree/container/0.5.0-histfix/container
+    // Docker Hub rather than ghcr, for the reason given in modules/local/clairsto/main.nf.
+    container "${(workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') && !task.ext.singularity_pull_docker_container
+        ? 'oras://docker.io/ljwharbers/wakhan-sif:0.5.0-histfix-1afd44d'
+        : 'docker.io/ljwharbers/wakhan:0.5.0-histfix-1afd44d'}"
 
     input:
     tuple val(meta), path(tumor_input), path(tumor_index), path(normal_input), path(normal_index), path(vcf), path(breakpoints)
     tuple val(meta2), path(reference)
+    // Staged next to the FASTA, else parallel samtools workers race to build the .fai and fail the task
+    tuple val(meta3), path(fai)
     path(centromere_bed)
 
     output:
-    tuple val(meta), path("*/*_genes_genome.html")                              , emit: genes_genome_html
-    tuple val(meta), path("*/*_genes_genome.pdf")                               , emit: genes_genome_pdf
-    tuple val(meta), path("*/*_genome_copynumbers_breakpoints.html")            , emit: breakpoints_html
-    tuple val(meta), path("*/*_genome_copynumbers_breakpoints.pdf")             , emit: breakpoints_pdf
-    tuple val(meta), path("*/*_genome_copynumbers_breakpoints_subclonal.html")  , emit: breakpoints_subclonal_html
-    tuple val(meta), path("*/*_genome_copynumbers_breakpoints_subclonal.pdf")   , emit: breakpoints_subclonal_pdf
-    tuple val(meta), path("*/*_genome_copynumbers_details.html")                , emit: copynumbers_details_html
-    tuple val(meta), path("*/*_genome_copynumbers_details.pdf")                 , emit: copynumbers_details_pdf
-    tuple val(meta), path("*/bed_output/*.bed")                                 , emit: bed_files
-    tuple val(meta), path("*/variation_plots/*.html")                           , emit: variation_plots
-    tuple val(meta), path("*/vcf_output/*_wakhan_cna_*.vcf")                    , emit: vcf_files
+    // Per-solution outputs live in solution_<ploidy>_<purity>_<confidence>/; solution_rank_<n> links to them
+    tuple val(meta), path("solution_*_*_*/integer_profile.html")                , emit: integer_profile_html
+    tuple val(meta), path("solution_*_*_*/integer_profile.pdf")                 , emit: integer_profile_pdf
+    tuple val(meta), path("solution_*_*_*/integer_profile.{bed,vcf}")           , emit: integer_profile
+    tuple val(meta), path("solution_*_*_*/subclonal_profile.html")              , emit: subclonal_profile_html
+    tuple val(meta), path("solution_*_*_*/subclonal_profile.pdf")               , emit: subclonal_profile_pdf
+    tuple val(meta), path("solution_*_*_*/subclonal_profile.{bed,vcf}")         , emit: subclonal_profile
+    tuple val(meta), path("solution_*_*_*/genes/genes_copynumber_states.*")     , emit: genes
+    tuple val(meta), path("solution_*_*_*/HiScanner_plots_data.zip")            , emit: hiscanner_zip
     tuple val(meta), path("*_heatmap_ploidy_purity.html")                       , emit: heatmap_html
     tuple val(meta), path("*_heatmap_ploidy_purity.html.pdf")                   , emit: heatmap_pdf
     tuple val(meta), path("coverage_data/*.csv")                                , emit: coverage_csv
@@ -36,8 +41,10 @@ process WAKHAN {
     tuple val(meta), path("phasing_output/*rephased.vcf.gz.csi")                , emit: rephased_vcf_index
     tuple val(meta), path("snps_loh_plots/*_genome_snps_ratio_loh.html")        , emit: snps_loh_plot,      optional: true
     tuple val(meta), path("solutions_ranks.tsv")                                , emit: solutions_ranks
-    // WARN: Manually update version information as tool does not provide on CLI
-    tuple val("${task.process}"), val('wakhan'), val("0.4.3"), topic: versions, emit: versions_wakhan
+    // Whole directories, not the files inside: every solution's files share their basenames,
+    // so Padfoot, ReConPlot, ShatterSeek and the report resolve the top-ranked ones by rank directory
+    tuple val(meta), path("solution_rank_*", type: 'dir')                       , emit: solution_dirs
+    tuple val("${task.process}"), val('wakhan'), eval("wakhan --version 2>/dev/null | sed 's/^wakhan //'"), topic: versions, emit: versions_wakhan
 
     when:
     task.ext.when == null || task.ext.when
@@ -46,10 +53,11 @@ process WAKHAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def phased_vcf = normal_input ? "--normal-phased-vcf $vcf" : "--tumor-phased-vcf $vcf"
-    def centromere = centromere_bed ? "--centromere \$PWD/${centromere_bed}" : ""
+    def centromere = centromere_bed ? "--centromere-bed \$PWD/${centromere_bed}" : ""
+    def link_fai = fai.name != reference.name + ".fai" ? "ln -sf ${fai} ${reference.name}.fai\n" : ''
 
     """
-    wakhan \\
+    ${link_fai}wakhan \\
         all \\
         --target-bam ${tumor_input} \\
         --breakpoints ${breakpoints} \\
@@ -64,8 +72,21 @@ process WAKHAN {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    touch ${prefix}.bam
+    sol=solution_2.0_0.8_0.9
+    mkdir -p \$sol/genes coverage_data coverage_plots phasing_output snps_loh_plots
+    for f in integer_profile subclonal_profile; do
+        touch \$sol/\$f.html \$sol/\$f.pdf \$sol/\$f.bed \$sol/\$f.vcf
+    done
+    touch \$sol/genes/genes_copynumber_states.html \$sol/genes/genes_copynumber_states.pdf \$sol/genes/genes_copynumber_states.bed
+    touch \$sol/HiScanner_plots_data.zip
+    ln -s \$sol solution_rank_1
+    touch ${prefix}_heatmap_ploidy_purity.html ${prefix}_heatmap_ploidy_purity.html.pdf
+    touch coverage_data/coverage.csv coverage_data/cn_peaks.png coverage_plots/COVERAGE_INDEX.html coverage_plots/chr1.pdf
+    touch phasing_output/PHASE_CORRECTION_INDEX.html phasing_output/chr1.pdf
+    echo "" | gzip > phasing_output/rephased.vcf.gz
+    touch phasing_output/rephased.vcf.gz.csi
+    touch snps_loh_plots/${prefix}_genome_snps_ratio_loh.html
+    printf 'repository_name\\tdna_purity\\tcell_purity\\tploidy\\tconfidence\\tsolution_rank\\n%s\\t0.8\\t0.8\\t2.0\\t0.9\\t1\\n' \$sol > solutions_ranks.tsv
     """
 }

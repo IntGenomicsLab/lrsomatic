@@ -1,0 +1,1 @@
+stale payload stand-in for SIGPROFILER_VERIFY tests

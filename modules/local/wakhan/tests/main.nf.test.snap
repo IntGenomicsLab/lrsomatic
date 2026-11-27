@@ -1,0 +1,455 @@
+{
+    "paired - stub": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "integer_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "integer_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "10": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "coverage.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "11": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "cn_peaks.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "12": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "COVERAGE_INDEX.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "13": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "14": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "PHASE_CORRECTION_INDEX.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "15": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "16": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "rephased.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "17": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "rephased.vcf.gz.csi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "18": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_genome_snps_ratio_loh.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "19": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "solutions_ranks.tsv:md5,563b0692a9825c94b2f1d3bf1397cdaf"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "integer_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "20": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "HiScanner_plots_data.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            [
+                                "genes_copynumber_states.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "genes_copynumber_states.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "genes_copynumber_states.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ],
+                            "integer_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "21": [
+                    [
+                        "WAKHAN",
+                        "wakhan",
+                        "0.5.0"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "subclonal_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "subclonal_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "5": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "subclonal_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "6": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "genes_copynumber_states.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "genes_copynumber_states.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "genes_copynumber_states.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "7": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "HiScanner_plots_data.zip:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "8": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_heatmap_ploidy_purity.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "9": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_heatmap_ploidy_purity.html.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "coverage_csv": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "coverage.csv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "coverage_plots_html": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "COVERAGE_INDEX.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "coverage_plots_pdf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "coverage_png": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "cn_peaks.png:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "genes": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "genes_copynumber_states.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "genes_copynumber_states.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "genes_copynumber_states.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "heatmap_html": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_heatmap_ploidy_purity.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "heatmap_pdf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_heatmap_ploidy_purity.html.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "hiscanner_zip": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "HiScanner_plots_data.zip:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "integer_profile": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "integer_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "integer_profile_html": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "integer_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "integer_profile_pdf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "integer_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "phasing_html": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "PHASE_CORRECTION_INDEX.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "phasing_pdf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "chr1.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "rephased_vcf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "rephased.vcf.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
+                    ]
+                ],
+                "rephased_vcf_index": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "rephased.vcf.gz.csi:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "snps_loh_plot": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "test_genome_snps_ratio_loh.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "solution_dirs": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "HiScanner_plots_data.zip:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            [
+                                "genes_copynumber_states.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "genes_copynumber_states.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                                "genes_copynumber_states.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                            ],
+                            "integer_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "integer_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "solutions_ranks": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "solutions_ranks.tsv:md5,563b0692a9825c94b2f1d3bf1397cdaf"
+                    ]
+                ],
+                "subclonal_profile": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        [
+                            "subclonal_profile.bed:md5,d41d8cd98f00b204e9800998ecf8427e",
+                            "subclonal_profile.vcf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        ]
+                    ]
+                ],
+                "subclonal_profile_html": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "subclonal_profile.html:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "subclonal_profile_pdf": [
+                    [
+                        {
+                            "id": "test",
+                            "paired_data": true
+                        },
+                        "subclonal_profile.pdf:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_wakhan": [
+                    [
+                        "WAKHAN",
+                        "wakhan",
+                        "0.5.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-01T15:42:20.391785654",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "26.04.3"
+        }
+    }
+}

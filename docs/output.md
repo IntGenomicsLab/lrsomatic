@@ -19,6 +19,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    ├── methylation
 │    │    └── tumor
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -29,16 +32,29 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
+│    ├── shatterseek
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
+│    ├── signatures
+│    │   ├── assignment
+│    │   └── matrices
 │    ├── variants
 │    │   ├── clairsto
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── somatic
 │    │   └── SVs
-│    └── wakhan
+│    ├── wakhan
+│    └── report
 ```
 
 **Paired tumor + normal sample**:
@@ -52,6 +68,9 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   └── modkit_pileup
 │    │    └── normal
 │    │        └── modkit_pileup
+│    ├── padfoot
+│    │   ├── severus_wakhan
+│    │   └── savana
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -70,21 +89,36 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 │    │    │   ├── nanoplot_ubam_rep1
 │    │    │   └── samtools
 │    │    └── whatshap_stats
+│    ├── reconplot
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
+│    ├── shatterseek
+│    │   ├── severus_ascat
+│    │   ├── severus_wakhan
+│    │   └── savana
+│    ├── signatures
+│    │   ├── assignment
+│    │   └── matrices
 │    ├── variants
 │    │   ├── clair3
 │    │   ├── clairs
 │    │   ├── deepsomatic
 │    │   ├── deepvariant
 │    │   ├── phased
+│    │   ├── savana
 │    │   └── severus
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic
 │    │   └── SVs
-│    └── wakhan
+│    ├── wakhan
+│    └── report
 ├── pipeline_info
 └── multiqc
 ```
+
+The `padfoot`, `reconplot` and `shatterseek` directories are only present when the corresponding step is enabled (`--skip_padfoot`, `--skip_reconplot`, `--skip_shatterseek`); SAVANA's own output lives under `variants/savana`. Within them, each caller-pair subdirectory requires both of its callers to have produced output for that sample: `severus_wakhan` needs `--skip_wakhan false`, `severus_ascat` needs `--skip_ascat false` (ASCAT runs for paired and tumour-only samples, so this pair forms for both), and the `savana` subdirectories additionally need SAVANA copy number, which is only produced when an SNP source is available (the phased germline VCF for paired samples, or the bundled 1000G panel for tumour-only samples) and SAVANA finds an acceptable purity/ploidy fit.
 
 ### `ascat`
 
@@ -144,18 +178,22 @@ The pipeline produces per-sample output directories. Two modes exist depending o
 
 ```
 ├── bamfiles
-│   ├── sample_normal.bam
-│   ├── sample_normal.bam.bai
-│   ├── sample_tumor.bam
-│   ├── sample_tumor.bam.bai
+│   ├── sample_normal.cram
+│   ├── sample_normal.cram.crai
+│   ├── sample_tumor.cram
+│   ├── sample_tumor.cram.crai
 ```
 
-| File                    | Description                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| `sample_normal.bam`     | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the normal sample |
-| `sample_normal.bam.bai` | index file for the normal bam file                                                                   |
-| ` sample_tumor.bam`     | Aligned and haplotagged bam file (with methylation and nucleosome predictions) for the tumor sample  |
-| `sample_tumor.bam.bai`  | index file for the tumor bam file                                                                    |
+| File                      | Description                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `sample_normal.cram`      | Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the normal sample |
+| `sample_normal.cram.crai` | index file for the normal CRAM file                                                                   |
+| `sample_tumor.cram`       | Aligned and haplotagged CRAM file (with methylation and nucleosome predictions) for the tumor sample  |
+| `sample_tumor.cram.crai`  | index file for the tumor CRAM file                                                                    |
+
+The CRAM files are version 3.0 with the reference embedded, so they can be read without the reference FASTA
+(`samtools view sample_tumor.cram`); `samtools view -b` turns one back into a BAM. With `--aligned_format bam`
+this directory holds `sample_{normal,tumor}.bam` and `.bam.bai` instead.
 
 </details>
 
@@ -176,41 +214,43 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 │   │   ├── fibertoolsrs
 │   │   │   ├── sample_qc.txt
 │   │   ├── mosdepth
-│   │   │   ├── sample.mosdepth.global.dist.txt
-│   │   │   ├── sample.mosdepth.summary.txt
+│   │   │   ├── sample_tumor.mosdepth.global.dist.txt
+│   │   │   ├── sample_tumor.mosdepth.summary.txt
 │   │   ├── nanoplot_aln
 │   │   │   ├── sample_tumor_aln_NanoStats.txt
 │   │   │   ├── sample_tumor_aln_NanoPlot-report.html
 │   │   ├── nanoplot_ubam_rep1
-│   │   │   ├── sample_tumor_ubam_NanoStats.txt
-│   │   │   ├── sample_tumor_ubam_NanoPlot-report.html
+│   │   │   ├── sample_tumor_rep1_ubam_NanoStats.txt
+│   │   │   ├── sample_tumor_rep1_ubam_NanoPlot-report.html
 │   │   ├── samtools
-│   │   │   ├── sample.flagstat
-│   │   │   ├── sample.idxstats
-│   │   │   ├── sample.stats
+│   │   │   ├── sample_tumor.flagstat
+│   │   │   ├── sample_tumor.idxstats
+│   │   │   ├── sample_tumor.stats
 │   ├── normal                          # paired samples only
 │   │   └── [same subdirectories as tumor]
 │   ├── whatshap_stats
-│   │   ├── sample.stats.tsv
-│   │   ├── sample.blocklist.tsv
+│   │   ├── sample_whatshap_stats.tsv
+│   │   ├── sample_whatshap_stats.gtf
+│   │   ├── sample_whatshap_stats.log
 ```
 
-| File                                                         | Description                                                                                                              |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `cramino_aln/sample_{type}_cramino.txt`                      | cramino QC summary statistics for the aligned bam file                                                                   |
-| `cramino_ubam_rep1/sample_{type}_cramino.txt`                | cramino QC summary statistics for the unaligned bam files                                                                |
-| `fibertoolsrs/sample_qc.txt`                                 | fibertools QC summary for the bam file                                                                                   |
-| `mosdepth/sample.mosdepth.global.dist.txt`                   | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value |
-| `mosdepth/sample.mosdepth.summary.txt`                       | overall summary file from mosdepth tool                                                                                  |
-| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`               | NanoPlot summary statistics for the aligned BAM file                                                                     |
-| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html`        | NanoPlot interactive HTML report for the aligned BAM file                                                                |
-| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                   |
-| `nanoplot_ubam_rep1/sample_{type}_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                              |
-| `samtools/sample.flagstat`                                   | a summary of the counts of different samtools flags                                                                      |
-| `samtools/sample.idxstats`                                   | a summary of the number of mapped and unmapped reads                                                                     |
-| `samtools/sample.stats`                                      | summary statistics from the bamfile                                                                                      |
-| `whatshap_stats/sample.stats.tsv`                            | WhatsHap phasing statistics per chromosome including phase block N50 and switch error rates                              |
-| `whatshap_stats/sample.blocklist.tsv`                        | list of all phase blocks with their genomic coordinates                                                                  |
+| File                                                              | Description                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cramino_aln/sample_{type}_cramino.txt`                           | cramino QC summary statistics for the aligned bam file                                                                                                                                                                                                                                                                       |
+| `cramino_ubam_rep1/sample_{type}_cramino.txt`                     | cramino QC summary statistics for the unaligned bam files                                                                                                                                                                                                                                                                    |
+| `fibertoolsrs/sample_qc.txt`                                      | fibertools QC summary per input file; `sample_rep{N}_qc.txt` per replicate when a sample has several input files; absent for a fiber-seq file whose reads carry no m6A calls and get none predicted, which skips the fibertools-rs steps (see [Fiber-seq rows without m6A calls](usage.md#fiber-seq-rows-without-m6a-calls)) |
+| `mosdepth/sample_{type}.mosdepth.global.dist.txt`                 | a cumulative distribution indicating the proportion of total bases that were covered for at least a given coverage value                                                                                                                                                                                                     |
+| `mosdepth/sample_{type}.mosdepth.summary.txt`                     | overall summary file from mosdepth tool                                                                                                                                                                                                                                                                                      |
+| `nanoplot_aln/sample_{type}_aln_NanoStats.txt`                    | NanoPlot summary statistics for the aligned BAM file                                                                                                                                                                                                                                                                         |
+| `nanoplot_aln/sample_{type}_aln_NanoPlot-report.html`             | NanoPlot interactive HTML report for the aligned BAM file                                                                                                                                                                                                                                                                    |
+| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoStats.txt`        | NanoPlot summary statistics for the unaligned BAM file                                                                                                                                                                                                                                                                       |
+| `nanoplot_ubam_rep1/sample_{type}_rep1_ubam_NanoPlot-report.html` | NanoPlot interactive HTML report for the unaligned BAM file                                                                                                                                                                                                                                                                  |
+| `samtools/sample_{type}.flagstat`                                 | a summary of the counts of different samtools flags                                                                                                                                                                                                                                                                          |
+| `samtools/sample_{type}.idxstats`                                 | a summary of the number of mapped and unmapped reads                                                                                                                                                                                                                                                                         |
+| `samtools/sample_{type}.stats`                                    | summary statistics from the bamfile                                                                                                                                                                                                                                                                                          |
+| `whatshap_stats/sample_whatshap_stats.tsv`                        | WhatsHap phasing statistics of the phased germline VCF, per chromosome and overall (`ALL`), including phase block N50                                                                                                                                                                                                        |
+| `whatshap_stats/sample_whatshap_stats.gtf`                        | Phase blocks as GTF features with their genomic coordinates                                                                                                                                                                                                                                                                  |
+| `whatshap_stats/sample_whatshap_stats.log`                        | WhatsHap log                                                                                                                                                                                                                                                                                                                 |
 
 </details>
 
@@ -223,15 +263,41 @@ QC outputs are placed under `tumor/` for all samples, and additionally under `no
 ├── methylation
 │   ├── tumor
 │   │   └── modkit_pileup
-│   │       └── sample.bed.gz
+│   │       ├── sample.bed.gz           # default
+│   │       ├── sample_hp1.bed.gz       # --modkit_phased only
+│   │       ├── sample_hp2.bed.gz       # --modkit_phased only
+│   │       └── sample_combined.bed.gz  # --modkit_phased only
 │   ├── normal                          # paired samples only
 │   │   └── modkit_pileup
-│   │       └── sample.bed.gz
+│   │       └── ...                     # same layout as tumor
 ```
 
-| File                                         | Description                                                                         |
-| -------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `{tumor,normal}/modkit_pileup/sample.bed.gz` | Modkit pileup BED file containing per-CpG methylation frequency and coverage values |
+| File                                                   | Description                                                                                                                                                                                                     |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{tumor,normal}/modkit_pileup/sample.bed.gz`           | Modkit pileup bedMethyl table (bgzip) with per-strand methylation frequency and coverage. By default (`--modkit_args '--cpg --modified-bases 5mC'`) rows are 5mC calls at CpG sites only.                       |
+| `{tumor,normal}/modkit_pileup/sample_{hp1,hp2}.bed.gz` | With `--modkit_phased`: bedMethyl tables restricted to reads carrying haplotype tag `HP:1` or `HP:2` from the Longphase-haplotagged BAM.                                                                        |
+| `{tumor,normal}/modkit_pileup/sample_combined.bed.gz`  | With `--modkit_phased`: bedMethyl table over all reads, including untagged ones (equivalent to the unphased default output). There is no separate file for untagged reads; they only contribute to `_combined`. |
+
+With `--modkit_phased` set (and `--skip_dmr` not set), haplotype differential methylation region (DMR) calling also runs, comparing the `_hp1`/`_hp2` bedMethyl pileups over CpG islands covered in both haplotypes and annotating each result with its nearest gene:
+
+```
+├── methylation
+│   ├── tumor
+│   │   ├── modkit_pileup
+│   │   │   └── ...
+│   │   └── dmr
+│   │       ├── sample.log                   # modkit dmr pair's debug log
+│   │       └── sample.nearestGene.bed       # final DMR deliverable
+│   ├── normal                               # paired samples only
+│   │   └── ...                              # same layout as tumor
+```
+
+| File                                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{tumor,normal}/dmr/sample.log`             | `modkit dmr pair`'s own debug log, published for troubleshooting (e.g. the `invalid-bedmethyl-data` class of failure) without needing `-resume`. The intermediate raw `modkit dmr pair` BED is not published, since this file supersedes it.                                                                                                                                                                                                                             |
+| `{tumor,normal}/dmr/sample.nearestGene.bed` | Each `modkit dmr pair` DMR call (17 columns — chrom/start/end, haplotype-vs-haplotype methylation counts/fractions and the difference score; see `modkit dmr pair --help` for the full column list), joined via `bedtools closest -D b -t first` to its nearest gene from `--dmr_gencode_gene_bed` (that gene's own BED6: chrom/start/end/name/score/strand), followed by the signed distance to that gene (relative to the gene's own strand; negative means upstream). |
+
+DMR runs `modkit dmr pair --base C`, which counts every modification on C as modified. The pileup feeding it requests both 5mC and 5hmC (see `--modkit_args` in the usage docs), so the methylation fractions and the difference score describe 5mC and 5hmC combined, not 5mC alone.
 
 </details>
 
@@ -261,16 +327,16 @@ Present in **paired** (tumor + normal) samples.
 ├── clairs
 │   ├── indel.vcf.gz
 │   ├── indel.vcf.gz.tbi
-│   ├── snv.vcf.gz
-│   ├── snv.vcf.gz.tbi
+│   ├── snvs.vcf.gz
+│   ├── snvs.vcf.gz.tbi
 ```
 
 | File               | Description                       |
 | ------------------ | --------------------------------- |
 | `indel.vcf.gz`     | Somatic indel calls in vcf format |
 | `indel.vcf.gz.tbi` | Index for somatic indel calls     |
-| `snv.vcf.gz`       | Somatic SNV calls in vcf format   |
-| `snv.vcf.gz.tbi`   | Index for somatic SNV calls       |
+| `snvs.vcf.gz`      | Somatic SNV calls in vcf format   |
+| `snvs.vcf.gz.tbi`  | Index for somatic SNV calls       |
 
 #### `clairS-TO`
 
@@ -284,20 +350,28 @@ Present in **tumor-only** samples (no matched normal).
 │   ├── indel.vcf.gz.tbi
 │   ├── snv.vcf.gz
 │   ├── snv.vcf.gz.tbi
+│   ├── {sample}_Tumor_Purity_Ploidy.txt
+│   ├── {sample}_Tumor_CNA.txt
+│   ├── {sample}.verdict_status.tsv
 │   ├── somatic.vcf.gz
 │   ├── somatic.vcf.gz.tbi
 ```
 
-| File                  | Description                                                           |
-| --------------------- | --------------------------------------------------------------------- |
-| `germline.vcf.gz`     | SNV and indel calls marked as germline (will not include variants QC) |
-| `germline.vcf.gz.tbi` | Index file for germline small variant calls                           |
-| `indel.vcf.gz`        | Raw indel calls in vcf format                                         |
-| `indel.vcf.gz.tbi`    | Index for somatic indel calls                                         |
-| `snv.vcf.gz`          | Raw SNV calls in vcf format                                           |
-| `snv.vcf.gz.tbi`      | Index for SNV calls                                                   |
-| `somatic.vcf.gz`      | SNV and indel calls marked as PASS and without a germline tag         |
-| `somatic.vcf.gz.tbi`  | Index for somatic small variant calls                                 |
+| File                               | Description                                                                                                                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `germline.vcf.gz`                  | SNV and indel calls marked as germline (will not include variants QC)                                                                                                                                  |
+| `germline.vcf.gz.tbi`              | Index file for germline small variant calls                                                                                                                                                            |
+| `indel.vcf.gz`                     | Raw indel calls in vcf format                                                                                                                                                                          |
+| `indel.vcf.gz.tbi`                 | Index for somatic indel calls                                                                                                                                                                          |
+| `snv.vcf.gz`                       | Raw SNV calls in vcf format                                                                                                                                                                            |
+| `snv.vcf.gz.tbi`                   | Index for SNV calls                                                                                                                                                                                    |
+| `{sample}_Tumor_Purity_Ploidy.txt` | Purity and ploidy the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`. Absent when no solution was found                                                                |
+| `{sample}_Tumor_CNA.txt`           | Allele-specific copy number segments the Verdict tags were computed from: ASCAT's, or Verdict's own with `--skip_ascat`                                                                                |
+| `{sample}.verdict_status.tsv`      | Whether Verdict tagged the calls: `status` (`applied`, `skipped` or `not_run`), `purity`, `ploidy`, `purity_source` (`ascat`, `clairsto_internal` or `none`) and Verdict's `message` explaining a skip |
+| `somatic.vcf.gz`                   | SNV and indel calls marked as PASS and without a germline tag                                                                                                                                          |
+| `somatic.vcf.gz.tbi`               | Index for somatic small variant calls                                                                                                                                                                  |
+
+The germline/somatic split comes from a panel of normals and from ClairS-TO's Verdict module, which tags each call as germline, somatic or subclonal somatic from tumour purity and allele-specific copy number. Unless `--skip_ascat` is set these come from the pipeline's ASCAT run (the profile under `ascat/`); otherwise Verdict estimates them itself, and its purity can differ from ASCAT's enough to cross the 0.6 threshold above which no Verdict tags are applied. Above that threshold `somatic.vcf.gz` is filtered by the panel of normals alone and, for a typical tumour, is dominated by germline variants (see [CHM13 support](usage.md#chm13-support) for the numbers); the purity used is in `{sample}_Tumor_Purity_Ploidy.txt`. Verdict is also disabled, with a warning in the ClairS-TO log, if its resources cannot belong to the reference. `{sample}.verdict_status.tsv` records which of these happened, and the pipeline log warns, naming the sample, purity and source, whenever Verdict tagged nothing (`skipped`) or did not run (`not_run`). See [CHM13 support](usage.md#chm13-support).
 
 #### `severus`
 
@@ -339,6 +413,128 @@ Present in **tumor-only** samples (no matched normal).
 | `read_qual.txt`                           | file containing quality statistics about identified segements                     |
 | `severus.log`                             | log file                                                                          |
 
+With `--severus_whitelist` the same files are published here. Passing `--write-alignments` through `--severus_whitelist_args` adds a `read_alignments` file.
+
+#### `ecdna`
+
+Extrachromosomal DNA and focal amplification. CoRAL reconstructs amplicon structures from the tumour
+BAM, seeded by ASCAT's copy-number segments, and AmpliconClassifier labels each reconstructed
+amplicon (ecDNA, BFB, linear, and so on). Runs on every tumour sample with ASCAT calls; disable with
+`--skip_coral`, or keep reconstruction and drop classification with `--skip_ampliconclassifier`.
+
+A sample with no segment above `--coral_gain` produces an empty seed BED and is skipped with a log
+message rather than failing. CoRAL defaults to the open-source SCIP solver; `--coral_solver
+gurobi_direct` is faster but needs `--gurobi_license`. AmpliconClassifier needs an AmpliconArchitect
+data repository, downloaded automatically for GRCh38 and supplied with `--aa_data_repo` for CHM13;
+a CHM13 run without one skips classification with a warning. An unseeded sample gets only its seed
+BED: no `reconstruct/` directory, and so no amplicon summary.
+
+With `--coral_run_cycle`, reconstruction builds the breakpoint graphs only, and the cycles and the
+amplicon summary are written to `cycles/` instead, beside copies of the graphs; the classifier and
+the plots then read `cycles/`.
+
+```
+├── ecdna
+│   ├── sample_coral_cn.bed
+│   ├── coral
+│   │   ├── sample_CNV_SEEDS.bed
+│   │   ├── reconstruct
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   ├── sample_amplicon_summary.txt
+│   │   │   └── sample_reconstruct.log
+│   │   ├── cycles                      # --coral_run_cycle only
+│   │   │   ├── sample_amplicon1_graph.txt
+│   │   │   ├── sample_amplicon1_cycles.txt
+│   │   │   └── sample_amplicon_summary.txt
+│   │   └── plots
+│   │       ├── sample_amplicon1_graph.png
+│   │       └── sample_amplicon1_cycles.png
+│   └── amplicon_classifier
+│       ├── sample_amplicon_classification_profiles.tsv
+│       ├── sample_gene_list.tsv
+│       ├── sample_ecDNA_counts.tsv
+│       ├── sample_result_table.tsv
+│       └── sample_classification_bed_files/
+```
+
+| File                                          | Description                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| `sample_coral_cn.bed`                         | ASCAT's copy number as the BED CoRAL seeds from                    |
+| `sample_CNV_SEEDS.bed`                        | Amplified intervals above `--coral_gain`; empty means no amplicons |
+| `sample_amplicon<N>_graph.txt`                | Breakpoint graph per amplicon, in AmpliconArchitect format         |
+| `sample_amplicon<N>_cycles.txt`               | Decomposed cycles and paths per amplicon                           |
+| `sample_amplicon_summary.txt`                 | Per-run amplicon summary, written by cycle decomposition           |
+| `sample_reconstruct.log`                      | CoRAL reconstruction log, including solver output                  |
+| `cycles/`                                     | `--coral_run_cycle` only: `cycle_all`'s cycles and summary, graphs |
+| `sample_amplicon<N>_{graph,cycles}.png`       | Per-amplicon copy-number and cycle plots                           |
+| `sample_amplicon_classification_profiles.tsv` | The headline call per amplicon: ecDNA+, BFB+, decomposition class  |
+| `sample_gene_list.tsv`                        | Genes intersecting each classified amplicon                        |
+| `sample_ecDNA_counts.tsv`                     | Number of distinct ecDNA species detected                          |
+| `sample_result_table.tsv`                     | Combined per-sample table, the format AmpliconRepository ingests   |
+| `sample_classification_bed_files/`            | Per-feature BED intervals for each classified amplicon             |
+| `sample_result_data.json`                     | The result table as JSON                                           |
+| `sample_feature_*.tsv`, `sample_*_calls.tsv`  | Feature properties, complexity and similarity; FAN, ecDNA context  |
+| `bfbarchitect_outputs/`                       | BFBArchitect reconstructions, only when a BFB is found             |
+
+#### `savana`
+
+SAVANA structural variant and copy-number calling. Runs alongside Severus/ASCAT rather than replacing
+either. Matched tumor/normal samples run `savana run` + `savana classify` + `savana cna` as separate
+steps; tumor-only samples run the combined `savana to` command instead, producing the same file set
+in one step. We strongly recommend matched tumor/normal mode for best performance -- SAVANA's own
+docs note tumor-only calling is a fallback, best combined with population/panel-of-normals filtering.
+
+SAVANA's PacBio classifier (`--pb`) has no tumour-only mode: it rejects a call only on matched-normal
+evidence, so a PacBio tumour-only `sample.classified.somatic.vcf` holds nearly every germline SV in the
+genome (~28k on a 30x sample). For these samples the pipeline removes the SVs found in the genome's
+Severus germline SV panel of normals (Severus's matching rule) and passes
+`sample.pon_filtered.classified.somatic.vcf` to VEP, Padfoot and ReConPlot instead; about 97% of the
+calls are removed. What remains is still mostly germline (on a PacBio pair, all 761 survivors had
+matched-normal support), so treat PacBio tumour-only SAVANA SVs as a fallback and prefer Severus
+or a matched normal. Turn this off with `--savana_pb_pon_filter false`.
+
+```
+├── savana
+│   ├── sample.sv_breakpoints.vcf
+│   ├── sample.sv_breakpoints.bedpe
+│   ├── sample.sv_breakpoints_read_support.tsv
+│   ├── sample.inserted_sequences.fa
+│   ├── sample.classified.vcf
+│   ├── sample.classified.somatic.vcf
+│   ├── sample.classified.somatic.bedpe
+│   ├── sample.classified.germline.vcf
+│   ├── sample.pon_filtered.classified.somatic.vcf
+│   ├── sample.pon_filtered.pon_filter_summary.tsv
+│   ├── sample_segmented_absolute_copy_number.tsv
+│   ├── sample_ranked_solutions.tsv
+│   ├── sample_fitted_purity_ploidy.tsv
+│   ├── sample_raw_read_counts.tsv
+│   ├── sample_read_counts_<mode>_log2r_segmented.tsv
+│   ├── sample_allele_counts_hetSNPs.bed
+│   ├── 10kbp_bin_ref_all_sample.bed
+```
+
+| File                                            | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `sample.sv_breakpoints.vcf`                     | Raw (unclassified) SV breakpoints from `savana run`/`savana to`                   |
+| `sample.sv_breakpoints.bedpe`                   | Raw SV breakpoints in BEDPE format                                                |
+| `sample.sv_breakpoints_read_support.tsv`        | Supporting-read evidence per breakpoint                                           |
+| `sample.inserted_sequences.fa`                  | Inserted sequences at breakpoints (insertion SVs)                                 |
+| `sample.classified.vcf`                         | All breakpoints after `savana classify` (somatic + germline)                      |
+| `sample.classified.somatic.vcf`                 | Classified somatic SV VCF -- fed into VEP for annotation                          |
+| `sample.classified.somatic.bedpe`               | Classified somatic SVs in BEDPE format (ONT only: not written with `--pb`)        |
+| `sample.classified.germline.vcf`                | Classified germline SVs                                                           |
+| `sample.pon_filtered.classified.somatic.vcf`    | PacBio tumour-only: somatic SVs not in the SV panel of normals -- used downstream |
+| `sample.pon_filtered.pon_filter_summary.tsv`    | PacBio tumour-only: events and records before and after the PoN filter            |
+| `sample_segmented_absolute_copy_number.tsv`     | Segmented absolute copy-number calls from `savana cna`/`savana to`                |
+| `sample_ranked_solutions.tsv`                   | Candidate purity/ploidy solutions, ranked                                         |
+| `sample_fitted_purity_ploidy.tsv`               | Selected purity/ploidy fit                                                        |
+| `sample_raw_read_counts.tsv`                    | Raw binned read counts used for CN segmentation                                   |
+| `sample_read_counts_<mode>_log2r_segmented.tsv` | Segmented log2 read-count ratios per bin (`<mode>` is `mnorm` or `self`)          |
+| `sample_allele_counts_hetSNPs.bed`              | Heterozygous-SNP allele counts (only when SNP/allele-frequency input is given)    |
+| `10kbp_bin_ref_all_sample.bed`                  | Genome bins used for read-count binning                                           |
+
 #### `deepvariant`
 
 DeepVariant germline small variant calls. Present in all samples.
@@ -379,7 +575,7 @@ DeepSomatic somatic small variant calls. Present in all samples.
 
 #### `phased`
 
-Phased variant calls produced by Longphase. Present in all samples.
+Phased small variants. Present in all samples. The germline VCF is phased by Longphase; the somatic VCF is phased from the haplotagged tumour reads, so both share one phase frame (see [usage](usage.md#somatic-phasing)).
 
 ```
 ├── phased
@@ -389,12 +585,12 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── somatic_smallvariants.vcf.gz.tbi
 ```
 
-| File                                | Description                                                      |
-| ----------------------------------- | ---------------------------------------------------------------- |
-| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags |
-| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                |
-| `somatic_smallvariants.vcf.gz`      | Longphase-phased somatic SNV/indel VCF with haplotype (PS) tags  |
-| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                 |
+| File                                | Description                                                                                                                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `germline_smallvariants.vcf.gz`     | Longphase-phased germline SNV/indel VCF with haplotype (PS) tags                                                                                                                                      |
+| `germline_smallvariants.vcf.gz.tbi` | Index for the phased germline VCF                                                                                                                                                                     |
+| `somatic_smallvariants.vcf.gz`      | Somatic SNV/indel VCF; heterozygous records with enough haplotagged ALT reads are phased (`GT` `1\|0`/`0\|1`, `PS` = germline block), the rest left unphased; `FORMAT/AHP`/`OHP` hold the read counts |
+| `somatic_smallvariants.vcf.gz.tbi`  | Index for the phased somatic VCF                                                                                                                                                                      |
 
 </details>
 
@@ -417,6 +613,9 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   │   ├── sample_SV_VEP.vcf.gz
 │   │   ├── sample_SV_VEP_summary.html
 │   │   ├── sample_SV_VEP.vcf.gz.tbi
+│   │   ├── sample_VEP_SAVANA.vcf.gz
+│   │   ├── sample_VEP_SAVANA_summary.html
+│   │   ├── sample_VEP_SAVANA.vcf.gz.tbi
 ```
 
 | File                                        | Description                                                             |
@@ -430,6 +629,263 @@ Phased variant calls produced by Longphase. Present in all samples.
 | `SVs/sample_SV_VEP.vcf.gz`                  | Annotated somatic structural variant vcf file                           |
 | `SVs/sample_SV_VEP_summary.html`            | Visual summary of somatic structural variant annotations in html format |
 | `SVs/sample_SV_VEP.vcf.gz.tbi`              | Annotated somatic structural variant vcf index file                     |
+| `SVs/sample_VEP_SAVANA.vcf.gz`              | Annotated SAVANA somatic structural variant vcf file                    |
+| `SVs/sample_VEP_SAVANA_summary.html`        | Visual summary of SAVANA SV annotations in html format                  |
+| `SVs/sample_VEP_SAVANA.vcf.gz.tbi`          | Annotated SAVANA somatic structural variant vcf index file              |
+
+The two SV annotation steps pass `--max_sv_size 250000000` ahead of `--vep_args`, so SVs up to 250 Mb (any intra-chromosomal SV on GRCh38 or CHM13) are annotated instead of being skipped at VEP's 10 Mb default; a `--max_sv_size` in `--vep_args` takes precedence. VEP still skips SVs on contigs its cache does not cover (`_random`, `chrUn_` and chrEBV on the default GRCh38 FASTA, and ALT, HLA or decoy contigs of a custom one), so those records are missing from these files; VEP lists each one in the task's `*_warnings.txt`, which is not published.
+
+</details>
+
+#### `vep_plugins`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── vep_plugins
+│   ├── clinvar_20260829.vcf.gz
+│   ├── clinvar_20260829.vcf.gz.tbi
+│   ├── revel_grch38.tsv.gz
+│   ├── revel_grch38.tsv.gz.tbi
+│   ├── eve_merged.vcf.gz
+│   ├── eve_merged.vcf.gz.tbi
+```
+
+| File                           | Description                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `clinvar_<date>.vcf.gz{,.tbi}` | ClinVar release and index as downloaded and MD5-checked by `VEPPLUGIN_CLINVAR`; only for a remote `--vep_clinvar` |
+| `revel_grch38.tsv.gz{,.tbi}`   | REVEL scores re-sorted on GRCh38 and indexed by `VEPPLUGIN_REVEL`                                                 |
+| `eve_merged.vcf.gz{,.tbi}`     | Per-protein EVE VCFs merged and indexed by `VEPPLUGIN_EVE`; only with the opt-in `--vep_eve`                      |
+
+Pass these to a later run as `--vep_clinvar`/`--vep_revel`/`--vep_eve` with their `_tbi` to skip the download and preparation. On CHM13 the ClinVar file is the CHM13-lifted Ensembl release instead.
+
+</details>
+
+#### Plugin fields in the `CSQ` annotation
+
+The germline and somatic VCFs carry these extra subfields inside VEP's `CSQ` INFO annotation, on
+top of what `--everything` already produces; the SV VCF is annotated without plugins. Read them
+out with `bcftools +split-vep`.
+
+| Field                                                   | Source                 | Appears on                                              |
+| ------------------------------------------------------- | ---------------------- | ------------------------------------------------------- |
+| `am_pathogenicity`, `am_class`                          | `AlphaMissense` plugin | GRCh38                                                  |
+| `AlphaMissenseProtein_match`                            | `AlphaMissenseProtein` | CHM13                                                   |
+| `am_pathogenicity`, `am_class`                          | `AlphaMissenseProtein` | CHM13, when the lookup resolves                         |
+| `SIFT_score`, `SIFT_pred`                               | `PolyPhen_SIFT` plugin | CHM13 (GRCh38 gets `SIFT` from cache)                   |
+| `PolyPhen_humvar_score`, `PolyPhen_humvar_pred`         | `PolyPhen_SIFT` plugin | CHM13, as above                                         |
+| `ClinVar_CLNSIG`, `ClinVar_CLNREVSTAT`, `ClinVar_CLNDN` | ClinVar `--custom`     | both, fields set by `--vep_clinvar_fields`              |
+| `REVEL`                                                 | `REVEL` plugin         | GRCh38                                                  |
+| `CADD_PHRED`, `CADD_RAW`                                | `CADD` plugin          | GRCh38, only with `--vep_cadd_snv` / `--vep_cadd_indel` |
+| `EVE_SCORE`, `EVE_CLASS`                                | `EVE` plugin           | GRCh38, only with `--vep_eve`                           |
+
+`AlphaMissenseProtein_match` records how the CHM13 protein-space lookup resolved, and is the field
+to check before trusting — or explaining — a missing score:
+
+| Value         | Meaning                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gene_aa`     | Matched on gene symbol and both amino acids; `am_pathogenicity` is populated                                                                                             |
+| `aa_mismatch` | The gene and position exist, but the reference amino acid differs — the CHM13 protein and the one AlphaMissense was numbered against disagree here, so no score is given |
+| `not_found`   | No row for this gene, position and substitution                                                                                                                          |
+| `no_gene`     | VEP produced no gene symbol for the transcript, so no lookup was possible                                                                                                |
+
+Only missense substitutions are looked up at all; anything else carries no `AlphaMissenseProtein_*`
+field rather than a match value.
+
+### `signatures`
+
+Mutational signature analysis of the PASS SNVs and indels in the phased somatic VCF: [SigProfilerMatrixGenerator](https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator) builds the mutational matrices and [SigProfilerAssignment](https://github.com/SigProfilerSuite/SigProfilerAssignment) fits COSMIC reference signatures to them. The `DBS78` and `ID83` directories are absent when a sample has no doublet substitutions or indels. File names use the sample ID with every character other than letters, digits, `_` and `-` replaced by `_`. See [Mutational Signature Options](usage.md#mutational-signature-options) for the CHM13 handling.
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── signatures
+│   ├── matrices
+│   │   ├── output
+│   │   │   ├── SBS
+│   │   │   │   ├── sample.SBS96.all
+│   │   │   │   ├── sample.SBS288.all
+│   │   │   │   ├── sample.SBS1536.all
+│   │   │   │   └── ...
+│   │   │   ├── DBS
+│   │   │   │   ├── sample.DBS78.all
+│   │   │   │   └── ...
+│   │   │   ├── ID
+│   │   │   │   ├── sample.ID83.all
+│   │   │   │   └── ...
+│   │   │   ├── plots
+│   │   │   │   └── *.pdf
+│   │   │   ├── vcf_files
+│   │   │   └── logs
+│   │   │       ├── SigProfilerMatrixGenerator_sample_<genome>.out
+│   │   │       └── SigProfilerMatrixGenerator_sample_<genome>.err
+│   └── assignment
+│       └── COSMIC_v3.6
+│           ├── SBS96
+│           │   ├── Assignment_Solution
+│           │   │   ├── Activities
+│           │   │   │   ├── Assignment_Solution_Activities.txt
+│           │   │   │   ├── Assignment_Solution_Activity_Plots.pdf
+│           │   │   │   ├── Assignment_Solution_TMB_plot.pdf
+│           │   │   │   ├── Decomposed_MutationType_Probabilities.txt
+│           │   │   │   └── Decomposed_Mutation_Probabilities
+│           │   │   │       └── Decomposed_Mutation_Probabilities_<sample>.txt
+│           │   │   ├── Signatures
+│           │   │   │   ├── Assignment_Solution_Signatures.txt
+│           │   │   │   └── SBS_96_plots_Assignment_Solution.pdf
+│           │   │   └── Solution_Stats
+│           │   │       ├── Assignment_Solution_Samples_Stats.txt
+│           │   │       └── Assignment_Solution_Signature_Assignment_log.txt
+│           │   └── JOB_METADATA_SPA.txt
+│           ├── DBS78
+│           │   └── ...
+│           └── ID83
+│               └── ...
+```
+
+| File                                                                                                              | Description                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matrices/output/SBS/sample.SBS96.all`                                                                            | SBS96 mutational matrix (mutation counts per trinucleotide class); further context sizes (SBS6, SBS24, SBS288, SBS384, SBS1536, SBS6144) alongside                                                                         |
+| `matrices/output/DBS/sample.DBS78.all`                                                                            | DBS78 doublet-substitution matrix (and DBS186/DBS1248/DBS2976 variants)                                                                                                                                                    |
+| `matrices/output/ID/sample.ID83.all`                                                                              | ID83 indel matrix (and ID28/ID96/ID415 variants)                                                                                                                                                                           |
+| `matrices/output/plots/*.pdf`                                                                                     | SigProfilerPlotting spectra of the matrices (with the default `--sigprofiler_matrix_args "--plot"`)                                                                                                                        |
+| `matrices/output/vcf_files/`                                                                                      | Sorted input mutations with their SigProfilerMatrixGenerator classification (`seqInfo`)                                                                                                                                    |
+| `matrices/output/logs/*`                                                                                          | SigProfilerMatrixGenerator log and error files; the summary reports the number of analysed mutations and reference-base mismatches                                                                                         |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*_Activities.txt`                          | Number of mutations attributed to every COSMIC signature                                                                                                                                                                   |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_MutationType_Probabilities.txt` | Probability of each signature per mutation class                                                                                                                                                                           |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/`        | Probability of each COSMIC signature for every mutation: `Sample Names`, `Chr` (no `chr` prefix; `chrM` is `MT`), `Pos`, `MutationType`, then one column per signature. E.g. to attribute a driver mutation to a signature |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Activities/*.pdf`                                     | Activity bar plots and tumour mutational burden plot                                                                                                                                                                       |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Signatures/`                                          | The reference signatures used for the fit and their spectra                                                                                                                                                                |
+| `assignment/COSMIC_v<version>/<context>/Assignment_Solution/Solution_Stats/`                                      | Per-sample reconstruction statistics (cosine similarity, L2 error) and the step-wise assignment log                                                                                                                        |
+| `assignment/COSMIC_v<version>/<context>/JOB_METADATA_SPA.txt`                                                     | SigProfilerAssignment run metadata, including the genome build the reference signatures were normalised to                                                                                                                 |
+
+</details>
+
+### `padfoot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── padfoot
+│   ├── severus_wakhan
+│   │   ├── annotated_svs.tsv
+│   │   ├── by_gene.tsv
+│   │   └── padfoot.log
+│   └── savana
+│       ├── annotated_svs.tsv
+│       ├── by_gene.tsv
+│       └── padfoot.log
+```
+
+| File                | Description                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotated_svs.tsv` | One row per somatic SV: breakpoints, support/VAF, overlapping genes and exons per breakend, repeat annotation, microhomology, VNTR, type                     |
+| `by_gene.tsv`       | One row per gene: SV and copy-number impact per haplotype, labelled against the caller's fitted ploidy (`NA` where the caller gave no minor-allele estimate) |
+| `padfoot.log`       | Padfoot log                                                                                                                                                  |
+
+`severus_wakhan/` combines Severus somatic SVs with the top-ranked Wakhan copy-number solution; `savana/` combines SAVANA classified somatic SVs with SAVANA absolute copy number (only present when SAVANA CNA was produced).
+
+</details>
+
+### `reconplot`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── reconplot
+│   ├── severus_ascat
+│   │   ├── per_chromosome/sample_chr{1..22,X,Y}.{pdf,png}
+│   │   ├── genome_wide/sample_genome_wide.{pdf,png}
+│   │   ├── focus/sample_<regions>.{pdf,png}
+│   │   ├── sample.reconplot_cn.tsv
+│   │   ├── sample.reconplot_sv.tsv
+│   │   └── reconplot.log
+│   ├── severus_wakhan
+│   │   └── (same layout)
+│   └── savana
+│       └── (same layout)
+```
+
+| File                      | Description                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `per_chromosome/*`        | One ReConPlot figure per chromosome: copy number (total + minor allele) with SV arcs coloured by type                                                                                            |
+| `genome_wide/*`           | All chromosomes side by side in one strip                                                                                                                                                        |
+| `focus/*`                 | Multi-panel figure for `--reconplot_regions`, with gene labels / BAF track if requested (optional)                                                                                               |
+| `sample.reconplot_cn.tsv` | Harmonised CN table (`chr,start,end,copyNumber,minorAlleleCopyNumber`) as passed to ReConPlot                                                                                                    |
+| `sample.reconplot_sv.tsv` | Harmonised SV table (`sv_id,chr1,pos1,chr2,pos2,strands,svlen,support`, plus `svtype,detailed_type,cluster_id,inside_vntr` for Severus; ReConPlot reads the five coordinate/orientation columns) |
+| `reconplot.log`           | Wrapper log (parser choices, purity/ploidy read, filters applied, and an `ERROR` line for any figure ReConPlot could not draw)                                                                   |
+
+A figure ReConPlot cannot draw is skipped and the task keeps the others: ReConPlot adds one plot layer per SV, so on a chromosome with a few thousand SVs (e.g. chromothripsis) R can run out of its node stack for that chromosome and for the genome-wide strip. The task fails only when no figure at all could be drawn. ASCAT + Severus is not drawn for a sample on which ASCAT found no solution.
+
+`severus_ascat/` and `severus_wakhan/` pair Severus somatic SVs with ASCAT or the top-ranked Wakhan copy-number solution; `savana/` uses SAVANA's own SVs and absolute copy number. A pair is only produced when both callers ran for the sample.
+
+</details>
+
+### `shatterseek`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── shatterseek
+│   ├── severus_ascat
+│   │   ├── sample.shatterseek.tsv
+│   │   ├── sample.shatterseek_sv_input.tsv
+│   │   ├── sample.shatterseek_cn_input.tsv
+│   │   ├── plots/sample_chr<N>.pdf
+│   │   └── shatterseek.log
+│   ├── severus_wakhan
+│   │   └── (same layout)
+│   └── savana
+│       └── (same layout)
+```
+
+| File                                   | Description                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `sample.shatterseek.tsv`               | One row per chromosome (chr1-22, chrX): the largest cluster of interleaved SVs, the statistical criteria and the confidence tiers |
+| `sample.shatterseek_{sv,cn}_input.tsv` | The SV and copy-number tables exactly as given to ShatterSeek (Ensembl chromosome names, integer copy number)                     |
+| `plots/*.pdf`                          | ShatterSeek figure (ideogram, SVs, copy number, summary) for every chromosome with a confidence tier (optional)                   |
+| `shatterseek.log`                      | Wrapper log: files read, SVs dropped and why, copy numbers rounded, the tiers called                                              |
+
+[ShatterSeek](https://github.com/parklab/ShatterSeek) (Cortes-Ciriano et al. 2020) finds, per chromosome, the largest cluster of interleaved intra-chromosomal SVs and tests it against the hallmarks of chromothripsis. The pipeline runs upstream ShatterSeek (v1.1, pinned commit) unchanged, apart from a build-time patch adding T2T-CHM13 chromosome sizes and cytobands. The columns are upstream's:
+
+| Column                                                 | Meaning                                                                                                                                            |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start`, `end`                                         | Span of the chromosome's largest cluster of interleaved intra-chromosomal SVs (NA without one)                                                     |
+| `number_DEL`/`_DUP`/`_h2hINV`/`_t2tINV`                | The cluster's SVs by type                                                                                                                          |
+| `number_TRA`, `clusterSize_including_TRA`              | Translocations with a breakend inside the cluster, and the cluster size including them                                                             |
+| `pval_fragment_joins`                                  | Chi-square test of the cluster's SV types (translocations typed by strand) against equal proportions; chromothripsis should **not** be significant |
+| `chr_breakpoint_enrichment`                            | Binomial test of the translocations touching this chromosome against its share of the genome                                                       |
+| `pval_exp_chr`, `pval_exp_cluster`                     | Kolmogorov-Smirnov tests of the breakpoints (chromosome / cluster) against an exponential distribution; significant = clustered breakpoints        |
+| `max_number_oscillating_CN_segments_2_states`          | Longest run of adjacent copy-number segments in the cluster region alternating between two states                                                  |
+| `q_*`                                                  | Benjamini-Hochberg q-values of the four tests across the sample's chromosomes (added by the wrapper)                                               |
+| `inter_*`                                              | Other chromosomes linked to this one by translocations, and the fragment-joins test over the linked clusters                                       |
+| `HC1`, `HC2`, `HC3`                                    | PCAWG high-confidence tiers met (see below)                                                                                                        |
+| `chromothripsis_criteria`, `chromothripsis_confidence` | The tiers met, e.g. `HC1,HC2`, and `high` (any tier) or `none`                                                                                     |
+
+The tiers use the PCAWG high-confidence cut-offs (Cortes-Ciriano et al. 2020, Supplementary Note 1.2; ShatterSeek issue #22), with significance at q ≤ 0.2 and NA counting as a fail. Interleaved intra SVs is the sum of the four SV-type columns. PCAWG's low-confidence tier (4-6 oscillating segments) is not reported.
+
+| Tier | Interleaved intra SVs | Other                         | Oscillating CN segments (2 states) | Fragment joins | Enrichment or `exp_chr` test |
+| ---- | --------------------- | ----------------------------- | ---------------------------------- | -------------- | ---------------------------- |
+| HC1  | ≥ 6                   |                               | ≥ 7                                | q > 0.2        | q ≤ 0.2                      |
+| HC2  | ≥ 3                   | ≥ 4 translocations            | ≥ 7                                | q > 0.2        |                              |
+| HC3  |                       | ≥ 40 SVs incl. translocations |                                    | q > 0.2        |                              |
+
+Points to keep in mind when reading the calls:
+
+- PCAWG applied HC3 only to osteosarcomas, leiomyosarcomas and liposarcomas, where amplification erodes the oscillating pattern; here it applies to every tumour. Drop it with `ext.args = '--no-hc3'`.
+- PCAWG corrected the P values once across every chromosome of all 2,658 tumours; within one sample the correction covers 23 chromosomes. The raw P values are kept, so a cohort-wide correction can be recomputed from the summaries (each row carries `sample`, `cn_source` and `sv_source`).
+- Upstream's exponential tests compare against random draws; the wrapper seeds R's generator (`--seed`, default 1), so a rerun gives the same P values. Clusters of equal size are pooled before the statistics are computed, so a chromosome whose SVs are all singletons is summarised over all of them.
+- The cut-offs were set by visual inspection of PCAWG's short-read consensus calls. Long-read callers report many small SVs, whose two breakpoints a few hundred bp apart make the exponential test significant on most chromosomes; intra-chromosomal SVs shorter than `--shatterseek_min_svlen` (default 150 bp) are therefore left out, and raising it tests larger rearrangements only.
+- ShatterSeek does not mask centromeres or satellite arrays. A cluster spanning a centromere or heterochromatin block (e.g. chr16 q11.2, chr1 q12, chr9 q12) is more likely mapping artefact than chromothripsis; check the figure.
+- Tumour-only Severus calls include germline SVs that the panel of normals did not remove.
+- Insertions and single breakends are not used, nor are SVs touching chrY, the mitochondrion or unplaced contigs. SAVANA's absolute copy number and fractional Wakhan states are rounded to integers, and neighbouring segments with equal copy number are merged, because ShatterSeek counts copy-number states row by row.
+
+Tier cut-offs, the q/P choice and SV filters can be changed with `ext.args` on `.*:SHATTERSEEK_(SEVERUS_ASCAT|SEVERUS_WAKHAN|SAVANA)` (see `Rscript assets/shatterseek/run_shatterseek.R --help`). A sample ShatterSeek cannot process is skipped without stopping the run.
 
 </details>
 
@@ -440,24 +896,28 @@ Phased variant calls produced by Longphase. Present in all samples.
 
 ```
 ├── wakhan
-│   ├── {ploidy}_{purity}_{confidence}
-│   │   ├── bed_output
+│   ├── solution_{ploidy}_{purity}_{confidence}
+│   │   ├── genes
 │   │   │   ├── genes_copynumber_states.bed
-│   │   │   ├── loh_regions.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_1.bed
-│   │   │   ├── sample_{ploidy}_{purity}_{confidence}_HP_2.bed
-│   │   ├── variation_plots
-│   │   │   ├── chr{1-22,X,Y}_cn.html
-│   │   │   ├── chr{1-22,X,Y}_cn.pdf
-│   │   │   ├── CN_VARIATION_INDEX.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_breakpoints.pdf
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html
-│   │   ├── sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf
+│   │   │   ├── genes_copynumber_states.html
+│   │   │   ├── genes_copynumber_states.pdf
+│   │   ├── integer_profile.bed
+│   │   ├── integer_profile.html
+│   │   ├── integer_profile.pdf
+│   │   ├── integer_profile.vcf
+│   │   ├── subclonal_profile.bed
+│   │   ├── subclonal_profile.html
+│   │   ├── subclonal_profile.pdf
+│   │   ├── subclonal_profile.vcf
+│   │   ├── HiScanner_plots_data.zip
+│   ├── solution_rank_{rank}
 │   ├── coverage_data
-│   │   ├── {0-23}_SNPS.csv
+│   │   ├── {0-23}_SNPs.csv
+│   │   ├── baf.csv
+│   │   ├── cancer_genes_coverage.csv
+│   │   ├── cn_coverage.png
+│   │   ├── cn_peaks.png
+│   │   ├── coverage.csv
 │   │   ├── coverage_ps.csv
 │   │   ├── phase_corrected_coverage.csv
 │   │   ├── pileup_SNPs.csv
@@ -466,57 +926,98 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   │   ├── chr{1-22,X,Y}.pdf
 │   │   ├── COVERAGE_INDEX.html
 │   ├── phasing_output
-│   │   ├── chr{1-22,X,Y}_phase_correction_0.html
-│   │   ├── chr{1-22,X,Y}_phase_correction_1.html
+│   │   ├── chr{1-22,X,Y}_phase_correction_{0.1,0.2,0.3,1,2}.html
 │   │   ├── chr{1-22,X,Y}_without_phase_correction.html
 │   │   ├── chr{1-22,X,Y}.pdf
-│   │   ├── sample.rephased.vcf.gz
-│   │   ├── sample.rephased.vcf.gz.tbi
+│   │   ├── PHASE_CORRECTION_INDEX.html
+│   │   ├── rephased.vcf.gz
+│   │   ├── rephased.vcf.gz.csi
 │   ├── snps_loh_plots
-│   │   ├── chr{1-22,X,Y}_snps_loh.html
-│   ├── sample_heatmap_ploidy_purity.html
-│   ├── sample_heatmap_ploidy_purity.html.pdf
-│   ├── sample_optimized_peak.html
+│   │   ├── {sample}_genome_snps_ratio_loh.html
+│   ├── {sample}_heatmap_ploidy_purity.html
+│   ├── {sample}_heatmap_ploidy_purity.html.pdf
 │   ├── solutions_ranks.tsv
-
 ```
 
-| File                                                                                                   | Description                                                                                        |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `{ploidy}_{purity}_{confidence}/bed_output/genes_copynumber_states.bed`                                | bed file containing allele specific copy number values with coverage information                   |
-| `{ploidy}_{purity}_{confidence}/bed_output/loh_regions.bed`                                            | bed file containing positions of loss of heterozygosity regions                                    |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_1.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 1               |
-| `{ploidy}_{purity}_{confidence}/bed_output/sample_{ploidy}_{purity}_{confidence}_HP_2.bed`             | bed file containing copy number states, coverage, and SV breakpoints for haplotype 2               |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.html`                                 | html based plotly plot of copy number and coverage for individual chromosomes                      |
-| `{ploidy}_{purity}_{confidence}/variation_plots/chr{1-22,X,Y}_cn.pdf`                                  | pdf based plotly plot of copy number and coverage for individual chromosomes                       |
-| `{ploidy}_{purity}_{confidence}/variation_plots/CN_VARIATION_INDEX.html`                               | unclear html plot                                                                                  |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.html`               | html plots of copy number variations in highlighted genes                                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genes_genome.pdf`                | pdf plots of copy number variations in highlighted genes                                           |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.html` | genome-wide html copy number plots with coverage information on same axis                          |
-| `{ploidy}_{purity}_{confidence}/sample_{purity}_{ploidy}_{confidence}_genome_copynumbers_details.pdf`  | genome-wide pdf copy number plots with coverage information on same axis                           |
-| `coverage_data/{0-23}_SNP.csv`                                                                         | CSV of coverage data per chromosome                                                                |
-| `coverage_data/coverage_ps.csv`                                                                        | CSV of overall haplotype specific coverage data                                                    |
-| `coverage_data/coverage.csv`                                                                           | CSV of overall coverage data                                                                       |
-| `coverage_data/phase_corrected_coverage.csv`                                                           | CSV of overall phase-corrected coverage data                                                       |
-| `coverage_data/pileup_SNPs.csv`                                                                        | CSV of SNP pileup data                                                                             |
-| `coverage_plots/chr{1-22,X,Y}_cov.html`                                                                | chromosome specific html coverage plots                                                            |
-| `coverage_plots/chr{1-22,X,Y}_cov.pdf`                                                                 | chromosome specific pdf coverage plots                                                             |
-| `coverage_plots/COVERAGE_INDEX.html`                                                                   | unclear html plot                                                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_0.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-23,X,Y}_phase_correction_1.html`                                                 | Phase-switch error correction plot per chromosome                                                  |
-| `phasing_output/chr{1-22,X,Y}_without_phase_correction.html`                                           | Phase-switch error without phase correction plot per chromosome                                    |
-| `phasing_output/chr{1-22,X,Y}.pdf`                                                                     | Phase-switch error correction plot                                                                 |
-| `phasing_output/sample_rephased.vcf.gz`                                                                | phase corrected SNP vcf file                                                                       |
-| `phasing_output/sample_rephased.vcf.gz.tbi`                                                            | phase corrected SNP vcf index file                                                                 |
-| `snps_loh_plots/chr{1-22,X,Y}_snps_loh.html`                                                           | interactive HTML plots of SNP allele frequencies and loss of heterozygosity regions per chromosome |
-| `sample_heatmap_ploidy_purity.html`                                                                    | heatmap html plot of purity ploidy fit                                                             |
-| `sample_heatmap_ploidy_purity.html.pdf`                                                                | heatmap pdf plot of purity ploidy fit                                                              |
-| `sample_optimized_peak.html`                                                                           | optimization peak plot                                                                             |
-| `solutions_ranks.tsv`                                                                                  | rank of potential purity ploidy solutions                                                          |
+| File                                                                      | Description                                                                                                                                                                                               |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.bed`             | Integer copy-number segments for one purity/ploidy solution, both haplotypes on shared boundaries: coverage, copy-number state and confidence per haplotype, and the IDs of SV breakpoints in the segment |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.vcf`             | The integer copy-number segments as VCF                                                                                                                                                                   |
+| `solution_{ploidy}_{purity}_{confidence}/integer_profile.html`            | Interactive genome-wide plot of the integer copy-number profile with SV breakpoints (`.pdf`: static version)                                                                                              |
+| `solution_{ploidy}_{purity}_{confidence}/subclonal_profile.*`             | The same for subclonal copy-number states (`.bed`, `.vcf`, `.html`, `.pdf`)                                                                                                                               |
+| `solution_{ploidy}_{purity}_{confidence}/genes/genes_copynumber_states.*` | Copy-number states of the genes of interest (`.bed`) and their plots (`.html`, `.pdf`)                                                                                                                    |
+| `solution_{ploidy}_{purity}_{confidence}/HiScanner_plots_data.zip`        | The solution's profiles, coverage, BAF and breakpoints bundled for the [Wakhan visualisation web viewer](https://wakhan-visualization.github.io/)                                                         |
+| `solution_rank_{rank}`                                                    | The solution of that rank in `solutions_ranks.tsv` (a copy of its `solution_{ploidy}_{purity}_{confidence}` directory)                                                                                    |
+| `coverage_data/*.csv`                                                     | Per-chromosome SNP tables, BAF, haplotype-specific and phase-corrected coverage, and SNP pileups; tumour-only runs also write `{sample}_loh_segments.csv`                                                 |
+| `coverage_data/*.png`                                                     | Copy-number coverage and peak plots                                                                                                                                                                       |
+| `coverage_plots/chr{1-22,X,Y}_cov.html`                                   | Coverage plot per chromosome (`.pdf`: static version); `COVERAGE_INDEX.html` links them                                                                                                                   |
+| `phasing_output/*.html`                                                   | Phase-switch error plots per chromosome, with and without correction; `PHASE_CORRECTION_INDEX.html` links them                                                                                            |
+| `phasing_output/rephased.vcf.gz`                                          | Phase-corrected SNP VCF, with its `.csi` index                                                                                                                                                            |
+| `snps_loh_plots/{sample}_genome_snps_ratio_loh.html`                      | SNP allele ratios and loss-of-heterozygosity regions (tumour-only runs)                                                                                                                                   |
+| `{sample}_heatmap_ploidy_purity.html`                                     | Heatmap of the purity/ploidy fit (`.html.pdf`: static version)                                                                                                                                            |
+| `solutions_ranks.tsv`                                                     | Ranked purity/ploidy solutions; `repository_name` is the solution's directory                                                                                                                             |
 
 </details>
 
+### `report`
+
+<details markdown="1">
+<summary>Output files</summary>
+
+```
+├── report
+│   ├── {sample}_report.html
+│   ├── {sample}_small_variants.tsv.gz
+```
+
+| File                             | Description                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{sample}_report.html`           | Self-contained per-sample HTML report ([lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report), run from `ghcr.io/ljwharbers/lrsomatic-report`): clinical overview, circos plot, small/structural variant tables, copy number, genomic instability, signatures and QC. Any section whose upstream data is unavailable (e.g. a skipped tool) shows a "not available" notice instead. |
+| `{sample}_small_variants.tsv.gz` | The full small-variant table behind the report's variant section, every row and column, as gzipped TSV. Written when the somatic VEP file holds at least one variant: not with `--skip_vep`, and not for a sample with no somatic calls. The HTML may embed only part of it (see `--embed` in [usage](usage.md#report-options)); this file is always complete.                                 |
+
+</details>
+
+This is the final step of the pipeline, run after every tool it reads. It renders each sample only once the run's last SigProfiler, ShatterSeek, ecDNA, SAVANA, Padfoot, ReConPlot and Wakhan output has been written, because several of those are optional per sample. Disable it with `--skip_report`.
+
+The report reads these published outputs of the sample (a skipped tool's section shows a notice):
+
+| Report section            | Files read                                                                                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Small variants            | `vep/somatic/{sample}_SOMATIC_VEP.vcf.gz`, `variants/phased/` somatic VCF, `variants/clairsto/{sample}.verdict_status.tsv` (tumour-only)                                                                                                                |
+| Structural variants       | `variants/severus/somatic_SVs/severus_somatic.vcf.gz`, `vep/SVs/{sample}_SV_VEP.vcf.gz`; SAVANA's `variants/savana/{sample}[.pon_filtered].classified.somatic.vcf` (PoN-filtered for PacBio tumour-only) and `vep/SVs/{sample}_VEP_SAVANA.vcf.gz`       |
+| SV annotation and figures | `padfoot/{pair}/{annotated_svs,by_gene}.tsv`, `reconplot/{pair}/{genome_wide,per_chromosome,focus}/*.png`                                                                                                                                               |
+| Copy number               | `ascat/{sample}.{purityploidy,segments_raw,metrics}.txt` and plots, `variants/savana/{sample}_fitted_purity_ploidy.tsv`, `wakhan/solutions_ranks.tsv`, `wakhan/solution_rank_1/{integer_profile.bed,genes/genes_copynumber_states.bed}`                 |
+| Chromothripsis            | `shatterseek/{pair}/{sample}.shatterseek.tsv`                                                                                                                                                                                                           |
+| ecDNA                     | `ecdna/amplicon_classifier/{sample}_{amplicon_classification_profiles,gene_list,result_table}.tsv`, `ecdna/coral/{sample}_CNV_SEEDS.bed`, `ecdna/coral/{reconstruct,cycles}/{sample}_amplicon_summary.txt`, `ecdna/coral/plots/*_{graph,cycles}.png`    |
+| Mutational signatures     | `signatures/assignment/COSMIC_v*/{SBS96,DBS78,ID83}/Assignment_Solution/{Activities,Solution_Stats}/`, `signatures/matrices/output/{SBS,DBS,ID}/*.{SBS96,DBS78,ID83}.all`                                                                               |
+| QC and phasing            | mosdepth, cramino and samtools files under `qc/{tumor,normal}/`, `qc/whatshap_stats/{sample}_whatshap_stats.tsv`                                                                                                                                        |
+| HMF driver annotation     | The genome's hosted HMF bundle (GRCh38, CHM13; unpacked copy published under `cache/hmf/hmf_report_<genome>/`) or your own `--report_hmf_*` resources ([usage](usage.md#hmf-driver-annotation)), plus the small-variant, SV and copy-number files above |
+
+The pipeline passes each sample's run mode, `--run-mode paired` for a tumour/normal pair and `--run-mode tumour_only` otherwise, which sets the report's header badge and its tumour-only caveat; the report no longer guesses it from the staged QC files.
+
+Wakhan's interactive HTML plots (`wakhan/solution_*/integer_profile.html`, the subclonal profiles and `{sample}_heatmap_ploidy_purity.html`) are no longer embedded in the report, which draws the top-ranked solution's copy-number profile from `integer_profile.bed` instead; open them from the [`wakhan`](#wakhan) directory.
+
+Sections:
+
+- **Small variants** — the VEP-annotated somatic SNVs/indels, with VAF, depth and phase set from the phased somatic VCF; a footnote names the file those columns came from and, after a consensus run, notes that a multi-caller variant's VAF comes from whichever caller won the merge. Unfiltered by default; see `--report_gene_panel` in [usage](usage.md#report-options).
+  - Pathogenicity predictors (SIFT, PolyPhen, AlphaMissense, ClinVar, CADD, REVEL, EVE) are read from the [plugin fields in `CSQ`](#plugin-fields-in-the-csq-annotation), each as a class column with a tickbox filter and a numeric score column. A column appears only when the annotated VCF declared that field, and an **Annotation sources** footnote lists which sources were present.
+- **Structural variants** — SEVERUS breakpoints, annotated from the VEP SV VCF (`{sample}_SV_VEP.vcf.gz`), one row per rearrangement. Breakends additionally get their own circos plot, cross-linked to the SV table and redrawn as the table is filtered. Skipping VEP leaves the SV table unannotated but still drawn on the circos plot.
+- **Circos** — genome-wide SNV density, SVs and copy number, with the tier 1–2 key-finding genes of the ticked gene list(s) labelled around the outside; the labels follow the panel checkboxes, so with no list ticked there are none.
+- **ReConPlot figures** — by default (the report's `--embed slim`) no genome-wide strip, and per-chromosome figures only for chromosomes with a ShatterSeek chromothripsis call, an SV with a Padfoot `HIGH_ONCO`/`HIGH_TSG` rating, or a tier 1–2 SV or copy-number key finding of a ticked gene list. The report option `--embed full` ([usage](usage.md#report-options)) embeds every figure; all of them remain under [`reconplot`](#reconplot).
+- **Copy number** — ASCAT purity/ploidy, whole-genome doubling and LOH (from `metrics.txt`) plus its diagnostic plots, SAVANA's fitted purity/ploidy, and, when WAKHAN ran, its ranked purity/ploidy solutions with the top-ranked solution's copy-number profile and gene copy-number states.
+- **HMF driver annotation** — on by default for GRCh38 and CHM13 (`--skip_report_hmf` turns it off), from the genome's hosted bundle or your own resources ([usage](usage.md#hmf-driver-annotation)): Hartwig's driver panel, hotspots and known fusions applied to the small variants (reported per the panel's flags, on the canonical transcript), to ASCAT and Wakhan copy number separately plus Severus/SAVANA deletions (amplifications and deletions, with a per-source on/off switch), and to the SV breakends (known fusions with exon ranges and frame). The driver panel is also added to the gene-list checkboxes as `hmf_driver`. Absent otherwise.
+- **QC** — mosdepth, cramino and samtools statistics; for a matched tumour/normal pair both sides are shown side by side. A collapsible **Phasing** block shows the per-chromosome WhatsHap statistics of the phased germline VCF (the normal's in a pair, the tumour's in tumour-only mode), and the header's "Phased variants" card their genome-wide total; both are absent with `--skip_whatshapstats` or `--skip_qc`.
+
+Filtering in the browser:
+
+- **Gene panels** are checkboxes in the panel bar; ticked panels are unioned, and `--report_gene_panel` only sets which are ticked on load — see [usage](usage.md#applying-several-panels-at-once). With two or more ticked, each `panel_hit` entry names the panel it matched in square brackets.
+- **Categorical columns** filter by tickbox dropdown rather than a text box: `consequence`, `impact` and `callers` on the small-variant table, and `svclass`, `svtype`, `impact`, `consequence` and `caller` on the SV table. Each dropdown lists the values actually present in that sample with a row count. Ticking several values in one column is OR; ticking values in two columns is AND. A column with fewer than two distinct values keeps a plain text box. Every other column keeps its text box, and the table's own search box still does substring across all columns.
+
+The report is one self-contained file — plots and tables are embedded, so it can be copied or emailed on its own.
+
 ### `multiqc`
+
+Sample rows are named per BAM: `{sample}_tumor` and `{sample}_normal` carry the samtools, mosdepth and post-alignment NanoPlot statistics of that BAM, `{sample}_{type}_rep{N}_ubam` rows carry the pre-alignment NanoPlot statistics of each unaligned replicate, and WhatsHap phasing statistics sit on a plain `{sample}` row because phasing is done once per sample.
 
 <details markdown="1">
 <summary>Output files</summary>
@@ -536,8 +1037,10 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   │   ├── multiqc_data.json
 │   │   ├── multiqc_general_stats.txt
 │   │   ├── multiqc_software_versions.txt
+│   │   ├── multiqc_nanostat.txt
 │   │   ├── multiqc_sources.txt
 │   │   ├── multiqc.log
+│   │   ├── nanostat_fasta_stats_table.txt
 │   ├── multiqc_plots
 │   │   ├── pdf
 │   │   │   ├── mosdepth-coverage-per-contig-multi-cnt.pdf
@@ -604,20 +1107,22 @@ Phased variant calls produced by Longphase. Present in all samples.
 │   ├── execution_timeline_{DATE}.html
 │   ├── execution_trace_{DATE}.txt
 │   ├── final_sample_disk_usage.tsv
+│   ├── hmf_liftover/hmf_chm13/    (CHM13 runs with --report_hmf_* only)
 │   ├── lrsomatic_software_mqc_versions.yml
 │   ├── params_{DATE}.json
 │   ├── pipeline_dag_{DATE}.html
 │   ├── raw_task_disk_usage.tsv
 ```
 
-| File                                  | Description                                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run |
-| `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                               |
-| `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                     |
-| `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                   |
-| `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                          |
-| `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                               |
-| `raw_task_disk_usage.tsv`             | per-task disk usage across all pipeline tasks                                               |
+| File                                  | Description                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `execution_timeline_{DATE}.html`      | a graphical summary of the timing of each module's task over the course of the pipeline run                                                                                                                                                                                                                   |
+| `execution_trace_{DATE}.txt`          | detailed per-task resource usage log (CPU, memory, wall time)                                                                                                                                                                                                                                                 |
+| `final_sample_disk_usage.tsv`         | summary of disk usage per sample at pipeline completion                                                                                                                                                                                                                                                       |
+| `hmf_liftover/hmf_chm13/`             | on a CHM13 run given your own GRCh38 HMF resources: the GRCh38 HMF resources lifted to CHM13 (`HMF_LIFTOVER`), laid out like an oncoanalyser bundle with `common/ensembl_data/REFERENCE` = `t2t`, and `hmf_liftover_report.tsv` counting what was lifted and dropped; reusable as `--report_hmf_resource_dir` |
+| `lrsomatic_software_mqc_versions.yml` | summary of the versions of each tool used by the pipeline                                                                                                                                                                                                                                                     |
+| `params_{DATE}.json`                  | summary of the parameters used in the pipeline run                                                                                                                                                                                                                                                            |
+| `pipeline_dag_{DATE}.html`            | flow chart summarizing the pipeline structure                                                                                                                                                                                                                                                                 |
+| `raw_task_disk_usage.tsv`             | per-task disk usage across all pipeline tasks                                                                                                                                                                                                                                                                 |
 
 </details>

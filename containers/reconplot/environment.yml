@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# R runtime for the ReConPlot wrapper (assets/reconplot), used only to build containers/reconplot/Dockerfile;
+# the ReConPlot package itself (https://github.com/cortes-ciriano-lab/ReConPlot) is not on conda and is
+# installed into the image from a pinned commit.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - "conda-forge::r-base=4.4.3"
+  - "conda-forge::r-ggplot2=4.0.3"
+  - "conda-forge::r-data.table=1.18.4"
+  - "conda-forge::r-optparse=1.8.2"
+  - "conda-forge::r-cowplot=1.2.0"
+  - "conda-forge::r-dplyr=1.2.1"
+  - "conda-forge::r-scales=1.4.0"
+  - "conda-forge::r-magrittr=2.0.5"
+  - "conda-forge::procps-ng" # `ps` required by Nextflow task metrics

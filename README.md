@@ -2,11 +2,11 @@
 
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_In_GitHub_Codespaces-black?labelColor=grey&logo=github)](https://github.com/codespaces/new/IntGenomicsLab/lrsomatic)
 [![GitHub Actions CI Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/nf-test.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/nf-test.yml)
-[![GitHub Actions Linting Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.17751829-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.17751829)
+[![GitHub Actions Linting Status](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml/badge.svg)](https://github.com/IntGenomicsLab/lrsomatic/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.17751828-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.17751828)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-[![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
-[![nf-core template version](https://img.shields.io/badge/nf--core_template-4.0.2-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/4.0.2)
+[![Nextflow](https://img.shields.io/badge/version-%E2%89%A526.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
+[![nf-core template version](https://img.shields.io/badge/nf--core_template-4.2.2-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/4.2.2)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -46,26 +46,39 @@ b. Phasing and Haplotagging the SNPs in the normal and tumour BAM ([`LongPhase`]
 
 c. Calling somatic SNVs ([`ClairS`](https://github.com/HKU-BAL/ClairS))
 
+d. Phasing somatic SNVs and indels from the haplotagged tumour reads ([`pysam`](https://github.com/pysam-developers/pysam))
+
 **2ii) Tumour only mode: small variant calling:**
 
 a. Calling Germline SNPs and somatic SNVs ([`ClairS-TO`](https://github.com/HKU-BAL/ClairS-TO))
 
 b. Phasing and Haplotagging germline SNPs in tumour BAM ([`LongPhase`](https://github.com/twolinin/longphase))
 
+c. Phasing somatic SNVs and indels from the haplotagged tumour reads ([`pysam`](https://github.com/pysam-developers/pysam))
+
 **3) Large variant calling:**
 
 a. Somatic structural variant calling ([`Severus`](https://github.com/KolmogorovLab/Severus))
 
-b. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
+b. Somatic structural variant and copy-number calling ([`SAVANA`](https://github.com/cortes-ciriano-lab/savana))
+
+c. Copy number alterion calling; long read version of ([`ASCAT`](https://github.com/VanLoo-lab/ascat))
 
 **4) Annotation:**
 
-a. Small variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep))
+a. Small variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep)), with pathogenicity and clinical-significance plugins: [`AlphaMissense`](https://github.com/google-deepmind/alphamissense), [`ClinVar`](https://www.ncbi.nlm.nih.gov/clinvar/), [`REVEL`](https://sites.google.com/site/revelgenomics/), [`SIFT`/`PolyPhen`](https://github.com/Ensembl/VEP_plugins), and optionally [`CADD`](https://cadd.gs.washington.edu/) and [`EVE`](https://evemodel.org/)
 
 b. Structural variant annotation ([`VEP`](https://github.com/Ensembl/ensembl-vep))
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/guidelines/graphic_design/workflow_diagrams#examples for examples.   -->
+c. Somatic SV and CNA functional annotation ([`Padfoot`](https://github.com/KolmogorovLab/Padfoot))
+
+**5) Visualisation:**
+
+a. Rearrangement and copy-number figures per CN/SV caller pair ([`ReConPlot`](https://github.com/cortes-ciriano-lab/ReConPlot))
+
+**6) Chromothripsis:**
+
+a. Chromothripsis calls with PCAWG confidence tiers per CN/SV caller pair ([`ShatterSeek`](https://github.com/parklab/ShatterSeek))
 
 ## Usage
 
@@ -82,7 +95,7 @@ sample3,tumour.bam,,pb,male,n
 sample4,tumour.bam,normal.bam,pb,male,y
 ```
 
-Each row represents a sample. The bam files should always be unaligned bam files. All fields except for `bam_normal` are required. If `bam_normal` is empty, the pipeline will run in tumour only mode. `platform` should be either `ont` or `pb` for Oxford Nanopore Sequencing or PacBio sequencing, respectively. `sex` refers to the biological sex of the sample and should be either `female` or `male`. Finally, `fiber` specifies whether your sample is Fiber-seq data or not and should have either `y` for Yes or `n` for No.
+Each row is a sample. BAMs/CRAMs may be unaligned or aligned (every input is realigned unless `--skip_alignment` is set), all fields except `bam_normal` are required, and an empty `bam_normal` runs the sample in tumour-only mode. `platform` is `ont` or `pb`, `sex` is `female` or `male`, and `fiber` is `y` or `n` for Fiber-seq; see the [usage documentation](/docs/usage.md#full-description-of-samplesheet-columns).
 
 Now, you can run the pipeline using:
 
@@ -100,13 +113,13 @@ More detail is given in our [usage documentation](/docs/usage.md)
 
 ## Credits
 
-IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, Laurens Lambrechts, and Jonas Demeulemeester.
+IntGenomicsLab/lr_somatic was originally written by Luuk Harbers, Robert Forsyth, Amber Verhasselt, Alexandra Pančíková, Marios Eftychiou, Ruben Cools, Laurens Lambrechts, and Jonas Demeulemeester.
 
 ## Pipeline output
 
-This pipeline produces a series of different output files. The main output is an aligned and phased tumour bam file. This bam file can be used by any typical downstream tool that uses bam files as input. Furthermore, we have sample-specific QC outputs from `cramino` (fastq), `cramino` (bam), `mosdepth`, `samtools` (stats/flagstat/idxstats), and optionally `fibertools`. Finally, we have a `multiqc` report from that combines the output from `mosdepth` and `samtools` into one html report.
+The main output is an aligned and phased tumour BAM, per-sample QC from `cramino`, `mosdepth`, `samtools` and optionally `fibertools`, a MultiQC report, and a self-contained per-sample HTML report (`<sample>/report/<sample>_report.html`; disable it with `--skip_report`).
 
-Besides QC and the aligned and phased bam file, we have output from (structural) variant and copy number callers, of which some are optional. The output from these variant callers can be found in their respective folders. For small and structural variant callers (`clairS`, `clairS-TO`, and `severus`) these will contain, among others, `vcf` files with called variants. For `ascat` these contain files with final copy number information and plots of the copy number profiles.
+Variant and copy number callers (`clairS`, `clairS-TO`, `severus`, `savana`, `ascat`) write to their own folders; Padfoot annotations, ReConPlot figures and ShatterSeek chromothripsis calls go to `padfoot/`, `reconplot/` and `shatterseek/`, one subfolder per caller pair. See the [output documentation](/docs/output.md).
 
 Example output directory structure:
 
@@ -114,6 +127,9 @@ Example output directory structure:
 ├── Sample 1
 │    ├── ascat
 │    ├── bamfiles
+│    ├── padfoot
+│    │   ├── savana
+│    │   └── severus_wakhan
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -121,17 +137,30 @@ Example output directory structure:
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
+│    ├── reconplot
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
+│    ├── shatterseek
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
 │    ├── variants
 │    │   ├──clairS-TO
 │    │   ├──severus
+│    │   ├──savana
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic
 │    │   ├── SVs
+│    ├── report
 │
 ├── Sample 2
 │    ├── ascat
 │    ├── bamfiles
+│    ├── padfoot
+│    │   ├── savana
+│    │   └── severus_wakhan
 │    ├── qc
 │    │    ├── tumor
 │    │    │   ├── cramino_aln
@@ -145,10 +174,19 @@ Example output directory structure:
 │    │    │   ├── fibertoolsrs
 │    │    │   ├── mosdepth
 │    │    │   ├── samtools
+│    ├── reconplot
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
+│    ├── shatterseek
+│    │   ├── savana
+│    │   ├── severus_ascat
+│    │   └── severus_wakhan
 │    ├── variants
 │    │   ├── clair3
 │    │   ├── clairS
 │    │   ├── severus
+│    │   ├── savana
 │    ├── vep
 │    │   ├── germline
 │    │   ├── somatic

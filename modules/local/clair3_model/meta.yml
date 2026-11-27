@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "clair3_model"
+description: Download a Clair3 v2 (PyTorch) model directory that is not bundled with the Clair3 image
+keywords:
+  - clair3
+  - model
+  - download
+tools:
+  - "wget":
+      description: "GNU Wget is a free software package for retrieving files using HTTP, HTTPS, FTP and FTPS"
+      homepage: "https://www.gnu.org/software/wget/"
+      documentation: "https://www.gnu.org/software/wget/manual/wget.html"
+      licence: ["GPL-3.0-or-later"]
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map whose id is the Clair3 model name, e.g. `[ id:'r1041_e82_400bps_sup_v430' ]`
+    - url:
+        type: string
+        description: URL of the model directory holding pileup.pt and full_alignment.pt
+
+output:
+  model:
+    - - meta:
+          type: map
+          description: Groovy Map whose id is the Clair3 model name
+      - "${meta.id}":
+          type: directory
+          description: Clair3 model directory with pileup.pt and full_alignment.pt
+  versions_wget:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - wget:
+          type: string
+          description: The name of the tool
+      - wget --version | head -1 | cut -d " " -f 3:
+          type: eval
+          description: The expression to obtain the version of the tool
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - wget:
+          type: string
+          description: The name of the tool
+      - wget --version | head -1 | cut -d " " -f 3:
+          type: eval
+          description: The expression to obtain the version of the tool
+
+authors:
+  - "@ljwharbers"
+maintainers:
+  - "@ljwharbers"

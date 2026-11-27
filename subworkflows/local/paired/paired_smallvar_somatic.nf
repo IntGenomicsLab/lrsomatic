@@ -1,11 +1,13 @@
 // IMPORT MODULES
+include { BCFTOOLS_VIEW as CLAIRS_PASS_FILTER      } from '../../../modules/nf-core/bcftools/view/main'
+include { DEEPSOMATIC_FILTER as DEEPSOMATIC_PASS_FILTER } from '../../../modules/local/deepsomatic/filter/main'
 include { CLAIRS                    } from '../../../modules/local/clairs/main.nf'
 include { BCFTOOLS_CONCAT           } from '../../../modules/nf-core/bcftools/concat'
 include { BCFTOOLS_SORT             } from '../../../modules/nf-core/bcftools/sort'
 
 // IMPORT SUBWORKFLOWS
-include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic.nf'
-include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus.nf'
+include { DEEPSOMATIC                                    } from '../../../subworkflows/local/deepsomatic/main.nf'
+include { SMALL_VARIANT_CONSENSUS as SOMATIC_CONSENSUS   } from '../../../subworkflows/local/small_variant_consensus/main.nf'
 
 workflow PAIRED_SMALLVAR_SOMATIC {
 
@@ -71,8 +73,15 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             BCFTOOLS_CONCAT.out.vcf
         )
 
-        BCFTOOLS_SORT.out.vcf
-            .join(BCFTOOLS_SORT.out.tbi)
+        // PASS-only copy for downstream steps; published VCFs are untouched.
+        def clairs_vcf = BCFTOOLS_SORT.out.vcf.join(BCFTOOLS_SORT.out.index)
+        if (params.smallvar_filter_pass) {
+            CLAIRS_PASS_FILTER ( clairs_vcf, [], [], [] )
+            clairs_vcf = CLAIRS_PASS_FILTER.out.vcf
+                .join(CLAIRS_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+        }
+
+        clairs_vcf
             .map { meta, vcf , tbi ->
                 def new_meta = meta + [caller:'clairs']
                 return [new_meta, vcf, tbi]
@@ -109,8 +118,12 @@ workflow PAIRED_SMALLVAR_SOMATIC {
             ds_pon_channel
         )
 
-        DEEPSOMATIC.out.vcf
-            .join(DEEPSOMATIC.out.vcf_index)
+        // Filtered copy for downstream steps; published VCFs are untouched.
+        DEEPSOMATIC_PASS_FILTER ( DEEPSOMATIC.out.vcf.join(DEEPSOMATIC.out.vcf_index, failOnMismatch: true, failOnDuplicate: true) )
+        def deepsomatic_vcf = DEEPSOMATIC_PASS_FILTER.out.vcf
+            .join(DEEPSOMATIC_PASS_FILTER.out.index, failOnMismatch: true, failOnDuplicate: true)
+
+        deepsomatic_vcf
             .map{ meta, vcf, tbi ->
                 def new_meta = meta + [caller:'deepsomatic']
                 return [new_meta, vcf, tbi]
@@ -160,8 +173,7 @@ workflow PAIRED_SMALLVAR_SOMATIC {
                             'fiber',
                             'clair3_model',
                             'clairS_model',
-                            'clairSTO_model',
-                            'kinetics')
+                            'clairSTO_model')
             return[new_meta, vcf, tbi]
         }
         .set{somatic_vcf}

@@ -14,6 +14,14 @@
 
 ## Pipeline tools
 
+- [AlphaMissense](https://doi.org/10.1126/science.adg7492)
+
+  > Cheng J, Novati G, Pan J, Bycroft C, Žemgulytė A, Applebaum T, Pritzel A, Wong LH, Zielinski M, Sargeant T, Schneider RG, Senior AW, Jumper J, Hassabis D, Kohli P, Avsec Ž. Accurate proteome-wide missense variant effect prediction with AlphaMissense. Science. 2023 Sep 22;381(6664):eadg7492. doi: 10.1126/science.adg7492.
+
+- [AmpliconClassifier](https://doi.org/10.1038/s41586-023-05937-5)
+
+  > Luebeck, J., Ng, A.W.T., Galipeau, P.C. et al. Extrachromosomal DNA in the cancerous transformation of Barrett's oesophagus. Nature 616, 798-805 (2023). https://doi.org/10.1038/s41586-023-05937-5
+
 - [ASCAT](https://pubmed.ncbi.nlm.nih.gov/20837533/)
 
   > Van Loo P, Nordgard SH, Lingjærde OC, Russnes HG, Rye IH, Sun W, Weigman VJ, Marynen P, Zetterberg A, Naume B, Perou CM, Børresen-Dale AL, Kristensen VN. Allele-specific copy number analysis of tumors. Proc Natl Acad Sci U S A. 2010 Sep 28;107(39):16910-5. doi: 10.1073/pnas.1009843107. Epub 2010 Sep 13. PubMed PMID: 20837533; PubMed Central PMCID: PMC2947907.
@@ -21,6 +29,10 @@
 - [bcftools](https://pubmed.ncbi.nlm.nih.gov/33590861/)
 
   > Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H. Twelve years of SAMtools and BCFtools. Gigascience. 2021 Feb 16;10(2):giab008. doi: 10.1093/gigascience/giab008. PMID: 33590861; PMCID: PMC7931819.
+
+- [CADD](https://doi.org/10.1093/nar/gkad989)
+
+  > Schubach M, Maass T, Nazaretyan L, Röner S, Kircher M. CADD v1.7: using protein language models, regulatory CNNs and other nucleotide-level scores to improve genome-wide variant predictions. Nucleic Acids Res. 2024 Jan 5;52(D1):D1143-D1154. doi: 10.1093/nar/gkad989.
 
 - [Clair3](https://www.nature.com/articles/s43588-022-00387-x)
 
@@ -34,21 +46,45 @@
 
   > Chen L, Zheng Z, Su J, Yu X, Wong AOK, Zhang J, Lee YL, Luo R. ClairS-TO: a deep-learning method for long-read tumor-only somatic small variant calling. Nat Commun. 2025 Oct 31;16(1):9630. doi: 10.1038/s41467-025-64547-z. PMID: 41173866; PMCID: PMC12579226.
 
+- [ClinVar](https://doi.org/10.1093/nar/gkx1153)
+
+  > Landrum MJ, Lee JM, Benson M, Brown GR, Chao C, Chitipiralla S, Gu B, Hart J, Hoffman D, Jang W, Karapetyan K, Katz K, Liu C, Maddipatla Z, Malheiro A, McDaniel K, Ovetsky M, Riley G, Zhou G, Holmes JB, Kattman BL, Maglott DR. ClinVar: improving access to variant interpretations and supporting evidence. Nucleic Acids Res. 2018 Jan 4;46(D1):D1062-D1067. doi: 10.1093/nar/gkx1153.
+
+- [CoRAL](https://doi.org/10.1101/gr.279131.124)
+
+  > Zhu, K., Jones, M.G., Luebeck, J. et al. CoRAL accurately resolves extrachromosomal DNA genome structures with long-read sequencing. Genome Res. 34, 1344-1354 (2024). https://doi.org/10.1101/gr.279131.124
+
 - [cramino](https://github.com/wdecoster/cramino)
 
   > De Coster W. cramino: A fast and simple tool for quality control of long read sequencing data [Software]. GitHub. https://github.com/wdecoster/cramino
+
+- [Dfam](https://pubmed.ncbi.nlm.nih.gov/33436076/)
+
+  > Storer J, Hubley R, Rosen J, Wheeler TJ, Smit AF. The Dfam community resource of transposable element families, sequence models, and genome annotations. Mob DNA. 2021 Jan 11;12(1):2. doi: 10.1186/s13100-020-00230-y. PubMed PMID: 33436076; PubMed Central PMCID: PMC7805199.
 
 - [Ensembl VEP](https://pubmed.ncbi.nlm.nih.gov/27268795/)
 
   > McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GR, Thormann A, Flicek P, Cunningham F. The Ensembl Variant Effect Predictor. Genome Biol. 2016 Jun 6;17(1):122. doi: 10.1186/s13059-016-0974-4. PubMed PMID: 27268795; PubMed Central PMCID: PMC4893825.
 
+- [EVE](https://doi.org/10.1038/s41586-021-04043-8)
+
+  > Frazer J, Notin P, Dias M, Gomez A, Min JK, Brock K, Gal Y, Marks DS. Disease variant prediction with deep generative models of evolutionary data. Nature. 2021 Nov;599(7883):91-95. doi: 10.1038/s41586-021-04043-8.
+
 - [fibertools-rs](https://doi.org/10.1101/gr.279095.124)
 
   > Jha, A., Bohaczuk, S. C., Mao, Y., Ranchalis, J., Mallory, B. J., Min, A. T., Hamm, M. O., Swanson, E., Dubocanin, D., Finkbeiner, C., Li, T., Whittington, D., Noble, W. S., Stergachis, A. B., & Vollger, M. R. (2024). DNA-m6A calling and integrated long-read epigenetic and genetic analysis with fibertools. Genome Research.
 
+- [ggplot2](https://ggplot2.tidyverse.org)
+
+  > Wickham H. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016. ISBN 978-3-319-24277-4. https://ggplot2.tidyverse.org
+
 - [LongPhase](https://pubmed.ncbi.nlm.nih.gov/35104333/)
 
   > Lin JH, Chen LC, Yu SC, Huang YT. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics. 2022 Apr 28;38(9):2452-2455. doi: 10.1093/bioinformatics/btac126. PubMed PMID: 35253834; PubMed Central PMCID: PMC9048675.
+
+- [lrsomatic_report](https://github.com/ljwharbers/lrsomatic_report)
+
+  > Standalone R/Quarto reporting tool that renders the pipeline's final per-sample HTML report. https://github.com/ljwharbers/lrsomatic_report
 
 - [minimap2](https://pubmed.ncbi.nlm.nih.gov/29750242/)
 
@@ -66,6 +102,42 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+- [NanoPlot](https://pubmed.ncbi.nlm.nih.gov/37171891/)
+
+  > De Coster W, Rademakers R. NanoPack2: population-scale evaluation of long-read sequencing data. Bioinformatics. 2023 May 4;39(5):btad311. doi: 10.1093/bioinformatics/btad311. PubMed PMID: 37171891; PubMed Central PMCID: PMC10196664.
+
+- [Padfoot](https://github.com/KolmogorovLab/Padfoot)
+
+  > Functional annotation of somatic structural variants and copy number alterations from long-read cancer genomes [Software]. GitHub. https://github.com/KolmogorovLab/Padfoot
+
+- [PolyPhen-2](https://doi.org/10.1038/nmeth0410-248)
+
+  > Adzhubei IA, Schmidt S, Peshkin L, Ramensky VE, Gerasimova A, Bork P, Kondrashov AS, Sunyaev SR. A method and server for predicting damaging missense mutations. Nat Methods. 2010 Apr;7(4):248-9. doi: 10.1038/nmeth0410-248.
+
+- [pysam](https://github.com/pysam-developers/pysam)
+
+  > Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, Keane T, Davies RM. HTSlib: C library for reading/writing high-throughput sequencing data. GigaScience. 2021 Feb 16;10(2):giab007. doi: 10.1093/gigascience/giab007.
+
+- [R](https://www.R-project.org/)
+
+  > R Core Team. R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna, Austria. https://www.R-project.org/
+
+- [ReConPlot](https://pubmed.ncbi.nlm.nih.gov/38058190/)
+
+  > Espejo Valle-Inclán J, Cortés-Ciriano I. ReConPlot: an R package for the visualization and interpretation of genomic rearrangements. Bioinformatics. 2023 Dec 1;39(12):btad719. doi: 10.1093/bioinformatics/btad719. PubMed PMID: 38058190; PubMed Central PMCID: PMC10710371.
+
+- [ShatterSeek](https://pubmed.ncbi.nlm.nih.gov/32025003/)
+
+  > Cortés-Ciriano I, Lee JJ, Xi R, Jain D, Jung YL, Yang L, Gordenin D, Klimczak LJ, Zhang CZ, Pellman DS; PCAWG Structural Variation Working Group; Park PJ; PCAWG Consortium. Comprehensive analysis of chromothripsis in 2,658 human cancers using whole-genome sequencing. Nat Genet. 2020 Mar;52(3):331-341. doi: 10.1038/s41588-019-0576-7. PubMed PMID: 32025003; PubMed Central PMCID: PMC7058534.
+
+- [RepeatMasker](https://www.repeatmasker.org/)
+
+  > Smit AFA, Hubley R, Green P. RepeatMasker Open-4.0 [Software]. https://www.repeatmasker.org/
+
+- [REVEL](https://doi.org/10.1016/j.ajhg.2016.08.016)
+
+  > Ioannidis NM, Rothstein JH, Pejaver V, Middha S, McDonnell SK, Baheti S, Musolf A, Li Q, Holzinger E, Karyadi D, Cannon-Albright LA, Teerlink CC, Stanford JL, Isaacs WB, Xu J, Cooney KA, Lange EM, Schleutker J, Carpten JD, Powell IJ, Cussenot O, Cancel-Tassin G, Giles GG, MacInnis RJ, Maier C, Hsieh CL, Wiklund F, Catalona WJ, Foulkes WD, Mandal D, Eeles RA, Kote-Jarai Z, Bustamante CD, Schaid DJ, Hastie T, Ostrander EA, Bailey-Wilson JE, Radivojac P, Thibodeau SN, Whittemore AS, Sieh W. REVEL: An Ensemble Method for Predicting the Pathogenicity of Rare Missense Variants. Am J Hum Genet. 2016 Oct 6;99(4):877-885. doi: 10.1016/j.ajhg.2016.08.016.
+
 - [SAMtools](https://pubmed.ncbi.nlm.nih.gov/19505943/)
 
   > Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, Marth G, Abecasis G, Durbin R; 1000 Genome Project Data Processing Subgroup. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009 Aug 15;25(16):2078-9. doi: 10.1093/bioinformatics/btp352. Epub 2009 Jun 8. PubMed PMID: 19505943; PubMed Central PMCID: PMC2723002.
@@ -73,6 +145,22 @@
 - [Severus](https://www.nature.com/articles/s41587-025-02618-8)
 
   > Keskus, A.G., Bryant, A., Ahmad, T. et al. Severus detects somatic structural variation and complex rearrangements in cancer genomes using long-read sequencing. Nat Biotechnol (2025). https://doi.org/10.1038/s41587-025-02618-8
+
+- [SAVANA](https://www.nature.com/articles/s41592-025-02708-0)
+
+  > Elrick, H. et al. SAVANA: reliable analysis of somatic structural variants and copy number aberrations using long-read sequencing. Nat Methods (2025). https://doi.org/10.1038/s41592-025-02708-0
+
+- [SIFT](https://doi.org/10.1093/nar/gkg509)
+
+  > Ng PC, Henikoff S. SIFT: Predicting amino acid changes that affect protein function. Nucleic Acids Res. 2003 Jul 1;31(13):3812-4. doi: 10.1093/nar/gkg509.
+
+- [SigProfilerAssignment](https://pubmed.ncbi.nlm.nih.gov/38096571/)
+
+  > Díaz-Gay M, Vangara R, Barnes M, Wang X, Islam SMA, Vermes I, Duke S, Narasimman NB, Yang T, Jiang Z, Moody S, Senkin S, Brennan P, Stratton MR, Alexandrov LB. Assigning mutational signatures to individual samples and individual somatic mutations with SigProfilerAssignment. Bioinformatics. 2023 Dec 1;39(12):btad756. doi: 10.1093/bioinformatics/btad756. PubMed PMID: 38096571; PubMed Central PMCID: PMC10733897.
+
+- [SigProfilerMatrixGenerator](https://pubmed.ncbi.nlm.nih.gov/31470794/)
+
+  > Bergstrom EN, Huang MN, Mahto U, Barnes M, Stratton MR, Rozen SG, Alexandrov LB. SigProfilerMatrixGenerator: a tool for visualizing and exploring patterns of small mutational events. BMC Genomics. 2019 Aug 30;20(1):685. doi: 10.1186/s12864-019-6041-2. PubMed PMID: 31470794; PubMed Central PMCID: PMC6717374.
 
 - [Wakhan](https://github.com/KolmogorovLab/Wakhan)
 
@@ -102,6 +190,47 @@
 
 ## Resources
 
+- [Hartwig Medical Foundation (WiGiTS / oncoanalyser) resources](https://github.com/hartwigmedical/hmftools)
+
+  Hosted for GRCh38 and CHM13 in IntGenomicsLab/test-datasets (`references/hmf/`), or user-supplied (`--report_hmf_*`): the driver gene panel, known fusions, hotspots,
+  actionable coding panel and Ensembl data cache of the oncoanalyser resource bundle, whose
+  reporting rules the report's HMF section re-implements from PURPLE and LINX.
+  On CHM13 they are lifted over with the T2T consortium's GRCh38 -> T2T-CHM13v2.0 chain ([`grch38-chm13v2.chain`](https://github.com/marbl/CHM13), public domain).
+
+  > Nurk S, Koren S, Rhie A, et al. The complete sequence of a human genome. Science. 2022;376(6588):44-53. doi: 10.1126/science.abj6987
+
+  > Priestley P, Baber J, Lolkema MP, et al. Pan-cancer whole-genome analyses of metastatic solid tumours. Nature. 2019;575(7781):210-216. doi: 10.1038/s41586-019-1689-y
+
+  > Shale C, Cameron DL, Baber J, et al. Unscrambling cancer genomes via integrated analysis of structural variation and copy number. Cell Genomics. 2022;2(4):100112. doi: 10.1016/j.xgen.2022.100112
+
+- [AlphaMissense Database](https://console.cloud.google.com/storage/browser/dm_alphamissense)
+
+  VEP plugin data, fetched by default via `--vep_alphamissense` (GRCh38) or
+  `--vep_alphamissense_aa` (CHM13). AlphaMissense Database, Copyright (2023) DeepMind Technologies
+  Limited, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode). Provided for
+  theoretical modelling only, and not a substitute for professional medical advice, diagnosis or
+  treatment.
+
+  On GRCh38 the score file is used unchanged, with a tabix index we host. On CHM13 the pipeline
+  distributes **an adaptation**: the protein-space release re-keyed from UniProt accession to gene
+  symbol, split into reference/position/alternate amino-acid columns, deduplicated and
+  tabix-indexed; rows without a gene symbol are dropped and **no score is altered**. CC BY 4.0
+  permits this with attribution and this indication of the changes made.
+
+- [Ensembl pangenome PolyPhen/SIFT database](https://ftp.ensembl.org/pub/release-115/variation/pangenomes/Human/)
+
+  VEP plugin data for the `PolyPhen_SIFT` plugin, fetched by default on `--genome CHM13` via
+  `--vep_polyphen_sift_db`. This is how SIFT and PolyPhen predictions reach T2T-CHM13, since the
+  lookup is keyed on the MD5 of the peptide sequence rather than on genome coordinates.
+
+- [UniProt ID mapping](https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/)
+
+  The source of the gene symbols in the protein-space AlphaMissense table above. Not fetched at
+  runtime: it is an input to the table the pipeline distributes. UniProtKB is licensed
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode).
+
 - [ASAP Panel of Normals](https://www.biorxiv.org/content/10.64898/2026.03.15.711881v1)
+
+  Used for the ClairS-TO CHM13 panel of normals, and merged with the 1000 Genomes CHM13 panel to form the SEVERUS structural-variant panel of normals used for `--genome CHM13`.
 
   > Olga M. Sigalova, Alexandra Pančíková, Julie De Man, Koen Theunis, Gert J. Hulselmans, Vasileios Konstantakos, Bram Stuyven, Anton De Brabandere, Jarne Geurts, Antonina Mikorska, Shinjini Mukherjee, Sara Abouelasrar Salama, Katy Vandereyken, Kristofer Davie, Lukas Mahieu, Charles H. Adler, Thomas G. Beach, Geidy E. Serrano, Thierry Voet, Jonas Demeulemeester, Stein Aerts. Modeling cis-regulatory variation in human brain enhancers across a large Parkinson’s Disease cohort bioRxiv 2026.03.15.711881; doi: https://doi.org/10.64898/2026.03.15.711881

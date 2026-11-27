@@ -3,7 +3,7 @@ process LONGPHASE_PHASE {
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/83/83fce1d397cf71705cc096fc0e0e52f7013bdd471ef68ee53ae765688e5c439c/data':
         'community.wave.seqera.io/library/longphase_samtools:8c61296cae7a5fc0' }"
 
@@ -62,15 +62,13 @@ process LONGPHASE_PHASE {
 
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
+    def sv_command = svs ? "echo '' | bgzip -c > ${prefix}_SV.vcf.gz && touch ${prefix}_SV.vcf.gz.tbi" : ""
+    def mod_command = mods ? "echo '' | bgzip -c > ${prefix}_mod.vcf.gz && touch ${prefix}_mod.vcf.gz.tbi" : ""
     """
-      tabix -p vcf ${prefix}.vcf.gz
+    echo "" | bgzip -c > ${prefix}.vcf.gz
+    touch ${prefix}.vcf.gz.tbi
 
-    if [ -f ${prefix}_SV.vcf.gz ]; then
-        tabix -p vcf ${prefix}_SV.vcf.gz
-    fi
-
-    if [ -f ${prefix}_mod.vcf.gz ]; then
-        tabix -p vcf ${prefix}_mod.vcf.gz
-    fi
+    $sv_command
+    $mod_command
     """
 }

@@ -1,0 +1,280 @@
+nextflow_function {
+
+    name "Test the fibertools-rs input selection"
+    script "../main.nf"
+    // "small" is what .github/workflows/nf-test.yml selects on for pull_request
+    tag "small"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "utils_nfcore_lrsomatic_pipeline"
+    tag "cram_input"
+
+    // fibertoolsReadsInput decides which samples FIBERSEQ hands to fibertools-rs, so the workflow prepares aligned
+    // input (SAMTOOLS_VIEW_FIBERPREP) for exactly these. fiberStepsSkipped sets aside the fiber-seq rows whose reads
+    // carry no m6A calls and get none predicted (m6aPredicted, the FIBERTOOLSRS_PREDICTM6A branch).
+
+    test("fiber-seq row - read by fibertools-rs") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = ''
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio kinetics, not fiber-seq - read for m6A prediction") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'n' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio kinetics, not fiber-seq, --skip_m6a - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = true
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'n' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("fiber-seq normal, --skip_normalfiber - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = true
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'normal', platform:'pb', fiber:'y' ]
+                input[1] = 'true'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("fiber-seq row, --skip_fiber - not read") {
+
+        function "fibertoolsReadsInput"
+
+        when {
+            params {
+                skip_fiber       = true
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = ''
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("ONT fiber-seq row without m6A calls - fiber steps skipped") {
+
+        function "fiberStepsSkipped"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = 'false'
+                input[2] = 'false'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio fiber-seq row without kinetics or m6A calls - fiber steps skipped") {
+
+        function "fiberStepsSkipped"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'y' ]
+                input[1] = 'false'
+                input[2] = 'false'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("PacBio fiber-seq row with kinetics, no m6A calls yet - m6A predicted, fiber steps run") {
+
+        function "fiberStepsSkipped"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'y' ]
+                input[1] = 'true'
+                input[2] = 'false'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+
+    test("PacBio fiber-seq row with kinetics, no m6A calls, --skip_m6a - fiber steps skipped") {
+
+        function "fiberStepsSkipped"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = true
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'pb', fiber:'y' ]
+                input[1] = 'true'
+                input[2] = 'false'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == true }
+            )
+        }
+    }
+
+    test("ONT fiber-seq row, m6A calls unknown - fiber steps run") {
+
+        function "fiberStepsSkipped"
+
+        when {
+            params {
+                skip_fiber       = false
+                skip_normalfiber = false
+                skip_m6a         = false
+            }
+            function {
+                """
+                input[0] = [ id:'s1', type:'tumor', platform:'ont', fiber:'y' ]
+                input[1] = ''
+                input[2] = 'unknown'
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert function.success },
+                { assert function.result == false }
+            )
+        }
+    }
+}

@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "coral_plot"
+description: Render per-amplicon copy-number and cycle plots.
+keywords:
+  - ecdna
+  - amplicon
+  - visualisation
+tools:
+  - "coral":
+      description: "Reconstructs extrachromosomal DNA structures from long-read sequencing."
+      homepage: "https://github.com/AmpliconSuite/CoRAL"
+      documentation: "https://github.com/AmpliconSuite/CoRAL"
+      doi: "10.1101/gr.279131.124"
+      licence: ["BSD-3-Clause"]
+      identifier: ""
+
+## No environment.yml: CoRAL is not on bioconda -- the `coral` recipe there is an unrelated
+## RNA-seq read-bridging tool. Built from a fork adding T2T-CHM13 support and two SCIP fixes
+## (https://github.com/robert-a-forsyth/CoRAL, branch chm13-support).
+
+input:
+  - - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - reconstruction:
+        type: directory
+        description: Output directory from `coral reconstruct`
+    - bam:
+        type: file
+        description: Tumour BAM, for the coverage track
+        pattern: "*.bam"
+    - bai:
+        type: file
+        description: BAM index
+        pattern: "*.bai"
+  - - coral_ref:
+        type: string
+        description: Reference genome name, one of hg19, hg38, mm10, t2t
+
+output:
+  plots:
+    - meta:
+        type: map
+        description: Groovy Map containing sample information
+    - "*_amplicon*.{pdf,png}":
+        type: file
+        description: Per-amplicon graph and cycle plots
+        pattern: "*_amplicon*.{pdf,png}"
+  versions_coral:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: Process name
+      - coral:
+          type: string
+          description: Tool name
+      - version:
+          type: string
+          description: Tool version
+
+authors:
+  - "@robert-a-forsyth"
+maintainers:
+  - "@robert-a-forsyth"

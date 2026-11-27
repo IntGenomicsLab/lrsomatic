@@ -1,0 +1,149 @@
+nextflow_process {
+
+    name "Test Process METAEXTRACT on CRAM input"
+    script "../../modules/local/metaextract/main.nf"
+    process "METAEXTRACT"
+
+    tag "modules"
+    tag "metaextract"
+    tag "cram_input"
+    tag "small"
+
+    // Lives in tests/modules so PR CI runs it (see severus_whitelist.nf.test). The CRAMs are built from the CHM13 chr19
+    // HiFi test BAM: aligned with and without the reference embedded, and unaligned. GRCh38_chr19.fasta.gz shares the
+    // contig name chr19 under a different M5, so it stands in for a --fasta of another assembly. METAEXTRACT gets the
+    // FASTA as the pipeline gives it, gzipped.
+
+    setup {
+        run("CRAM_FIXTURES") {
+            script "./cram_fixtures.nf"
+            process {
+                """
+                input[0] = [
+                    [ id:'HS578T' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true),
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+    }
+
+    test("CRAMs of the FASTA's assembly - decoded with --fasta when aligned") {
+
+        when {
+            process {
+                """
+                input[0] = CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded', platform:'pb' ], cram ] }
+                    .mix(CRAM_FIXTURES.out.noref.map { _meta, cram -> [ [ id:'noref', platform:'pb' ], cram ] })
+                    .mix(CRAM_FIXTURES.out.unaligned.map { _meta, cram -> [ [ id:'unaligned', platform:'pb' ], cram ] })
+                input[1] = [
+                    [ id:'fasta' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/CHM13V2_maskedY_rCRS_chr19.fa.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_input.collectEntries { meta, value -> [ (meta.id): value ] }
+            def m6a     = process.out.m6a_calls.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert decode == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
+                { assert aligned == [ embedded: 'true', noref: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" },
+                // the test BAM has no MM tags; 'false', not 'unknown', means the records were read, the no-reference CRAM too
+                { assert m6a == [ embedded: 'false', noref: 'false', unaligned: 'false' ] : "m6a_calls: ${m6a}" }
+            )
+        }
+    }
+
+    test("CRAMs of another assembly than the FASTA - never decoded with --fasta") {
+
+        when {
+            process {
+                """
+                input[0] = CRAM_FIXTURES.out.embedded.map { _meta, cram -> [ [ id:'embedded', platform:'pb' ], cram ] }
+                    .mix(CRAM_FIXTURES.out.unaligned.map { _meta, cram -> [ [ id:'unaligned', platform:'pb' ], cram ] })
+                input[1] = [
+                    [ id:'fasta' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/references/GRCh38_chr19.fasta.gz', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            def decode  = process.out.decode_with_fasta.collectEntries { meta, value -> [ (meta.id): value ] }
+            def aligned = process.out.aligned_input.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert decode == [ embedded: 'false', unaligned: 'false' ] : "decode_with_fasta: ${decode}" },
+                { assert aligned == [ embedded: 'true', unaligned: 'false' ] : "aligned_input: ${aligned}" }
+            )
+        }
+    }
+
+    test("aligned BAM input - no FASTA, no M5 check, aligned") {
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'bam', platform:'pb' ],
+                    file('https://raw.githubusercontent.com/IntGenomicsLab/test-datasets/main/data/aligned/HS578T_HIFI_CHM13_chr19.bam', checkIfExists: true)
+                ]
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert process.out.decode_with_fasta == [ [ [ id:'bam', platform:'pb' ], 'false' ] ] },
+                { assert process.out.aligned_input == [ [ [ id:'bam', platform:'pb' ], 'true' ] ] : "aligned BAM: ${process.out.aligned_input}" }
+            )
+        }
+    }
+
+    // m6a_calls: an m6A entry (A+a, T-a or ChEBI 28871) in the MM tag of any of the first 1000 records. SAM text
+    // stands in for BAM/CRAM; htslib reads the format from the content.
+    test("m6A calls in the MM tags - true, false, unknown") {
+
+        when {
+            params {
+                def input_dir = new File("${outputDir}/../m6a_input")
+                input_dir.mkdirs()
+                def header = '@HD\tVN:1.6\tSO:unknown\n'
+                def read = { mm -> "r1\t4\t*\t0\t0\t*\t*\t0\t0\tACGTACGT\t*\tMM:Z:${mm}\tML:B:C,200,200\n" }
+                [
+                    a_plus_a:   header + read('C+m?,0;A+a?,1;'),
+                    t_minus_a:  header + read('C+m?,0;T-a?,1;'),
+                    chebi:      header + read('A+28871?,0,1;'),
+                    cpg_only:   header + read('C+m?,0,1;'),
+                    no_mm:      header + 'r1\t4\t*\t0\t0\t*\t*\t0\t0\tACGTACGT\t*\n',
+                    header_only: header
+                ].each { name, text -> new File(input_dir, "${name}.bam").text = text }
+                m6a_input_dir = input_dir.canonicalPath
+            }
+            process {
+                """
+                input[0] = channel.of('a_plus_a', 't_minus_a', 'chebi', 'cpg_only', 'no_mm', 'header_only')
+                    .map { name -> [ [ id:name, platform:'pb' ], file("\${params.m6a_input_dir}/\${name}.bam", checkIfExists: true) ] }
+                input[1] = [ [:], [] ]
+                """
+            }
+        }
+
+        then {
+            def m6a = process.out.m6a_calls.collectEntries { meta, value -> [ (meta.id): value ] }
+            assertAll(
+                { assert process.success },
+                { assert m6a == [ a_plus_a: 'true', t_minus_a: 'true', chebi: 'true', cpg_only: 'false', no_mm: 'false', header_only: 'unknown' ] : "m6a_calls: ${m6a}" }
+            )
+        }
+    }
+}
