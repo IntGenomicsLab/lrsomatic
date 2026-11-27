@@ -1,0 +1,1585 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Somatic variant calling for Oxford Nanopore and PacBio long-read data.">
+      
+      
+      
+        <link rel="canonical" href="https://intgenomicslab.github.io/lrsomatic/1.2.0/changelog/">
+      
+      
+        <link rel="prev" href="../parameters/">
+      
+      
+        <link rel="next" href="../citations/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets-static/lrsomatic-logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Changelog - lrsomatic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#intgenomicslablrsomatic-changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You are not viewing the docs for the latest release.
+  <a href="../..">
+    <strong>Go to the latest release.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lrsomatic" class="md-header__button md-logo" aria-label="lrsomatic" data-md-component="logo">
+      
+  <img src="../assets-static/lrsomatic-logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lrsomatic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/IntGenomicsLab/lrsomatic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IntGenomicsLab/lrsomatic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../usage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Usage
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../output/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Output
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../parameters/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Parameters
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../citations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Citations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../CONTRIBUTING/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lrsomatic" class="md-nav__button md-logo" aria-label="lrsomatic" data-md-component="logo">
+      
+  <img src="../assets-static/lrsomatic-logo.svg" alt="logo">
+
+    </a>
+    lrsomatic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/IntGenomicsLab/lrsomatic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IntGenomicsLab/lrsomatic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v120-2026-11-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.2.0 - [2026-11-27]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.2.0 - [2026-11-27]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v110-2026-04-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.0 - [2026-04-28]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.1.0 - [2026-04-28]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100-28-nov-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.0.0 - [28 Nov 2025]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.0.0 - [28 Nov 2025]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../citations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Citations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v120-2026-11-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.2.0 - [2026-11-27]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.2.0 - [2026-11-27]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v110-2026-04-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.1.0 - [2026-04-28]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.1.0 - [2026-04-28]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v100-28-nov-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.0.0 - [28 Nov 2025]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.0.0 - [28 Nov 2025]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/IntGenomicsLab/lrsomatic/edit/dev/docs/changelog.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="intgenomicslablrsomatic-changelog">IntGenomicsLab/lrsomatic: Changelog<a class="headerlink" href="#intgenomicslablrsomatic-changelog" title="Permanent link">&para;</a></h1>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="v120-2026-11-27">v1.2.0 - [2026-11-27]<a class="headerlink" href="#v120-2026-11-27" title="Permanent link">&para;</a></h2>
+<h3 id="breaking-changes">Breaking changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nextflow <code>&gt;=26.04.0</code> is required (1.1.0 required <code>&gt;=25.04.0</code>) (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/235">#235</a>).</li>
+<li>Aligned and haplotagged reads are published as CRAM 3.0 with the reference embedded instead of BAM; <code>--aligned_format bam</code> restores BAM (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a>).</li>
+<li><code>--genome GRCh38</code> now aligns to the NCBI no-ALT analysis set instead of the GATK <code>Homo_sapiens_assembly38.fasta</code>, so results are not directly comparable to 1.1.0 GRCh38 runs (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a>).</li>
+<li><code>modkit pileup</code> reports only 5mC at CpG sites by default; <code>--modkit_args=''</code> restores the previous output (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/188">#188</a>).</li>
+<li><code>--ascat_gc_files</code> and <code>--ascat_rt_files</code> are replaced by <code>--ascat_gc_file</code> and <code>--ascat_rt_file</code> (the old names were never read) (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/229">#229</a>).</li>
+</ul>
+<h3 id="added"><code>Added</code><a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/270">#270</a> - <strong>HMF driver annotation</strong> in the report (GRCh38; CHM13 via liftover): <code>--report_hmf_resource_dir</code> (an oncoanalyser resource bundle, v2.x or v3.x) or the individual <code>--report_hmf_driver_panel</code>, <code>--report_hmf_ensembl_data_dir</code>, <code>--report_hmf_known_fusions</code>, <code>--report_hmf_hotspots</code> and <code>--report_hmf_actionable_bed</code> stage Hartwig's driver panel, Ensembl cache, known fusions, hotspots and actionable coding panel into <code>LRSOMATICREPORT</code>, which passes them as the report's <code>--hmf-*</code> flags (built in the module, so <code>ext.args</code> does not drop them). Report 2.3.0 then reports driver small variants per the panel's flags, amplifications/deletions from ASCAT and Wakhan separately plus Severus/SAVANA deletions (each source switchable in the browser), and known fusions with exon ranges and frame, and adds the panel as the <code>hmf_driver</code> gene list. <strong>On by default for GRCh38 and CHM13</strong> (<code>--skip_report_hmf</code> turns it off): the new <code>HMF_BUNDLE</code> (<code>bin/fetch_hmf_bundle.py</code>) downloads and MD5-checks the genome's hosted bundle, about 5 MB, the subset of oncoanalyser v2.2.0 the report reads (IntGenomicsLab/test-datasets <code>references/hmf/v2.2.0/</code>, <code>conf/igenomes.config</code> <code>hmf_bundle_url</code>/<code>hmf_bundle_md5</code>; CHM13 pre-lifted), and publishes it under <code>cache/hmf/</code> for reuse offline; the test profiles skip it. Your own resources take over from it. On <code>--genome CHM13</code> a GRCh38 bundle of your own is lifted over once per run by the new <code>HMF_LIFTOVER</code> (<code>bin/hmf_liftover.py</code>, <code>--report_hmf_liftover_chain</code>, default the T2T consortium's public-domain <code>grch38-chm13v2.chain</code>, downloaded at launch; a local copy offline): whole canonical transcripts only (every exon, one contig and strand, rank order and span kept), hotspot REF re-checked on CHM13, IG/enhancer ranges and the actionable panel lifted; the lifted copy declares <code>REFERENCE t2t</code>, is published under <code>pipeline_info/hmf_liftover/</code> and can be reused as <code>--report_hmf_resource_dir</code>. On any other genome the pipeline warns and skips it; a missing driver panel or Ensembl cache, or CHM13-lifted resources on GRCh38, is a launch error. <code>hmfReportFiles()</code> / <code>hmfAnnotationOk()</code> gate the workflow and the validation alike (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/269">#269</a> - Added <code>--skip_alignment</code> (off by default) to use input BAMs/CRAMs that are already aligned to <code>--fasta</code> instead of realigning them with minimap2. The new <code>PREPARE_ALIGNED</code> module checks that every <code>@SQ</code> contig is in the reference with the same length and that the file is coordinate-sorted, then makes one samtools pass that sets the pipeline's read group, drops old phasing tags (and PacBio kinetics unless <code>--keep_kinetic_data</code>), writes <code>--aligned_format</code> and indexes it. Rows that fibertools-rs reads (Fiber-seq, or PacBio kinetics with m6A prediction) and unaligned rows stop the run with an error that names the row. Realigning stays the recommended path. Includes a module test, <code>-stub</code> pipeline tests and an <code>extended</code> CHM13 run (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/268">#268</a> - The documentation site (https://intgenomicslab.github.io/lrsomatic/) is now versioned with mike and built by the <code>Docs</code> workflow: <code>/latest/</code> follows the newest GitHub release, every release keeps its own <code>/&lt;version&gt;/</code>, and <code>/dev/</code> tracks the dev branch. The MkDocs sources (<code>mkdocs.yml</code>, <code>schema_render.py</code>, <code>docs/</code>) are now in the repository.</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>LRSOMATICREPORT</code> passes the run mode to the report, <code>--run-mode paired</code> when <code>meta.paired_data</code> is set and <code>--run-mode tumour_only</code> otherwise, instead of the report inferring it from whether normal-side QC files were staged (campaign E-F2: a pair run without mosdepth, cramino and samtools stats was badged tumour-only and given the tumour-only caveat). Requires lrsomatic_report &gt;= 2.1.0, which this release pins. The stub writes the flag into its HTML, and the stub pipeline test checks it per sample (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>LRSOMATICREPORT</code> is now also given <code>variants/clairsto/&lt;sample&gt;.verdict_status.tsv</code> (tumour-only) and ReConPlot's <code>--reconplot_regions</code> figures, <code>reconplot/&lt;pair&gt;/focus/*.png</code>, which were published but never staged (<code>RECONPLOT_FIGURES</code> gains a <code>focus</code> emit). Report 2.1.0 renders them as the tumour-only Verdict warning and the "Your regions" block that opens the ReConPlot section. The stub pipeline test now runs with <code>--reconplot_regions</code> and checks both relpaths, and a real-render module test stages both files and checks that the report shows both (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - Tumour-only samples get <code>variants/clairsto/&lt;sample&gt;.verdict_status.tsv</code>, saying whether ClairS-TO's Verdict tagged the calls (<code>applied</code>), ran and tagged nothing (<code>skipped</code>: purity above 0.6, or no purity/ploidy solution) or did not run (<code>not_run</code>), with the purity, ploidy and purity source it used (<code>ascat</code> from <code>CLAIRSTO_VERDICT_TAG</code>, <code>clairsto_internal</code> with <code>--skip_ascat</code>) and Verdict's own reason. Until now a skip was only visible in the task's <code>.command.out</code>, although it leaves <code>somatic.vcf.gz</code> mostly germline on a high-purity tumour (73-93 % of PASS SNVs at VAF &gt;= 0.35 on three 30x samples with ASCAT purity 0.66-0.82). The pipeline log now warns for every <code>skipped</code> or <code>not_run</code> sample, naming it with its purity and source. <code>CLAIRSTO_VERDICT_TAG</code> takes the status from whether Verdict wrote tagged VCFs (it writes them only when it tags); <code>CLAIRSTO</code> from Verdict's tagging logs, which exist only when Verdict ran and carry its skip message. New <code>bin/verdict_status.py</code>, <code>verdictStatusWarning()</code> and tests for both paths (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/243">#243</a> - <code>LRSOMATICREPORT</code> stages every other output the report reads through one generic input, two parallel lists <code>extra_relpaths</code>/<code>extra_files</code>: each file is linked at its published path under the tool's sample directory (<code>&lt;outdir&gt;/&lt;sample&gt;/</code> layout), so a new report input needs no new module slot. The report now also receives SigProfiler activities, fit statistics and matrices, ShatterSeek summaries, the ecDNA outputs (AmpliconClassifier profiles, gene list and result table, the CoRAL seeds, amplicon summary and graph/cycles PNGs), SAVANA's somatic SV VCF (PoN-filtered for PacBio tumour-only), fitted purity/ploidy and VEP annotation, Padfoot's per-pair tables, ReConPlot's PNG figures, Wakhan's top-ranked <code>integer_profile.bed</code> and gene copy-number states, and ASCAT's <code>metrics.txt</code>. Each file stages in its own numbered directory, so per-pair files sharing a base name (Padfoot's <code>by_gene.tsv</code>, ReConPlot's figures) do not collide (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/243">#243</a> - <code>LRSOMATICREPORT</code> publishes <code>&lt;sample&gt;_small_variants.tsv.gz</code> beside the HTML: the full small-variant table, written when the somatic VEP file holds at least one variant. The report tool's new <code>--embed slim|full</code> (which rows the HTML table embeds; default <code>slim</code>) has no pipeline parameter and is passed through <code>ext.args</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/243">#243</a> - New emits for the report: <code>SIGPROFILER_ASSIGNMENT.out.solution_stats</code> (<code>Assignment_Solution/Solution_Stats/*_Samples_Stats.txt</code>), <code>ECDNA.out.{gene_list,result_table,seeds,summary}</code>, <code>PADFOOT_ANNOTATION.out.{annotated_svs,by_gene}</code> and <code>RECONPLOT_FIGURES.out.{genome_wide,per_chromosome}</code>, with assertions in their stub tests, and <code>LRSOMATICREPORT</code> stub tests that same-named files land at their own paths and that mismatched lists fail (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/222">#222</a> - Added ShatterSeek chromothripsis calling for every CN/SV caller pair with output for a sample (ASCAT + Severus, Wakhan + Severus, SAVANA), published to <code>&lt;sample&gt;/shatterseek/&lt;pair&gt;/</code> with a per-chromosome summary, the exact ShatterSeek inputs and a figure per called chromosome; each cluster is labelled with the PCAWG high-confidence tiers (HC1, HC2, HC3; Cortes-Ciriano et al. 2020, ShatterSeek issue #22), with BH q-values at 0.2 and cut-offs overridable through <code>ext.args</code>. The pipeline runs upstream <a href="https://github.com/parklab/ShatterSeek">parklab/ShatterSeek</a> with a build-time patch adding T2T-CHM13, inside <code>docker.io/robertaforsyth/shatterseek</code> (SIF twin <code>oras://docker.io/robertaforsyth/shatterseek-sif</code>, recipe in <code>containers/shatterseek/</code>); the callers are read by the ReConPlot wrapper's parsers. <code>--skip_shatterseek</code>, <code>--shatterseek_genome</code> and <code>--shatterseek_min_svlen</code> (intra-chromosomal SVs shorter than 150 bp are left out by default) control it (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/221">#221</a> - SigProfilerAssignment now also exports the probability of each COSMIC signature for every somatic mutation (<code>Assignment_Solution/Activities/Decomposed_Mutation_Probabilities/</code>), e.g. to attribute a driver mutation to a signature (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/221">#221</a> - Added non-stub <code>SIGPROFILER_ASSIGNMENT</code> nf-tests (tag <code>small</code>) that fit synthetic SBS96, DBS78 and ID83 matrices on GRCh38 and CHM13-T2T and check the per-mutation probabilities of every context (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/204">#204</a> - Added haplotype differential methylation region (DMR) calling: with <code>--modkit_phased</code> set, <code>modkit dmr pair</code> compares methylation between the <code>_hp1</code>/<code>_hp2</code> bedMethyl pileups over CpG islands covered in both haplotypes, and each DMR call is annotated with its nearest gene via <code>bedtools closest</code>. Runs automatically whenever <code>--modkit_phased</code> is set; turn it off with <code>--skip_dmr</code>. <code>--dmr_cpg_islands_bed</code>/<code>--dmr_gencode_gene_bed</code> have built-in defaults for <code>--genome GRCh38</code>/<code>CHM13</code> and must be supplied explicitly for any other genome, or DMR is skipped with a warning rather than failing the run. Tumour/normal (cross-sample) DMR is explicitly out of scope for this PR (@YannVRB).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/204">#204</a> - Added a real, public subworkflow-level nf-test for the <code>DMR</code> subworkflow (tag <code>small</code>), chaining <code>MODKIT_PILEUP</code> on the public phased, methylation-tagged <code>test.sorted.phased.bam</code> fixture through the full DMR chain against a small synthetic CpG-island/gene region (@YannVRB).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Added ecDNA and focal amplification analysis: CoRAL reconstructs amplicon structures from each tumour BAM, seeded by ASCAT's copy-number calls, and AmpliconClassifier labels each amplicon as ecDNA, BFB or linear. Runs by default on tumour samples with ASCAT calls; turn it off with <code>--skip_coral</code>, or keep reconstruction without classification with <code>--skip_ampliconclassifier</code>. CoRAL's optimisation defaults to the open-source SCIP solver rather than Gurobi: across the 1102 solver logs from the previous standalone cohort the largest model was 620 rows by 438 columns and the slowest solve took 0.49 s, so a licensed solver buys nothing at this scale, though <code>--coral_solver gurobi_direct</code> with <code>--gurobi_license</code> remains available. AmpliconClassifier's AmpliconArchitect data repository is downloaded automatically for GRCh38, checked against a pinned <code>--aa_data_repo_md5</code>, and can be supplied with <code>--aa_data_repo</code> (the reference directory or its parent); CHM13 has no published repository, so without <code>--aa_data_repo</code> the classifier is skipped with a warning (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Added <code>ascat_to_coral_bed.py</code> and the <code>ASCAT_TO_CORAL_BED</code> module, converting ASCAT's <code>cnvs.txt</code> into the headerless BED CoRAL seeds from. Contigs are respelled to match the reference, since ASCAT writes <code>1</code> where the BAM may say <code>chr1</code> and CoRAL builds its chromosome sizes from the BAM header; zero-length and inverted segments are dropped, which CoRAL's own parser would otherwise reject (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Added stub nf-tests for the <code>ECDNA</code> subworkflow and <code>ASCAT_TO_CORAL_BED</code> (tag <code>small</code>), covering the seeded path, the empty-seed branch, the opt-in cycle re-extraction with plotting, the <code>--skip_ampliconclassifier</code> path and a run with no data repository, plus a stub test for <code>AADATAREPO_DOWNLOAD</code> (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - The samplesheet now accepts CRAM as well as BAM (<code>.cram</code> in <code>bam_tumor</code>/<code>bam_normal</code>), unaligned or aligned to any assembly. An aligned CRAM is decoded with <code>--fasta</code> only when no contig name has a different <code>M5</code> checksum in the two (checked in <code>METAEXTRACT</code> for <code>CRAMINO_PRE</code>, and inside <code>MINIMAP2_ALIGN</code>), otherwise from its embedded reference, <code>UR:</code> path or <code>REF_PATH</code>: given a mismatched reference, htslib decodes an embedded-reference CRAM to wrong bases (63 of 1469 test reads) and exits 0. A run resumed from an earlier version re-runs <code>METAEXTRACT</code>, <code>CRAMINO_PRE</code>, <code>CRAMINO_POST</code> and <code>MINIMAP2_ALIGN</code> for BAM input too: Nextflow hashes the script source, and this PR edits all four (<code>CRAMINO</code> gained a <code>--reference</code> argument and a FASTA input) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Aligned CRAM is accepted for samples that fibertools-rs reads (a <code>fiber</code> = <code>y</code> row, or PacBio reads with kinetics while m6A prediction runs). fibertools-rs takes no reference, so aligned input of these samples, BAM or CRAM, first goes through <code>SAMTOOLS_VIEW_FIBERPREP</code> (nf-core <code>samtools/view</code>, samtools 1.25), which keeps the primary records as BAM and decodes a CRAM with <code>--fasta</code> when its <code>M5</code>s match, otherwise from its embedded reference, <code>UR:</code> path or <code>REF_PATH</code>; a CRAM with none of those fails there with htslib's error. On Revio and ONT fiber-seq reads aligned to GRCh38, an embedded-reference CRAM 3.0 or 3.1 gave the same <code>predict-m6a</code>, <code>add-nucleosomes</code>, <code>fire</code> and <code>qc</code> output as the BAM. <code>METAEXTRACT</code> emits <code>aligned_input</code> ('true' for a BAM or CRAM with <code>@SQ</code> lines) for the decision. The step runs inside the <code>FIBERSEQ</code> subworkflow, where the rest of the samples reach fibertools-rs as given (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Added tests for CRAM input (tag <code>small</code>): module tests of <code>METAEXTRACT</code> and <code>MINIMAP2_ALIGN</code> on CRAMs built from a test BAM (aligned with and without the reference embedded, and unaligned), against a matching and a mismatched FASTA, which check the <code>M5</code> decisions and that every CRAM realigns to the same records as the BAM; a module test of <code>SAMTOOLS_VIEW_FIBERPREP</code>'s filter on that BAM with secondary alignments added, as BAM and as both CRAMs; <code>-stub</code> pipeline tests with BAM and CRAM rows mixed in one samplesheet and with fiber-seq rows given as aligned CRAM, aligned BAM and unaligned CRAM; and a function test of the fibertools-rs input selection (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Added a <code>-stub</code> pipeline test of <code>--aligned_format cram</code> and <code>bam</code> on the extended samplesheet (tag <code>small</code>), which checks the replicate merge and the published <code>bamfiles/</code>, and a read-group check in the <code>default</code> test. The pipeline could not run with <code>-stub</code> before: the <code>METAEXTRACT</code> stub reported no basecalling model, and the patched <code>LONGPHASE_PHASE</code> stub indexed VCFs it never wrote (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/215">#215</a> - Added optional whitelist SV calling: <code>SEVERUS</code> now runs a patched Severus 1.7 image (<code>oras://docker.io/amberverhasselt/severus-sif:1.7-whitelist-6813dee</code>), whose output without a whitelist is identical to stock 1.7, and takes an optional whitelist BED: <code>--severus_whitelist &lt;bed&gt;</code> reports every SV inside the whitelisted regions, past the read-quality, minimum-support and VNTR filters, with corroboration required for single-read junctions. Extra flags go through <code>--severus_whitelist_args</code>. <code>--severus_whitelist</code> is not supported under Conda (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/197">#197</a> - Added CHM13 support for ClairS-TO's Verdict module, which tags tumour-only calls as germline, somatic or subclonal somatic; its resources were GRCh38-only, so on CHM13 germline variants leaked into <code>somatic.vcf.gz</code>. With <code>--genome CHM13 --skip_ascat</code> the pipeline builds a CHM13 resource set from the ASCAT files it already downloads and passes it as <code>--cna_resource_dir</code>; a prepared directory can be given with <code>--clairsto_cna_resources</code> (validated at launch). Without <code>--skip_ascat</code> tagging comes from ASCAT's own tables instead (next entry) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/197">#197</a> - Added <code>CLAIRSTO_VERDICT_TAG</code>: when ASCAT is in the run, Verdict's germline tagging is computed from ASCAT's purity, ploidy and segments instead of Verdict's own estimate, so <code>CLAIRSTO</code> runs with <code>--disable_verdict</code> and ASCAT runs before small variant calling. Output names are unchanged. The tables the tags were computed from are published as <code>&lt;sample&gt;_Tumor_Purity_Ploidy.txt</code> and <code>&lt;sample&gt;_Tumor_CNA.txt</code>, also on <code>--skip_ascat</code> runs (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/197">#197</a> - Added a stub nf-test for <code>TUMORONLY_SMALLVAR</code> covering both germline tagging paths (tag <code>small</code>) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/190">#190</a> - Added mutational signature analysis: SigProfilerMatrixGenerator matrices (SBS/DBS/ID) and per-sample COSMIC signature fitting with SigProfilerAssignment on the phased somatic VCF, with CHM13-T2T support via a purpose-built image (<code>ghcr.io/ljwharbers/sigprofiler</code>) and CHM13-renormalised COSMIC signatures; new <code>--sigprofiler_*</code> / <code>--download_sigprofiler_genome</code> / <code>--skip_signatures</code> parameters (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/188">#188</a> - Added <code>modkit_args</code> (default <code>--cpg --modified-bases 5mC</code>) to control the arguments passed to <code>modkit pileup</code>, and <code>modkit_phased</code> to run the pileup with <code>--phased</code> on the Longphase-haplotagged BAMs, producing <code>_hp1</code>, <code>_hp2</code> and <code>_combined</code> bedMethyl files per sample (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/176">#176</a> - Added <code>LRSOMATICREPORT</code> as the final pipeline step: a self-contained per-sample HTML report covering small variants, structural variants, copy number and QC. Skip it with <code>--skip_report</code>; choose the gene panel selected on load with <code>--report_gene_panel</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/176">#176</a> - Added the <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> tool to the pipeline, first vendored as source at <code>assets/lrsomatic_report</code>, now shipped as a container (see the entry below) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/176">#176</a> - Added a <code>solution_dirs</code> output to the WAKHAN module so its per-solution copy-number plots can be staged downstream (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/193">#193</a> - Added VEP plugins: AlphaMissense, SIFT/PolyPhen, ClinVar and REVEL on GRCh38, and AlphaMissense plus SIFT/PolyPhen on CHM13 via protein-space lookup. Enabled by default with <code>--genome GRCh38</code> or <code>--genome CHM13</code> (a first GRCh38 run downloads around 1.4 GB); any <code>--vep_*</code> path overrides its default and <code>--skip_vep_plugins</code> turns the set off. CADD and EVE are opt-in behind <code>--vep_cadd_snv</code>/<code>--vep_cadd_indel</code> and <code>--vep_eve</code> because of their size (81 GB and 9.6 GB); prepared REVEL and EVE files are published to <code>&lt;outdir&gt;/vep_plugins/</code> for reuse. Two lab-hosted AlphaMissense files are CC BY 4.0 with attribution in <code>CITATIONS.md</code> (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/189">#189</a> - Added SAVANA structural variant and copy-number calling, running alongside Severus/ASCAT (@yannvrb).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/202">#202</a> - Added Padfoot annotation of somatic SVs and CNAs for every caller pair with output for a sample, Severus + Wakhan and SAVANA, paired and tumour-only, published to <code>&lt;sample&gt;/padfoot/&lt;pair&gt;/</code>. Padfoot (a pinned commit of <a href="https://github.com/Tim-Yu/Padfoot">Tim-Yu/Padfoot</a>, which adds SAVANA input) ships inside <code>docker.io/timmy9527/padfoot-repeatmasker</code> (<code>oras://docker.io/timmy9527/padfoot-repeatmasker-sif</code> under Singularity/Apptainer) with RepeatMasker on by default, so nothing is downloaded at run time and the module needs a container engine; gene copy number is labelled against the caller's fitted ploidy; <code>--skip_padfoot</code> and the <code>--padfoot_*</code> parameters control it (@Tim-Yu).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/202">#202</a> - Added ReConPlot rearrangement and copy-number figures per CN/SV caller pair, <code>reconplot/{severus_ascat,severus_wakhan,savana}/</code>, with per-chromosome, genome-wide and optional focus panels plus the harmonised CN/SV tables. The wrapper ships in <code>assets/reconplot/</code> and the ReConPlot R package inside <code>docker.io/timmy9527/reconplot</code> (<code>oras://docker.io/timmy9527/reconplot-sif</code> under Singularity/Apptainer; the image patches the package's genome-wide chromosome clipping), so nothing is downloaded at run time and the module needs a container engine; <code>--skip_reconplot</code> and the <code>--reconplot_*</code> parameters control it (@Tim-Yu).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/202">#202</a> - <code>PAIRED_SAVANA</code> and <code>TUMORONLY_SAVANA</code> also emit the fitted purity/ploidy and the het-SNP allele counts, so Padfoot and ReConPlot can consume SAVANA output; ReConPlot reads SAVANA's SVs from the classified somatic VCF, since SAVANA writes no somatic BEDPE for PacBio (<code>--pb</code>) (@Tim-Yu).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/202">#202</a> - Added stub nf-tests for <code>PADFOOT_ANNOTATION</code> and <code>RECONPLOT_FIGURES</code> that check every caller pair is formed (including ASCAT + Severus for tumour-only samples), unfitted samples are dropped and each task receives the top-ranked Wakhan solution's files (tag <code>small</code>) (@Tim-Yu).</li>
+</ul>
+<h3 id="changed"><code>Changed</code><a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/270">#270</a> - <code>LRSOMATICREPORT</code> runs <a href="https://github.com/ljwharbers/lrsomatic_report/releases/tag/v2.3.0">lrsomatic_report 2.3.0</a> (<code>ghcr.io/ljwharbers/lrsomatic-report:2.3.0</code> / <code>oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.3.0</code>). Changes since 2.2.0: the optional HMF driver annotation section (<code>--hmf-*</code>); Wakhan 0.4.x output (<code>solution_N/bed_output/*_copynumbers_segments_HP_{1,2}.bed</code>) is read, where the copy-number section used to fall back to ASCAT; the SV table carries each breakend's orientation; HMF resources declaring their build (a CHM13 lift) are accepted on t2t reports, and where VEP's transcript ids are another namespace (CHM13's rapid-release cache) VEP's canonical transcript stands in for HMF's (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/261">#261</a> - <code>LRSOMATICREPORT</code> runs <a href="https://github.com/ljwharbers/lrsomatic_report/releases/tag/v2.2.0">lrsomatic_report 2.2.0</a> (<code>ghcr.io/ljwharbers/lrsomatic-report:2.2.0</code> / <code>oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.2.0</code>). Changes since 2.1.0: the ecDNA "N more CoRAL plots not embedded" note names the folder relative to the sample directory instead of an absolute work-directory path; the overview shows a warning box when the purity estimates of ASCAT, Wakhan and SAVANA differ by 0.2 or more; the full small-variant table (<code>&lt;sample-id&gt;_small_variants.tsv.gz</code>) is now also embedded in the HTML, with Download and Show all controls, unless it is larger than 5 MB gzipped, so each report grows by about 4/3 of that file's size (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/260">#260</a> - A fiber-seq file whose reads carry no m6A calls now skips the fibertools-rs nucleosome, FIRE and QC steps (and <code>SAMTOOLS_VIEW_FIBERPREP</code>) whenever the run predicts no m6A for it, not only under <code>--skip_m6a</code>: ONT reads basecalled without a 6mA model, and PacBio reads without kinetics. PacBio reads with kinetics still get m6A predicted and then the fiber steps unless <code>--skip_m6a</code> is set, and a file whose <code>m6a_calls</code> is 'unknown' keeps them. The rule shares one helper with the <code>FIBERTOOLSRS_PREDICTM6A</code> branch (<code>m6aPredicted</code>), and the warning names the reason for each skipped file. The fiber-seq <code>-stub</code> tests give their fixtures m6A calls so they still reach the fiber steps (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <strong><code>--genome GRCh38</code> now aligns to the NCBI no-ALT analysis set</strong> (<code>GCA_000001405.15_GRCh38_no_alt_analysis_set</code>, staged from its byte-identical iGenomes copy <code>Homo_sapiens/NCBI/GRCh38/Sequence/WholeGenomeFasta/genome.fa</code>) instead of the GATK <code>Homo_sapiens_assembly38.fasta</code>, whose 261 ALT, 525 HLA and 2,385 decoy contigs minimap2 does not handle as alternates. On a 30x real-data run with a no-ALT build that kept the hs38d1 decoys, removing the ALT contigs raised Clair3's germline calls in the ALT-contig footprint from 49,085 to 167,927 (MHC 4,280 to 28,899), with calls elsewhere within 0.1 %; the new default has no decoy contigs, so reads from decoy sequence now map to the primary assembly. The 195 contigs of the new FASTA are a subset of the GATK FASTA with identical names, lengths and MD5s, so the other GRCh38 resources are unchanged. Results differ from earlier versions in ALT regions, and <code>-resume</code> from an earlier version realigns every sample; pass the old path with <code>--fasta</code> to keep it (see <code>docs/usage.md</code>, GRCh38 reference) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - With <code>--skip_m6a</code>, a fiber-seq file whose reads carry no m6A calls now skips the fibertools-rs nucleosome, FIRE and QC steps (and <code>SAMTOOLS_VIEW_FIBERPREP</code>) with a warning naming the sample, and goes on to alignment as given, like a <code>fiber</code> = <code>n</code> row. <code>METAEXTRACT</code> emits the new <code>m6a_calls</code> ('true' when an <code>MM</code> tag of the first 1000 records has an <code>A+a</code>, <code>T-a</code> or ChEBI <code>28871</code> entry, 'false' when none has, 'unknown' when the records could not be read; only aux fields are decoded, so a CRAM needs no reference); 'unknown' keeps the fiber steps. On a 2 M-read PacBio fiber-seq slice without m6A these steps had reported zero m6A, nucleosomes and MSPs on every read and written a 98 GB FIRE copy of the 94 GB input. <code>FIBERTOOLSRS_FIRE</code> also replaces its per-read <code>FIRE: no msp annotations on record; skipping</code> warning (2 M lines, 214 MB of task logs on that slice) with one count line; all other output of <code>ft fire</code> is kept. A run resumed from an earlier version re-runs <code>METAEXTRACT</code> and <code>FIBERTOOLSRS_FIRE</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>LRSOMATICREPORT</code> runs <a href="https://github.com/ljwharbers/lrsomatic_report/releases/tag/v2.1.0">lrsomatic_report 2.1.0</a> (<code>ghcr.io/ljwharbers/lrsomatic-report:2.1.0</code> / <code>oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.1.0</code>). Changes:</li>
+<li>Severus whitelist-rescued SVs get their own hidden-by-default "rescued" tier, with a show/hide toggle in key findings, the SV table and the circos labels.</li>
+<li>Failed (<code>FAIL_*</code>) SV records no longer count.</li>
+<li>ClinVar is credited only to the gene that carries the coding or splice consequence.</li>
+<li>Breakpoint and focal-deletion gene claims are checked by position.</li>
+<li>Coding TMB counts unique variants and leads with SNVs.</li>
+<li>ShatterSeek calls name their HC tiers, and there is a tier selector.</li>
+<li>ReConPlot has a reason selector and caps the embedded per-chromosome figures at 12.</li>
+<li>The phasing percentage is now of heterozygous variants.</li>
+<li>Copy number 1 at high ploidy is called a "deep deletion".</li>
+<li>The circos copy-number ring uses the overview's copy-number source.</li>
+<li>Symbol-only gene lists get gene spans.</li>
+<li>DeepSomatic genotypes are explained.</li>
+<li>No absolute work-dir paths appear in the report.</li>
+<li>The ASCAT tab says when ASCAT was skipped.</li>
+<li>New optional inputs (<code>--run-mode</code>, Verdict status, ReConPlot focus figures) are wired below (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/243">#243</a> - <code>LRSOMATICREPORT</code> now runs <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> 2.0.0 (<code>ghcr.io/ljwharbers/lrsomatic-report:2.0.0</code> / <code>oras://ghcr.io/ljwharbers/lrsomatic-report-sif:2.0.0</code>), which adds clinical-overview, genomic-instability (ShatterSeek, ecDNA), signature and ReConPlot sections and reads SAVANA and Padfoot. Wakhan's interactive HTML plots and heatmap are no longer staged or embedded; the report draws the top-ranked solution from <code>integer_profile.bed</code>, and the HTML plots stay in <code>wakhan/</code>. <strong>Each sample's report now waits for the run's last output of those tools</strong>, since several are optional per sample or ignored on failure, so there is no per-sample count to group on; this gives up the per-sample rendering of #200 for the report step (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/242">#242</a> - Right-sized default resource requests from execution traces of ~30x ONT and PacBio runs (pairs and tumour-only, GRCh38 and CHM13), in a new <code>withName</code> section of <code>conf/base.config</code>. Lowered where requests were an order of magnitude above use: <code>FIBERTOOLSRS_NUCLEOSOMES</code>/<code>FIRE</code>/<code>QC</code> (200/144 GB -&gt; 8 GB, 8-16 cpus; peaks &lt;= 3.1 GB), <code>FIBERTOOLSRS_PREDICTM6A</code> (200 GB / 16 h -&gt; 16 GB / 24 h at 24 cpus, for ~185 cpu-hours and a 7 GB peak), <code>GERMLINE_VEP</code> (16 cpus / 16 GB), <code>SOMATIC_VEP</code>/<code>SV_VEP</code>/<code>VEP_SAVANA</code> (24 / 144 GB -&gt; 6 / 24 GB), the per-sample bcftools steps of the consensus, Verdict and phasing chains (6 / 36 GB -&gt; 2 / 4 GB), <code>LONGPHASE_MODCALL_*</code> (12 -&gt; 2 cpus, as it runs single-threaded; 64 GB), <code>LRSOMATICREPORT</code> (1 cpu / 32 GB), <code>MOSDEPTH</code> (4 / 8 GB), DeepVariant/DeepSomatic <code>call_variants</code> on CPU (144 -&gt; 48 GB), and the labels of <code>SIGPROFILER_MATRIXGENERATOR</code> (<code>process_single</code>), <code>CORAL_PLOT</code> and <code>AMPLICONCLASSIFIER</code> (<code>process_low</code>). Raised where 30x data reaches the default: <code>WAKHAN</code> 36 -&gt; 72 GB (38-64 GB on tumour-only samples), <code>SEVERUS</code> 36 -&gt; 64 GB (32 GB on ONT pairs), <code>SAVANA_RUN</code>/<code>SAVANA_TO</code> 72 -&gt; 96 GB, <code>CRAMINO</code> 2 -&gt; 4 cpus. All keep attempt scaling. The fibertools tasks that request a GPU under <code>--use_gpu</code> keep their previous requests (24 cpus / 144 GB / 16 h), as that path was not measured. <code>docs/usage.md</code> now lists the measured needs of the heaviest steps at ~30x (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/250">#250</a> - Resource defaults resized from 30x real-data runs: <code>SAVANA_RUN</code> 96 to 128 GB (paired peaks up to 118 GB), <code>DEEPSOMATIC_MAKEEXAMPLES</code> 144 to 192 GB (peak 120 GB), <code>LRSOMATICREPORT</code> 32 to 16 GB (peak 9 GB); <code>BCFTOOLS_CALLER_CONSENSUS</code> joins the small bcftools block (2 cpus / 4 GB, was 6 / 36 GB for under 1 GB), and the removed <code>BCFTOOLS_ISEC</code>, <code>NORM_REJOIN</code>, <code>SORT_CONSENSUS</code> and <code>DS_VERDICT_*</code>/<code>DS_GERMLINE_REJOIN</code> names leave its selector (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>CLAIRS</code>, <code>DEEPSOMATIC_MAKEEXAMPLES</code>, <code>DEEPSOMATIC_CALLVARIANTS</code> (CPU) and <code>FIBERTOOLSRS_PREDICTM6A</code> (CPU) request 48 cpus instead of 24; memory and time are unchanged. At 24 cpus paired DeepSomatic took 15.9 h of a 17.75 h 30x ONT pair run (<code>make_examples</code> 6.4 h, <code>call_variants</code> 8.5 h; 3.7 h and 5.4 h at 48), PacBio ClairS 6.2-6.4 h (3.6 h at 48) and m6A prediction 5.7-6.3 h at 97 % cpu efficiency (3.8 h at 64). <code>DEEPSOMATIC_CALLVARIANTS</code> under <code>--use_gpu</code> keeps 8 cpus (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>docs/usage.md</code> notes that float read tags (Dorado's <code>qs</code>, <code>du</code>, <code>sd</code>) keep only the 6 significant digits <code>samtools fastq -T</code> writes on their way through <code>minimap2 -y</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>docs/usage.md</code> lists the small differences to expect between runs on identical input (ClairS/DeepSomatic ±1-2 PASS records between thread counts, SAVANA copy-number segmentation and purity ±0.01, SAVANA and Severus ±1-2 SVs) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>docs/usage.md</code> describes every option of the whitelist Severus build (<code>--whitelist-single-read reciprocal|any|off</code>, <code>--whitelist-reciprocal-dist</code>, <code>--whitelist-allow-intra-region</code>, <code>--whitelist-enforce-mapq</code>, passed through <code>--severus_whitelist_args</code>) and the <code>INFO/INSIDE_WHITELIST</code>/<code>WL_RESCUE</code> tags, with a warning that <code>--whitelist-single-read any</code> floods 30x WGS (9,388 of 9,711 somatic SVs rescued on a 30x ONT pair, 314 without a whitelist) and that rescued SVs reach ShatterSeek and ReConPlot (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/245">#245</a> - <code>SHATTERSEEK</code> runs upstream <a href="https://github.com/parklab/ShatterSeek">parklab/ShatterSeek</a> (+CHM13 patch, <code>robertaforsyth/shatterseek:1.1-3b3f4cd-chm13</code>, SIF twin <code>oras://docker.io/robertaforsyth/shatterseek-sif</code>) instead of the robert-a-forsyth fork, at the author's request (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/240">#240</a> - A samplesheet whose replicate rows the per-type merge would mis-handle now stops the run at launch, naming the sample: rows of one sample that mix "has normal" and "no normal" (the tumour rows were never merged and the run aborted after alignment with a bare <code>Join mismatch</code>), a normal file repeated across rows (it was merged with itself, doubling normal depth), a file given as both tumour and normal, and duplicate <code>tumor_replicate</code>/<code>normal_replicate</code> numbers within a sample, including the all-blank case (the replicates shared output names and <code>@RG</code> IDs). A tumour file repeated across rows only warns. Single-row samples, tumour-only replicates and the paired <code>T1,N1,1,1</code>/<code>T2,N2,2,2</code> form are unchanged. New stub test <code>tests/samplesheet_replicates.nf.test</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/247">#247</a> - Rows of one sample that differ in <code>platform</code>, <code>sex</code> or <code>fiber</code> now stop the run at launch, naming the sample and each row's value; <code>docs/usage.md</code> asked for these to match but nothing checked it. The caller-model mismatch error (raised after <code>METAEXTRACT</code>) labels each file by type and replicate (<code>tumor_rep1=...</code>, <code>tumor_rep2=...</code>) instead of <code>tumor=</code> twice, and no longer tells users who already set the model column to set it explicitly. New cases in the <code>utils_nfcore_lrsomatic_pipeline</code> function tests and <code>tests/samplesheet_replicates.nf.test</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/235">#235</a> - <strong>Raised the minimum Nextflow version from <code>25.10.4</code> to <code>26.04.0</code>; users on Nextflow 25.10 must upgrade.</strong> Nextflow 25.10 compiles each workflow body into one string and fails with <code>String too long</code> above 65,535 characters; the <code>LRSOMATIC</code> workflow body is close to that limit, and Nextflow 26.04 has no such limit. The bump also follows nf-core: nf-schema goes from 2.7.3 to 3.0.0, which needs Nextflow 26.04, and the <code>utils_nfschema_plugin</code> subworkflow is updated to the nf-core master that targets it, so <code>paramsSummaryMap</code> no longer takes the <code>workflow</code> object and <code>paramsHelp</code> takes the parameter as a <code>parameter:</code> option. The nf-test CI matrix, <code>fix-linting.yml</code>, the README badge and the RO-Crate metadata now say <code>26.04.0</code>. The launch-validation function tests now look for the error message on stderr as well as stdout, because Nextflow 26.10 prints console output to stderr when ANSI logging is off (<a href="https://github.com/nextflow-io/nextflow/pull/7741">nextflow-io/nextflow#7741</a>), so 19 of them failed on the <code>latest-everything</code> CI shards. <code>--show_hidden</code> is converted to a boolean before it reaches nf-schema, because Nextflow 26 passes a bare <code>--show_hidden</code> as the string <code>'true'</code> and nf-schema 3.0.0 failed on it with a <code>String cannot be cast to Boolean</code> error (fixed upstream after 3.0.0, <a href="https://github.com/nextflow-io/nf-schema/issues/237">nextflow-io/nf-schema#237</a>) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/233">#233</a> - Updated to the nf-core template for <a href="https://github.com/nf-core/tools/releases/tag/4.2.2">nf-core/tools 4.2.2</a>, which moves the CI's <code>eWaterCycle/setup-apptainer</code> action from v2 to v3 (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/221">#221</a> - <code>--sigprofiler_matrix_args</code> now rejects <code>--bed_file</code>, <code>--exome</code> and <code>--seqInfo False</code>, as the per-mutation signature probabilities are built from every mutation's SigProfilerMatrixGenerator seqinfo (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Aligned and haplotagged reads are now CRAM 3.0 with the reference embedded instead of BAM, from <code>MINIMAP2_ALIGN</code> onwards; <code>bamfiles/</code> holds <code>&lt;sample&gt;_&lt;type&gt;.cram</code> + <code>.crai</code>. The new <code>--aligned_format</code> parameter (<code>cram</code> by default, or <code>bam</code>) keeps BAM throughout for tools that cannot read CRAM. On chr20 of three real samples CRAM is 33 % (ONT), 52 % (older PacBio) and 69 % (Revio) smaller, with identical records. Version 3.0 because Clair3 and ClairS-TO's Verdict bundle an htslib that cannot decode 3.1 and then call nothing without failing; the embedded reference (1-7 % of the file) because ClairS, ClairS-TO, Severus and SAVANA open the reads without the FASTA. <code>CRAMINO_POST</code> and <code>SAMTOOLS_MERGE</code> now get the FASTA (<code>ASCAT</code> does not: its image has no <code>ref.fasta</code> argument, and it reads the embedded reference); <code>CLAIRSTO</code> deletes its intermediate haplotagged copy of the tumour reads; the uBAM's own <code>RG</code> tag is dropped before alignment, since CRAM keeps one read group per record and kept the basecaller's. That change alters <code>MINIMAP2_ALIGN</code> in both formats, so a run resumed from an earlier version realigns every sample, also with <code>--aligned_format bam</code>. <code>LONGPHASE_MODCALL</code> moves from longphase 2.0.1 to 2.0.2: 2.0.1 reads CRAM through the wrong iterator call and called about 28 % fewer methylation sites on CRAM than on BAM, a different number every run, which shifted the phasing and every haplotype-resolved output; 2.0.2 gives identical, deterministic results for both formats (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/227">#227</a> - Cleared the pipeline-level nf-core lint warnings. <code>manifest.version</code> and the <code>.nf-core.yml</code> template version are now <code>1.2.0dev</code>; the 13 flat <code>subworkflows/local/*.nf</code> files moved to <code>subworkflows/local/&lt;name&gt;/main.nf</code>; <code>skip_modkit</code> is in the skip options group and six parameters got schema descriptions; <code>--autocorrelation</code> is now a boolean (default <code>false</code>), as <code>docs/usage.md</code> already described it, so a bare <code>--autocorrelation</code> flag passes validation; template TODOs are resolved, including a pipeline citation in the MultiQC methods description and pipeline-specific contribution guidelines; and the stray <code>lint_log.txt</code> debug log is removed (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/224">#224</a> - Updated to the nf-core template for <a href="https://github.com/nf-core/tools/releases/tag/4.2.1">nf-core/tools 4.2.1</a>. Bumps nf-schema to 2.7.3 (needed for Nextflow 26.04) and nft-utils to 1.2.1, sets <code>manifest.diagram</code> to the existing metro map (<code>assets/lrsomatic_1.0.png</code>), replaces <code>fix_linting.yml</code> with the reusable <code>fix-linting.yml</code> from nf-core/actions, adds recommended VS Code extensions, and stops <code>workflow.onComplete</code> from blocking on the MultiQC report. The linting workflow keeps running plain <code>pre-commit</code> rather than the template's prek-action (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/224">#224</a> - Dropped <code>ext.use_gpu</code> from the GPU resource labels, following the template. <code>CLAIR3</code> now reads <code>params.use_gpu</code> instead of <code>task.ext.use_gpu</code>, the same param that picks its label and container, as DeepVariant, DeepSomatic and fibertools already do (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/204">#204</a> - With <code>--modkit_phased</code> set and haplotype DMR running, <code>5hmC</code> is appended to <code>--modified-bases</code> whenever <code>--modkit_args</code> names <code>5mC</code> without it, so the published <code>modkit_pileup/*_{hp1,hp2,combined}.bed.gz</code> now carry a 5hmC row next to each 5mC row. <code>modkit dmr pair</code> rejects bedMethyl rows whose valid coverage includes uncounted (<code>N_other</code>) calls, which ONT SUP data calling both 5mC and 5hmC produces under the <code>--cpg --modified-bases 5mC</code> default. Runs with <code>--skip_dmr</code>, without <code>--modkit_phased</code>, or without DMR references keep <code>--modkit_args</code> exactly as given (@YannVRB).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Moved the fiber-seq steps into a <code>FIBERSEQ</code> subworkflow and the AmpliconArchitect MD5 default into <code>aaDataRepoMd5()</code>, because with dev merged the <code>LRSOMATIC</code> workflow body exceeded the 65,535-character limit on a compiled string and failed to compile; behaviour is unchanged (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>--download_sigprofiler_genome</code> now defaults to <code>true</code>, so a run without <code>--sigprofiler_genome_dir</code> installs the SigProfiler genome instead of stopping at launch; a given directory still wins (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Every small-variant path now rejoins each arm to one record per position (<code>bcftools norm -m +any</code>) before Longphase, which cannot take two records at one position; single-caller runs previously passed an SNV and an indel at the same base (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - In tumour-only mode with <code>--smallvar_filter_pass</code>, ClairS-TO germline calls that fail another filter (e.g. <code>LowQual;NonSomatic</code>) are dropped unless Verdict tags them germline; DeepVariant germline calls are <code>PASS</code>-filtered whenever DeepSomatic is not selected, so <code>RefCall</code> records never enter the germline arm (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>INFO/DS_VERDICT</code> is now <code>Number=.</code> and carries a multi-valued DeepSomatic <code>FILTER</code> comma-separated instead of a raw <code>;</code> that split the INFO field (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>ASCAT_TO_CORAL_BED</code> now writes 0-based BED (ASCAT is 1-based), keeps single-SNP segments and tiles each contig without gaps, so CoRAL no longer silently drops breakpoints that fell between ASCAT segments. With <code>--coral_run_cycle</code>, reconstruction skips its own cycle decomposition; otherwise <code>--coral_cycle_decomp_alpha</code> is passed to it (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - In tumour-only mode with both <code>deepvariant</code> and <code>deepsomatic</code> selected, DeepVariant's <code>PASS</code> germline calls are now kept only where DeepSomatic's verdict is <code>GERMLINE</code> or <code>PON</code> (<code>INFO/DS_VERDICT</code>); with <code>deepvariant</code> alone they are unfiltered and may include somatic variants (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - The phased somatic VCF is now split from the merged germline+somatic VCF by an <code>INFO/SOMATIC</code> provenance flag (new <code>VCFTAG</code> module) instead of by position, so germline records at somatic coordinates no longer leak into it; ClairS-TO germline records keep their original <code>FILTER</code> in <code>INFO/ORIG_FILTER</code> (@robert-a-forsyth). The merge and the <code>INFO/SOMATIC</code> flag were removed again in <a href="https://github.com/IntGenomicsLab/lrsomatic/pull/266">#266</a> (see Fixed); <code>INFO/ORIG_FILTER</code> stays.</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - Added <code>--smallvar_filter_pass</code> (default <code>true</code>), which restricts each small variant caller's output to <code>PASS</code> records before the caller consensus, phasing, VEP and the report; the published per-caller VCFs are unchanged (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/201">#201</a> - <code>CLAIRSTO</code> and <code>CLAIRSTO_VERDICT_TAG</code> now pull the fork image from Docker Hub: <code>oras://docker.io/ljwharbers/clairs-to-sif:0.5.1-verdict-chm13-c0687e8-flat</code> under Singularity/Apptainer and <code>docker.io/ljwharbers/clairs-to:0.5.1-verdict-chm13-c0687e8-flat</code> otherwise, instead of <code>ghcr.io/ljwharbers/clairs-to</code>. The <code>-cpu</code> SIF on ghcr failed with <code>PROTOCOL_ERROR</code> on slow links: ghcr redirects every blob download to an Azure URL that expires at the next 5-minute mark and resets a stream still open then, and Apptainer resumes neither an <code>oras://</code> nor a <code>docker://</code> download. Docker Hub's download URLs are valid for 50 minutes and only checked when the request starts. <code>-flat</code> is the same software copied into an empty image in a few layers (3.3 GB instead of 7 GB); the software and its outputs are unchanged. <code>docs/usage.md</code> describes <code>pullTimeout</code>, Docker Hub's anonymous pull limit, pre-pulling, and how to recover the remaining <code>oras://ghcr.io</code> SIFs resumably (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/199">#199</a> - <code>CLAIRSTO</code> and <code>CLAIRSTO_VERDICT_TAG</code> now run the <code>-cpu</code> rebuild of the fork image (<code>0.5.1-verdict-chm13-c0687e8-cpu</code>), which swaps PyTorch's CUDA build for the CPU build of the same version. The software is otherwise unchanged, but the Apptainer SIF drops from 6.53 GB to 3.46 GB. The old image could not be pulled on a normal VSC link: Apptainer fetches an <code>oras://</code> SIF as a single unresumable stream, and the signed blob URL ghcr redirects to expires on a 15-minute wall-clock boundary, so 6.53 GB needed 7.3 MB/s sustained and was otherwise cut mid-transfer with <code>PROTOCOL_ERROR</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/197">#197</a> - <code>CLAIRSTO</code> now runs <code>ghcr.io/ljwharbers/clairs-to:0.5.1-verdict-chm13-c0687e8</code> (ClairS-TO 0.5.1) instead of <code>docker.io/hkubal/clairs-to:v0.4.2</code>: a fork that lets Verdict read its CNA resources from <code>--cna_resource_dir</code>, fixes four places where Verdict's Python port of ASCAT departed from R, and disables Verdict with a warning when its resources cannot be read. <strong>GRCh38 results move as well as CHM13 ones.</strong> Revert to the upstream image once HKU-BAL/ClairS-TO carries these changes. The module also selects the SIF under <code>-profile apptainer</code> and sets explicit output prefixes (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - <code>LRSOMATICREPORT</code> now runs <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> v1.6.0 from <code>ghcr.io/ljwharbers/lrsomatic-report:1.6.0</code> (<code>oras://ghcr.io/ljwharbers/lrsomatic-report-sif:1.6.0</code> under Singularity/Apptainer) instead of the source vendored at <code>assets/lrsomatic_report</code>, which is deleted; updating the tool is now a tag bump. The image is <code>linux/amd64</code> only and <strong>Conda is not supported for this step</strong>: the module errors under <code>-profile conda</code>/<code>mamba</code>, <code>conda</code> is dropped from the nf-test CI matrix, and <code>--skip_report</code> gives a conda run (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - Builtin gene panels moved from the tool into this repository at <code>assets/gene_lists/</code> and reach the report through <code>--gene-lists-dir</code>, so adding a panel needs no report-tool release; <code>--report_gene_panel</code> validation reads that directory (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - Removed <code>--report_src</code>; render with an unreleased tool by pinning a container tag instead (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - The report's small-variant table now shows the VEP plugin annotations from #193 (AlphaMissense, ClinVar, CADD, REVEL, EVE, and SIFT/PolyPhen on CHM13) as separate class and score columns, present only when the annotated VCF declared the field, with an "Annotation sources" footnote. The v1.4.0 to v1.6.0 releases also fix the SV table's <code>panel_hit</code> column, add the optional <code>applies_to</code> panel column (next entry) and make the footer read the tool version at render time (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - Rebuilt the builtin <code>lymphoid</code> panel from two curated NHL lists (234 rows, up from 72) and scoped its genes per table with the new optional <code>applies_to</code> column (<code>snv</code>, <code>sv</code> or blank for both). Four upstream rows were corrected (<code>EWSR1</code>, <code>KDM6B</code> and <code>SIK3</code> hg38 coordinates; <code>PRKBC</code> to <code>PRKCB</code>; <code>RCK</code> to <code>DDX6</code>; duplicate <code>FAM46C</code> dropped); see <code>assets/gene_lists/README.md</code>. <code>sarcoma</code> is untouched (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/188">#188</a> - <code>MODKIT_PILEUP</code> now runs <code>modkit pileup</code> with <code>--cpg --modified-bases 5mC</code> by default; the previous unfiltered pileup produced 30-45 GB per sample, so reruns report only 5mC at CpG sites. Set <code>--modkit_args=''</code> (the <code>=</code> form; <code>--modkit_args ''</code> reaches the pipeline as <code>true</code>) or an empty <code>modkit_args</code> entry in a params file to get the previous output (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/186">#186</a> - Re-synced the vendored <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> to v1.3.0, which adds tickbox dropdown filters on the categorical columns of both variant tables and turns the report's gene panel selector into checkboxes (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/176">#176</a> - Re-synced the vendored <a href="https://github.com/ljwharbers/lrsomatic_report">lrsomatic_report</a> to v1.3.2: facet dropdown counts follow the active filters, opening a facet menu no longer resets the table's horizontal scroll, a flatter clinical theme, and inline code comments trimmed to one line (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/186">#186</a> - <code>--report_gene_panel</code> now takes a comma-separated list, so several panels can be applied at once: a variant or SV is kept if it hits any of them. Panel values are also validated at launch instead of failing inside the report task (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/184">#184</a> - Replaced the CHM13 Severus panel of normals with the merged 1000 Genomes + ASAP panel (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Updated to the nf-core template for <a href="https://github.com/nf-core/tools/releases/tag/4.1.0">nf-core/tools 4.1.0</a>. Adds the <code>check-added-large-files</code>, <code>check-merge-conflict</code> and <code>block-pipeline-outdir</code> pre-commit hooks, a <code>process_low_memory</code> resource label, and a split-out <code>pr-comment.yml</code> workflow. <code>conf/igenomes.config</code> was converted to the template's strict-syntax <code>params.genomes</code> map literal, and the MultiQC module was bumped to 1.35 (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Raised the minimum Nextflow version to <code>25.10.4</code>, following the template, and bumped the nf-test CI matrix to match (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Filled in the <code>manifest.contributors</code> <code>contribution</code> fields: @ljwharbers and @robert-a-forsyth as author and maintainer, all other contributors as author. Previously empty, which left the RO-Crate metadata without any authors (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Added @AmberVerhasselt to <code>manifest.contributors</code> as a contributor and to the README credits, and expanded @ljwharbers' affiliation to match the other core contributors. RO-Crate metadata updated to match (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Set @laulambr's affiliation to the same three-part VIB/KU Leuven string as the other core contributors (@ljwharbers).</li>
+</ul>
+<h3 id="fixed"><code>Fixed</code><a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/272">#272</a> - A run resumed from an earlier 1.2.0dev work directory no longer re-runs every variant caller, phasing and SAVANA step: the <code>HMF_LIFTOVER</code> and <code>HMF_BUNDLE</code> includes (#270) sat ahead of the subworkflow includes, and since Nextflow numbers <code>eval</code> outputs in include order and hashes that number, their three version outputs shifted every later process. They now come last in <code>workflows/lrsomatic.nf</code>, where new includes go (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/266">#266</a> - The phase of <code>variants/phased/somatic_smallvariants.vcf.gz</code> now agrees with the germline VCF and the haplotagged BAMs (<a href="https://github.com/IntGenomicsLab/lrsomatic/issues/265">#265</a>). It came from a second LongPhase run on the tumour (<code>LONGPHASE_PHASE_SOMATIC</code>) with its own blocks and an arbitrary haplotype 1 per block, so a somatic SNV marked <code>1|0</code> was on the <code>HP:2</code> reads about as often as on <code>HP:1</code> (somatic VCF haplotype = alt-read <code>HP</code> for 60 % of SNVs on two paired 30x runs, 74-77 % tumour-only; <code>PS</code> matched 35-70 %). The new <code>PHASE_SOMATIC_FROM_READS</code> (pysam, <code>bin/phase_somatic_from_reads.py</code>) phases each heterozygous somatic SNV/indel from the <code>HP</code>/<code>PS</code> of its alt reads in the haplotagged tumour BAM (at least 3 tagged alt reads, at least 80 % on one haplotype) and adds <code>FORMAT/AHP</code> with the alt reads on HP1, HP2 and untagged. Tumour-only samples also need at least 3 tagged reads on the other haplotype at the site (<code>FORMAT/OHP</code>), because their haplotags, built from a germline phase on tumour reads, can put both haplotypes' reads on one <code>HP</code>; records failing it stay in the VCF, unphased. This replaces <code>LONGPHASE_PHASE_SOMATIC</code>, <code>LONGPHASE_MODCALL_SOMATIC</code> and the steps that fed it (<code>REJOIN_SOMATIC</code>, <code>TAG_SOMATIC</code>/<code>TAG_GERMLINE</code>, <code>SOMATIC_ALT</code>/<code>SOMATIC_NONALT</code>, <code>GERMLINE_ANCHORS</code>, the somatic concat/sort/view), so the somatic VCF keeps the callers' records (more than one per position is possible) and neither phased VCF carries <code>INFO/SOMATIC</code>/<code>INFO/GERMLINE</code> any more. A run resumed from an earlier version re-runs germline phasing, haplotagging and everything downstream (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>ENSEMBLVEP_DOWNLOAD</code> reports its <code>perl-math-cdf</code> version again (it was empty in <code>lrsomatic_software_mqc_versions.yml</code>): the nf-core module's version command escaped <code>$Math::CDF::VERSION</code> once, so the shell expanded it to nothing. Patched the way upstream nf-core/modules fixed it. The version command is part of the task hash, so a resumed <code>--download_vep_cache</code> run downloads the cache once more (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - Published indexes are no longer older than their data file (htslib's <code>The index file is older than the data file</code> warning on the published gVCFs). Nextflow copies a task's files in parallel and gives each copy the time it finished, so a large VCF could land after its index; <code>workflow.output.copyAttributes = true</code> now keeps the work-directory timestamps, where the index is always the newer file (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a> - <code>MULTIQC</code> no longer re-runs on every <code>-resume</code>: its inputs are sorted by file name instead of arriving in completion order, the workflow summary leaves out the per-launch <code>runName</code> and <code>trace_report_suffix</code> (and shows the session id, which <code>-resume</code> keeps), and the methods description quotes the command line without <code>-resume</code> and no longer expands the whole <code>${workflow}</code> object in a YAML comment of <code>assets/methods_description_template.yml</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/249">#249</a> - A Padfoot, ReConPlot, ShatterSeek, CoRAL (reconstruct, cycle, plot) or AmpliconClassifier task that the scheduler loses (Slurm <code>NODE_FAIL</code>, <code>CANCELLED</code> by root; Nextflow exit status <code>Integer.MAX_VALUE</code>) is now retried once instead of being silently ignored while the run still exits 0. These steps share one policy in <code>conf/modules.config</code>: retry a kill (exit 130-145, 104, 175-177 or <code>Integer.MAX_VALUE</code>) up to <code>maxRetries</code>, ignore any other failure; CoRAL and AmpliconClassifier also gain 104 and 175-177, and their module tests now fail on an error instead of ignoring it. The default policy in <code>conf/base.config</code> also retries <code>Integer.MAX_VALUE</code>, which previously stopped the run. A workflow nf-test checks the policy for all twelve process names (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/248">#248</a> - Unaligned input no longer gets a second copy of minimap2's own tags: <code>MINIMAP2_ALIGN</code> now drops <code>tp</code>, <code>cm</code>, <code>s1</code>, <code>s2</code>, <code>nn</code>, <code>ms</code>, <code>de</code>, <code>dv</code>, <code>rl</code>, <code>zd</code>, <code>cs</code>, <code>cg</code>, <code>ds</code> from every input before <code>minimap2 -y</code>, not only from aligned input. Dorado uBAMs that were once aligned can keep <code>zd</code> (minimap2's z-drop split flag), which minimap2 then wrote again, so about 10,000 reads per 30x ONT CRAM carried two <code>zd</code> tags and failed strict SAM validation. A run resumed from an earlier version re-runs <code>MINIMAP2_ALIGN</code> and everything after it for unaligned input (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/246">#246</a> - Fixed <code>--download_vep_cache</code> failing every run: <code>ENSEMBLVEP_DOWNLOAD</code>'s <code>ext.args</code> was commented out, so <code>vep_install</code> started its interactive full install (Ensembl API, BioPerl, htslib from git) and exited on the missing <code>git</code>. It now gets <code>--AUTO c --CONVERT --NO_BIOPERL --NO_HTSLIB --NO_TEST --NO_UPDATE</code>, as in nf-core/sarek, and installs only the cache (GRCh38 v113: 23.3 GiB in 27 min). The <code>-stub</code> test of the option missed this, since the module's stub ignores <code>ext.args</code>; it now checks the resolved <code>ext.args</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/243">#243</a> - <code>docs/output.md</code> names WhatsHap's outputs as published, <code>qc/whatshap_stats/&lt;sample&gt;_whatshap_stats.{tsv,gtf,log}</code>, instead of <code>sample.stats.tsv</code> and a <code>sample.blocklist.tsv</code> the pipeline never writes (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/241">#241</a> - The tumour-only DeepVariant germline arm (with <code>deepsomatic</code> selected) no longer publishes genotypes DeepVariant never made: the DeepSomatic-verdict chain split DeepVariant's records per allele, selected and rejoined them, so e.g. <code>C&gt;CCG,CG 1/2</code> became <code>C&gt;CCG 1/0</code> and <code>G&gt;GTT,GTTT 2/2</code> became <code>G&gt;GTT 0/0</code> (28,705 <code>1/0</code>, 87 <code>2/0</code> and 933 <code>0/0</code> records on a PacBio tumour). <code>DS_GERMLINE_SELECT</code> (now <code>BCFTOOLS_CALLER_CONSENSUS</code>, replacing <code>DS_VERDICT_SPLIT_DS</code>/<code>_DV</code>, <code>DS_VERDICT_SITES</code>, <code>DS_VERDICT_ANNOTATE</code> and <code>DS_GERMLINE_REJOIN</code>) publishes DeepVariant's own <code>PASS</code> records, unchanged, whose called alleles all carry a DeepSomatic <code>GERMLINE</code>/<code>PON</code> verdict; <code>INFO/DS_VERDICT</code> is no longer added (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/241">#241</a> - <code>--smallvar_filter_pass false</code> with DeepSomatic no longer crashes the run (<code>REJOIN_SOMATIC</code>: <code>could not merge FORMAT tag NAF</code>). The DeepVariant (paired germline) and DeepSomatic filters now always run: with the flag off they keep calls whose genotype carries an ALT allele and whose <code>FILTER</code> is <code>PASS</code> or <code>LowQual</code>, but never <code>RefCall</code>/<code>NoCall</code> records (40.4 M and 1.0 M on a 30x ONT pair) nor DeepSomatic's <code>GERMLINE</code>/<code>PON</code> verdicts. The new <code>DEEPSOMATIC_FILTER</code> step also declares DeepSomatic 1.10's <code>FORMAT/NAF</code> as <code>Number=A</code> (it is declared <code>Number=R</code> but written once per ALT allele) before any record join; the published DeepSomatic VCF is unchanged (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/241">#241</a> - The <code>all</code> (union) combine mode no longer drops a caller's second allele at one position: <code>BCFTOOLS_CALLER_UNION</code> deduplicates with <code>bcftools norm -d exact</code> instead of <code>-d all</code>, so e.g. a Clair3 SNV and a 47 bp deletion starting at the same base are both kept (and joined into one record before phasing, as before); 4 Clair3 calls restored on a 30x ONT genome (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/241">#241</a> - The <code>consensus</code> combine mode no longer publishes genotypes that neither caller made (e.g. DeepVariant <code>C&gt;A,G 2/2</code> and Clair3 <code>C&gt;A 0/1</code> gave <code>C&gt;A 0/0</code>; 13,188 <code>0/0</code> and 4,383 <code>1/0</code> records on a 30x ONT germline set). The new <code>BCFTOOLS_CALLER_CONSENSUS</code> module (replacing <code>BCFTOOLS_ISEC</code>, <code>BCFTOOLS_SORT_CONSENSUS</code> and <code>BCFTOOLS_NORM_REJOIN</code>) matches the alleles each caller's genotype carries and publishes the priority caller's own records unchanged, where every called allele is shared; sites where the callers agree on only one of several called alleles are left out (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/244">#244</a> - Padfoot now produces output on CHM13. Its microhomology step reads each 51-bp <code>samtools faidx</code> window as one line, and samtools keeps the FASTA's own line width, so with the 50-column iGenomes CHM13 <code>genome.fa</code> every <code>PADFOOT_*</code> task failed with <code>ValueError: sequence has zero length</code>, was ignored under its <code>errorStrategy</code>, and nothing was published under <code>&lt;sample&gt;/padfoot/</code>. When the <code>.fai</code> shows a contig wrapped at fewer than 51 columns, <code>PADFOOT</code> now hands Padfoot a 60-column copy (<code>samtools faidx -n 60</code>), deleted when the task ends; GRCh38 and other FASTAs wrapped at 51 columns or more are passed through unchanged. New module test on a 50-column FASTA (tag <code>small</code>) (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/240">#240</a> - The per-sample report now receives the WhatsHap phasing statistics: <code>&lt;id&gt;_whatshap_stats.tsv</code> joins the report's tumour-side QC inputs, so its Phasing block and "Phased variants" card are filled instead of "WhatsHap phasing statistics not found" (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/240">#240</a> - Documentation fixes from the real-data campaign: samplesheet <code>sex</code> is <code>male</code>/<code>female</code>; the nonexistent <code>--normal_fiber</code> is replaced by <code>--skip_normalfiber</code>; the multiple-runs section describes per-file alignment and per-type merging, the replicate columns and the valid paired encoding; re-used pipeline output needs the model columns; CRAM decoding via <code>UR:</code>; <code>--smallvar_filter_pass false</code> keeps the tumour-only ClairS-TO somatic split <code>PASS</code>-only; ClairS-TO Verdict tags nothing above a purity of 0.6, which leaves tumour-only somatic sets mostly germline; Padfoot fails on the 50-column iGenomes CHM13 FASTA; the T2T VEP cache has no known-variant or frequency data (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/240">#240</a> - A sample lost before <code>SEVERUS</code> (e.g. by a step skipped or ignored under its <code>errorStrategy</code>) no longer aborts the whole run at report assembly with <code>Invalid method invocation call</code>: the report joins emitted it as a short tuple without meta, which the fixed-arity filter closure could not take. Such a sample now gets no report and a warning; the other samples are reported as before. New stub test <code>tests/report_without_severus.nf.test</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - PacBio kinetics (<code>fi</code>, <code>fp</code>, <code>ri</code>, <code>rp</code>, and per-subread <code>ip</code>/<code>pw</code>) are dropped from every PacBio read at alignment unless <code>--keep_kinetic_data</code> is set, which now keeps them everywhere. Before, they stayed on the 2-3 % of reads <code>ft predict-m6a</code> gave no m6A call (about 3-4 GB per 30x CRAM), and on every read of samples that skip m6A prediction (<code>--skip_m6a</code>, <code>--skip_fiber</code>, normals under <code>--skip_normalfiber</code>). A run resumed from an earlier version re-runs <code>MINIMAP2_ALIGN</code> and everything after it for PacBio samples; ONT samples are not affected by this change (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - The published BAM/CRAM of ONT samples keeps the basecalling model as <code>DS:basecall_model=&lt;model&gt;</code> in its read group, so it can be fed back into the pipeline without filling the samplesheet model columns; before, the model was lost and the run failed at Clair3 model selection. A run resumed from an earlier version re-runs <code>MINIMAP2_ALIGN</code> and everything after it for ONT samples whose input names a model (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - <code>--download_vep_cache true</code> no longer aborts the run with <code>Not a valid path value type: java.util.ArrayList</code>: the downloaded cache was passed on as <code>[[:], [meta, cache]]</code> in a queue channel, which could also have fed only one VEP task. It is now a value channel shaped like the local cache, so every VEP task gets it (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - <code>--use_gpu</code> no longer puts <code>FIBERTOOLSRS_NUCLEOSOMES</code>, <code>FIBERTOOLSRS_FIRE</code> and <code>FIBERTOOLSRS_PREDICTM6A</code> on GPU labels: their image is the CPU fibertools-rs build, so they held a GPU at 0 % while running on the CPU. The <code>use_gpu</code> docs and schema help now name the steps that use a GPU (DeepVariant/DeepSomatic <code>call_variants</code>, Clair3) and say that their GPU images support GPUs up to Hopper (compute capability 9.0); on a B200 <code>call_variants</code> fails with <code>CUDA_ERROR_INVALID_PTX</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - <code>FIBERTOOLSRS_QC</code> output of samples with several input files is named <code>&lt;id&gt;_rep&lt;N&gt;_qc.txt</code>, so replicates no longer overwrite each other in <code>qc/&lt;type&gt;/fibertoolsrs/</code>; single-file samples keep <code>&lt;id&gt;_qc.txt</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - Realigning aligned input (BAM or CRAM) no longer keeps the old alignment's tags: <code>samtools reset</code> only dropped its default list, so <code>minimap2 -y</code> wrote the old minimap2 tags (<code>tp</code>, <code>cm</code>, <code>s1</code>, <code>s2</code>, <code>nn</code>, <code>ms</code>, <code>de</code>, <code>rl</code>) a second time on 99.6 % of records and kept stale <code>HP</code>/<code>PS</code>/<code>PQ</code> phasing from a haplotagged input. Aligned input now drops these and other alignment and phasing tags (a deny-list, see <code>docs/usage.md</code>). Base modifications and read-level tags are kept. Unaligned input is not affected by this change: it still drops only <code>RG</code>, plus the PacBio kinetics described in the kinetics entry above (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/239">#239</a> - <code>WAKHAN</code> now stages the FASTA index next to the FASTA. Without it, Wakhan's parallel <code>samtools mpileup</code> workers each built <code>&lt;fasta&gt;.fai</code> in the task dir at once, and a worker that read a half-written index failed the task and the run (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a> - Fixed haplotype DMR calling (<code>--modkit_phased</code>) running for only one BAM per run: the reference channel the <code>DMR</code> subworkflow built for <code>MODKIT_DMR</code> with <code>combine</code> was a one-item queue channel, so <code>MODKIT_DMR</code> and <code>DMR_NEAREST_GENE</code> ran once, for whichever BAM arrived first, and every other BAM (the normal of a pair, other samples) silently got no DMR table. It is now a value channel, and the <code>DMR</code> subworkflow test runs a tumour and a normal and requires a DMR task for each (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a> - Fixed SVs longer than 10 Mb being dropped from <code>SV_VEP</code> and <code>VEP_SAVANA</code> output: VEP skips anything above its default <code>--max_sv_size</code> (10,000,000) and only notes it in its unpublished warnings file, which on real samples lost 28 of 23,240 (CCS15-ONT) and 3 of 18,784 (BL5) Severus SVs, including 7 and 3 somatic events the report annotates. Both steps now pass <code>--max_sv_size 250000000</code> ahead of <code>--vep_args</code>, so a value given there still wins. SVs on contigs the VEP cache does not cover are still skipped (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a> - Fixed <code>DEEPSOMATIC_POSTPROCESSVARIANTS</code> and <code>DEEPVARIANT_POSTPROCESSVARIANTS</code> hanging until the walltime on deeper samples. When the step runs short of memory it does not fail: the kernel OOM-kills some of its pool workers, the pool respawns them without re-running their partitions, and the task waits at 0 % CPU with no error until it is killed, so an undersized memory request burns the whole time limit silently. On a 30x matched ONT pair with <code>--generate_gvcf</code> (12 cpus), paired DeepSomatic hung for 6 h at <code>process_high</code>'s 72 GB (5 of 12 workers OOM-killed) and finished in 1 h 01 min at 192 GB (peak RSS 133.6 GB); DeepVariant on the normal peaked at 69.2 GB of 72 GB. Both now request memory per cpu, never less than 8 cpus' worth: DeepSomatic 16 GB per cpu for a pair and 8 GB per cpu tumour-only, DeepVariant 8 GB per cpu (192, 96 and 96 GB at <code>process_high</code>'s 12 cpus, doubled on a retry with the cpus), and <code>4.h * task.attempt</code> instead of <code>process_short</code>'s fixed 1 h, which a retry could not extend. <code>docs/usage.md</code> says to set <code>resourceLimits</code> on machines with less memory (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a> - Fixed the GRCh38 AmpliconArchitect data repository being downloaded without its pinned MD5 check. <code>aaDataRepoMd5()</code> read a <code>params.aa_data_repo_url</code> that was assigned in the workflow and is not visible in the utils script, so the URL looked overridden and the MD5 was dropped (with an "undefined parameter" warning on every run). The resolved URL is now passed in as an argument (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/237">#237</a> - Declared <code>--keep_kinetic_data</code> (keep the PacBio kinetics tags on every read: <code>ft predict-m6a --keep</code>, and no removal at alignment) and <code>--keep_all_calls</code> (<code>ft predict-m6a --all-calls</code>), both default <code>false</code>, and <code>--outdir_cache</code> (where the downloaded VEP cache and SigProfiler genome are published, default <code>&lt;outdir&gt;/cache</code>). <code>conf/modules.config</code> already read all three, so every run warned "Access to undefined parameter". Defaults are unchanged (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/238">#238</a> - Fixed three stub blocks that stopped <code>-stub-run</code> from reaching large parts of the pipeline (real runs are unaffected). The nf-core <code>UNZIP</code> stub (now patched locally) wrote an empty directory, so ASCAT got no reference files, never ran, and the strict joins on its output aborted every stub run with ASCAT on. The patched <code>SEVERUS</code> stub wrote <code>.vcf</code> where the outputs expect <code>.vcf.gz</code>, so WAKHAN, SV_VEP and every <code>*_SEVERUS_*</code> Padfoot/ReConPlot/ShatterSeek task were silently skipped. The patched <code>BCFTOOLS_QUERY</code> stub touched the <code>.tbi</code> before running <code>tabix</code>, which refuses to overwrite it, killing every stub run with two callers per arm (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/236">#236</a> - Paired <code>SAVANA_CNA</code> no longer receives the genome's contigs file: <code>savana cna</code> has no <code>--contigs</code> option (only <code>savana run</code> and <code>savana to</code> do), so every matched tumour-normal run with SAVANA on failed with <code>unrecognized arguments: --contigs</code>, on GRCh38 and CHM13 alike. The test profiles ignored every <code>SAVANA_CNA</code> failure, which hid it from CI; they now ignore only the expected no-fit on the chr19 slice (exit 1) and fail on argument errors (exit 2), for <code>SAVANA_TO</code> too. Paired copy-number calling still covers only chr1-22, chrX and chrY: <code>savana cna</code> hard-codes that list (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/222">#222</a> - The ReConPlot wrapper's SAVANA VCF parser re-expresses a <code>_2</code> breakend from its mate's side before collapsing mates: SAVANA writes <code>BP_NOTATION</code> in (_1, _2) order on both records, so a junction whose <code>_2</code> record came first in the file paired the second breakend's position with the first breakend's orientation (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/222">#222</a> - <code>RECONPLOT</code> and <code>SHATTERSEEK</code> unset <code>R_HOME</code> before running R. Apptainer forwards the host environment, and with a host <code>R_HOME</code> set (as with a micromamba R) R prints <code>WARNING: ignoring environment value of R_HOME</code> on stdout, which ended up in the <code>versions.yml</code> version strings (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/232">#232</a> - Fixed haplotagged BAMs silently losing reads on contigs missing from the phased germline VCF header (chrM, unplaced/alt contigs, chrY without calls; <a href="https://github.com/IntGenomicsLab/lrsomatic/issues/231">#231</a>): ClairS-TO only lists contigs with calls, and <code>longphase haplotag</code> only writes contigs listed in the VCF header. A new <code>REHEADER_GERMLINE</code> step (<code>bcftools reheader --fai</code>) now gives the germline VCF the full reference contig list before phasing; records are unchanged. A new <code>small</code> nf-test of <code>PHASING_HAPLOTYPING</code> with a reference contig that has reads but no germline calls covers it (@laulambr).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/219">#219</a> - Fixed paired PacBio samples being dropped when only one of the tumour and normal BAMs kept its kinetics. The tumour/normal joins keyed on METAEXTRACT's per-BAM <code>kinetics</code> flag, so such a pair was silently left out of all variant calling, and the report join then crashed with "Invalid method invocation call". <code>kinetics</code> is now dropped from the meta after alignment (only the m6A branch reads it). The tumour/normal join uses <code>failOnMismatch</code>, so meta drift stops the run instead of dropping a pair, and a sample whose BAMs resolve to different Clair3/ClairS/ClairS-TO models, which also key those joins, now stops the run with an error naming the models (<code>validateSampleModels</code>). The <code>small</code> <code>-stub</code> test <code>tests/kinetics_pairing.nf.test</code> covers both (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Fixed <code>FIBERTOOLSRS_PREDICTM6A</code> crashing (<code>range start index 4294958926 out of range for slice of length 0</code>) on aligned BAM input with secondary alignments, which minimap2 writes by default with SEQ <code>*</code>. Secondary and supplementary records are now dropped before fibertools-rs (<code>SAMTOOLS_VIEW_FIBERPREP</code>), so they are no longer counted in the fibertools-rs QC either; <code>MINIMAP2_ALIGN</code> dropped them before realignment already. On Revio reads the m6A calls of the primary records are unchanged, and after <code>samtools reset</code> equal those made on the same reads unaligned (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/229">#229</a> - The CHM13 ASCAT GC-content file (<code>GCcontent_SNPloci_CHM13.txt.zip</code>) is now fetched from the IntGenomicsLab Globus collection instead of GitHub. GitHub served it through Git LFS with a <code>Last-Modified</code> header that changes over time, so Nextflow treated it as a new file and downloaded it again on every <code>-resume</code>, re-running <code>UNZIP_GC</code> and everything that depends on it. The file content is unchanged (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/229">#229</a> - <code>--ascat_allele_files</code>, <code>--ascat_loci_files</code>, <code>--ascat_gc_file</code> and <code>--ascat_rt_file</code> now override the <code>--genome</code> defaults as documented. <code>nextflow.config</code> and the schema declared <code>ascat_gc_files</code>/<code>ascat_rt_files</code> instead, which nothing read, and did not declare the allele and loci parameters at all (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/issues/225">#225</a> - PacBio tumour-only SAVANA calls are now filtered against the genome's Severus germline SV panel of normals before VEP, Padfoot and ReConPlot. SAVANA's PacBio classifier only rejects a call on matched-normal evidence, so without a normal its somatic VCF held nearly every germline SV (27,591 events on a simulated tumour-only C8, against 2 records with the matched normal) and <code>RECONPLOT_SAVANA</code> took 6-8 h; the filter, Severus's own PoN matching rule in <code>bin/savana_pon_filter.py</code> / <code>SAVANA_PON_FILTER</code>, removes 97% of them (761 kept), and <code>RECONPLOT_SAVANA</code> then finishes in 21 min with every figure drawn (unfiltered: not finished after 2 h). The 761 left are still germline by C8's matched normal, so PacBio tumour-only SAVANA calls remain a fallback. The unfiltered VCF is still published; <code>--savana_pb_pon_filter false</code> turns it off (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/issues/225">#225</a> - ReConPlot draws at most <code>--reconplot_max_svs</code> SVs in each of its per-chromosome, genome-wide and focus figure sets (default 1000, best supported first; a figure missing some of its SVs says <code>top N of M SVs</code>), since ReConPlot adds one plot layer per SV: tens of thousands take hours, and the genome-wide panel already overflows R's node stack at ~2,000 (no genome-wide figure was drawn for BL1, 2,084 SAVANA junctions, or for 2,500 capped C8 junctions; 761 drew). The harmonised <code>*.reconplot_sv.tsv</code> table keeps every SV (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/224">#224</a> - Fixed <code>CLAIR3</code> with <code>--use_gpu</code>, which failed at start with "Reference index fai file not found". The GPU image <code>hkubal/clair3:v2.0.2_gpu</code> follows the reference symlink and looks for the <code>.fai</code> next to the real file, but Nextflow stages the index from a different task. The GPU image is now <code>hkubal/clair3:v2.0.5_gpu</code>, which has the fix and bundles the same models. CPU runs keep the 2.0.3 biocontainer. The image doesn't run on GPUs newer than compute capability 9.0, such as the B200. <code>docs/usage.md</code> and the schema now say so and list every tool that <code>--use_gpu</code> affects (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/223">#223</a> - Fixed the Severus input channel (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>PREPARE_AA_DATA_REPO</code> no longer reads a <code>versions</code> output <code>UNTAR</code> does not have, which crashed every default GRCh38 run with CoRAL; overriding <code>--aa_data_repo_url</code> drops the genome's default MD5 (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>-profile test_full</code> starts again: it skips CoRAL and signatures and carries the chr19 SAVANA workarounds from <code>test</code> (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>CLAIRSTO_VERDICT_TAG</code> no longer crashes when ASCAT finds no solution and writes an empty segments table (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - CoRAL and AmpliconClassifier tasks killed again after their last retry are ignored instead of stopping the run (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - Paired <code>SAVANA_CNA</code> now gets the canonical contigs file; SAVANA and ClairS-TO no longer fail on null contigs or PoN lists without <code>--genome</code> (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - <code>--germline_var_keep</code>/<code>--somatic_var_keep</code> are validated at launch; conda/mamba runs fail at launch when modkit, the report or signatures would run (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - SigProfiler no longer fails on samples with no SNVs; <code>AlphaMissenseProtein</code> reports <code>not_found</code> rather than <code>aa_mismatch</code> when the exact position is absent; MultiQC strips only the NanoStats <code>_aln</code> suffix (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/205">#205</a> - CoRAL outputs: cycles publish to <code>ecdna/coral/cycles</code>, Pyomo <code>models/</code> dumps are not published, SCIP gets one solver thread, the summary is named <code>&lt;prefix&gt;_amplicon_summary.txt</code>, and AmpliconClassifier's extra tables are published; docs corrected to match (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/218">#218</a> - <code>VEPPLUGIN_REVEL</code> (and <code>VEPPLUGIN_EVE</code>) failed with <code>grep: invalid option -- 'P'</code> because the <code>bcftools:1.24</code> image has a BusyBox <code>grep</code>; the tabix version is now read with <code>sed</code>, which works with both BusyBox and GNU tools (@laulambr).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/216">#216</a> - <code>--download_sigprofiler_genome</code> failed on CHM13 with <code>CHM13-T2T failed the SigProfilerMatrixGenerator checksum verification</code>. The published payload had been replaced by the archive rebuilt after <a href="https://github.com/SigProfilerSuite/SigProfilerMatrixGenerator/issues/251">SigProfilerMatrixGenerator#251</a>, which counts transcript-end bases correctly, while the image still carried the old checksums. The SigProfiler modules now use <code>ghcr.io/ljwharbers/sigprofiler:1.3.6-chm13-7894689</code> (<code>oras://ghcr.io/ljwharbers/sigprofiler-sif:1.3.6-chm13-7894689</code>), and the CHM13 <code>sigprofiler_genome_url</code> points at the versioned <code>chm13_release_2026-09</code> payload. The new SigProfilerMatrixGenerator also includes upstream's corrected GRCh38 payload, which the AlexandrovLab FTP has served as <code>GRCh38.tar.gz</code> since 2026-09-25; the old one is now <code>GRCh38_Legacy</code>. <strong>GRCh38 and CHM13-T2T volumes installed before this change fail verification and must be reinstalled.</strong> A volume passed with <code>--sigprofiler_genome_dir</code> is now checked once, up front, by the new <code>SIGPROFILER_VERIFY</code> step, which stops with reinstall instructions instead of failing in every <code>SIGPROFILER_MATRIXGENERATOR</code> task. Its error names the cause: missing chromosome files, a checksum mismatch (stale or corrupted payload), or a genome the image has no checksums for. Stub nf-tests (tag <code>small</code>) now cover <code>PREPARE_SIGNATURES</code>, the volume reaching every <code>SIGPROFILER_MATRIXGENERATOR</code> sample, and the pinned image in <code>SIGPROFILER_MATRIXGENERATOR</code> and <code>SIGPROFILER_ASSIGNMENT</code>. Transcribed-strand matrices (SBS288, SBS384) change slightly; SBS96 and the COSMIC fits are not expected to change (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/206">#206</a> - A remote (http, https or ftp) ClinVar is now downloaded once per run by the new <code>VEPPLUGIN_CLINVAR</code> step in <code>PREPARE_VEP_PLUGINS</code>, instead of being staged by Nextflow as a foreign file; local and cloud-storage paths are staged as before. <code>GERMLINE_VEP</code> and <code>SOMATIC_VEP</code> re-checked the foreign file on its host for every sample, and NCBI answered the burst from a multi-sample GRCh38 run with HTTP 503, so <code>SOMATIC_VEP</code> failed with <code>Can't stage file ...clinvar_20260829.vcf.gz</code>; <code>-resume</code> could not recover, since the failed check changed the staging cache key. The download is checked against the new <code>--vep_clinvar_md5</code> and <code>--vep_clinvar_tbi_md5</code>, set by default to the checksums NCBI (GRCh38, VCF only) and Ensembl (CHM13, VCF and index) publish, so the pinned release cannot change silently. Resuming a run that already finished re-runs <code>GERMLINE_VEP</code> and <code>SOMATIC_VEP</code> once, since ClinVar now comes from a task rather than the stage cache. The ClinVar sizes in <code>docs/usage.md</code> are also corrected, and <code>docs/output.md</code> now documents <code>vep_plugins/</code> (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/203">#203</a> - <code>CLAIRS</code> no longer runs with <code>--haplotagged_tumor_bam_provided_so_skip_intermediate_phasing_and_haplotagging</code>. Since somatic calling was moved ahead of <code>PHASING_HAPLOTYPING</code> (v1.1.0), ClairS has received the untagged minimap2 BAM, so the flag made it skip its own phasing and haplotagging and call every paired sample without haplotype information: the full-alignment model saw no <code>HP</code> tags and the haplotype filtering step had nothing to filter on, the same as <code>--disable_phasing</code>. ClairS now runs Clair3 on the normal and tumour BAMs and phases the tumour itself. <strong>Paired somatic calls change</strong> (fewer false positives expected), and <code>CLAIRS</code> takes longer and uses more work-directory space (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/203">#203</a> - <code>docs/output.md</code> now lists the ClairS SNV output as <code>snvs.vcf.gz</code>, the name the pipeline publishes, instead of <code>snv.vcf.gz</code> (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - <code>*_var_combine = 'all'</code> now keeps both callers' private calls; the prioritized caller's own private calls were previously dropped. Invalid <code>combine_method</code>/<code>prioritize_caller</code> values now raise an error (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - <code>*_var_combine = 'consensus'</code> now splits multi-allelic records before intersecting, so they match across callers, and rejoins them before phasing. <code>'all'</code> now keeps the prioritised caller's record wherever both callers call a position, so no record mixes two callers' alleles (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - With <code>--smallvar_filter_pass false</code>, <code>'all'</code> now prefers a <code>PASS</code> record over a non-<code>PASS</code> one at each position before applying the caller priority, so a prioritised caller's <code>RefCall</code>/<code>LowQual</code> record no longer drops the other caller's <code>PASS</code> call. It also keeps one record where left-alignment moves two of one caller's indels onto the same position (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - Somatic phasing no longer includes germline records at the position of an alt-genotype somatic call, which gave the somatic record the germline genotype and phase set (new <code>BCFTOOLS_EXCLUDE_SITES</code> module); <code>0/0</code> and <code>./.</code> somatic records are published unphased (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - <code>LRSOMATICREPORT</code> now renders each sample as soon as its own inputs are ready instead of waiting for the whole batch, including samples without ASCAT's optional raw segments output (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/200">#200</a> - Bumped <code>WAKHAN</code> from 0.4.3 to 0.4.4, fixing a deterministic <code>StatisticsError</code> crash in BAF binning that aborted the run (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/196">#196</a> - <code>LRSOMATICREPORT</code> now points <code>XDG_CACHE_HOME</code> at the task directory alongside <code>HOME</code> and <code>TMPDIR</code>. Singularity/Apptainer inherit the host environment, so on sites that set it outside the bind-mounted work tree the render died with <code>Read-only file system (os error 30): mkdir '&lt;...&gt;/.cache/quarto'</code> (@AmberVerhasselt, @ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/193">#193</a> - <code>--vep_eve https://evemodel.org/api/proteins/bulk/download/</code> was rejected at launch because the "needs preparing" check keyed on a <code>.zip</code> suffix; it now checks whether the value is already a prepared bgzipped file (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/188">#188</a> - <code>MODKIT_PILEUP</code> now runs a patched modkit 0.6.4 (<a href="https://github.com/ljwharbers/modkit/tree/pacbio-conflict-fix">ljwharbers/modkit@pacbio-conflict-fix</a>): <code>ghcr.io/ljwharbers/modkit:0.6.4-pacbiofix-6e0afa2</code> under Docker and <code>oras://ghcr.io/ljwharbers/modkit-sif:0.6.4-pacbiofix-6e0afa2</code> under Singularity/Apptainer. Stock modkit 0.4.3-0.6.4 dropped 32-65 % of reads from recent PacBio HiFi BAMs and returned empty <code>--cpg</code> pileups (<a href="https://github.com/nanoporetech/modkit/issues/612">nanoporetech/modkit#612</a>, fix proposed in <a href="https://github.com/nanoporetech/modkit/pull/720">nanoporetech/modkit#720</a>), and ignored <code>--phased</code>/<code>--modified-bases</code> for PacBio BAMs with 6mA calls. The image is <code>linux/amd64</code> only and Conda is not supported (use <code>--skip_modkit</code> there); return to the biocontainer once a release includes the fix (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/181">#181</a> - NanoPlot pre- and post-alignment statistics now reach MultiQC; their channels were declared but never assigned, so the NanoStat section was silently missing from every report (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/181">#181</a> - <code>NANOPLOT_PRE</code> now includes the replicate in its output prefix, so samples with more than one replicate no longer collapse into a single MultiQC sample (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/181">#181</a> - samtools stats/flagstat/idxstats and mosdepth outputs are now prefixed <code>&lt;sample&gt;_&lt;type&gt;</code> instead of <code>&lt;sample&gt;</code>; the tumor and normal files of a matched pair shared a basename, so MultiQC logged <code>Duplicate sample name found! Overwriting</code> and reported only one of them (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/194">#194</a> - A sample whose <code>clair3_model</code> differs from the model implied by its BAM header no longer makes Clair3 run twice on every normal BAM sharing that header model, with a random copy winning the downstream join. The same bug made <code>UNTAR</code> fail with <code>mkdir: missing operand</code> when the header's basecall model was absent from the model map (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/191">#191</a>). Model entries are now keyed on the downloaded model (@YannVRB, @ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/181">#181</a> - Raised MultiQC's <code>log_filesize_limit</code> to 500 MB, because long-read <code>samtools stats</code> output exceeds the 50 MB default and was silently skipped (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/186">#186</a> - The <code>clair_only</code> nf-test now asserts sample4's merged tumour BAM with <code>bam().getReadsMD5()</code> instead of file md5s, which <code>samtools merge</code> makes irreproducible by giving colliding <code>@PG</code> IDs a random suffix (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/182">#182</a> - Added <code>--vcf</code> to the default <code>vep_args</code> so VEP writes VCF output rather than its default tab-delimited format (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/183">#183</a> - Corrected the <code>github</code> URL for Laurens Lambrechts in <code>manifest.contributors</code>, which was a copy of @MariosEft97's, to @laulambr. RO-Crate metadata updated to match (@ljwharbers).</li>
+</ul>
+<h3 id="dependencies"><code>Dependencies</code><a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/212">#212</a> - Updated all nf-core modules and the <code>bam_stats_samtools</code> subworkflow to the current nf-core/modules master with <code>nf-core modules update</code> (the <code>utils_*</code> subworkflows stay on the template's versions, because their master needs nf-schema 3.0.0), and bumped the tools further where nf-core lags the release and a single-tool biocontainer could be used (recorded as module patches). The callers follow the new module interfaces: <code>.tbi</code>/<code>.csi</code>/<code>.bai</code> outputs are now one <code>.index</code> channel, <code>WGET</code> takes the file suffix in its input tuple, and most modules report versions through the <code>versions</code> topic. The variant callers (Clair3, ClairS, DeepVariant, DeepSomatic) are updated in a separate PR (@ljwharbers).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Old</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bcftools</code></td>
+<td>1.20 / 1.22</td>
+<td>1.24</td>
+<td>All nf-core and local bcftools modules, <code>VCFSPLIT</code>, <code>VEPPLUGIN_EVE</code>/<code>VEPPLUGIN_REVEL</code>. <code>BCFTOOLS_NORM</code> now runs with <code>--check-ref w</code>: 1.24 aborts when a REF differs from the FASTA, and Clair3 writes <code>N</code> where GRCh38 has IUPAC codes (e.g. <code>B</code> at chr3:16902883), which 1.22 accepted</td>
+</tr>
+<tr>
+<td><code>samtools</code></td>
+<td>1.21 / 1.22.1 / 1.23.1</td>
+<td>1.24</td>
+<td>Including <code>METAEXTRACT</code>; <code>minimap2/align</code> stays on nf-core's samtools 1.23.1</td>
+</tr>
+<tr>
+<td><code>minimap2</code></td>
+<td>2.29</td>
+<td>2.30</td>
+<td>2.31 has no minimap2 + samtools image yet</td>
+</tr>
+<tr>
+<td><code>mosdepth</code></td>
+<td>0.3.11</td>
+<td>0.3.14</td>
+<td></td>
+</tr>
+<tr>
+<td><code>nanoplot</code></td>
+<td>1.46.1</td>
+<td>1.48.0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ensembl-vep</code></td>
+<td>115.2</td>
+<td>116.1</td>
+<td>116.2's biocontainer lacks <code>Math::CDF</code>; the default <code>--vep_cache_version</code> (113) is unchanged</td>
+</tr>
+<tr>
+<td><code>severus</code></td>
+<td>1.6</td>
+<td>1.7</td>
+<td></td>
+</tr>
+<tr>
+<td><code>cramino</code></td>
+<td>1.3.0</td>
+<td>2.0.0</td>
+<td><strong>N50, N75, median and mean read length now use the full read length</strong> (primary alignments, clipped bases included), so the report's N50 goes up; the old aligned values are new <code>... aligned</code> rows. <code>% from total alignments</code> is renamed <code>% from total reads</code></td>
+</tr>
+<tr>
+<td><code>fibertools-rs</code></td>
+<td>0.8.1</td>
+<td>0.13.1</td>
+<td><strong>Fiber-seq BAMs now carry nucleosomes, MSPs and FIREs in the MolecularAnnotation tags <code>Ma</code> (<code>nuc</code>, <code>msp</code> and <code>fire</code> intervals) and <code>Aq</code> (their qualities)</strong> instead of <code>ns</code>/<code>nl</code>/<code>as</code>/<code>al</code>/<code>aq</code>; downstream tools reading the old tags need <code>ft convert-tags</code> or an update</td>
+</tr>
+<tr>
+<td><code>wakhan</code></td>
+<td>0.4.3</td>
+<td>0.4.4</td>
+<td>0.5.0 changes the output directory layout and has no biocontainer yet</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/213">#213</a> - Updated the small variant callers. <strong>Germline and somatic calls change</strong> with the new models (@ljwharbers).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Old</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clair3</code></td>
+<td>1.2.0</td>
+<td>2.0.3</td>
+<td>Clair3 v2 runs on PyTorch and <strong>cannot read the v1 TensorFlow models</strong> the pipeline downloaded from ONT's CDN. Models bundled with the image (HKU's and ONT's recent R10.4.1 SUP/HAC ones, <code>hifi_revio</code>) are now used from the image with no download; other models are fetched as PyTorch directories from HKU (ONT's Rerio catalogue for <code>r9</code>/<code>r10</code> names) by the new <code>CLAIR3_MODEL</code> step, which replaces <code>WGET</code>/<code>UNTAR</code> and, unlike <code>WGET</code>, checks the TLS certificate (Clair3 unpickles the files). The GPU image is <code>hkubal/clair3:v2.0.5_gpu</code> (was <code>v2.0.2_gpu</code> until #224; see Fixed)</td>
+</tr>
+<tr>
+<td><code>clairs</code></td>
+<td>0.4.4</td>
+<td>0.5.1</td>
+<td>Bundles Clair3 2.0.3 for its germline step</td>
+</tr>
+<tr>
+<td><code>deepvariant</code></td>
+<td>1.9.0</td>
+<td>1.10.0</td>
+<td>nf-core update; <code>make_examples</code> now takes its flags from the model (<code>--checkpoint</code>): the ONT model is 199 wide with the new fuzzy channel, and both models call easy sites with the small model</td>
+</tr>
+<tr>
+<td><code>deepsomatic</code></td>
+<td>1.7.0</td>
+<td>1.10.0</td>
+<td><code>make_examples_somatic</code> now takes its flags from the model (<code>--checkpoint</code>) instead of a hard-coded channel list and pileup width; the paired PacBio model is 147 wide with 9 channels. The small model is kept off explicitly (<code>--nocall_small_model_examples</code>), because the module does not pass its calls on</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/214">#214</a> - Updated Wakhan from 0.4.4 to 0.5.0, run from <code>docker.io/ljwharbers/wakhan:0.5.0-histfix-1afd44d</code> (<code>oras://docker.io/ljwharbers/wakhan-sif:0.5.0-histfix-1afd44d</code> for Singularity/Apptainer) because no biocontainer was built for it. The image carries upstream commit 1afd44d4, which fixes the <code>IndexError</code> in <code>update_coverage_hist</code> that killed WAKHAN on some samples (KolmogorovLab/Wakhan#64). <strong>The <code>wakhan/</code> output layout changes</strong>: each solution is now <code>solution_{ploidy}_{purity}_{confidence}/</code> with <code>integer_profile.{bed,vcf,html,pdf}</code> (one boundary-aligned table for both haplotypes, replacing the two <code>*_HP_{1,2}.bed</code> files), <code>subclonal_profile.*</code>, <code>genes/genes_copynumber_states.*</code> and a <code>HiScanner_plots_data.zip</code> for the Wakhan web viewer; ranked solutions are <code>solution_rank_{n}</code>. Wakhan 0.5.0 no longer writes the per-chromosome <code>variation_plots</code>, <code>genome_copynumbers_details</code> plots or per-solution <code>loh_regions*.bed</code>. <code>LRSOMATICREPORT</code> now runs lrsomatic_report v1.6.1 (<code>ghcr.io/ljwharbers/lrsomatic-report:1.6.1</code>), which finds the copy-number plots in both layouts; v1.6.0 silently dropped them for 0.5.0 output. The WAKHAN stub now writes the outputs the module declares, and the version comes from <code>wakhan --version</code> (@ljwharbers).</li>
+</ul>
+<h2 id="v110-2026-04-28">v1.1.0 - [2026-04-28]<a class="headerlink" href="#v110-2026-04-28" title="Permanent link">&para;</a></h2>
+<h3 id="added_1"><code>Added</code><a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/117">#117</a> - Added ASCAT PDF plots to output (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/126">#126</a> - Added ASCAT raw segments txt files to output (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/135">#135</a> - Added <code>skip_m6a</code> parameter to allow skipping m6A base modification steps (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/141">#141</a> - Added output of phased variants in separate VCF files for improved downstream analysis (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/143">#143</a> - Added Severus <code>min_support</code> parameter and <code>skip_fibernormal</code> option (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/145">#145</a> - Integrated MultiQC and nanoplot for comprehensive QC reporting with long-read sequencing metrics (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/147">#147</a> - Implemented whatshap_stats module to generate phase block statistics and phasing quality metrics (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/149">#149</a> - Added DeepVariant and DeepSomatic modules for germline and somatic variant calling from long-read sequencing data (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/149">#149</a> - Added GPU support for Clair3, DeepVariant, and fibertools (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/150">#150</a> - Added Claude GitHub Actions workflows for automated code review and PR assistance (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/152">#152</a> - Integrated modkit module for long-read base modification detection and analysis (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/165">#165</a> - Added bcftools/view and samtools/merge modules; added extended test suites for union, consensus, clair-only, and deep-only caller modes (@robert-a-forsyth).</li>
+</ul>
+<h3 id="changed_1"><code>Changed</code><a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/123">#123</a> - Updated channel structure (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/137">#137</a> - Bulk module versions update. Fixed some issues with Wakhan (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/138">#138</a> - Perform QC before merging replicates (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/140">#140</a> - Improved documentation with additional pipeline usage examples and configuration guidance (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/149">#149</a> - Refactored variant calling workflow to support both DeepVariant and existing callers with improved configuration handling (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/152">#152</a> - Updated container versions and dependencies for modkit and related tools (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/157">#157</a> - Added ASAP Panel of Normals citation to CITATIONS.md (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/160">#160</a> - DeepVariant/DeepSomatic optimization and Panel-of-Normals handling improvements; updated docs; removed Claude workflow files (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/163">#163</a> - Added LongPhase supplementary alignment tag to extended args (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/164">#164</a> - Updated nf-core template components (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/166">#166</a> - Updated Wakhan to v0.4.3 using BioContainers distribution (@robert-a-forsyth).</li>
+</ul>
+<h3 id="fixed_1"><code>Fixed</code><a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/116">#116</a> - Corrected ASCAT GC and RT bias correction (@AmberVerhasselt).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/118">#118</a> - Updated nf-core template components to align with latest pipeline standards (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/130">#130</a> - Fixed path pattern for rephased VCF files (@Tim-Yu).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/137">#137</a> - Resolved Nextflow strict syntax compliance issues for compatibility with latest Nextflow versions (@ljwharbers).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/149">#149</a> - Corrected bcftools and vcfsplit operations for accurate variant filtering and merging (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/165">#165</a> - Fixed consensus variant calling workflow issues (@robert-a-forsyth).</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/168">#168</a> - Fixed default values for <code>germline_var_keep</code>, <code>somatic_var_keep</code>, <code>prioritize_caller_germline</code>, and <code>prioritize_caller_somatic</code> parameters to default to <code>clair</code> (@robert-a-forsyth).</li>
+</ul>
+<h2 id="v100-28-nov-2025">v1.0.0 - [28 Nov 2025]<a class="headerlink" href="#v100-28-nov-2025" title="Permanent link">&para;</a></h2>
+<p>Initial release of IntGenomicsLab/lrsomatic, created with the <a href="https://nf-co.re/">nf-core</a> template.</p>
+<h3 id="added_2"><code>Added</code><a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>ClairS-TO Module</li>
+<li>cramino module</li>
+<li>modkit pileup module</li>
+<li>mosdepth module</li>
+<li>minimap2/index module</li>
+<li>minimap2/align module</li>
+<li>pigz module</li>
+<li>samtools/cat module</li>
+<li>samtools faidx module</li>
+<li>bam_stats_samtools subworkflow</li>
+<li>mosdepth added to workflow</li>
+<li>add longphase/tag and longphase/phase modules</li>
+</ul>
+<h3 id="fixed_2"><code>Fixed</code><a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>New channel structure</li>
+<li>No longer possible to have duplicated naming after samtools cat</li>
+<li>restructured minimap2</li>
+</ul>
+<h3 id="dependencies_1"><code>Dependencies</code><a class="headerlink" href="#dependencies_1" title="Permanent link">&para;</a></h3>
+<h3 id="deprecated"><code>Deprecated</code><a class="headerlink" href="#deprecated" title="Permanent link">&para;</a></h3>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../parameters/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parameters">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Parameters
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../citations/" class="md-footer__link md-footer__link--next" aria-label="Next: Citations">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Citations
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/IntGenomicsLab/lrsomatic" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://doi.org/10.5281/zenodo.17751828" target="_blank" rel="noopener" title="doi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M384 512H96c-53 0-96-43-96-96V96C0 43 43 0 96 0h304c26.5 0 48 21.5 48 48v288c0 20.9-13.4 38.7-32 45.3V448c17.7 0 32 14.3 32 32s-14.3 32-32 32zM96 384c-17.7 0-32 14.3-32 32s14.3 32 32 32h256v-64zm32-232c0 13.3 10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24m24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.footer", "navigation.instant", "search.highlight", "search.suggest", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
