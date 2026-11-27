@@ -66,6 +66,25 @@ input:
         type: file
         description: User-supplied gene panel TSVs (each with a `gene` column) applied on load; unioned when several are given, and base names must be unique
         pattern: "*.tsv"
+  - - hmf_driver_panel:
+        type: file
+        description: HMF `DriverGenePanel.38.tsv` (oncoanalyser resource bundle, GRCh38, or its CHM13 lift from HMF_LIFTOVER); turns on the HMF driver annotation section. `[]` when off
+        pattern: "*.tsv"
+    - hmf_ensembl_data:
+        type: directory
+        description: HMF Ensembl data cache (`common/ensembl_data`, with `ensembl_gene_data.csv` and `ensembl_trans_exon_data.csv`); required with the driver panel. `[]` when off
+    - hmf_known_fusions:
+        type: file
+        description: HMF `known_fusion_data.38.csv`, for known-fusion matching of the SV calls; optional, `[]` when absent
+        pattern: "*.csv"
+    - hmf_hotspots:
+        type: file
+        description: HMF `KnownHotspots.somatic.38.vcf.gz`, for hotspot matching of small variants; optional, `[]` when absent
+        pattern: "*.vcf.gz"
+    - hmf_actionable_bed:
+        type: file
+        description: HMF `ActionableCodingPanel.38.bed(.gz)`, a region flag on small variants; optional (absent from bundle v3), `[]` when absent
+        pattern: "*.bed{,.gz}"
 
 output:
   report:

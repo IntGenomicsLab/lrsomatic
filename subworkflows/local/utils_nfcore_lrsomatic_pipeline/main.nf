@@ -244,6 +244,7 @@ workflow PIPELINE_COMPLETION {
 def validateInputParameters() {
     genomeExistsError()
     validateReportGenePanels()
+    validateHmfReportParams()
     validateCondaSupport(workflow.profile)
     validateSmallvarCallers()
     validateSvAnnotationParams()
@@ -416,6 +417,186 @@ def validateReportGenePanels() {
         .keySet()
     if (duplicates) {
         error("--report_gene_panel: panel files sharing a base name cannot be used together ('${duplicates.join("', '")}'). Rename one of them.")
+    }
+}
+
+//
+// HMF resource files for the report's optional driver annotation, as [slot: path-or-null] in the module's input order.
+// An explicit --report_hmf_* file wins; otherwise the slot is taken from --report_hmf_resource_dir's standard
+// oncoanalyser layout when that file exists there (ActionableCodingPanel is absent from bundle v3).
+//
+def hmfReportFiles() {
+    def layout = [
+        driver_panel    : [params.report_hmf_driver_panel,     ['common/DriverGenePanel.38.tsv']],
+        ensembl_data_dir: [params.report_hmf_ensembl_data_dir, ['common/ensembl_data']],
+        known_fusions   : [params.report_hmf_known_fusions,    ['dna/sv/known_fusion_data.38.csv']],
+        hotspots        : [params.report_hmf_hotspots,         ['dna/variants/KnownHotspots.somatic.38.vcf.gz']],
+        actionable_bed  : [params.report_hmf_actionable_bed,   ['dna/variants/ActionableCodingPanel.38.bed.gz', 'dna/variants/ActionableCodingPanel.38.bed']],
+    ]
+    def root = params.report_hmf_resource_dir ? params.report_hmf_resource_dir.toString().replaceAll('/+$', '') : null
+    return layout.collectEntries { slot, spec ->
+        def (explicit, relpaths) = spec
+        def path = explicit ?: (root ? relpaths.collect { rel -> "${root}/${rel}".toString() }.find { cand -> file(cand).exists() } : null)
+        return [slot, path ? path.toString() : null]
+    }
+}
+
+//
+// Whether any HMF report parameter was given (the user's own resources, which take over from the hosted bundle)
+//
+def hmfAnnotationRequested() {
+    return [params.report_hmf_resource_dir, params.report_hmf_driver_panel, params.report_hmf_ensembl_data_dir,
+            params.report_hmf_known_fusions, params.report_hmf_hotspots, params.report_hmf_actionable_bed].any { p -> p }
+}
+
+//
+// The build the HMF resources declare: a one-line REFERENCE file in the Ensembl data cache ('t2t' in a copy lifted by
+// HMF_LIFTOVER); the published oncoanalyser bundle declares nothing and is GRCh38. Mirrors the report's
+// hmf_declared_reference()
+//
+def hmfResourcesBuild(ensembl_data_dir) {
+    def f = ensembl_data_dir ? file("${ensembl_data_dir}/REFERENCE") : null
+    def ref = f && f.exists() ? f.text.readLines().find { line -> line.trim() }?.trim()?.toLowerCase() : null
+    return ref in ['t2t', 'chm13', 'chm13v2', 'chm13v2.0', 't2t-chm13', 't2t-chm13v2.0'] ? 'CHM13' : 'GRCh38'
+}
+
+//
+// GRCh38 -> CHM13 chain for HMF_LIFTOVER: --report_hmf_liftover_chain, else the genome's default (conf/igenomes.config)
+//
+def hmfLiftoverChain() {
+    return params.report_hmf_liftover_chain ?: getGenomeAttribute('hmf_liftover_chain')
+}
+
+//
+// Whether the HMF resources must be lifted over first: a CHM13 run given the user's own GRCh38 bundle (the hosted
+// CHM13 bundle is lifted already)
+//
+def hmfNeedsLiftover() {
+    return hmfAnnotationRequested() && params.genome == 'CHM13' && hmfResourcesBuild(hmfReportFiles().ensembl_data_dir) == 'GRCh38'
+}
+
+//
+// --skip_report_hmf as a boolean: given on the command line ('--skip_report_hmf false', to opt back in where a profile
+// sets it) Nextflow passes the string 'false', which Groovy reads as true
+//
+def hmfSkipped() {
+    return params.skip_report_hmf.toString().toBoolean()
+}
+
+//
+// The genome's hosted HMF report bundle as [url, md5] (conf/igenomes.config hmf_bundle_url / hmf_bundle_md5): the
+// default when the report runs, --skip_report_hmf is off and no --report_hmf_* resources are given; null otherwise,
+// and for a genome without one (a custom --fasta)
+//
+def hmfDefaultBundle() {
+    if (params.skip_report || hmfSkipped() || hmfAnnotationRequested()) {
+        return null
+    }
+    def url = getGenomeAttribute('hmf_bundle_url')
+    return url ? [url.toString(), getGenomeAttribute('hmf_bundle_md5')?.toString()] : null
+}
+
+//
+// The unpacked hosted bundle (HMF_BUNDLE's hmf_bundle/) as the report's five slots, at the bundle's fixed layout
+//
+def hmfHostedFiles(bundle) {
+    return [
+        bundle.resolve('common/DriverGenePanel.38.tsv'),
+        bundle.resolve('common/ensembl_data'),
+        bundle.resolve('dna/sv/known_fusion_data.38.csv'),
+        bundle.resolve('dna/variants/KnownHotspots.somatic.38.vcf.gz'),
+        bundle.resolve('dna/variants/ActionableCodingPanel.38.bed.gz'),
+    ]
+}
+
+//
+// Whether the report gets the HMF annotation. On by default where the genome has a hosted bundle (GRCh38, CHM13);
+// off with --skip_report_hmf or --skip_report. The user's own --report_hmf_* resources take over: then the two required
+// files must resolve and be on the run's genome (GRCh38 as published, CHM13 lifted already or liftable).
+// The workflow gate and validateHmfReportParams() both call this, so they cannot drift apart.
+//
+def hmfAnnotationOk() {
+    if (params.skip_report || hmfSkipped() || !(params.genome in ['GRCh38', 'CHM13'])) {
+        return false
+    }
+    if (!hmfAnnotationRequested()) {
+        return hmfDefaultBundle() as boolean
+    }
+    def f = hmfReportFiles()
+    if (!(f.driver_panel && f.ensembl_data_dir)) {
+        return false
+    }
+    def build = hmfResourcesBuild(f.ensembl_data_dir)
+    return params.genome == build || (params.genome == 'CHM13' && hmfLiftoverChain() as boolean)
+}
+
+//
+// The lifted bundle (HMF_LIFTOVER's hmf_chm13/) as the report's five slots, named after the GRCh38 inputs `files`
+// (hmfReportFiles()); [] for a slot that had no input
+//
+def hmfLiftedFiles(bundle, files) {
+    def name = { p -> p ? file(p).name : null }
+    def hotspots = name.call(files.hotspots)
+    return [
+        files.driver_panel     ? bundle.resolve("common/${name.call(files.driver_panel)}") : [],
+        files.ensembl_data_dir ? bundle.resolve('common/ensembl_data') : [],
+        files.known_fusions    ? bundle.resolve("dna/sv/${name.call(files.known_fusions)}") : [],
+        hotspots               ? bundle.resolve("dna/variants/${hotspots.endsWith('.gz') ? hotspots : hotspots + '.gz'}") : [],
+        files.actionable_bed   ? bundle.resolve("dna/variants/${name.call(files.actionable_bed)}") : [],
+    ]
+}
+
+//
+// Validate the user's own HMF report resources at launch: skipped with a warning on a genome they cannot be put on
+// (anything but GRCh38 and CHM13, or CHM13 without a chain), an error when the driver panel or the Ensembl cache
+// cannot be found (each other file is optional), when the resources declare another build than the run's, or when
+// the chain (local or remote: the default is a URL) cannot be reached
+//
+def validateHmfReportParams() {
+    // The hosted bundle needs no checks (its MD5 is checked on download); only the user's own resources do
+    if (params.skip_report || !hmfAnnotationRequested()) {
+        return
+    }
+    if (hmfSkipped()) {
+        log.warn "--skip_report_hmf is set, so the --report_hmf_* resources are ignored."
+        return
+    }
+    if (!(params.genome in ['GRCh38', 'CHM13'])) {
+        log.warn "The HMF driver annotation will be skipped: its resources are GRCh38 (or lifted to CHM13) and the genome is '${params.genome ?: 'custom (--fasta)'}'. " +
+            "Run with --genome GRCh38 or --genome CHM13 to use it."
+        return
+    }
+    def f = hmfReportFiles()
+    if (params.report_hmf_resource_dir && !file(params.report_hmf_resource_dir).exists()) {
+        error("--report_hmf_resource_dir not found: '${params.report_hmf_resource_dir}'.")
+    }
+    def missing = ['driver_panel': '--report_hmf_driver_panel', 'ensembl_data_dir': '--report_hmf_ensembl_data_dir']
+        .findAll { slot, _flag -> !f[slot] }
+    if (missing) {
+        error("The HMF driver annotation needs the driver panel and the Ensembl data cache: ${missing.values().join(' and ')} " +
+            "(or a --report_hmf_resource_dir holding common/DriverGenePanel.38.tsv and common/ensembl_data).")
+    }
+    if (!file("${f.ensembl_data_dir}/ensembl_trans_exon_data.csv").exists() || !file("${f.ensembl_data_dir}/ensembl_gene_data.csv").exists()) {
+        error("The HMF Ensembl data cache '${f.ensembl_data_dir}' lacks ensembl_gene_data.csv or ensembl_trans_exon_data.csv.")
+    }
+    def build = hmfResourcesBuild(f.ensembl_data_dir)
+    if (params.genome == 'GRCh38' && build == 'CHM13') {
+        error("The HMF resources declare CHM13 (REFERENCE in '${f.ensembl_data_dir}') but the genome is GRCh38. Give the GRCh38 bundle.")
+    }
+    if (params.genome == 'CHM13' && build == 'GRCh38') {
+        if (!hmfLiftoverChain()) {
+            log.warn "The HMF driver annotation will be skipped: the resources are GRCh38 and no GRCh38 -> CHM13 chain was found to lift them over. " +
+                "Give one with --report_hmf_liftover_chain."
+            return
+        }
+        // A remote chain is probed too: the workflow stages it at launch, so an unreachable one would otherwise stop
+        // the run with a bare "No such file" for an optional report section
+        def chain = hmfLiftoverChain().toString()
+        if (!file(chain).exists()) {
+            error("--report_hmf_liftover_chain ${chain.contains('://') ? 'is not reachable' : 'not found'}: '${chain}'. " +
+                "Offline, download the GRCh38 -> CHM13 chain once and pass its local path with --report_hmf_liftover_chain, " +
+                "or reuse a bundle the pipeline already lifted (pipeline_info/hmf_liftover/hmf_chm13/) as --report_hmf_resource_dir.")
+        }
     }
 }
 

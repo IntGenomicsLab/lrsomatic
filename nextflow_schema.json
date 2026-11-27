@@ -729,6 +729,62 @@
                     "type": "string",
                     "description": "Gene panel(s) applied when the report opens, as a comma-separated list: 'none' for no filtering, builtin panel names (e.g. 'lymphoid'), and/or paths to TSVs with a 'gene' column. Several panels are unioned; default (unset) is unfiltered.",
                     "help_text": "Every builtin panel is embedded in the report as a checkbox, so this only sets the initial selection. An entry is read as a panel file if it contains a '/' or ends in '.tsv', and as a builtin panel name otherwise. 'none' cannot be combined with a real panel, and two panel files sharing a base name cannot be combined."
+                },
+                "report_hmf_resource_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "Root of a Hartwig (oncoanalyser) GRCh38 resource bundle, lifted over on --genome CHM13 (or a copy the pipeline already lifted). Turns on the report's optional HMF driver annotation, taking its files from the bundle's standard layout.",
+                    "help_text": "Reads common/DriverGenePanel.38.tsv, common/ensembl_data/, dna/sv/known_fusion_data.38.csv, dna/variants/KnownHotspots.somatic.38.vcf.gz and dna/variants/ActionableCodingPanel.38.bed(.gz) (absent from bundle v3, then skipped). Any --report_hmf_* file parameter overrides its file. The bundle is GRCh38: on --genome CHM13 it is lifted over first (HMF_LIFTOVER, see --report_hmf_liftover_chain), or a copy the pipeline already lifted (its common/ensembl_data/REFERENCE says t2t) is used as is; such a copy is rejected on GRCh38. With any other --genome, or on CHM13 when no chain resolves, the annotation is skipped with a warning. The bundle is not distributed with the pipeline; download it from the oncoanalyser documentation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_driver_panel": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "HMF DriverGenePanel.38.tsv. Turns on the report's HMF driver annotation (with --report_hmf_ensembl_data_dir) and adds the panel as the selectable gene list 'hmf_driver'.",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_ensembl_data_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "description": "HMF Ensembl data cache directory (the bundle's common/ensembl_data, with ensembl_gene_data.csv and ensembl_trans_exon_data.csv). Required for the HMF driver annotation.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "report_hmf_known_fusions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "HMF known_fusion_data.38.csv: known-fusion matching of the SV calls in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_hotspots": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf(\\.gz)?$",
+                    "description": "HMF KnownHotspots.somatic.38.vcf.gz: hotspot matching of small variants in the report's HMF section (optional).",
+                    "fa_icon": "fas fa-file"
+                },
+                "report_hmf_liftover_chain": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.chain(\\.gz)?$",
+                    "description": "GRCh38 -> CHM13 chain file used to lift the HMF resources over on a CHM13 run. Default: the genome's (the T2T consortium's grch38-chm13v2.chain).",
+                    "help_text": "On --genome CHM13 the pipeline lifts the GRCh38 HMF resources over to CHM13 (HMF_LIFTOVER) before the report: the Ensembl data cache (a transcript is kept only if every exon lifts whole), hotspots (REF re-checked against the CHM13 FASTA), the actionable coding panel and the known fusions' IG/enhancer ranges. The lifted bundle is published under pipeline_info/hmf_liftover/ and can be given back as --report_hmf_resource_dir. The default chain is the T2T consortium's (public domain), downloaded at launch (~6 MB); offline, download it once and pass its local path here, or reuse a lifted bundle. A chain that cannot be reached is an error at launch.",
+                    "fa_icon": "fas fa-link"
+                },
+                "report_hmf_actionable_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "HMF ActionableCodingPanel.38.bed(.gz): flags small variants in its regions in the report's HMF section (optional; a calling-sensitivity region set, not an actionability call).",
+                    "fa_icon": "fas fa-file"
                 }
             }
         },
@@ -835,6 +891,11 @@
                 "skip_report": {
                     "type": "boolean",
                     "description": "Skip the final per-sample HTML report"
+                },
+                "skip_report_hmf": {
+                    "type": "boolean",
+                    "description": "Skip the report's HMF driver annotation (on by default for GRCh38 and CHM13).",
+                    "help_text": "By default the report's HMF driver annotation uses the genome's hosted bundle (GRCh38, or CHM13 lifted over; about 5 MB, downloaded once per run and MD5-checked). Your own resources via --report_hmf_resource_dir or the --report_hmf_* files take over from it. Other genomes have no bundle and run without the annotation."
                 },
                 "skip_coral": {
                     "type": "boolean",
