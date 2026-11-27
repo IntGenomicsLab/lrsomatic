@@ -594,16 +594,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#v120dev" class="md-nav__link">
+  <a href="#v120-2026-11-27" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.2.0dev
+        v1.2.0 - [2026-11-27]
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v1.2.0dev">
+    <nav class="md-nav" aria-label="v1.2.0 - [2026-11-27]">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#added" class="md-nav__link">
@@ -854,16 +865,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#v120dev" class="md-nav__link">
+  <a href="#v120-2026-11-27" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v1.2.0dev
+        v1.2.0 - [2026-11-27]
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v1.2.0dev">
+    <nav class="md-nav" aria-label="v1.2.0 - [2026-11-27]">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#added" class="md-nav__link">
@@ -1053,7 +1075,15 @@
 <h1 id="intgenomicslablrsomatic-changelog">IntGenomicsLab/lrsomatic: Changelog<a class="headerlink" href="#intgenomicslablrsomatic-changelog" title="Permanent link">&para;</a></h1>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<h2 id="v120dev">v1.2.0dev<a class="headerlink" href="#v120dev" title="Permanent link">&para;</a></h2>
+<h2 id="v120-2026-11-27">v1.2.0 - [2026-11-27]<a class="headerlink" href="#v120-2026-11-27" title="Permanent link">&para;</a></h2>
+<h3 id="breaking-changes">Breaking changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nextflow <code>&gt;=26.04.0</code> is required (1.1.0 required <code>&gt;=25.04.0</code>) (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/235">#235</a>).</li>
+<li>Aligned and haplotagged reads are published as CRAM 3.0 with the reference embedded instead of BAM; <code>--aligned_format bam</code> restores BAM (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a>).</li>
+<li><code>--genome GRCh38</code> now aligns to the NCBI no-ALT analysis set instead of the GATK <code>Homo_sapiens_assembly38.fasta</code>, so results are not directly comparable to 1.1.0 GRCh38 runs (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/258">#258</a>).</li>
+<li><code>modkit pileup</code> reports only 5mC at CpG sites by default; <code>--modkit_args=''</code> restores the previous output (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/188">#188</a>).</li>
+<li><code>--ascat_gc_files</code> and <code>--ascat_rt_files</code> are replaced by <code>--ascat_gc_file</code> and <code>--ascat_rt_file</code> (the old names were never read) (<a href="https://github.com/IntGenomicsLab/lrsomatic/pull/229">#229</a>).</li>
+</ul>
 <h3 id="added"><code>Added</code><a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/270">#270</a> - <strong>HMF driver annotation</strong> in the report (GRCh38; CHM13 via liftover): <code>--report_hmf_resource_dir</code> (an oncoanalyser resource bundle, v2.x or v3.x) or the individual <code>--report_hmf_driver_panel</code>, <code>--report_hmf_ensembl_data_dir</code>, <code>--report_hmf_known_fusions</code>, <code>--report_hmf_hotspots</code> and <code>--report_hmf_actionable_bed</code> stage Hartwig's driver panel, Ensembl cache, known fusions, hotspots and actionable coding panel into <code>LRSOMATICREPORT</code>, which passes them as the report's <code>--hmf-*</code> flags (built in the module, so <code>ext.args</code> does not drop them). Report 2.3.0 then reports driver small variants per the panel's flags, amplifications/deletions from ASCAT and Wakhan separately plus Severus/SAVANA deletions (each source switchable in the browser), and known fusions with exon ranges and frame, and adds the panel as the <code>hmf_driver</code> gene list. <strong>On by default for GRCh38 and CHM13</strong> (<code>--skip_report_hmf</code> turns it off): the new <code>HMF_BUNDLE</code> (<code>bin/fetch_hmf_bundle.py</code>) downloads and MD5-checks the genome's hosted bundle, about 5 MB, the subset of oncoanalyser v2.2.0 the report reads (IntGenomicsLab/test-datasets <code>references/hmf/v2.2.0/</code>, <code>conf/igenomes.config</code> <code>hmf_bundle_url</code>/<code>hmf_bundle_md5</code>; CHM13 pre-lifted), and publishes it under <code>cache/hmf/</code> for reuse offline; the test profiles skip it. Your own resources take over from it. On <code>--genome CHM13</code> a GRCh38 bundle of your own is lifted over once per run by the new <code>HMF_LIFTOVER</code> (<code>bin/hmf_liftover.py</code>, <code>--report_hmf_liftover_chain</code>, default the T2T consortium's public-domain <code>grch38-chm13v2.chain</code>, downloaded at launch; a local copy offline): whole canonical transcripts only (every exon, one contig and strand, rank order and span kept), hotspot REF re-checked on CHM13, IG/enhancer ranges and the actionable panel lifted; the lifted copy declares <code>REFERENCE t2t</code>, is published under <code>pipeline_info/hmf_liftover/</code> and can be reused as <code>--report_hmf_resource_dir</code>. On any other genome the pipeline warns and skips it; a missing driver panel or Ensembl cache, or CHM13-lifted resources on GRCh38, is a launch error. <code>hmfReportFiles()</code> / <code>hmfAnnotationOk()</code> gate the workflow and the validation alike (@robert-a-forsyth).</li>
@@ -1197,7 +1227,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/236">#236</a> - Paired <code>SAVANA_CNA</code> no longer receives the genome's contigs file: <code>savana cna</code> has no <code>--contigs</code> option (only <code>savana run</code> and <code>savana to</code> do), so every matched tumour-normal run with SAVANA on failed with <code>unrecognized arguments: --contigs</code>, on GRCh38 and CHM13 alike. The test profiles ignored every <code>SAVANA_CNA</code> failure, which hid it from CI; they now ignore only the expected no-fit on the chr19 slice (exit 1) and fail on argument errors (exit 2), for <code>SAVANA_TO</code> too. Paired copy-number calling still covers only chr1-22, chrX and chrY: <code>savana cna</code> hard-codes that list (@ljwharbers).</li>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/222">#222</a> - The ReConPlot wrapper's SAVANA VCF parser re-expresses a <code>_2</code> breakend from its mate's side before collapsing mates: SAVANA writes <code>BP_NOTATION</code> in (_1, _2) order on both records, so a junction whose <code>_2</code> record came first in the file paired the second breakend's position with the first breakend's orientation (@robert-a-forsyth).</li>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/222">#222</a> - <code>RECONPLOT</code> and <code>SHATTERSEEK</code> unset <code>R_HOME</code> before running R. Apptainer forwards the host environment, and with a host <code>R_HOME</code> set (as with a micromamba R) R prints <code>WARNING: ignoring environment value of R_HOME</code> on stdout, which ended up in the <code>versions.yml</code> version strings (@ljwharbers).</li>
-<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/232">#232</a> - Fixed haplotagged BAMs silently losing reads on contigs missing from the phased germline VCF header (chrM, unplaced/alt contigs, chrY without calls; <a href="https://github.com/IntGenomicsLab/lrsomatic/issues/231">#231</a>): ClairS-TO only lists contigs with calls, and <code>longphase haplotag</code> only writes contigs listed in the VCF header. A new <code>REHEADER_GERMLINE</code> step (<code>bcftools reheader --fai</code>) now gives the germline VCF the full reference contig list before phasing; records are unchanged. A new <code>small</code> nf-test of <code>PHASING_HAPLOTYPING</code> with a reference contig that has reads but no germline calls covers it.</li>
+<li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/232">#232</a> - Fixed haplotagged BAMs silently losing reads on contigs missing from the phased germline VCF header (chrM, unplaced/alt contigs, chrY without calls; <a href="https://github.com/IntGenomicsLab/lrsomatic/issues/231">#231</a>): ClairS-TO only lists contigs with calls, and <code>longphase haplotag</code> only writes contigs listed in the VCF header. A new <code>REHEADER_GERMLINE</code> step (<code>bcftools reheader --fai</code>) now gives the germline VCF the full reference contig list before phasing; records are unchanged. A new <code>small</code> nf-test of <code>PHASING_HAPLOTYPING</code> with a reference contig that has reads but no germline calls covers it (@laulambr).</li>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/219">#219</a> - Fixed paired PacBio samples being dropped when only one of the tumour and normal BAMs kept its kinetics. The tumour/normal joins keyed on METAEXTRACT's per-BAM <code>kinetics</code> flag, so such a pair was silently left out of all variant calling, and the report join then crashed with "Invalid method invocation call". <code>kinetics</code> is now dropped from the meta after alignment (only the m6A branch reads it). The tumour/normal join uses <code>failOnMismatch</code>, so meta drift stops the run instead of dropping a pair, and a sample whose BAMs resolve to different Clair3/ClairS/ClairS-TO models, which also key those joins, now stops the run with an error naming the models (<code>validateSampleModels</code>). The <code>small</code> <code>-stub</code> test <code>tests/kinetics_pairing.nf.test</code> covers both (@robert-a-forsyth).</li>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/207">#207</a> - Fixed <code>FIBERTOOLSRS_PREDICTM6A</code> crashing (<code>range start index 4294958926 out of range for slice of length 0</code>) on aligned BAM input with secondary alignments, which minimap2 writes by default with SEQ <code>*</code>. Secondary and supplementary records are now dropped before fibertools-rs (<code>SAMTOOLS_VIEW_FIBERPREP</code>), so they are no longer counted in the fibertools-rs QC either; <code>MINIMAP2_ALIGN</code> dropped them before realignment already. On Revio reads the m6A calls of the primary records are unchanged, and after <code>samtools reset</code> equal those made on the same reads unaligned (@ljwharbers).</li>
 <li><a href="https://github.com/IntGenomicsLab/lrsomatic/pull/229">#229</a> - The CHM13 ASCAT GC-content file (<code>GCcontent_SNPloci_CHM13.txt.zip</code>) is now fetched from the IntGenomicsLab Globus collection instead of GitHub. GitHub served it through Git LFS with a <code>Last-Modified</code> header that changes over time, so Nextflow treated it as a new file and downloaded it again on every <code>-resume</code>, re-running <code>UNZIP_GC</code> and everything that depends on it. The file content is unchanged (@AmberVerhasselt).</li>
