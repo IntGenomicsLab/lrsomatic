@@ -123,7 +123,7 @@
                     "whatshap": 2.8
                 },
                 "Workflow": {
-                    "IntGenomicsLab/lrsomatic": "v1.2.0"
+                    "IntGenomicsLab/lrsomatic": "v1.3.0dev"
                 }
             },
             [
